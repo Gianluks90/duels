@@ -21,14 +21,14 @@
          Anchored exactly like a wand card (same height, same edge offset): tall,
          only the bottom strip stays on screen, the rest hangs off past the top edge. -->
     <div class="board__hand-box board__hand-box--opponent"
-         [style.--hand-card-width.px]="handCardWidth"
+         [style.--hand-card-width.px]="handArcCardWidth"
          [style.--visible-content-height.px]="visibleContentHeight"
          [style.--wand-label-height.px]="wandLabelHeight"
          [style.left.px]="handBoxWandInset"
          [style.right.px]="handBoxHudInset">
 
       <div class="board__hand-box-side">
-        <div class="board__card-back board__card-back--hand board__card-back--stacked" aria-hidden="true"></div>
+        <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false" />
       </div>
 
       <div class="board__hand-track" #opponentHandTrack
@@ -40,7 +40,9 @@
         }
       </div>
 
-      <div class="board__hand-box-side"></div>
+      <div class="board__hand-box-side">
+        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false" />
+      </div>
 
     </div>
 
@@ -106,46 +108,44 @@
   <!-- ═══════════════ FONTE ARCANA (middle 1/3) ═══════════════ -->
   <section class="board__zone board__zone--fonte" aria-label="Fonte Arcana">
 
-    <!-- Deck stacks (left column) -->
-    <div class="board__fonte-decks">
-      <div class="board__fonte-deck">
-        <div class="board__card-back board__card-back--sm board__card-back--stacked board__card-back--residuo" aria-hidden="true"></div>
-        <div class="board__fonte-deck-info">
-          <span class="board__deck-label t-muted">Residuo</span>
-          <span class="board__count t-muted">{{ residuoDeckCount() }}</span>
-        </div>
-      </div>
-      <div class="board__fonte-deck">
-        <div class="board__card-back board__card-back--sm board__card-back--stacked" aria-hidden="true"></div>
-        <div class="board__fonte-deck-info">
-          <span class="board__deck-label t-muted">Avanzato</span>
-          <span class="board__count t-muted">{{ commonDeckCount() }}</span>
-        </div>
-      </div>
-      <div class="board__fonte-deck">
-        <div class="board__card-back board__card-back--sm board__card-back--stacked" aria-hidden="true"></div>
-        <div class="board__fonte-deck-info">
-          <span class="board__deck-label t-muted">Base</span>
-          <span class="board__count t-muted">{{ baseDeckCount() }}</span>
-        </div>
-      </div>
-    </div>
+    <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
 
-    <!-- Fonte cards (center) -->
-    <div class="board__fonte-cards" role="region" aria-label="Fonte Arcana">
-      <span class="board__fonte-title t-muted">Fonte Arcana</span>
-      <div class="board__fonte-row">
-        @for (card of fonteCards(); track $index) {
-          <app-card [element]="card" [size]="76" />
-        }
+      <!-- Group 1: Residuo Arcano — a single pile, always face up -->
+      <div class="board__fonte-group">
+        <app-deck [size]="fonteCardWidth" [count]="residuoDeckCount()" [faceUp]="true" [topElement]="'residium'" [label]="'Residuo'" />
       </div>
-    </div>
 
-    <!-- Discard pile (right) -->
-    <div class="board__fonte-discard">
-      <div class="board__card-back board__card-back--sm board__card-back--stacked" aria-hidden="true"></div>
-      <span class="board__deck-label t-muted">Scarti</span>
-      <span class="board__count t-muted">{{ fonteDiscardCount() }}</span>
+      <!-- Group 2: Base — draw (face down, left) and scarti (face up, right, messy) -->
+      <div class="board__fonte-group">
+        <app-deck [size]="fonteCardWidth" [count]="baseDeckCount()" [label]="'Base'" />
+        <app-deck [size]="fonteCardWidth" [count]="baseDiscardCount()" [faceUp]="true" [topElement]="baseDiscardTop()" [messy]="true" [label]="'Scarti'" />
+      </div>
+
+      <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
+      <div class="board__fonte-group board__fonte-group--arcana">
+
+        <div class="board__fonte-header">
+          <span class="board__fonte-heading">Fonte Arcana</span>
+        </div>
+
+        <div class="board__fonte-group-content">
+          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'Avanzato'" />
+
+          <div class="board__fonte-row" role="region" aria-label="Fonte Arcana">
+            @for (card of fonteCards(); track $index) {
+              <app-card [element]="card" [size]="handArcCardWidth" />
+            }
+          </div>
+
+          <app-deck [size]="fonteCardWidth" [count]="fonteDiscardCount()" [faceUp]="true" [topElement]="fonteDiscardTop()" [messy]="true" [label]="'Scarti'" />
+        </div>
+
+        <div class="board__fonte-footer">
+          <p class="board__fonte-description">Combina e rimuovi due o più elementi base per ottenere un elemento avanzato</p>
+        </div>
+
+      </div>
+
     </div>
 
   </section>
@@ -171,27 +171,25 @@
          Anchored exactly like a wand card (same height, same edge offset): tall,
          only the top strip stays on screen, the rest hangs off past the bottom edge. -->
     <div class="board__hand-box"
-         [style.--hand-card-width.px]="handCardWidth"
+         [style.--hand-card-width.px]="handArcCardWidth"
          [style.--visible-content-height.px]="visibleContentHeight"
          [style.--wand-label-height.px]="wandLabelHeight"
          [style.left.px]="handBoxHudInset"
          [style.right.px]="handBoxWandInset">
 
       <div class="board__hand-box-side">
-        <div class="board__card-back board__card-back--hand board__card-back--stacked" aria-hidden="true"></div>
+        <app-deck [size]="handCardWidth" [count]="playerDeckCount()" [showLabel]="false" [showCount]="false" />
       </div>
 
       <div class="board__hand-track" #playerHandTrack role="region" aria-label="La tua mano">
         @for (card of playerHand(); track $index) {
-          <app-card class="board__hand-card" [element]="card" [size]="handCardWidth"
+          <app-card class="board__hand-card" [element]="card" [size]="handArcCardWidth"
                     [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
         }
       </div>
 
       <div class="board__hand-box-side">
-        @if (playerDiscardCount() > 0) {
-          <div class="board__card-back board__card-back--hand board__card-back--stacked" aria-hidden="true"></div>
-        }
+        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false" />
       </div>
 
     </div>

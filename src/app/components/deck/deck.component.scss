@@ -1,0 +1,59 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.deck__back {
+  background-image: url('/cards-back/dark.png');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  flex-shrink: 0;
+
+  // Neat deck: a single back with an offset double-shadow suggesting depth.
+  &--stacked {
+    box-shadow:
+      -3px 3px 0 -1px rgba(122, 92, 30, 0.4),
+      -6px 6px 0 -1px rgba(122, 92, 30, 0.2);
+  }
+
+  // Messy pile: layered directly on top of each other, only rotation tells them apart.
+  &--layer {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+.deck__stack {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.deck__top {
+  position: absolute;
+  inset: 0;
+}
+
+.deck__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.deck__label {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.deck__count {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}

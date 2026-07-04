@@ -2,8 +2,10 @@
   display: grid;
   // Player/opponent zones need at least 300px to fit the vita/mano/bacchetta
   // panels (276px tall) without touching Fonte Arcana; they can still grow
-  // proportionally (5fr) on taller screens.
-  grid-template-rows: minmax(300px, 5fr) 4fr minmax(300px, 5fr);
+  // proportionally (5fr) on taller screens. Fonte Arcana itself bumped up
+  // (4fr → 6fr) to give its own panel more breathing room.
+  grid-template-rows: minmax(150px, 1fr) auto minmax(150px, 1fr);
+  // grid-template-rows: minmax(300px, 5fr) 8fr minmax(300px, 5fr);
   height: 100dvh;
   overflow: hidden;
 
@@ -17,17 +19,13 @@
     gap: var(--sp-2);
 
     &--opponent {
-      border-bottom: 1px solid var(--border-subtle);
+      // border-bottom: 1px solid var(--border-subtle);
     }
 
     &--fonte {
       flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--sp-4);
-      background: rgba(0, 0, 0, 0.18);
-      border-top: 1px solid var(--border-subtle);
-      border-bottom: 1px solid var(--border-subtle);
+      align-items: stretch; // lets the inner container fill the zone's full height — no more "container in a container"
+      justify-content: center;
     }
 
     &--player {
@@ -142,53 +140,6 @@
     color: var(--text-muted);
   }
 
-  &__deck-label {
-    font-size: 0.55rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  &__count {
-    font-family: var(--font-ui);
-    font-size: 0.6rem;
-  }
-
-  // ── Card backs (face-down) ──────────────────────────────────────────────────
-  &__card-back {
-    width: 52px;
-    height: 78px;
-    background-image: url('/cards-back/dark.png');
-    background-size: cover;
-    background-position: center;
-    border: 1px solid var(--border-gold);
-    border-radius: 5px;
-    flex-shrink: 0;
-
-    &--sm {
-      width: 36px;
-      height: 54px;
-    }
-
-    // Matches the hand cards' own size — mazzo/scarti/mano now share one dimension.
-    &--hand {
-      width: var(--hand-card-width, 84px);
-      height: calc(var(--hand-card-width, 84px) * 1.5);
-    }
-
-    &--stacked {
-      box-shadow:
-        -3px 3px 0 -1px rgba(122, 92, 30, 0.4),
-        -6px 6px 0 -1px rgba(122, 92, 30, 0.2);
-    }
-
-    &--residuo {
-      border-color: var(--el-residium);
-      box-shadow:
-        -3px 3px 0 -1px rgba(160, 96, 208, 0.35),
-        -6px 6px 0 -1px rgba(160, 96, 208, 0.15);
-    }
-  }
-
   // ── Hand box (mazzo 15% | arco 1fr | scarti 15%), styled like the wand cards ─
   // Same total height as the wand cards (--wand-label-height), flush against
   // the true bottom/top edge (bottom/top: 0) — the panel is fully on screen.
@@ -273,40 +224,54 @@
   }
 
   // ── Fonte Arcana (middle zone internals) ────────────────────────────────────
-  &__fonte-decks {
+  // A raised panel wrapping the 3 groups (Residuo | Base draw+scarti | Fonte
+  // Arcana draw+slots+scarti), centered in the zone with a fixed gap.
+  &__fonte-container {
     display: flex;
-    flex-direction: column;
-    gap: var(--sp-3);
-    padding: var(--sp-1) var(--sp-2);
+    align-items: center;
+    justify-content: space-evenly; // restores the previous spacing between the 3 groups — "center" (my mistake) squashed it back down to just the raw gap
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: var(--sp-3) var(--sp-6);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    width: 100%;
+  }
+
+  // Each group takes only its own natural width.
+  &__fonte-group {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
     flex-shrink: 0;
   }
 
-  &__fonte-deck {
-    display: flex;
-    align-items: center;
+  // The Fonte Arcana group specifically gets a header (title) and footer (rules
+  // blurb) — scoped to just its own draw/slots/scarti, not the whole row.
+  &__fonte-group--arcana {
+    flex-direction: column;
+    align-items: center; // centers the content row under the (centered) title — it was left-aligned by default (stretch)
     gap: var(--sp-2);
   }
 
-  &__fonte-deck-info {
+  &__fonte-header {
     display: flex;
-    flex-direction: column;
-    gap: 1px;
-  }
-
-  &__fonte-cards {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-    gap: var(--sp-2);
   }
 
-  &__fonte-title {
+  &__fonte-heading {
     font-family: var(--font-ui);
-    font-size: 0.55rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    letter-spacing: 0.18em;
+    color: var(--text-heading);
+  }
+
+  &__fonte-group-content {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
   }
 
   &__fonte-row {
@@ -315,13 +280,17 @@
     align-items: center;
   }
 
-  &__fonte-discard {
+  &__fonte-footer {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--sp-1);
-    flex-shrink: 0;
-    padding: var(--sp-1) var(--sp-2);
+    justify-content: center;
+  }
+
+  &__fonte-description {
+    font-size: 0.62rem;
+    text-align: center;
+    color: var(--text-muted);
+    line-height: 1.35;
+    max-width: 260px;
   }
 
   // ── Wand panels (player + opponent) ─────────────────────────────────────────

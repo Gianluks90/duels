@@ -15,6 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { GameService, type GameDoc } from '../../services/game.service';
 import { AuthService } from '../../services/auth.service';
 import { CardComponent } from '../../components/card/card.component';
+import { DeckComponent } from '../../components/deck/deck.component';
 import { PlayerHudComponent } from '../../components/player-hud/player-hud.component';
 import type { BaseElement, Element } from '../../models/element.model';
 import { elementLabel } from '../../models/element.model';
@@ -32,14 +33,16 @@ const PANEL_CONTENT_HEIGHT = 100;
 /** Matches --sp-3 — used to size the spacer that reserves room for the (absolutely positioned) wand panels within the row. */
 const ROW_GAP = 12;
 
-/** Width of a single hand card (and of the mazzo/scarti card-backs, now unified to the same size); height follows the standard 2:3 ratio. */
+/** Width of the mazzo/scarti card-backs in the mano box (the deck/discard piles beside the arc — not the arc's own cards). */
 const HAND_CARD_WIDTH = 84;
+/** Width of the fanned cards in the hand itself — bigger than the mazzo/scarti beside it. */
+const HAND_ARC_CARD_WIDTH = 100;
 /** Resting overlap when there's room to spare — high enough that the fan never reaches into the mazzo/scarti columns next to it. */
 const HAND_MIN_OVERLAP_FRACTION = 0.58;
 /** Overlap cap for large hands — cards always keep at least this sliver visible. */
 const HAND_MAX_OVERLAP_FRACTION = 0.8;
 /** How much the outermost cards in the arc dip relative to the (highest, centered) middle card — capped well under 1/3 of the card's height. */
-const HAND_ARC_DROP = 24;
+const HAND_ARC_DROP = 12;
 /** Rotation of the outermost cards in the arc. */
 const HAND_ARC_ROTATION_DEG = 10;
 
@@ -50,11 +53,16 @@ const ZONE_H_PADDING = 16;
 /** Gap between vita, mano and bacchetta. */
 const GROUP_GAP = 24;
 
+/** Every card in the Fonte Arcana row — deck backs, discards, the 4 slots, Residuo — shares this one width, face down or up. */
+const FONTE_CARD_WIDTH = 76;
+/** Gap between the 3 Fonte Arcana groups (Residuo | Base | Fonte Arcana). */
+const FONTE_GROUP_GAP = 32;
+
 @Component({
   selector: 'app-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [CardComponent, PlayerHudComponent],
+  imports: [CardComponent, DeckComponent, PlayerHudComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
@@ -76,6 +84,7 @@ export class BoardComponent implements OnInit {
   protected readonly wandRowWidth = 3 * WAND_CARD_WIDTH + 2 * ROW_GAP;
 
   protected readonly handCardWidth = HAND_CARD_WIDTH;
+  protected readonly handArcCardWidth = HAND_ARC_CARD_WIDTH;
   protected readonly visibleContentHeight = PANEL_CONTENT_HEIGHT;
 
   protected readonly hudWidth = HUD_WIDTH;
@@ -84,6 +93,9 @@ export class BoardComponent implements OnInit {
    *  too — otherwise the gap ends up shrunk by that same amount (the bug from the previous pass). */
   protected readonly handBoxHudInset = ZONE_H_PADDING + HUD_WIDTH + GROUP_GAP;
   protected readonly handBoxWandInset = ZONE_H_PADDING + this.wandRowWidth + GROUP_GAP;
+
+  protected readonly fonteCardWidth = FONTE_CARD_WIDTH;
+  protected readonly fonteGroupGap = FONTE_GROUP_GAP;
 
   private readonly playerHandTrackRef = viewChild<ElementRef<HTMLElement>>('playerHandTrack');
   private readonly opponentHandTrackRef = viewChild<ElementRef<HTMLElement>>('opponentHandTrack');
@@ -102,16 +114,22 @@ export class BoardComponent implements OnInit {
   protected readonly isPlayerTurn = signal(true);
 
   protected readonly opponentHandCount = signal(5);
-  protected readonly fonteCards = signal<Element[]>(['fire', 'water', 'thunder', 'ice']);
+  protected readonly fonteCards = signal<Element[]>(['thunder', 'ice', 'poison', 'thunder']);
   protected readonly playerHand = signal<Element[]>(['fire', 'air', 'water', 'earth', 'fire']);
 
-  protected readonly residuoDeckCount  = signal(8);
-  protected readonly commonDeckCount   = signal(20);
-  protected readonly baseDeckCount     = signal(40);
-  protected readonly fonteDiscardCount = signal(3);
+  protected readonly residuoDeckCount   = signal(8);
+  protected readonly commonDeckCount    = signal(20);
+  protected readonly baseDeckCount      = signal(40);
+  protected readonly baseDiscardCount   = signal(5);
+  protected readonly baseDiscardTop     = signal<Element>('earth');
+  protected readonly fonteDiscardCount  = signal(3);
+  protected readonly fonteDiscardTop    = signal<Element>('poison');
   protected readonly playerDiscardCount   = signal(2);
+  protected readonly playerDiscardTop     = signal<Element>('water');
   protected readonly playerDeckCount      = signal(12);
   protected readonly opponentDeckCount    = signal(10);
+  protected readonly opponentDiscardCount = signal(1);
+  protected readonly opponentDiscardTop   = signal<Element>('air');
 
   private readonly myRole = computed<'host' | 'guest' | null>(() => {
     const doc = this.gameDoc();
@@ -178,7 +196,7 @@ export class BoardComponent implements OnInit {
    *  Overlap and arc width are computed from the live container width so any hand size fits without cards disappearing off-screen. */
   protected handCardStyle(index: number, count: number, containerWidth: number, mirrored: boolean): Record<string, string> {
     const spacing = this.handSpacing(count, containerWidth);
-    const fanWidth = HAND_CARD_WIDTH + (count - 1) * spacing;
+    const fanWidth = HAND_ARC_CARD_WIDTH + (count - 1) * spacing;
     const startX = Math.max((containerWidth - fanWidth) / 2, 0);
 
     const mid = (count - 1) / 2;
@@ -195,14 +213,14 @@ export class BoardComponent implements OnInit {
   }
 
   private handSpacing(count: number, containerWidth: number): number {
-    if (count <= 1 || containerWidth <= 0) return HAND_CARD_WIDTH;
+    if (count <= 1 || containerWidth <= 0) return HAND_ARC_CARD_WIDTH;
 
-    const naturalSpacing = HAND_CARD_WIDTH * (1 - HAND_MIN_OVERLAP_FRACTION);
-    const naturalTotal = HAND_CARD_WIDTH + (count - 1) * naturalSpacing;
+    const naturalSpacing = HAND_ARC_CARD_WIDTH * (1 - HAND_MIN_OVERLAP_FRACTION);
+    const naturalTotal = HAND_ARC_CARD_WIDTH + (count - 1) * naturalSpacing;
     if (naturalTotal <= containerWidth) return naturalSpacing;
 
-    const fitSpacing = (containerWidth - HAND_CARD_WIDTH) / (count - 1);
-    const minSpacing = HAND_CARD_WIDTH * (1 - HAND_MAX_OVERLAP_FRACTION);
+    const fitSpacing = (containerWidth - HAND_ARC_CARD_WIDTH) / (count - 1);
+    const minSpacing = HAND_ARC_CARD_WIDTH * (1 - HAND_MAX_OVERLAP_FRACTION);
     return Math.max(fitSpacing, minSpacing);
   }
 
