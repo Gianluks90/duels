@@ -1,0 +1,7 @@
+<div class="tooltip" role="tooltip" [id]="tooltipId()" [style.width.px]="width()">
+  @if (templateContent(); as tpl) {
+    <ng-container [ngTemplateOutlet]="tpl" />
+  } @else {
+    {{ textContent() }}
+  }
+</div>

@@ -1,0 +1,32 @@
+<div class="game-settings-dialog">
+  <header class="game-settings-dialog__header">
+    <h2 class="t-heading game-settings-dialog__title">Impostazioni Partita</h2>
+    <button class="btn btn--secondary game-settings-dialog__close" (click)="close()" aria-label="Chiudi">✕</button>
+  </header>
+
+  <div class="game-settings-dialog__body">
+    <section class="game-settings-dialog__section">
+      @if (!confirmSurrender()) {
+        <div class="game-settings-dialog__row">
+          <div>
+            <p class="game-settings-dialog__label">Arrenditi</p>
+            <p class="t-muted game-settings-dialog__desc">Concludi subito la partita in corso.</p>
+          </div>
+          <button class="btn btn--danger" (click)="requestConfirm()">Arrenditi</button>
+        </div>
+      } @else {
+        <div class="game-settings-dialog__confirm">
+          <p class="game-settings-dialog__confirm-text">
+            Sei sicuro di volerti arrendere? La partita terminerà <strong>subito</strong>.
+          </p>
+          <div class="game-settings-dialog__confirm-actions">
+            <button class="btn btn--secondary" [disabled]="surrendering()" (click)="cancelConfirm()">Annulla</button>
+            <button class="btn btn--danger" [disabled]="surrendering()" (click)="surrender()">
+              {{ surrendering() ? 'Arrendendosi…' : 'Confermo, arrenditi' }}
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+  </div>
+</div>

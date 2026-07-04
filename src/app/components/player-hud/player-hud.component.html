@@ -4,25 +4,68 @@
        the outer .hud stays anchored to the edge like the other two panels. -->
   <div class="hud__content">
 
-    <!-- Name + turn indicator -->
+    <!-- Name (+ settings, only on our own panel) -->
     <div class="hud__name-row">
-      <span
-        class="hud__turn-dot"
-        [class.hud__turn-dot--active]="isMyTurn()"
-        [attr.aria-label]="isMyTurn() ? 'Turno tuo' : 'Turno avversario'"
-      ></span>
       <span class="hud__name t-heading">{{ firstName() }}</span>
+      @if (!mirrored()) {
+        <button type="button" class="hud__settings" (click)="settingsClick.emit()" aria-label="Impostazioni partita">
+          <span class="hud__settings-icon" aria-hidden="true"></span>
+        </button>
+      }
     </div>
 
-    <!-- HP bar: pill-shaped track with a glossy fill proportional to hp/maxHp;
-         mana + hp values protrude above it, side by side on the same baseline -->
-    <div class="hud__hp-bar" [attr.aria-label]="firstName() + ': ' + hp() + ' vita su ' + maxHp()">
+    <!-- Turn phase: only the current phase is shown; on our own panel, hover/focus
+         reveals the full order (with descriptions) in a tooltip — the opponent's
+         panel has no tooltip, just the plain indicator. -->
+    <div class="hud__phases" [attr.aria-label]="isMyTurn() ? ('Fase: ' + turnPhaseLabel(phase())) : 'Turno dell\'avversario'">
+      @if (mirrored()) {
+        <span class="hud__phase" [class.hud__phase--active]="isMyTurn()">
+          <span class="hud__phase-dot" aria-hidden="true"></span>
+          <span class="hud__phase-label">{{ turnPhaseLabel(phase()) }}</span>
+        </span>
+      } @else {
+        <span class="hud__phase hud__phase--current" [class.hud__phase--active]="isMyTurn()"
+              tabindex="0" [appTooltip]="phasesTooltip" tooltipPosition="top" [tooltipWidth]="260">
+          <span class="hud__phase-dot" aria-hidden="true"></span>
+          <span class="hud__phase-label">{{ turnPhaseLabel(phase()) }}</span>
+        </span>
+      }
+    </div>
+
+    <ng-template #phasesTooltip>
+      <div class="hud__phases-list">
+        @for (p of phases; track p) {
+          <div class="hud__phase-entry" [class.hud__phase-entry--active]="isMyTurn() && phase() === p">
+            <span class="hud__phase-entry-dot" aria-hidden="true"></span>
+            <div class="hud__phase-entry-text">
+              <span class="hud__phase-entry-name">{{ turnPhaseLabel(p) }}</span>
+              <span class="hud__phase-entry-desc">{{ turnPhaseDescription(p) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </ng-template>
+
+    <!-- HP bar: pill-shaped track with a glossy red fill (current/max) plus a
+         blue shield segment right after it (bonus effective hp); mana + hp
+         values protrude above it, side by side on the same baseline -->
+    <div class="hud__hp-bar" [attr.aria-label]="firstName() + ': ' + displayedHp() + ' vita su ' + health().max">
       <div class="hud__hp-track">
         <div class="hud__hp-fill" [style.width.%]="hpPercent()" aria-hidden="true"></div>
+        @if (hasShield()) {
+          <div class="hud__hp-shield-fill" [style.width.%]="shieldPercent()"
+               [style.left.%]="mirrored() ? null : hpPercent()" [style.right.%]="mirrored() ? hpPercent() : null"
+               aria-hidden="true"></div>
+        }
       </div>
       <div class="hud__values">
-        <span class="hud__mana-value" [attr.aria-label]="'Mana: ' + mana() + ' di ' + maxMana()">{{ mana() }}</span>
-        <span class="hud__hp-value" aria-hidden="true">{{ hp() }}</span>
+        <span class="hud__mana-value" tabindex="0" [attr.aria-label]="'Mana: ' + mana() + ' di ' + maxMana()"
+              [appTooltip]="'Mana disponibile ' + mana()" [tooltipPosition]="mirrored() ? 'bottom' : 'top'">{{ mana() }}</span>
+        @if (hpTooltip(); as tip) {
+          <span class="hud__hp-value hud__hp-value--interactive" tabindex="0" [appTooltip]="tip" [tooltipPosition]="mirrored() ? 'bottom' : 'top'">{{ displayedHp() }}</span>
+        } @else {
+          <span class="hud__hp-value">{{ displayedHp() }}</span>
+        }
       </div>
     </div>
 

@@ -10,10 +10,11 @@
       [style.--visible-content-height.px]="visibleContentHeight"
       [width]="hudWidth"
       [name]="opponentName()"
-      [hp]="opponentHP()"
+      [health]="opponentHealth()"
       [mana]="opponentMana()"
       [maxMana]="maxMana()"
       [isMyTurn]="!isPlayerTurn()"
+      [phase]="turnPhase()"
       [mirrored]="true"
     />
 
@@ -28,7 +29,8 @@
          [style.right.px]="handBoxHudInset">
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false" />
+        <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false"
+                  [appTooltip]="'Mazzo: ' + opponentDeckCount() + ' carte rimanenti'" tooltipPosition="bottom" />
       </div>
 
       <div class="board__hand-track" #opponentHandTrack
@@ -41,7 +43,8 @@
       </div>
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false" />
+        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false"
+                  [appTooltip]="'Scarti: ' + opponentDiscardCount() + ' carte scartate'" tooltipPosition="bottom" />
       </div>
 
     </div>
@@ -108,6 +111,13 @@
   <!-- ═══════════════ FONTE ARCANA (middle 1/3) ═══════════════ -->
   <section class="board__zone board__zone--fonte" aria-label="Fonte Arcana">
 
+    <div class="board__toolbar">
+      <app-icon-button [icon]="grimoireIcon" [ariaLabel]="'Apri il Grimorio'" (iconClick)="openGrimoire()"
+                       [appTooltip]="'Grimorio'" tooltipPosition="right" />
+      <app-icon-button [icon]="rulebookIcon" [ariaLabel]="'Apri il regolamento'" (iconClick)="openRulebook()"
+                       [appTooltip]="'Regolamento'" tooltipPosition="right" />
+    </div>
+
     <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
 
       <!-- Group 1: Residuo Arcano — a single pile, always face up -->
@@ -133,7 +143,7 @@
 
           <div class="board__fonte-row" role="region" aria-label="Fonte Arcana">
             @for (card of fonteCards(); track $index) {
-              <app-card [element]="card" [size]="handArcCardWidth" />
+              <app-card [element]="card" [size]="handArcCardWidth" [appTooltip]="recipeTooltip(card)" tooltipPosition="top" />
             }
           </div>
 
@@ -160,11 +170,13 @@
       [style.--visible-content-height.px]="visibleContentHeight"
       [width]="hudWidth"
       [name]="playerName()"
-      [hp]="playerHP()"
+      [health]="playerHealth()"
       [mana]="playerMana()"
       [maxMana]="maxMana()"
       [isMyTurn]="isPlayerTurn()"
+      [phase]="turnPhase()"
       [mirrored]="false"
+      (settingsClick)="openGameSettings()"
     />
 
     <!-- Box: mazzo (15%) | arco (1fr, l'unico che esce sopra il box) | scarti (15%).
@@ -178,7 +190,8 @@
          [style.right.px]="handBoxWandInset">
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="playerDeckCount()" [showLabel]="false" [showCount]="false" />
+        <app-deck [size]="handCardWidth" [count]="playerDeckCount()" [showLabel]="false" [showCount]="false"
+                  [appTooltip]="'Mazzo: ' + playerDeckCount() + ' carte rimanenti'" tooltipPosition="top" />
       </div>
 
       <div class="board__hand-track" #playerHandTrack role="region" aria-label="La tua mano">
@@ -189,7 +202,8 @@
       </div>
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false" />
+        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false"
+                  [appTooltip]="'Scarti: ' + playerDiscardCount() + ' carte scartate'" tooltipPosition="top" />
       </div>
 
     </div>

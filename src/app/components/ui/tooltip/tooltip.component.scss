@@ -1,0 +1,13 @@
+// Fixed width, auto height — same panel language used everywhere else
+// (brown background, gold border), square corners, no target-pointer arrow.
+.tooltip {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  border-radius: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+}

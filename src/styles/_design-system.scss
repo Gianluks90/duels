@@ -67,6 +67,12 @@
   padding: 0;
 }
 
+// Browsers each draw their own default focus ring (Safari's is blue) — remove it.
+:focus,
+:focus-visible {
+  outline: none;
+}
+
 html,
 body {
   width: 100%;

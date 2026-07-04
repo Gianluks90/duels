@@ -12,15 +12,24 @@ import {
   type WritableSignal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Dialog } from '@angular/cdk/dialog';
+import { Overlay } from '@angular/cdk/overlay';
 import { GameService, type GameDoc } from '../../services/game.service';
 import { AuthService } from '../../services/auth.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
 import { PlayerHudComponent } from '../../components/player-hud/player-hud.component';
-import type { BaseElement, Element } from '../../models/element.model';
-import { elementLabel } from '../../models/element.model';
+import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
+import { GameSettingsDialogComponent } from '../../dialogs/game-settings/game-settings-dialog.component';
+import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
+import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
+import type { BaseElement, Element, AdvancedElement } from '../../models/element.model';
+import { elementLabel, ADVANCED_RECIPES } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
+import type { TurnPhase } from '../../models/turn-phase.model';
+import type { Health } from '../../models/player.model';
 
 /** Width of a wand-section card; its paired peeking element card shares the same width. */
 const WAND_CARD_WIDTH = 168;
@@ -62,7 +71,7 @@ const FONTE_GROUP_GAP = 32;
   selector: 'app-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [CardComponent, DeckComponent, PlayerHudComponent],
+  imports: [CardComponent, DeckComponent, PlayerHudComponent, IconButtonComponent, TooltipDirective],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
@@ -72,6 +81,8 @@ export class BoardComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly dialog = inject(Dialog);
+  private readonly overlay = inject(Overlay);
 
   protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
   protected readonly elementLabel = elementLabel;
@@ -97,6 +108,9 @@ export class BoardComponent implements OnInit {
   protected readonly fonteCardWidth = FONTE_CARD_WIDTH;
   protected readonly fonteGroupGap = FONTE_GROUP_GAP;
 
+  protected readonly grimoireIcon = '/icons/book_2_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly rulebookIcon = '/icons/question_mark_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+
   private readonly playerHandTrackRef = viewChild<ElementRef<HTMLElement>>('playerHandTrack');
   private readonly opponentHandTrackRef = viewChild<ElementRef<HTMLElement>>('opponentHandTrack');
   protected readonly playerHandTrackWidth = signal(0);
@@ -106,12 +120,14 @@ export class BoardComponent implements OnInit {
   protected readonly gameDoc = signal<GameDoc | null>(null);
 
   // Mock game state — will be replaced by real GameState from Firestore
-  protected readonly playerHP   = signal(20);
-  protected readonly opponentHP = signal(20);
+  // (shield mirrors the future PlayerTokens.shield, 0–3 — the player has one here to preview the bar's shield segment)
+  protected readonly playerHealth   = signal<Health>({ max: 20, current: 14, shield: 2 });
+  protected readonly opponentHealth = signal<Health>({ max: 20, current: 20, shield: 0 });
   protected readonly playerMana   = signal(3);
   protected readonly opponentMana = signal(2);
   protected readonly maxMana      = signal(6);
   protected readonly isPlayerTurn = signal(true);
+  protected readonly turnPhase    = signal<TurnPhase>('azione');
 
   protected readonly opponentHandCount = signal(5);
   protected readonly fonteCards = signal<Element[]>(['thunder', 'ice', 'poison', 'thunder']);
@@ -241,5 +257,40 @@ export class BoardComponent implements OnInit {
 
   protected elementColorVar(el: BaseElement): string {
     return `var(--el-${el})`;
+  }
+
+  /** Recipe tooltip for an advanced card ("Fulmine: Fuoco + Aria") — null for elements with no 2-base recipe (base/superior/residium), so the directive stays silent. */
+  protected recipeTooltip(el: Element): string | null {
+    const recipe = ADVANCED_RECIPES[el as AdvancedElement];
+    if (!recipe) return null;
+    return `${elementLabel(el)}: ${elementLabel(recipe[0])} + ${elementLabel(recipe[1])}`;
+  }
+
+  protected openGameSettings(): void {
+    this.dialog.open(GameSettingsDialogComponent, {
+      data: { gameId: this.gameId() },
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+  }
+
+  protected openGrimoire(): void {
+    this.dialog.open(GrimoireDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+  }
+
+  protected openRulebook(): void {
+    this.dialog.open(RulebookDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
   }
 }

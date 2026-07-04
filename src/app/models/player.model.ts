@@ -11,6 +11,13 @@ export interface PlayerTokens {
   ice: number;     // 0–3
 }
 
+/** The vita bar's shape: current/max hp plus bonus effective hp from shield tokens (PlayerTokens.shield, 0–3). */
+export interface Health {
+  max: number;
+  current: number;
+  shield: number;
+}
+
 export interface PlayerState {
   id: PlayerId;
   name: string;

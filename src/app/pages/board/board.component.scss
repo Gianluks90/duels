@@ -18,9 +18,9 @@
     padding: var(--sp-2) var(--sp-4);
     gap: var(--sp-2);
 
-    &--opponent {
-      // border-bottom: 1px solid var(--border-subtle);
-    }
+    // &--opponent {
+    //   // border-bottom: 1px solid var(--border-subtle);
+    // }
 
     &--fonte {
       flex-direction: row;
@@ -52,6 +52,19 @@
       right: var(--sp-4);
       top: 0;
     }
+  }
+
+  // Toolbar: top-right corner of the central (Fonte Arcana) row — holds the
+  // Grimorio icon-button today, laid out to just as easily take more of them.
+  &__toolbar {
+    position: absolute;
+    top: var(--sp-2);
+    right: var(--sp-4);
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 8px;
   }
 
   // ── Player meta (name + mana dots) ──────────────────────────────────────────
