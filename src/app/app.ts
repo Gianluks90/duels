@@ -1,12 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss'
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { style: 'display: block; width: 100%; height: 100dvh;' },
+  styleUrl: './app.scss',
 })
-export class App {
-  protected readonly title = signal('duels');
-}
+export class App {}

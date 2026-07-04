@@ -1,0 +1,273 @@
+.grimoire {
+  // Parchment theme — intentional contrast with the dark outer frame
+  --parchment: #e8d5a0;
+  --ink: #1a1008;
+  --ink-muted: #7a5f3a;
+  --ink-heading: #3d1a05;
+  --ink-line: rgba(100, 70, 30, 0.22);
+
+  display: flex;
+  flex-direction: column;
+  width: min(860px, 92vw);
+  height: min(560px, 82vh);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-3) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+  }
+
+  &__close {
+    padding: var(--sp-1) var(--sp-3);
+    font-size: 0.7rem;
+    line-height: 1;
+  }
+
+  // Padding here creates the "open cover" frame around the pages
+  &__book {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    padding: var(--sp-4) var(--sp-5);
+    background: #0d0803;
+    gap: 0;
+  }
+
+  // Pages
+
+  &__page {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background: var(--parchment);
+    overflow: hidden;
+    border-radius: 8px;
+
+    &--left {
+      box-shadow: inset -12px 0 20px rgba(0, 0, 0, 0.15);
+    }
+
+    &--right {
+      box-shadow: inset 12px 0 20px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  // Book spine — single hairline between the two pages
+  &__spine {
+    width: .5px;
+    flex-shrink: 0;
+    background: rgba(60, 30, 5, 0.45);
+    z-index: 1;
+  }
+
+  // --- Left page ---
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-1);
+    padding: var(--sp-3);
+    border-bottom: 1px solid var(--ink-line);
+    flex-shrink: 0;
+  }
+
+  &__filter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid var(--ink-line);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.07);
+    }
+
+    &--active {
+      background: rgba(0, 0, 0, 0.13);
+      border-color: rgba(100, 60, 20, 0.55);
+    }
+
+  }
+
+  &__filter-icon {
+    display: block;
+    // SVGs are near-white; invert + warm sepia makes them dark ink on parchment
+    filter: invert(1) sepia(0.4);
+    transition: filter 0.12s;
+
+    .grimoire__filter-btn--active & {
+      filter: invert(1) sepia(0.6) saturate(1.2);
+    }
+  }
+
+  &__spell-list {
+    list-style: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--sp-2) 0;
+    margin: 0;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--ink-line);
+      border-radius: 2px;
+    }
+  }
+
+  &__spell-item {
+    padding: var(--sp-2) var(--sp-4);
+    color: var(--ink-muted);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    line-height: 1.4;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: background 0.1s, color 0.1s;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--ink);
+    }
+
+    &--active {
+      background: rgba(0, 0, 0, 0.1);
+      color: var(--ink);
+      font-weight: 600;
+      border-left-color: var(--ink-heading);
+    }
+  }
+
+  &__spell-empty {
+    padding: var(--sp-4);
+    color: var(--ink-muted);
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-style: italic;
+    list-style: none;
+  }
+
+  // --- Right page ---
+
+  &__detail {
+    padding: var(--sp-5) var(--sp-6);
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--ink-line);
+      border-radius: 2px;
+    }
+  }
+
+  &__spell-name {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    color: var(--ink-heading);
+    line-height: 1.05;
+    margin: 0 0 var(--sp-3);
+  }
+
+  &__rule {
+    height: 1px;
+    background: var(--ink-line);
+    margin: var(--sp-3) 0;
+  }
+
+  &__formula {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+  }
+
+  &__formula-op {
+    font-family: var(--font-ui);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink-muted);
+  }
+
+  // Mana cost row — number + one dot per mana
+  &__mana-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-top: var(--sp-2);
+  }
+
+  &__mana-count {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink-muted);
+    min-width: 1.4ch;
+  }
+
+  &__mana-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #b87030, #7a4510);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    flex-shrink: 0;
+  }
+
+  &__effect {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--ink);
+    line-height: 1.8;
+    margin: 0;
+  }
+
+  &__flavor {
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-style: italic;
+    color: var(--ink-muted);
+    margin: var(--sp-5) 0 0;
+    padding-left: var(--sp-4);
+    border-left: 2px solid var(--ink-line);
+    line-height: 1.65;
+
+    &::before {
+      content: '"';
+    }
+
+    &::after {
+      content: '"';
+    }
+  }
+}

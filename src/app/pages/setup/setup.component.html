@@ -1,0 +1,129 @@
+<div class="setup">
+  <header class="setup__header panel">
+    <span class="t-display setup__logo">Duels</span>
+    <span class="t-muted setup__code">{{ gameId() }}</span>
+  </header>
+
+  <main class="setup__main">
+
+    @if (!iAmReady()) {
+      <div class="setup__sections">
+
+        <!-- Handle socket -->
+        <section class="setup__section panel panel--raised">
+          <h2 class="t-heading setup__section-title">Manico</h2>
+          <p class="t-muted setup__section-desc">
+            10% di duplicare ogni elemento pescato. Incastona un elemento per portarlo al 20%, ma solo per quell'elemento.
+          </p>
+
+          <div class="setup__socket-row">
+            @for (el of baseElements; track el) {
+              <button
+                class="setup__socket-btn"
+                [class.setup__socket-btn--selected]="handleSocket() === el"
+                [attr.aria-pressed]="handleSocket() === el"
+                [attr.aria-label]="elementLabel(el)"
+                (click)="setHandleSocket(el)"
+              >
+                <app-card [element]="el" [size]="56" />
+              </button>
+            }
+            <button
+              class="setup__socket-btn setup__socket-btn--none"
+              [class.setup__socket-btn--selected]="handleSocket() === null"
+              aria-label="Nessun incastonamento"
+              (click)="setHandleSocket(null)"
+            >
+              —
+            </button>
+          </div>
+
+          <p class="setup__socket-effect t-muted">
+            @if (handleSocket(); as el) {
+              20% di duplicare <strong>{{ elementLabel(el) }}</strong>
+            } @else {
+              10% universale · nessun elemento incastonato
+            }
+          </p>
+        </section>
+
+        <!-- Body socket -->
+        <section class="setup__section panel panel--raised">
+          <h2 class="t-heading setup__section-title">Corpo</h2>
+          <p class="t-muted setup__section-desc">
+            Incastona un elemento per ottenere protezione da esso (1 danno annullato) e vulnerabilità al suo opposto (+1 danno).
+          </p>
+
+          <div class="setup__socket-row">
+            @for (el of baseElements; track el) {
+              <button
+                class="setup__socket-btn"
+                [class.setup__socket-btn--selected]="bodySocket() === el"
+                [attr.aria-pressed]="bodySocket() === el"
+                [attr.aria-label]="elementLabel(el)"
+                (click)="setBodySocket(el)"
+              >
+                <app-card [element]="el" [size]="56" />
+              </button>
+            }
+            <button
+              class="setup__socket-btn setup__socket-btn--none"
+              [class.setup__socket-btn--selected]="bodySocket() === null"
+              aria-label="Nessun incastonamento"
+              (click)="setBodySocket(null)"
+            >
+              —
+            </button>
+          </div>
+
+          <p class="setup__socket-effect t-muted">
+            @if (bodySocket(); as el) {
+              Protegge da <strong>{{ elementLabel(el) }}</strong>
+              · Vulnerabile a <strong>{{ elementLabel(ELEMENT_OPPOSITES[el]) }}</strong>
+            } @else {
+              Nessuna protezione elementale
+            }
+          </p>
+        </section>
+
+      </div>
+
+      <div class="setup__footer panel">
+        <span class="t-muted setup__mana-preview">
+          Mana disponibile: <strong>{{ BASE_TOTAL_MANA }}</strong>
+        </span>
+        <button
+          class="btn btn--primary setup__confirm"
+          [disabled]="saving()"
+          (click)="confirmWand()"
+        >
+          {{ saving() ? 'Salvataggio…' : 'Conferma Bacchetta' }}
+        </button>
+      </div>
+    }
+
+    @if (iAmReady()) {
+      <div class="setup__waiting panel panel--raised">
+        <h2 class="t-heading">Bacchetta confermata!</h2>
+        @if (opponentReady()) {
+          <p class="t-muted">Entrambi pronti. Avvio del duello…</p>
+        } @else {
+          <p class="t-muted">
+            In attesa di
+            @if (opponentName(); as name) {
+              <strong>{{ name }}</strong>
+            } @else {
+              <strong>l'avversario</strong>
+            }…
+          </p>
+        }
+        <div class="setup__dots">
+          <span class="setup__dot"></span>
+          <span class="setup__dot"></span>
+          <span class="setup__dot"></span>
+        </div>
+      </div>
+    }
+
+  </main>
+</div>

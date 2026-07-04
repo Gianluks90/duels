@@ -1,0 +1,32 @@
+<div class="result">
+  <div class="result__panel panel panel--raised">
+
+    @if (isWinner() === true) {
+      <h1 class="t-display result__title result__title--win">Vittoria!</h1>
+      <p class="t-muted result__subtitle">Hai sconfitto il tuo avversario.</p>
+    } @else if (isWinner() === false) {
+      <h1 class="t-display result__title result__title--loss">Sconfitta</h1>
+      <p class="t-muted result__subtitle">Il tuo avversario ha vinto il duello.</p>
+    } @else {
+      <h1 class="t-display result__title">Duello concluso</h1>
+      <p class="t-muted result__subtitle">La partita è terminata.</p>
+    }
+
+    <div class="result__players">
+      @if (gameDoc(); as doc) {
+        <div class="result__player">
+          <span class="t-heading">{{ doc.hostName }}</span>
+        </div>
+        <span class="result__vs t-muted">vs</span>
+        <div class="result__player">
+          <span class="t-heading">{{ doc.guestName ?? 'Avversario' }}</span>
+        </div>
+      }
+    </div>
+
+    <button class="btn btn--primary result__btn" (click)="goHome()">
+      Torna alla Home
+    </button>
+
+  </div>
+</div>

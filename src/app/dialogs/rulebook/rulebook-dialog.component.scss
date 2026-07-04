@@ -1,0 +1,212 @@
+.rulebook-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(900px, 90vw);
+  height: min(680px, 80vh);
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+  }
+
+  &__close {
+    padding: var(--sp-1) var(--sp-3);
+    font-size: 0.7rem;
+    line-height: 1;
+  }
+
+  &__body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  &__nav {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-subtle);
+    overflow-y: auto;
+    padding: var(--sp-3) 0;
+  }
+
+  &__nav-item {
+    display: block;
+    width: 100%;
+    padding: var(--sp-2) var(--sp-5);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+    letter-spacing: 0.04em;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+
+    &--active {
+      color: var(--text-heading);
+      background: rgba(212, 168, 71, 0.07);
+      border-left: 2px solid var(--text-heading);
+      padding-left: calc(var(--sp-5) - 2px);
+    }
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--sp-6);
+  }
+
+  &__loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    height: 100%;
+  }
+
+  &__dot {
+    width: 6px;
+    height: 6px;
+    background: var(--text-muted);
+    animation: blink 1.2s ease-in-out infinite;
+
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.4s; }
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+// Markdown prose — ::ng-deep necessario perché [innerHTML] bypassa l'encapsulation
+.prose {
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 1.75;
+
+  ::ng-deep {
+    h1 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      background: linear-gradient(160deg, #f5d980 0%, #d4a847 25%, #f0c84a 55%, #a07020 80%, #d4a847 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: var(--sp-4);
+      line-height: 1.1;
+    }
+
+    h2 {
+      font-family: var(--font-ui);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-heading);
+      margin-top: var(--sp-6);
+      margin-bottom: var(--sp-3);
+    }
+
+    h3 {
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: var(--sp-4);
+      margin-bottom: var(--sp-2);
+    }
+
+    p {
+      margin-bottom: var(--sp-4);
+    }
+
+    strong {
+      color: var(--text-primary);
+      font-weight: 700;
+    }
+
+    em {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    ul, ol {
+      padding-left: var(--sp-5);
+      margin-bottom: var(--sp-4);
+
+      li {
+        margin-bottom: var(--sp-2);
+      }
+    }
+
+    blockquote {
+      border-left: 2px solid var(--border-gold);
+      padding-left: var(--sp-4);
+      margin: var(--sp-4) 0;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: var(--sp-5);
+      font-size: 0.82rem;
+
+      th {
+        text-align: left;
+        padding: var(--sp-2) var(--sp-3);
+        border-bottom: 1px solid var(--border-gold);
+        color: var(--text-heading);
+        font-family: var(--font-ui);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+      }
+
+      td {
+        padding: var(--sp-2) var(--sp-3);
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-primary);
+        vertical-align: top;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+    }
+
+    code {
+      font-family: monospace;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 1px 6px;
+      font-size: 0.8em;
+      color: var(--text-heading);
+    }
+  }
+}

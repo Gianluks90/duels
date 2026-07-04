@@ -1,0 +1,32 @@
+[
+  {
+    "id": "introduction",
+    "title": "Introduzione",
+    "contentUrl": "/config/rulebook/it/introduction.md"
+  },
+  {
+    "id": "turn",
+    "title": "Struttura del Turno",
+    "contentUrl": "/config/rulebook/it/turn.md"
+  },
+  {
+    "id": "source",
+    "title": "Fonte Arcana",
+    "contentUrl": "/config/rulebook/it/source.md"
+  },
+  {
+    "id": "mana",
+    "title": "Mana e Sfere",
+    "contentUrl": "/config/rulebook/it/mana.md"
+  },
+  {
+    "id": "elements",
+    "title": "Elementi",
+    "contentUrl": "/config/rulebook/it/elements.md"
+  },
+  {
+    "id": "wand",
+    "title": "Bacchetta",
+    "contentUrl": "/config/rulebook/it/wand.md"
+  }
+]

@@ -1,0 +1,317 @@
+// ── Fonts ──────────────────────────────────────────────────────────────────────
+@import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+// ── Tokens ─────────────────────────────────────────────────────────────────────
+:root {
+  // Backgrounds
+  --bg-deep:         #0d0808;
+  --bg-surface:      rgba(13, 8, 8, 0.85);
+  --bg-panel:        rgba(22, 14, 14, 0.92);
+  --bg-panel-raised: rgba(28, 16, 16, 0.95);
+
+  // Borders
+  --border-gold:   #7a5c1e;
+  --border-bright: #c8a45a;
+  --border-subtle: rgba(122, 92, 30, 0.35);
+
+  // Accent
+  --accent:        #8b1010;
+  --accent-hover:  #b01818;
+  --accent-active: #6a0c0c;
+
+  // Text
+  --text-primary: #e8d5b0;
+  --text-heading: #d4a847;
+  --text-muted:   #7a6545;
+
+  // Fonts
+  --font-display: 'UnifrakturMaguntia', cursive;
+  --font-ui:      'Cinzel', serif;
+  --font-body:    'Lora', serif;
+
+  // Element colors
+  --el-fire:     #e05a1a;
+  --el-water:    #2080c0;
+  --el-earth:    #4a8a5a;
+  --el-air:      #9070c0;
+  --el-thunder:  #e08040;
+  --el-light:    #d4c070;
+  --el-dark:     #6040a0;
+  --el-ice:      #60a0c0;
+  --el-poison:   #60a040;
+  --el-lava:     #d04020;
+  --el-residium: #a060d0;
+
+  // Spacing (scala 4px)
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --transition: 150ms ease;
+  --card-ratio: 2 / 3;
+}
+
+// ── Reset ──────────────────────────────────────────────────────────────────────
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100dvh;
+}
+
+body {
+  background-image: url('/images/pexels-karola-g-4022121.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+// ── Typography ─────────────────────────────────────────────────────────────────
+.t-display {
+  font-family: var(--font-display);
+  background: linear-gradient(
+    160deg,
+    #f5d980 0%,
+    #d4a847 25%,
+    #f0c84a 55%,
+    #a07020 80%,
+    #d4a847 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--text-heading); // fallback for browsers that don't support background-clip
+}
+
+.t-heading {
+  font-family: var(--font-ui);
+  color: var(--text-heading);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.t-muted {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+// ── Panel ──────────────────────────────────────────────────────────────────────
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  &--raised {
+    background: var(--bg-panel-raised);
+    border-color: var(--border-gold);
+    box-shadow:
+      0 8px 40px rgba(0, 0, 0, 0.7),
+      0 2px 8px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(212, 168, 71, 0.08);
+  }
+}
+
+// ── Button ─────────────────────────────────────────────────────────────────────
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-5);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition);
+
+  &--primary {
+    background: var(--accent);
+    border-color: var(--border-gold);
+    color: var(--text-primary);
+    box-shadow: 0 2px 12px rgba(139, 16, 16, 0.35);
+
+    &:hover:not(:disabled) {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 20px rgba(176, 24, 24, 0.5);
+    }
+    &:active:not(:disabled) { background: var(--accent-active); }
+  }
+
+  &--secondary {
+    background: transparent;
+    border-color: var(--border-gold);
+    color: var(--text-heading);
+
+    &:hover:not(:disabled) { background: rgba(122, 92, 30, 0.12); }
+  }
+
+  &--danger {
+    background: transparent;
+    border-color: var(--accent);
+    color: var(--accent-hover);
+
+    &:hover:not(:disabled) {
+      background: rgba(139, 16, 16, 0.15);
+      border-color: var(--accent-hover);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+// ── CDK Dialog overlay ──────────────────────────────────────────────────────────
+.dialog-backdrop {
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.dialog-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ── Game card ──────────────────────────────────────────────────────────────────
+// --el-color va impostato inline per ogni carta in base al tipo di elemento
+.card-game {
+  --el-color: var(--border-gold);
+
+  aspect-ratio: var(--card-ratio);
+  border: 1px solid var(--el-color);
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  transition: transform var(--transition), box-shadow var(--transition);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  &:hover:not(.card-game--back):not(:disabled) {
+    transform: translateY(-6px);
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.7),
+      0 0 16px color-mix(in srgb, var(--el-color) 55%, transparent);
+  }
+
+  &--selected {
+    box-shadow: 0 0 0 1px var(--el-color), 0 0 20px color-mix(in srgb, var(--el-color) 60%, transparent);
+  }
+
+  &--back {
+    cursor: default;
+  }
+}
+
+// ── Token badge (Scudo / Veleno / Ghiaccio) ────────────────────────────────────
+.token-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid currentColor;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  font-weight: 700;
+
+  &--shield { color: #a0aabb; }
+  &--poison { color: var(--el-poison); }
+  &--ice    { color: var(--el-ice); }
+}
+
+// ── Calice (punti vita) ────────────────────────────────────────────────────────
+// Ogni orb rappresenta 1 HP.
+.calice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+
+  &__orb {
+    width: 12px;
+    height: 12px;
+
+    &--full   { background: var(--accent); }
+    &--empty  { border: 1px solid var(--accent); opacity: 0.35; }
+    &--cursed { background: #3a3a3a; border: 1px solid #555; }
+  }
+}
+
+// ── Mana display ───────────────────────────────────────────────────────────────
+.mana-display {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  font-family: var(--font-ui);
+  color: var(--text-heading);
+
+  &__current {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__sep {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+  }
+
+  &__max {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+}
+
+// ── Turn indicator ─────────────────────────────────────────────────────────────
+.turn-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1) var(--sp-4);
+  background: var(--accent);
+  border: 1px solid var(--border-gold);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}

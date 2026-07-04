@@ -1,0 +1,31 @@
+<div class="hud" [class.hud--mirrored]="mirrored()" [style.width.px]="width()">
+
+  <!-- Only this wrapper (sized to the visible slice) is space-between'd —
+       the outer .hud stays anchored to the edge like the other two panels. -->
+  <div class="hud__content">
+
+    <!-- Name + turn indicator -->
+    <div class="hud__name-row">
+      <span
+        class="hud__turn-dot"
+        [class.hud__turn-dot--active]="isMyTurn()"
+        [attr.aria-label]="isMyTurn() ? 'Turno tuo' : 'Turno avversario'"
+      ></span>
+      <span class="hud__name t-heading">{{ firstName() }}</span>
+    </div>
+
+    <!-- HP bar: pill-shaped track with a glossy fill proportional to hp/maxHp;
+         mana + hp values protrude above it, side by side on the same baseline -->
+    <div class="hud__hp-bar" [attr.aria-label]="firstName() + ': ' + hp() + ' vita su ' + maxHp()">
+      <div class="hud__hp-track">
+        <div class="hud__hp-fill" [style.width.%]="hpPercent()" aria-hidden="true"></div>
+      </div>
+      <div class="hud__values">
+        <span class="hud__mana-value" [attr.aria-label]="'Mana: ' + mana() + ' di ' + maxMana()">{{ mana() }}</span>
+        <span class="hud__hp-value" aria-hidden="true">{{ hp() }}</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>

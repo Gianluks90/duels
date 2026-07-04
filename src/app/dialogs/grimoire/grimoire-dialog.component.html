@@ -1,0 +1,87 @@
+<div class="grimoire" role="dialog" aria-modal="true" aria-label="Grimorio degli incantesimi">
+  <header class="grimoire__header">
+    <h2 class="t-heading grimoire__title">Grimorio</h2>
+    <button class="btn btn--secondary grimoire__close" (click)="close()" aria-label="Chiudi il grimorio">✕</button>
+  </header>
+
+  <div class="grimoire__book">
+    <!-- Left page: filters + spell list -->
+    <div class="grimoire__page grimoire__page--left">
+      <div class="grimoire__filters" role="group" aria-label="Filtra per elemento">
+        @for (f of elementFilters; track f.element) {
+          <button
+            class="grimoire__filter-btn"
+            [class.grimoire__filter-btn--active]="activeFilters().has(f.element)"
+            [attr.aria-pressed]="activeFilters().has(f.element)"
+            [attr.aria-label]="f.label"
+            (click)="toggleFilter(f.element)"
+          >
+            <img
+              class="grimoire__filter-icon"
+              [src]="elementIconPath(f.element)"
+              alt=""
+              aria-hidden="true"
+              width="18"
+              height="18"
+            />
+          </button>
+        }
+      </div>
+
+      <ul class="grimoire__spell-list" role="listbox" aria-label="Elenco incantesimi">
+        @for (spell of filteredSpells(); track spell.id) {
+          <li
+            class="grimoire__spell-item"
+            [class.grimoire__spell-item--active]="selectedSpellId() === spell.id"
+            role="option"
+            [attr.aria-selected]="selectedSpellId() === spell.id"
+            (click)="selectSpell(spell.id)"
+          >
+            {{ spell.name }}
+          </li>
+        }
+        @if (filteredSpells().length === 0) {
+          <li class="grimoire__spell-empty">Nessun incantesimo.</li>
+        }
+      </ul>
+    </div>
+
+    <!-- Spine -->
+    <div class="grimoire__spine" aria-hidden="true"></div>
+
+    <!-- Right page: spell detail -->
+    <div class="grimoire__page grimoire__page--right">
+      @if (selectedSpell(); as spell) {
+        <div class="grimoire__detail">
+          <h3 class="grimoire__spell-name">{{ spell.name }}</h3>
+
+          <div class="grimoire__rule" aria-hidden="true"></div>
+
+          <div class="grimoire__formula" aria-label="Formula dell'incantesimo">
+            @for (el of spell.formula; track $index; let last = $last) {
+              <app-card [element]="el" [size]="40" />
+              @if (!last) {
+                <span class="grimoire__formula-op" aria-hidden="true">+</span>
+              }
+            }
+          </div>
+
+          <div class="grimoire__mana-row" [attr.aria-label]="spell.manaCost + ' mana'">
+            <span class="grimoire__mana-count">{{ spell.manaCost }}</span>
+            @for (i of range(spell.manaCost); track i) {
+              <span class="grimoire__mana-dot" aria-hidden="true"></span>
+            }
+          </div>
+
+          <div class="grimoire__rule" aria-hidden="true"></div>
+
+          <p class="grimoire__effect">{{ effectLabel(spell.effects) }}</p>
+
+          @if (spell.flavorText) {
+            <blockquote class="grimoire__flavor">{{ spell.flavorText }}</blockquote>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

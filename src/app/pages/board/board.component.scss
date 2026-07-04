@@ -1,0 +1,414 @@
+.board {
+  display: grid;
+  // Player/opponent zones need at least 300px to fit the vita/mano/bacchetta
+  // panels (276px tall) without touching Fonte Arcana; they can still grow
+  // proportionally (5fr) on taller screens.
+  grid-template-rows: minmax(300px, 5fr) 4fr minmax(300px, 5fr);
+  height: 100dvh;
+  overflow: hidden;
+
+  // ── Zones ───────────────────────────────────────────────────────────────────
+  &__zone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: var(--sp-2) var(--sp-4);
+    gap: var(--sp-2);
+
+    &--opponent {
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    &--fonte {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-4);
+      background: rgba(0, 0, 0, 0.18);
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    &--player {
+      flex-direction: column;
+      justify-content: flex-end; // the single row sits at the bottom, touching the wand's anchor edge
+    }
+  }
+
+  // Vita: sits next to the zone's own left (player) / right (opponent) edge,
+  // flush against the true bottom/top edge (bottom/top: 0) exactly like
+  // mano/bacchetta — the panel itself is fully on screen; only the flat,
+  // unrounded edge (see player-hud.component.scss) simulates it continuing
+  // off past the table.
+  &__hud {
+    position: absolute;
+    z-index: 2;
+
+    &--player {
+      left: var(--sp-4);
+      bottom: 0;
+    }
+
+    &--opponent {
+      right: var(--sp-4);
+      top: 0;
+    }
+  }
+
+  // ── Player meta (name + mana dots) ──────────────────────────────────────────
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--sp-1);
+  }
+
+  &__meta-name {
+    font-size: 0.7rem;
+  }
+
+  // ── Mana track ──────────────────────────────────────────────────────────────
+  &__mana-track {
+    display: flex;
+    gap: 4px;
+  }
+
+  &__mana-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid var(--border-gold);
+    background: transparent;
+    flex-shrink: 0;
+
+    &--filled {
+      background: radial-gradient(circle at 35% 35%, #c07030, #7a4510);
+      border-color: #d4a040;
+      box-shadow: 0 0 5px rgba(192, 112, 48, 0.4);
+    }
+  }
+
+  // ── Pile badge (scarti count in opponent strip) ──────────────────────────────
+  &__pile-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+
+  &__badge-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  &__badge-count {
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  // ── Vita circle ─────────────────────────────────────────────────────────────
+  &__vita {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 2px solid var(--border-gold);
+    background: radial-gradient(circle at 38% 38%, rgba(48, 20, 20, 0.97), rgba(12, 6, 6, 0.99));
+    box-shadow:
+      0 0 14px rgba(139, 16, 16, 0.25),
+      inset 0 1px 0 rgba(212, 168, 71, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__vita-hp {
+    font-family: var(--font-ui);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-heading);
+    line-height: 1;
+  }
+
+  &__vita-tag {
+    font-family: var(--font-ui);
+    font-size: 0.45rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+  }
+
+  &__deck-label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  &__count {
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+  }
+
+  // ── Card backs (face-down) ──────────────────────────────────────────────────
+  &__card-back {
+    width: 52px;
+    height: 78px;
+    background-image: url('/cards-back/dark.png');
+    background-size: cover;
+    background-position: center;
+    border: 1px solid var(--border-gold);
+    border-radius: 5px;
+    flex-shrink: 0;
+
+    &--sm {
+      width: 36px;
+      height: 54px;
+    }
+
+    // Matches the hand cards' own size — mazzo/scarti/mano now share one dimension.
+    &--hand {
+      width: var(--hand-card-width, 84px);
+      height: calc(var(--hand-card-width, 84px) * 1.5);
+    }
+
+    &--stacked {
+      box-shadow:
+        -3px 3px 0 -1px rgba(122, 92, 30, 0.4),
+        -6px 6px 0 -1px rgba(122, 92, 30, 0.2);
+    }
+
+    &--residuo {
+      border-color: var(--el-residium);
+      box-shadow:
+        -3px 3px 0 -1px rgba(160, 96, 208, 0.35),
+        -6px 6px 0 -1px rgba(160, 96, 208, 0.15);
+    }
+  }
+
+  // ── Hand box (mazzo 15% | arco 1fr | scarti 15%), styled like the wand cards ─
+  // Same total height as the wand cards (--wand-label-height), flush against
+  // the true bottom/top edge (bottom/top: 0) — the panel is fully on screen.
+  // The panel is fully visible now (flush at bottom/top: 0), so its content
+  // strip just packs to the natural top (player) / bottom (opponent) edge —
+  // plain reading order, same as before we (wrongly) flipped it to chase
+  // the "true edge" side. Mazzo/scarti fit fully inside that strip (hence
+  // smaller), while the arc — the only one of the three taller than it —
+  // spills out past the strip into the rest of the panel. Horizontal bounds
+  // (left/right, bound inline from board.component.ts) sit clear of vita and
+  // bacchetta by the same gap.
+  &__hand-box {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 15% 1fr 15%;
+    grid-template-rows: var(--visible-content-height, 92px);
+    gap: var(--sp-2);
+    height: var(--wand-label-height, 276px);
+    // left/right are bound inline (board.component.ts computes them from vita's
+    // and bacchetta's own widths); bottom matches the wand cards' anchor.
+    bottom: 0;
+    align-content: start;
+    align-items: end;
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px 12px 0 0;
+
+    &--opponent {
+      bottom: auto;
+      top: 0;
+      align-content: end;
+      align-items: start;
+      border-radius: 0 0 12px 12px;
+    }
+  }
+
+  &__hand-box-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    align-self: end;
+    gap: var(--sp-1);
+    min-width: 0;
+  }
+
+  .board__hand-box--opponent &__hand-box-side {
+    justify-content: flex-start;
+    align-self: start;
+  }
+
+  // Cards are absolutely positioned within this track so they can fan out with
+  // an arc and overlap dynamically to fit whatever width is available.
+  &__hand-track {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: calc(var(--hand-card-width, 84px) * 1.5);
+  }
+
+  &__hand-card {
+    position: absolute;
+    top: 0;
+    width: var(--hand-card-width, 84px);
+    height: calc(var(--hand-card-width, 84px) * 1.5);
+    transform-origin: bottom center; // pivots from a shared base point, like cards held in hand
+    transition: left 150ms ease, transform 150ms ease;
+
+    &--mirrored {
+      transform-origin: top center;
+    }
+
+    &--back {
+      background-image: url('/cards-back/dark.png');
+      background-size: cover;
+      background-position: center;
+      border: 1px solid var(--border-gold);
+      border-radius: 6px;
+    }
+  }
+
+  // ── Fonte Arcana (middle zone internals) ────────────────────────────────────
+  &__fonte-decks {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    padding: var(--sp-1) var(--sp-2);
+    flex-shrink: 0;
+  }
+
+  &__fonte-deck {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  &__fonte-deck-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  &__fonte-cards {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+  }
+
+  &__fonte-title {
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+  }
+
+  &__fonte-row {
+    display: flex;
+    gap: var(--sp-3);
+    align-items: center;
+  }
+
+  &__fonte-discard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+    flex-shrink: 0;
+    padding: var(--sp-1) var(--sp-2);
+  }
+
+  // ── Wand panels (player + opponent) ─────────────────────────────────────────
+  // Each panel stacks two real cards: the wand-section card (label, hr, full
+  // effect text) and — slid in behind it — the actual element card (app-card,
+  // in header mode) so only a sliver with its icon + name peeks out. The
+  // panel sits flush against the zone's true bottom (player) / top (opponent)
+  // edge — fully on screen; the flat, unrounded edge (see .board__wand-card)
+  // simulates it continuing off past the table.
+  &__wand-panels {
+    position: absolute;
+    display: flex;
+    gap: calc(var(--sp-3) / 2); // halved per feedback
+    z-index: 2;
+
+    &--player {
+      right: var(--sp-4);
+      bottom: 0;
+      align-items: flex-end;
+    }
+
+    &--opponent {
+      left: var(--sp-4);
+      top: 0;
+      align-items: flex-start;
+    }
+  }
+
+  &__wand-panel {
+    display: flex;
+    flex-direction: column;
+    width: var(--wand-card-width, 168px);
+    flex-shrink: 0;
+  }
+
+  &__wand-peek {
+    position: relative;
+    z-index: 1;
+  }
+
+  &__wand-card {
+    --el-color: var(--border-subtle);
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: var(--sp-2);
+    height: var(--wand-label-height, 252px);
+    background: var(--bg-panel);
+    border: 1px solid var(--el-color);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+
+    // The panel is fully visible now, so content just packs to the natural
+    // top (player) / bottom (opponent) edge — plain reading order.
+    &--player {
+      justify-content: flex-start;
+      border-radius: 8px 8px 0 0;
+    }
+
+    &--opponent {
+      justify-content: flex-end;
+      border-radius: 0 0 8px 8px;
+    }
+  }
+
+  &__wand-card-label {
+    font-family: var(--font-ui);
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-heading);
+  }
+
+  &__wand-card-hr {
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 2px 0;
+  }
+
+  &__wand-card-effect {
+    font-size: 0.62rem;
+    text-align: center;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
+}

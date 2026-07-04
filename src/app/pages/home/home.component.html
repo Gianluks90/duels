@@ -1,0 +1,95 @@
+<div class="home">
+  <header class="home__header panel">
+    <span class="t-display home__logo">Duels</span>
+    <div class="home__user">
+      @if (isDebugUser()) {
+        <button class="btn btn--secondary" [disabled]="debugLoading()" (click)="startDebugGame()">
+          {{ debugLoading() ? '…' : 'Debug' }}
+        </button>
+      }
+      <button class="btn btn--secondary" (click)="openGrimoire()">Grimorio</button>
+      <button class="btn btn--secondary" (click)="openRulebook()">Regolamento</button>
+      <button class="btn btn--secondary" (click)="openOptions()">Opzioni</button>
+      <button class="btn btn--secondary" (click)="signOut()">Esci</button>
+    </div>
+  </header>
+
+  <main class="home__main">
+    <div class="home__panels">
+
+      <!-- Crea partita -->
+      <div class="panel panel--raised home__panel">
+        <h2 class="t-heading home__panel-title">Nuova Partita</h2>
+
+        <div class="home__panel-body">
+          @if (roomCode(); as code) {
+            <div class="home__code">
+              <span class="home__code-value t-heading">{{ code }}</span>
+              <button class="btn btn--secondary home__copy-btn" (click)="copyCode()">
+                {{ copied() ? 'Copiato!' : 'Copia' }}
+              </button>
+            </div>
+            <p class="t-muted home__hint">Condividi il codice con l'avversario</p>
+            <div class="home__waiting">
+              <span class="home__dot"></span>
+              <span class="t-muted">In attesa dell'avversario…</span>
+            </div>
+          } @else {
+            <p class="t-muted home__hint">Genera un codice e condividilo</p>
+          }
+        </div>
+
+        <div class="home__panel-actions">
+          @if (roomCode()) {
+            <button
+              class="btn btn--secondary"
+              [disabled]="cancelling()"
+              (click)="cancelGame()"
+            >
+              {{ cancelling() ? 'Annullamento…' : 'Annulla' }}
+            </button>
+          } @else {
+            <button
+              class="btn btn--primary"
+              [disabled]="creating()"
+              (click)="createGame()"
+            >
+              {{ creating() ? 'Creazione…' : 'Crea Partita' }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Unisciti -->
+      <div class="panel panel--raised home__panel">
+        <h2 class="t-heading home__panel-title">Unisciti</h2>
+
+        <div class="home__panel-body">
+          <p class="t-muted home__hint">Inserisci il codice ricevuto</p>
+          <input
+            class="home__input"
+            [formControl]="codeControl"
+            placeholder="CODICE"
+            maxlength="6"
+            autocomplete="off"
+            (keydown.enter)="joinGame()"
+          />
+          @if (joinError()) {
+            <p class="home__error">{{ joinError() }}</p>
+          }
+        </div>
+
+        <div class="home__panel-actions">
+          <button
+            class="btn btn--primary"
+            [disabled]="joining() || codeControl.value.length < 6"
+            (click)="joinGame()"
+          >
+            {{ joining() ? 'Connessione…' : 'Entra' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>

@@ -1,0 +1,32 @@
+<div class="rulebook-dialog">
+  <header class="rulebook-dialog__header">
+    <h2 class="t-heading rulebook-dialog__title">Regolamento</h2>
+    <button class="rulebook-dialog__close btn btn--secondary" (click)="close()" aria-label="Chiudi">✕</button>
+  </header>
+
+  <div class="rulebook-dialog__body">
+    <nav class="rulebook-dialog__nav" aria-label="Sezioni regolamento">
+      @for (section of sections(); track section.id) {
+        <button
+          class="rulebook-dialog__nav-item"
+          [class.rulebook-dialog__nav-item--active]="activeId() === section.id"
+          (click)="selectSection(section.id)"
+        >
+          {{ section.title }}
+        </button>
+      }
+    </nav>
+
+    <div class="rulebook-dialog__content">
+      @if (loading()) {
+        <div class="rulebook-dialog__loader">
+          <span class="rulebook-dialog__dot"></span>
+          <span class="rulebook-dialog__dot"></span>
+          <span class="rulebook-dialog__dot"></span>
+        </div>
+      } @else {
+        <div class="prose" [innerHTML]="renderedContent()"></div>
+      }
+    </div>
+  </div>
+</div>

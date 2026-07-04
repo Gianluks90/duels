@@ -1,0 +1,18 @@
+<div class="login">
+  <div class="login__panel panel panel--raised">
+    <h1 class="t-display login__title">Duels</h1>
+    <p class="t-muted login__subtitle">Un duello tra gentilmaghi</p>
+
+    <button
+      class="btn btn--primary login__btn"
+      [disabled]="loading()"
+      (click)="signIn()"
+    >
+      {{ loading() ? 'Accesso in corso...' : 'Entra con Google' }}
+    </button>
+
+    @if (error()) {
+      <p class="login__error">{{ error() }}</p>
+    }
+  </div>
+</div>

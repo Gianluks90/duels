@@ -1,0 +1,63 @@
+:host {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  // A real border, like the edge of a real playing card — an inset box-shadow
+  // here gets painted underneath the edge-to-edge artwork image and doesn't
+  // show; a border reserves its own space (box-sizing: border-box, set
+  // globally) so the artwork can't paint over it.
+  border: 3px solid #212121;
+  // Drop shadow so overlapping cards (e.g. fanned in hand) read as stacked on
+  // top of whatever sits behind/below them.
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+}
+
+// Artwork layer — fills the card
+.card__art {
+  object-fit: cover;
+}
+
+// Icon layer — centered with breathing room, pops above the artwork
+.card__icon {
+  object-fit: contain;
+  padding: 18%;
+  box-sizing: border-box;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9));
+}
+
+// Header layer — compact icon + name, for when the card is mostly hidden behind another element
+.card__header {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+}
+
+.card__header-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+}
+
+.card__header-label {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:host(.card--header-bottom) .card__header {
+  top: auto;
+  bottom: 0;
+}
