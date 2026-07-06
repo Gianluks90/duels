@@ -21,15 +21,18 @@ import { DeckComponent } from '../../components/deck/deck.component';
 import { PlayerHudComponent } from '../../components/player-hud/player-hud.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
+import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/action-menu/action-menu.component';
 import { GameSettingsDialogComponent } from '../../dialogs/game-settings/game-settings-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
 import type { BaseElement, Element, AdvancedElement } from '../../models/element.model';
-import { elementLabel, ADVANCED_RECIPES } from '../../models/element.model';
+import { ADVANCED_RECIPES } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { TurnPhase } from '../../models/turn-phase.model';
 import type { Health } from '../../models/player.model';
+import { TranslationService } from '../../services/translation.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /** Width of a wand-section card; its paired peeking element card shares the same width. */
 const WAND_CARD_WIDTH = 168;
@@ -67,11 +70,17 @@ const FONTE_CARD_WIDTH = 76;
 /** Gap between the 3 Fonte Arcana groups (Residuo | Base | Fonte Arcana). */
 const FONTE_GROUP_GAP = 32;
 
+/** Pool a combined Fonte slot is refilled from (mock only — a real Avanzato deck draw comes once the board is wired up). */
+const ADVANCED_ELEMENT_POOL: readonly AdvancedElement[] = ['thunder', 'poison', 'ice', 'lava'];
+
+/** What's currently hovered in the Fonte row — 'fixed' for an advanced card (one specific pair), 'opposite' for Residuo Arcano (any base + its opposite). */
+type HoverRecipe = { kind: 'fixed'; pair: readonly [BaseElement, BaseElement] } | { kind: 'opposite' };
+
 @Component({
   selector: 'app-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [CardComponent, DeckComponent, PlayerHudComponent, IconButtonComponent, TooltipDirective],
+  imports: [CardComponent, DeckComponent, PlayerHudComponent, IconButtonComponent, TooltipDirective, ActionMenuComponent, TranslatePipe],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
@@ -83,9 +92,9 @@ export class BoardComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);
+  protected readonly i18n = inject(TranslationService);
 
   protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
-  protected readonly elementLabel = elementLabel;
 
   protected readonly wandCardWidth = WAND_CARD_WIDTH;
   private readonly wandPeekCardHeight = Math.round(WAND_CARD_WIDTH * 1.5);
@@ -133,6 +142,9 @@ export class BoardComponent implements OnInit {
   protected readonly fonteCards = signal<Element[]>(['thunder', 'ice', 'poison', 'thunder']);
   protected readonly playerHand = signal<Element[]>(['fire', 'air', 'water', 'earth', 'fire']);
 
+  /** Set while hovering a Fonte Arcana card or Residuo Arcano — drives the gold/blue highlight on matching hand cards. */
+  protected readonly hoveredRecipe = signal<HoverRecipe | null>(null);
+
   protected readonly residuoDeckCount   = signal(8);
   protected readonly commonDeckCount    = signal(20);
   protected readonly baseDeckCount      = signal(40);
@@ -156,14 +168,16 @@ export class BoardComponent implements OnInit {
 
   protected readonly playerName = computed(() => {
     const doc = this.gameDoc();
-    if (!doc) return 'Tu';
-    return this.myRole() === 'host' ? doc.hostName : (doc.guestName ?? 'Tu');
+    const you = this.i18n.t('board.you');
+    if (!doc) return you;
+    return this.myRole() === 'host' ? doc.hostName : (doc.guestName ?? you);
   });
 
   protected readonly opponentName = computed(() => {
     const doc = this.gameDoc();
-    if (!doc) return 'Avversario';
-    return this.myRole() === 'host' ? (doc.guestName ?? 'Avversario') : doc.hostName;
+    const opponent = this.i18n.t('board.opponent');
+    if (!doc) return opponent;
+    return this.myRole() === 'host' ? (doc.guestName ?? opponent) : doc.hostName;
   });
 
   protected readonly playerWand = computed<Wand | null>(() => {
@@ -263,7 +277,99 @@ export class BoardComponent implements OnInit {
   protected recipeTooltip(el: Element): string | null {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
     if (!recipe) return null;
-    return `${elementLabel(el)}: ${elementLabel(recipe[0])} + ${elementLabel(recipe[1])}`;
+    return this.i18n.t('board.fonte.recipeTooltip', {
+      name: this.i18n.elementLabel(el),
+      a: this.i18n.elementLabel(recipe[0]),
+      b: this.i18n.elementLabel(recipe[1]),
+    });
+  }
+
+  /** Regolamento.md's Fonte Elementale rule: scartare le 2 basi corrispondenti per prendere l'avanzata dalla Fonte. */
+  protected fonteMenuItems(el: Element, slotIndex: number): ActionMenuItem[] {
+    const recipe = ADVANCED_RECIPES[el as AdvancedElement];
+    if (!recipe) return [];
+    const [a, b] = recipe;
+    return [{
+      label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
+      action: () => this.combineAdvanced(slotIndex, a, b),
+      disabled: !this.hasBaseCards(a, b),
+    }];
+  }
+
+  /** "Resistenza ai danni da Fuoco, vulnerabilità ai danni da Acqua" — or the empty-socket fallback. */
+  protected bodyEffectText(el: BaseElement | null): string {
+    if (!el) return this.i18n.t('board.wand.bodyEffectEmpty');
+    return this.i18n.t('board.wand.bodyEffect', {
+      element: this.i18n.elementLabel(el),
+      opposite: this.i18n.elementLabel(ELEMENT_OPPOSITES[el]),
+    });
+  }
+
+  /** "Hai il 20% di possibilità di duplicare Fuoco quando pescato" — or the empty-socket fallback. */
+  protected handleEffectText(el: BaseElement | null): string {
+    if (!el) return this.i18n.t('board.wand.handleEffectEmpty');
+    return this.i18n.t('board.wand.handleEffect', { element: this.i18n.elementLabel(el) });
+  }
+
+  private hasBaseCards(a: BaseElement, b: BaseElement): boolean {
+    const hand = [...this.playerHand()];
+    const ia = hand.indexOf(a);
+    if (ia === -1) return false;
+    hand.splice(ia, 1);
+    return hand.includes(b);
+  }
+
+  protected onFonteHover(el: Element): void {
+    const recipe = ADVANCED_RECIPES[el as AdvancedElement];
+    this.hoveredRecipe.set(recipe ? { kind: 'fixed', pair: recipe } : null);
+  }
+
+  protected onResiduoHover(): void {
+    this.hoveredRecipe.set({ kind: 'opposite' });
+  }
+
+  protected onFonteHoverEnd(): void {
+    this.hoveredRecipe.set(null);
+  }
+
+  /** Gold = combo completable right now, blue = part of the recipe but not enough yet, null = unrelated to what's hovered. */
+  protected handCardHighlight(el: Element): 'gold' | 'blue' | null {
+    const recipe = this.hoveredRecipe();
+    if (!recipe) return null;
+    const hand = this.playerHand();
+
+    if (recipe.kind === 'fixed') {
+      const [a, b] = recipe.pair;
+      if (el !== a && el !== b) return null;
+      return hand.includes(a) && hand.includes(b) ? 'gold' : 'blue';
+    }
+
+    if (!(el in ELEMENT_OPPOSITES)) return null;
+    const opposite = ELEMENT_OPPOSITES[el as BaseElement];
+    return hand.includes(opposite) ? 'gold' : 'blue';
+  }
+
+  /** Mock resolution — discards the 2 base cards, sends the combined card to the player's discards, and refills the Fonte slot. Will move to a real Firestore transaction once the board is wired up. */
+  private combineAdvanced(slotIndex: number, a: BaseElement, b: BaseElement): void {
+    const hand = [...this.playerHand()];
+    const ia = hand.indexOf(a);
+    if (ia === -1) return;
+    hand.splice(ia, 1);
+    const ib = hand.indexOf(b);
+    if (ib === -1) return;
+    hand.splice(ib, 1);
+    this.playerHand.set(hand);
+
+    const combined = this.fonteCards()[slotIndex];
+    this.playerDiscardCount.update(count => count + 1);
+    this.playerDiscardTop.set(combined);
+
+    this.fonteCards.update(cards => {
+      const next = [...cards];
+      next[slotIndex] = ADVANCED_ELEMENT_POOL[Math.floor(Math.random() * ADVANCED_ELEMENT_POOL.length)];
+      return next;
+    });
+    this.commonDeckCount.update(count => Math.max(0, count - 1));
   }
 
   protected openGameSettings(): void {

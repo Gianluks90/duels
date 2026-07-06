@@ -1,14 +1,14 @@
 <div class="login">
   <div class="login__panel panel panel--raised">
     <h1 class="t-display login__title">Duels</h1>
-    <p class="t-muted login__subtitle">Un duello tra gentilmaghi</p>
+    <p class="t-muted login__subtitle">{{ 'login.subtitle' | translate }}</p>
 
     <button
       class="btn btn--primary login__btn"
       [disabled]="loading()"
       (click)="signIn()"
     >
-      {{ loading() ? 'Accesso in corso...' : 'Entra con Google' }}
+      {{ (loading() ? 'login.signingIn' : 'login.signIn') | translate }}
     </button>
 
     @if (error()) {

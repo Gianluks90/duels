@@ -1,7 +1,7 @@
 <div class="board">
 
   <!-- ═══════════════ OPPONENT ZONE (top 1/3) ═══════════════ -->
-  <section class="board__zone board__zone--opponent" aria-label="Zona avversario">
+  <section class="board__zone board__zone--opponent" [attr.aria-label]="'board.opponentZoneAria' | translate">
 
     <!-- Vita: anchored exactly like a wand card — tall, only the bottom strip
          stays on screen, the rest hangs off past the top edge (mirrored). -->
@@ -30,11 +30,11 @@
 
       <div class="board__hand-box-side">
         <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'Mazzo: ' + opponentDeckCount() + ' carte rimanenti'" tooltipPosition="bottom" />
+                  [appTooltip]="'board.deckRemaining' | translate:{ count: opponentDeckCount() }" tooltipPosition="bottom" />
       </div>
 
       <div class="board__hand-track" #opponentHandTrack
-           aria-label="Mano avversario, {{ opponentHandCount() }} carte coperte">
+           [attr.aria-label]="'board.handAriaOpponent' | translate:{ count: opponentHandCount() }">
         @for (i of opponentHandRange(); track i) {
           <div class="board__hand-card board__hand-card--back board__hand-card--mirrored"
                [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
@@ -44,7 +44,7 @@
 
       <div class="board__hand-box-side">
         <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'Scarti: ' + opponentDiscardCount() + ' carte scartate'" tooltipPosition="bottom" />
+                  [appTooltip]="'board.deckDiscarded' | translate:{ count: opponentDiscardCount() }" tooltipPosition="bottom" />
       </div>
 
     </div>
@@ -56,11 +56,13 @@
          [style.--wand-card-width.px]="wandCardWidth"
          [style.--wand-label-height.px]="wandLabelHeight">
 
+      <div class="board__wand-title board__wand-title--opponent">{{ 'board.wand.title' | translate }}</div>
+
       <div class="board__wand-panel">
         <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentTip() ? elementColorVar(opponentTip()!) : null">
-          <p class="board__wand-card-effect">Trascina qui un elemento per conservarlo fino al turno successivo</p>
+          <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
           <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">Punta</span>
+          <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
         </div>
         @if (opponentTip(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
@@ -70,15 +72,9 @@
 
       <div class="board__wand-panel">
         <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentBody() ? elementColorVar(opponentBody()!) : null">
-          <p class="board__wand-card-effect">
-            @if (opponentBody(); as el) {
-              Resistenza ai danni da {{ elementLabel(el) }}, vulnerabilità ai danni da {{ elementLabel(ELEMENT_OPPOSITES[el]) }}
-            } @else {
-              Nessuna protezione attiva al momento
-            }
-          </p>
+          <p class="board__wand-card-effect">{{ bodyEffectText(opponentBody()) }}</p>
           <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">Asta</span>
+          <span class="board__wand-card-label">{{ 'board.wand.body' | translate }}</span>
         </div>
         @if (opponentBody(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
@@ -88,15 +84,9 @@
 
       <div class="board__wand-panel">
         <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentHandle() ? elementColorVar(opponentHandle()!) : null">
-          <p class="board__wand-card-effect">
-            @if (opponentHandle(); as el) {
-              Hai il 20% di possibilità di duplicare {{ elementLabel(el) }} quando pescato
-            } @else {
-              Hai il 10% di possibilità di duplicare un elemento base appena pescato
-            }
-          </p>
+          <p class="board__wand-card-effect">{{ handleEffectText(opponentHandle()) }}</p>
           <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">Manico</span>
+          <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
         </div>
         @if (opponentHandle(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
@@ -109,49 +99,52 @@
   </section>
 
   <!-- ═══════════════ FONTE ARCANA (middle 1/3) ═══════════════ -->
-  <section class="board__zone board__zone--fonte" aria-label="Fonte Arcana">
+  <section class="board__zone board__zone--fonte" [attr.aria-label]="'board.fonteAria' | translate">
 
     <div class="board__toolbar">
-      <app-icon-button [icon]="grimoireIcon" [ariaLabel]="'Apri il Grimorio'" (iconClick)="openGrimoire()"
-                       [appTooltip]="'Grimorio'" tooltipPosition="right" />
-      <app-icon-button [icon]="rulebookIcon" [ariaLabel]="'Apri il regolamento'" (iconClick)="openRulebook()"
-                       [appTooltip]="'Regolamento'" tooltipPosition="right" />
+      <app-icon-button [icon]="grimoireIcon" [ariaLabel]="'board.toolbar.grimoireAria' | translate" (iconClick)="openGrimoire()"
+                       [appTooltip]="'board.toolbar.grimoireTooltip' | translate" tooltipPosition="right" />
+      <app-icon-button [icon]="rulebookIcon" [ariaLabel]="'board.toolbar.rulebookAria' | translate" (iconClick)="openRulebook()"
+                       [appTooltip]="'board.toolbar.rulebookTooltip' | translate" tooltipPosition="right" />
     </div>
 
     <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
 
       <!-- Group 1: Residuo Arcano — a single pile, always face up -->
-      <div class="board__fonte-group">
-        <app-deck [size]="fonteCardWidth" [count]="residuoDeckCount()" [faceUp]="true" [topElement]="'residium'" [label]="'Residuo'" />
+      <div class="board__fonte-group" (mouseenter)="onResiduoHover()" (mouseleave)="onFonteHoverEnd()">
+        <app-deck [size]="fonteCardWidth" [count]="residuoDeckCount()" [faceUp]="true" [topElement]="'residium'" [label]="'board.fonte.residuo' | translate" />
       </div>
 
       <!-- Group 2: Base — draw (face down, left) and scarti (face up, right, messy) -->
       <div class="board__fonte-group">
-        <app-deck [size]="fonteCardWidth" [count]="baseDeckCount()" [label]="'Base'" />
-        <app-deck [size]="fonteCardWidth" [count]="baseDiscardCount()" [faceUp]="true" [topElement]="baseDiscardTop()" [messy]="true" [label]="'Scarti'" />
+        <app-deck [size]="fonteCardWidth" [count]="baseDeckCount()" [label]="'board.fonte.base' | translate" />
+        <app-deck [size]="fonteCardWidth" [count]="baseDiscardCount()" [faceUp]="true" [topElement]="baseDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
       </div>
 
       <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
       <div class="board__fonte-group board__fonte-group--arcana">
 
         <div class="board__fonte-header">
-          <span class="board__fonte-heading">Fonte Arcana</span>
+          <span class="board__fonte-heading">{{ 'board.fonteAria' | translate }}</span>
         </div>
 
         <div class="board__fonte-group-content">
-          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'Avanzato'" />
+          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.avanzato' | translate" />
 
-          <div class="board__fonte-row" role="region" aria-label="Fonte Arcana">
+          <div class="board__fonte-row" role="region" [attr.aria-label]="'board.fonteAria' | translate">
             @for (card of fonteCards(); track $index) {
-              <app-card [element]="card" [size]="handArcCardWidth" [appTooltip]="recipeTooltip(card)" tooltipPosition="top" />
+              <app-action-menu [items]="fonteMenuItems(card, $index)"
+                               (mouseenter)="onFonteHover(card)" (mouseleave)="onFonteHoverEnd()">
+                <app-card [element]="card" [size]="handArcCardWidth" [appTooltip]="recipeTooltip(card)" tooltipPosition="top" />
+              </app-action-menu>
             }
           </div>
 
-          <app-deck [size]="fonteCardWidth" [count]="fonteDiscardCount()" [faceUp]="true" [topElement]="fonteDiscardTop()" [messy]="true" [label]="'Scarti'" />
+          <app-deck [size]="fonteCardWidth" [count]="fonteDiscardCount()" [faceUp]="true" [topElement]="fonteDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
         </div>
 
         <div class="board__fonte-footer">
-          <p class="board__fonte-description">Combina e rimuovi due o più elementi base per ottenere un elemento avanzato</p>
+          <p class="board__fonte-description">{{ 'board.fonte.description' | translate }}</p>
         </div>
 
       </div>
@@ -161,7 +154,7 @@
   </section>
 
   <!-- ═══════════════ PLAYER ZONE (bottom 1/3) ═══════════════ -->
-  <section class="board__zone board__zone--player" aria-label="La tua zona">
+  <section class="board__zone board__zone--player" [attr.aria-label]="'board.playerZoneAria' | translate">
 
     <!-- Vita: anchored exactly like a wand card — tall, only the top strip
          stays on screen, the rest hangs off past the bottom edge. -->
@@ -191,19 +184,21 @@
 
       <div class="board__hand-box-side">
         <app-deck [size]="handCardWidth" [count]="playerDeckCount()" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'Mazzo: ' + playerDeckCount() + ' carte rimanenti'" tooltipPosition="top" />
+                  [appTooltip]="'board.deckRemaining' | translate:{ count: playerDeckCount() }" tooltipPosition="top" />
       </div>
 
-      <div class="board__hand-track" #playerHandTrack role="region" aria-label="La tua mano">
+      <div class="board__hand-track" #playerHandTrack role="region" [attr.aria-label]="'board.handAriaPlayer' | translate">
         @for (card of playerHand(); track $index) {
-          <app-card class="board__hand-card" [element]="card" [size]="handArcCardWidth"
+          <app-card class="board__hand-card" [element]="card" [size]="handArcCardWidth" [priority]="$index === 0"
+                    [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
+                    [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
                     [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
         }
       </div>
 
       <div class="board__hand-box-side">
         <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'Scarti: ' + playerDiscardCount() + ' carte scartate'" tooltipPosition="top" />
+                  [appTooltip]="'board.deckDiscarded' | translate:{ count: playerDiscardCount() }" tooltipPosition="top" />
       </div>
 
     </div>
@@ -215,15 +210,17 @@
          [style.--wand-card-width.px]="wandCardWidth"
          [style.--wand-label-height.px]="wandLabelHeight">
 
+      <div class="board__wand-title board__wand-title--player">{{ 'board.wand.title' | translate }}</div>
+
       <div class="board__wand-panel">
         @if (playerTip(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
                     [style.margin-bottom.px]="-wandPeekOverlap" />
         }
         <div class="board__wand-card board__wand-card--player" [style.--el-color]="playerTip() ? elementColorVar(playerTip()!) : null">
-          <span class="board__wand-card-label">Punta</span>
+          <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
           <hr class="board__wand-card-hr" />
-          <p class="board__wand-card-effect">Trascina qui un elemento per conservarlo fino al turno successivo</p>
+          <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
         </div>
       </div>
 
@@ -233,15 +230,9 @@
                     [style.margin-bottom.px]="-wandPeekOverlap" />
         }
         <div class="board__wand-card board__wand-card--player" [style.--el-color]="playerBody() ? elementColorVar(playerBody()!) : null">
-          <span class="board__wand-card-label">Asta</span>
+          <span class="board__wand-card-label">{{ 'board.wand.body' | translate }}</span>
           <hr class="board__wand-card-hr" />
-          <p class="board__wand-card-effect">
-            @if (playerBody(); as el) {
-              Resistenza ai danni da {{ elementLabel(el) }}, vulnerabilità ai danni da {{ elementLabel(ELEMENT_OPPOSITES[el]) }}
-            } @else {
-              Nessuna protezione attiva al momento
-            }
-          </p>
+          <p class="board__wand-card-effect">{{ bodyEffectText(playerBody()) }}</p>
         </div>
       </div>
 
@@ -251,15 +242,9 @@
                     [style.margin-bottom.px]="-wandPeekOverlap" />
         }
         <div class="board__wand-card board__wand-card--player" [style.--el-color]="playerHandle() ? elementColorVar(playerHandle()!) : null">
-          <span class="board__wand-card-label">Manico</span>
+          <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
           <hr class="board__wand-card-hr" />
-          <p class="board__wand-card-effect">
-            @if (playerHandle(); as el) {
-              Hai il 20% di possibilità di duplicare {{ elementLabel(el) }} quando pescato
-            } @else {
-              Hai il 10% di possibilità di duplicare un elemento base appena pescato
-            }
-          </p>
+          <p class="board__wand-card-effect">{{ handleEffectText(playerHandle()) }}</p>
         </div>
       </div>
 

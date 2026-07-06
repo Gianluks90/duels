@@ -1,0 +1,257 @@
+{
+  "common": {
+    "elements": {
+      "fire": "Fire",
+      "water": "Water",
+      "air": "Air",
+      "earth": "Earth",
+      "thunder": "Thunder",
+      "poison": "Poison",
+      "ice": "Ice",
+      "lava": "Lava",
+      "light": "Light",
+      "dark": "Darkness",
+      "residium": "Residuum"
+    },
+    "turnPhases": {
+      "attesa": { "label": "Waiting", "description": "Wait for your opponent to end their turn" },
+      "preparazione": { "label": "Preparation", "description": "Some start-of-turn effects are resolved" },
+      "raccolta": { "label": "Collection", "description": "Collect your resources" },
+      "azione": { "label": "Action", "description": "Take your actions" },
+      "incantesimo": { "label": "Spell", "description": "The selected spells are cast" },
+      "fine": { "label": "End", "description": "Some end-of-turn effects are resolved before ending it" }
+    }
+  },
+
+  "playerHud": {
+    "settingsAria": "Game settings",
+    "phaseAria": "Phase: {phase}",
+    "opponentTurnAria": "Opponent's turn",
+    "hpAria": "{name}: {value} hp out of {max}",
+    "manaAria": "Mana: {value} out of {max}",
+    "manaTooltip": "Mana available {value}",
+    "hpTooltip": "Hit points: {current} + {shield} = {total}"
+  },
+
+  "board": {
+    "you": "You",
+    "opponent": "Opponent",
+    "opponentZoneAria": "Opponent zone",
+    "playerZoneAria": "Your zone",
+    "handAriaOpponent": "Opponent's hand, {count} face-down cards",
+    "handAriaPlayer": "Your hand",
+    "deckRemaining": "Deck: {count} cards remaining",
+    "deckDiscarded": "Discards: {count} cards discarded",
+    "fonteAria": "Arcane Source",
+    "wand": {
+      "title": "Wand",
+      "tip": "Tip",
+      "body": "Body",
+      "handle": "Handle",
+      "tipEffect": "Drag an element here to keep it until next turn",
+      "bodyEffect": "Resistance to {element} damage, vulnerability to {opposite} damage",
+      "bodyEffectEmpty": "No active protection right now",
+      "handleEffect": "You have a 20% chance to duplicate {element} when drawn",
+      "handleEffectEmpty": "You have a 10% chance to duplicate a base element as soon as it's drawn"
+    },
+    "fonte": {
+      "residuo": "Residuum",
+      "base": "Base",
+      "scarti": "Discards",
+      "avanzato": "Advanced",
+      "description": "Combine and remove two or more base elements to get an advanced element",
+      "recipeTooltip": "{name}: {a} + {b}",
+      "combineAction": "Combine: {a} + {b}"
+    },
+    "toolbar": {
+      "grimoireAria": "Open the Grimoire",
+      "grimoireTooltip": "Grimoire",
+      "rulebookAria": "Open the rulebook",
+      "rulebookTooltip": "Rulebook"
+    }
+  },
+
+  "home": {
+    "debug": "Debug",
+    "grimoire": "Grimoire",
+    "rulebook": "Rulebook",
+    "options": "Options",
+    "avatarAria": "Profile",
+    "menu": {
+      "profile": "Profile",
+      "signOut": "Sign out"
+    },
+    "newGame": {
+      "title": "New Game",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "shareHint": "Share the code with your opponent",
+      "waiting": "Waiting for opponent…",
+      "hint": "Generate a code and share it",
+      "cancel": "Cancel",
+      "cancelling": "Cancelling…",
+      "create": "Create Game",
+      "creating": "Creating…"
+    },
+    "join": {
+      "title": "Join",
+      "hint": "Enter the code you received",
+      "placeholder": "CODE",
+      "connect": "Join",
+      "connecting": "Connecting…",
+      "unknownError": "Unknown error.",
+      "errors": {
+        "game-not-found": "Game not found.",
+        "game-full-or-started": "The game is already full or has started.",
+        "already-host": "You're already the host of this game."
+      }
+    }
+  },
+
+  "login": {
+    "subtitle": "A duel between gentle-wizards",
+    "signIn": "Sign in with Google",
+    "signingIn": "Signing in...",
+    "error": "Sign in failed. Please try again."
+  },
+
+  "setup": {
+    "handle": {
+      "title": "Handle",
+      "desc": "10% chance to duplicate any drawn element. Socket an element to raise it to 20%, but only for that element.",
+      "noneAria": "No element socketed",
+      "effectWith": "20% chance to duplicate <strong>{element}</strong>",
+      "effectWithout": "10% universal · no element socketed"
+    },
+    "body": {
+      "title": "Body",
+      "desc": "Socket an element for protection from it (1 damage nullified) and vulnerability to its opposite (+1 damage).",
+      "effectWith": "Protects from <strong>{element}</strong> · Vulnerable to <strong>{opposite}</strong>",
+      "effectWithout": "No elemental protection"
+    },
+    "manaPreview": "Mana available: {mana}",
+    "confirm": "Confirm Wand",
+    "saving": "Saving…",
+    "ready": {
+      "title": "Wand confirmed!",
+      "bothReady": "Both ready. Starting the duel…",
+      "waitingFor": "Waiting for {name}…",
+      "opponentFallback": "the opponent"
+    }
+  },
+
+  "result": {
+    "win": { "title": "Victory!", "subtitle": "You defeated your opponent." },
+    "loss": { "title": "Defeat", "subtitle": "Your opponent won the duel." },
+    "draw": { "title": "Duel over", "subtitle": "The match has ended." },
+    "vs": "vs",
+    "opponentFallback": "Opponent",
+    "backHome": "Back to Home"
+  },
+
+  "grimoire": {
+    "dialogAria": "Grimoire of spells",
+    "title": "Grimoire",
+    "closeAria": "Close the grimoire",
+    "filterGroupAria": "Filter by element",
+    "spellListAria": "Spell list",
+    "empty": "No spells.",
+    "formulaAria": "Spell formula",
+    "manaAria": "{cost} mana",
+    "effects": {
+      "damage": "Deals {amount} damage to the opponent.",
+      "damageIgnoreShields": "Deals {amount} damage, ignoring shields.",
+      "damageSelf": "Deals {amount} damage to yourself.",
+      "heal": "Recovers {amount} hit point.",
+      "shieldAdd": "Adds {amount} shield.",
+      "shieldRemoveOpponent": "Removes {amount} shield from the opponent.",
+      "poisonAdd": "Applies {amount} poison to the opponent.",
+      "iceAdd": "Applies {amount} ice to the opponent.",
+      "opponentLoseMana": "The opponent loses {amount} mana.",
+      "opponentDiscardRandom": "The opponent discards {amount} card from their hand.",
+      "revealOpponentHand": "Reveals the opponent's hand.",
+      "fonteReset": "Resets the Arcane Source."
+    }
+  },
+
+  "rulebook": {
+    "title": "Rulebook",
+    "closeAria": "Close",
+    "navAria": "Rulebook sections"
+  },
+
+  "gameSettings": {
+    "title": "Game Settings",
+    "closeAria": "Close",
+    "surrender": "Surrender",
+    "surrenderDesc": "Immediately end the current game.",
+    "confirmText": "Are you sure you want to surrender? The game will end <strong>immediately</strong>.",
+    "cancel": "Cancel",
+    "confirmSurrender": "Confirm, surrender",
+    "surrendering": "Surrendering…"
+  },
+
+  "options": {
+    "title": "Options",
+    "close": "Close",
+    "preferences": {
+      "title": "Preferences",
+      "language": "Language",
+      "audio": "Audio",
+      "audioOn": "On",
+      "audioOff": "Off"
+    },
+    "debug": {
+      "title": "Debug",
+      "firebaseConsole": "Firebase Console",
+      "open": "Open"
+    }
+  },
+
+  "profile": {
+    "title": "Profile",
+    "close": "Close",
+    "info": {
+      "title": "Information",
+      "name": "Display name",
+      "photoUrl": "Custom image URL",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved!"
+    },
+    "cardBack": {
+      "title": "Card back"
+    },
+    "danger": {
+      "title": "Danger Zone",
+      "deleteAccount": "Delete Account",
+      "deleteDesc": "Permanently removes your account and all associated data.",
+      "delete": "Delete",
+      "confirmText": "Are you sure? This action is irreversible. Your account and all your data will be permanently deleted.",
+      "cancel": "Cancel",
+      "confirmDelete": "Confirm, delete",
+      "deleting": "Deleting…",
+      "unknownError": "Unknown error.",
+      "reauthRequired": "For security, sign out and sign in again before deleting your account."
+    }
+  },
+
+  "spells": {
+    "fire_bolt": {
+      "name": "Fire Bolt",
+      "flavorText": "Summoning a Fire Bolt feels really good — you can feel the power flowing from your hands as it bursts out at a distance. Exciting!"
+    },
+    "water_lance": {
+      "name": "Water Lance",
+      "flavorText": "Ever tried shooting a jet of water at great speed? You get the same effect as a saber strike, just a lot wetter."
+    },
+    "air_slash": {
+      "name": "Air Slash",
+      "flavorText": "You won't even hear it coming, and when it hits you, it'll make your head spin like you're caught in a tornado."
+    },
+    "earth_shard": {
+      "name": "Earth Shard",
+      "flavorText": "A shard of earth may look harmless, but thrown with enough force, it becomes a lethal projectile. Nature is powerful and unpredictable."
+    }
+  }
+}

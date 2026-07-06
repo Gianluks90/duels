@@ -1,0 +1,89 @@
+<div class="profile-dialog">
+  <header class="profile-dialog__header">
+    <h2 class="t-heading profile-dialog__title">{{ 'profile.title' | translate }}</h2>
+    <app-icon-button [icon]="closeIcon" [ariaLabel]="'profile.close' | translate" [size]="32" (iconClick)="close()" />
+  </header>
+
+  <div class="profile-dialog__body">
+
+    <section class="profile-dialog__section">
+      <h3 class="profile-dialog__section-title">{{ 'profile.info.title' | translate }}</h3>
+
+      <div class="profile-dialog__identity">
+        <div class="profile-dialog__avatar">
+          @if (profile()?.photoURL; as url) {
+            <img [src]="url" alt="" />
+          } @else {
+            <span>{{ (profile()?.displayName ?? '?').charAt(0) }}</span>
+          }
+        </div>
+
+        <div class="profile-dialog__fields">
+          <label class="profile-dialog__label" for="profile-name">{{ 'profile.info.name' | translate }}</label>
+          <input id="profile-name" class="profile-dialog__input" type="text" [formControl]="nameControl" maxlength="24" />
+
+          <label class="profile-dialog__label" for="profile-photo">{{ 'profile.info.photoUrl' | translate }}</label>
+          <input id="profile-photo" class="profile-dialog__input" type="url" [formControl]="photoUrlControl" placeholder="https://…" />
+        </div>
+      </div>
+
+      <div class="profile-dialog__save-row">
+        @if (saved()) {
+          <span class="profile-dialog__saved">{{ 'profile.info.saved' | translate }}</span>
+        }
+        <button
+          class="btn btn--primary"
+          [disabled]="saving() || nameControl.invalid || photoUrlControl.invalid"
+          (click)="saveProfile()"
+        >
+          {{ saving() ? ('profile.info.saving' | translate) : ('profile.info.save' | translate) }}
+        </button>
+      </div>
+    </section>
+
+    <section class="profile-dialog__section">
+      <h3 class="profile-dialog__section-title">{{ 'profile.cardBack.title' | translate }}</h3>
+      <div class="profile-dialog__card-backs">
+        @for (skin of cardBacks; track skin) {
+          <button
+            type="button"
+            class="profile-dialog__card-back"
+            [class.profile-dialog__card-back--active]="profile()?.cardBack === skin"
+            [attr.aria-pressed]="profile()?.cardBack === skin"
+            (click)="selectCardBack(skin)"
+          >
+            <img [src]="'/cards-back/' + skin + '.png'" alt="" />
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="profile-dialog__section profile-dialog__section--danger">
+      <h3 class="profile-dialog__section-title">{{ 'profile.danger.title' | translate }}</h3>
+
+      @if (!confirmDelete()) {
+        <div class="profile-dialog__danger-row">
+          <div>
+            <p class="profile-dialog__danger-label">{{ 'profile.danger.deleteAccount' | translate }}</p>
+            <p class="t-muted profile-dialog__danger-desc">{{ 'profile.danger.deleteDesc' | translate }}</p>
+          </div>
+          <button class="btn btn--danger" (click)="requestConfirm()">{{ 'profile.danger.delete' | translate }}</button>
+        </div>
+      } @else {
+        <div class="profile-dialog__confirm">
+          <p class="profile-dialog__confirm-text">{{ 'profile.danger.confirmText' | translate }}</p>
+          @if (deleteError()) {
+            <p class="profile-dialog__error">{{ deleteError() }}</p>
+          }
+          <div class="profile-dialog__confirm-actions">
+            <button class="btn btn--secondary" [disabled]="deleting()" (click)="cancelConfirm()">{{ 'profile.danger.cancel' | translate }}</button>
+            <button class="btn btn--danger" [disabled]="deleting()" (click)="deleteAccount()">
+              {{ (deleting() ? 'profile.danger.deleting' : 'profile.danger.confirmDelete') | translate }}
+            </button>
+          </div>
+        </div>
+      }
+    </section>
+
+  </div>
+</div>

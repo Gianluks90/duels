@@ -1,11 +1,11 @@
 <div class="rulebook-dialog">
   <header class="rulebook-dialog__header">
-    <h2 class="t-heading rulebook-dialog__title">Regolamento</h2>
-    <button class="rulebook-dialog__close btn btn--secondary" (click)="close()" aria-label="Chiudi">✕</button>
+    <h2 class="t-heading rulebook-dialog__title">{{ 'rulebook.title' | translate }}</h2>
+    <app-icon-button [icon]="closeIcon" [ariaLabel]="'rulebook.closeAria' | translate" [size]="32" (iconClick)="close()" />
   </header>
 
   <div class="rulebook-dialog__body">
-    <nav class="rulebook-dialog__nav" aria-label="Sezioni regolamento">
+    <nav class="rulebook-dialog__nav" [attr.aria-label]="'rulebook.navAria' | translate">
       @for (section of sections(); track section.id) {
         <button
           class="rulebook-dialog__nav-item"

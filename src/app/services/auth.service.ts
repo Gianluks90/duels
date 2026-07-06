@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { getAuth, signInWithPopup, signOut, deleteUser, GoogleAuthProvider, onAuthStateChanged, type User } from 'firebase/auth';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 import type { UserProfile } from '../models/user.model';
 
@@ -40,6 +40,15 @@ export class AuthService {
 
   async signOut(): Promise<void> {
     await signOut(this.auth);
+  }
+
+  async updateProfile(patch: Partial<Pick<UserProfile, 'displayName' | 'photoURL' | 'cardBack'>>): Promise<void> {
+    const user = this.auth.currentUser;
+    const current = this.profile();
+    if (!user || !current) return;
+
+    await updateDoc(doc(this.firebase.db, 'users', user.uid), patch);
+    this.profile.set({ ...current, ...patch });
   }
 
   async deleteAccount(): Promise<void> {

@@ -1,0 +1,96 @@
+import { Injectable, signal } from '@angular/core';
+import { SUPPORTED_LANGUAGES, type LanguageCode } from '../models/language.model';
+import type { Element } from '../models/element.model';
+import type { TurnPhase } from '../models/turn-phase.model';
+
+interface DictionaryObject {
+  [key: string]: DictionaryNode;
+}
+
+type DictionaryNode = string | DictionaryObject;
+type Dictionary = DictionaryObject;
+
+/**
+ * Runtime i18n: JSON dictionaries fetched from /i18n/<lang>.json, switchable without a reload.
+ * No persistence yet — every session starts in italiano (the fallback language) until the
+ * language choice has somewhere real to live (the user profile, once it exists).
+ */
+@Injectable({ providedIn: 'root' })
+export class TranslationService {
+  private readonly fallbackLanguage: LanguageCode = 'it';
+
+  private readonly languageSignal = signal<LanguageCode>(this.fallbackLanguage);
+  private readonly activeDictionarySignal = signal<Dictionary>({});
+  private readonly fallbackDictionarySignal = signal<Dictionary>({});
+
+  readonly language = this.languageSignal.asReadonly();
+  readonly supportedLanguages = SUPPORTED_LANGUAGES;
+
+  constructor() {
+    void this.bootstrap();
+  }
+
+  async setLanguage(language: LanguageCode): Promise<void> {
+    if (!this.supportedLanguages.includes(language) || language === this.languageSignal()) return;
+    this.languageSignal.set(language);
+    this.activeDictionarySignal.set(await this.loadDictionary(language));
+  }
+
+  /** Looks up a dot-separated key ("options.language.label"); falls back to italiano, then to the raw key. */
+  t(key: string, params?: Record<string, string | number>): string {
+    const active = this.resolveNested(this.activeDictionarySignal(), key);
+    if (typeof active === 'string') return this.interpolate(active, params);
+
+    const fallback = this.resolveNested(this.fallbackDictionarySignal(), key);
+    if (typeof fallback === 'string') return this.interpolate(fallback, params);
+
+    return key;
+  }
+
+  elementLabel(element: Element): string {
+    return this.t(`common.elements.${element}`);
+  }
+
+  turnPhaseLabel(phase: TurnPhase): string {
+    return this.t(`common.turnPhases.${phase}.label`);
+  }
+
+  turnPhaseDescription(phase: TurnPhase): string {
+    return this.t(`common.turnPhases.${phase}.description`);
+  }
+
+  private async bootstrap(): Promise<void> {
+    const fallbackDictionary = await this.loadDictionary(this.fallbackLanguage);
+    this.fallbackDictionarySignal.set(fallbackDictionary);
+    this.activeDictionarySignal.set(fallbackDictionary);
+  }
+
+  private async loadDictionary(language: LanguageCode): Promise<Dictionary> {
+    try {
+      const response = await fetch(`/i18n/${language}.json`, { headers: { 'Cache-Control': 'no-cache' } });
+      if (!response.ok) return {};
+      const dictionary = (await response.json()) as unknown;
+      return dictionary && typeof dictionary === 'object' ? (dictionary as Dictionary) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private resolveNested(dictionary: Dictionary, key: string): DictionaryNode | undefined {
+    const path = key.split('.').filter(Boolean);
+    let current: DictionaryNode | undefined = dictionary;
+    for (const segment of path) {
+      if (!current || typeof current === 'string') return undefined;
+      current = current[segment];
+    }
+    return current;
+  }
+
+  private interpolate(template: string, params?: Record<string, string | number>): string {
+    if (!params) return template;
+    return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+      const value = params[key];
+      return typeof value === 'undefined' ? `{${key}}` : String(value);
+    });
+  }
+}

@@ -10,6 +10,8 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { GameService, type GameDoc } from '../../services/game.service';
+import { TranslationService } from '../../services/translation.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { BASE_TOTAL_MANA, ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { BaseElement } from '../../models/element.model';
 import { CardComponent } from '../../components/card/card.component';
@@ -18,7 +20,7 @@ import { CardComponent } from '../../components/card/card.component';
   selector: 'app-setup',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [CardComponent],
+  imports: [CardComponent, TranslatePipe],
   templateUrl: './setup.component.html',
   styleUrl: './setup.component.scss',
 })
@@ -28,6 +30,7 @@ export class SetupComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly i18n = inject(TranslationService);
 
   protected readonly BASE_TOTAL_MANA = BASE_TOTAL_MANA;
   protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
@@ -70,6 +73,28 @@ export class SetupComponent implements OnInit {
     return role === 'host' ? doc.guestReady : doc.hostReady;
   });
 
+  protected readonly handleEffectText = computed(() => {
+    const el = this.handleSocket();
+    return el
+      ? this.i18n.t('setup.handle.effectWith', { element: this.i18n.elementLabel(el) })
+      : this.i18n.t('setup.handle.effectWithout');
+  });
+
+  protected readonly bodyEffectText = computed(() => {
+    const el = this.bodySocket();
+    return el
+      ? this.i18n.t('setup.body.effectWith', {
+          element: this.i18n.elementLabel(el),
+          opposite: this.i18n.elementLabel(ELEMENT_OPPOSITES[el]),
+        })
+      : this.i18n.t('setup.body.effectWithout');
+  });
+
+  protected readonly waitingText = computed(() => {
+    const name = this.opponentName();
+    return this.i18n.t('setup.ready.waitingFor', { name: name ?? this.i18n.t('setup.ready.opponentFallback') });
+  });
+
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('gameId') ?? '';
     this.gameId.set(id);
@@ -91,13 +116,6 @@ export class SetupComponent implements OnInit {
 
   protected setBodySocket(el: BaseElement | null): void {
     this.bodySocket.set(el);
-  }
-
-  protected elementLabel(el: BaseElement): string {
-    const labels: Record<BaseElement, string> = {
-      fire: 'Fuoco', water: 'Acqua', air: 'Aria', earth: 'Terra',
-    };
-    return labels[el];
   }
 
   protected async confirmWand(): Promise<void> {

@@ -2,14 +2,14 @@
   <div class="result__panel panel panel--raised">
 
     @if (isWinner() === true) {
-      <h1 class="t-display result__title result__title--win">Vittoria!</h1>
-      <p class="t-muted result__subtitle">Hai sconfitto il tuo avversario.</p>
+      <h1 class="t-display result__title result__title--win">{{ 'result.win.title' | translate }}</h1>
+      <p class="t-muted result__subtitle">{{ 'result.win.subtitle' | translate }}</p>
     } @else if (isWinner() === false) {
-      <h1 class="t-display result__title result__title--loss">Sconfitta</h1>
-      <p class="t-muted result__subtitle">Il tuo avversario ha vinto il duello.</p>
+      <h1 class="t-display result__title result__title--loss">{{ 'result.loss.title' | translate }}</h1>
+      <p class="t-muted result__subtitle">{{ 'result.loss.subtitle' | translate }}</p>
     } @else {
-      <h1 class="t-display result__title">Duello concluso</h1>
-      <p class="t-muted result__subtitle">La partita è terminata.</p>
+      <h1 class="t-display result__title">{{ 'result.draw.title' | translate }}</h1>
+      <p class="t-muted result__subtitle">{{ 'result.draw.subtitle' | translate }}</p>
     }
 
     <div class="result__players">
@@ -17,15 +17,15 @@
         <div class="result__player">
           <span class="t-heading">{{ doc.hostName }}</span>
         </div>
-        <span class="result__vs t-muted">vs</span>
+        <span class="result__vs t-muted">{{ 'result.vs' | translate }}</span>
         <div class="result__player">
-          <span class="t-heading">{{ doc.guestName ?? 'Avversario' }}</span>
+          <span class="t-heading">{{ doc.guestName ?? ('result.opponentFallback' | translate) }}</span>
         </div>
       }
     </div>
 
     <button class="btn btn--primary result__btn" (click)="goHome()">
-      Torna alla Home
+      {{ 'result.backHome' | translate }}
     </button>
 
   </div>

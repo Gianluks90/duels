@@ -28,11 +28,10 @@ export interface SpellEffect {
   amount?: number;
 }
 
+/** name/flavorText live in the i18n dictionaries under spells.<id>.name / spells.<id>.flavorText, not here. */
 export interface Spell {
   id: string;
-  name: string;
   formula: Element[];
   manaCost: number;
   effects: SpellEffect[];
-  flavorText?: string;
 }

@@ -67,11 +67,11 @@ export class GameService {
     const ref = doc(this.db, 'games', gameId);
     const snapshot = await getDoc(ref);
 
-    if (!snapshot.exists()) throw new Error('Partita non trovata.');
+    if (!snapshot.exists()) throw new Error('game-not-found');
 
     const data = snapshot.data() as GameDoc;
-    if (data.status !== 'waiting') throw new Error('La partita è già al completo o iniziata.');
-    if (data.hostId === user.uid) throw new Error('Sei già l\'host di questa partita.');
+    if (data.status !== 'waiting') throw new Error('game-full-or-started');
+    if (data.hostId === user.uid) throw new Error('already-host');
 
     await updateDoc(ref, {
       guestId: user.uid,

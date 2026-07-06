@@ -1,0 +1,15 @@
+<div class="action-menu-trigger" [cdkMenuTriggerFor]="menu">
+  <ng-content />
+</div>
+
+<ng-template #menu>
+  <div class="action-menu" cdkMenu>
+    @for (item of items(); track item.label) {
+      <button type="button" cdkMenuItem class="action-menu__item"
+              [disabled]="item.disabled ?? false" [cdkMenuItemDisabled]="item.disabled ?? false"
+              (cdkMenuItemTriggered)="item.action()">
+        {{ item.label }}
+      </button>
+    }
+  </div>
+</ng-template>

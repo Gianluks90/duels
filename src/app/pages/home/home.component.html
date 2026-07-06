@@ -4,13 +4,22 @@
     <div class="home__user">
       @if (isDebugUser()) {
         <button class="btn btn--secondary" [disabled]="debugLoading()" (click)="startDebugGame()">
-          {{ debugLoading() ? '…' : 'Debug' }}
+          {{ debugLoading() ? '…' : ('home.debug' | translate) }}
         </button>
       }
-      <button class="btn btn--secondary" (click)="openGrimoire()">Grimorio</button>
-      <button class="btn btn--secondary" (click)="openRulebook()">Regolamento</button>
-      <button class="btn btn--secondary" (click)="openOptions()">Opzioni</button>
-      <button class="btn btn--secondary" (click)="signOut()">Esci</button>
+      <button class="btn btn--secondary" (click)="openGrimoire()">{{ 'home.grimoire' | translate }}</button>
+      <button class="btn btn--secondary" (click)="openRulebook()">{{ 'home.rulebook' | translate }}</button>
+      <button class="btn btn--secondary" (click)="openOptions()">{{ 'home.options' | translate }}</button>
+
+      <app-action-menu [items]="avatarMenuItems()">
+        <button type="button" class="home__avatar" [attr.aria-label]="'home.avatarAria' | translate">
+          @if (profile()?.photoURL; as url) {
+            <img [src]="url" alt="" referrerpolicy="no-referrer" />
+          } @else {
+            <span>{{ (profile()?.displayName ?? '?').charAt(0) }}</span>
+          }
+        </button>
+      </app-action-menu>
     </div>
   </header>
 
@@ -19,23 +28,23 @@
 
       <!-- Crea partita -->
       <div class="panel panel--raised home__panel">
-        <h2 class="t-heading home__panel-title">Nuova Partita</h2>
+        <h2 class="t-heading home__panel-title">{{ 'home.newGame.title' | translate }}</h2>
 
         <div class="home__panel-body">
           @if (roomCode(); as code) {
             <div class="home__code">
               <span class="home__code-value t-heading">{{ code }}</span>
               <button class="btn btn--secondary home__copy-btn" (click)="copyCode()">
-                {{ copied() ? 'Copiato!' : 'Copia' }}
+                {{ (copied() ? 'home.newGame.copied' : 'home.newGame.copy') | translate }}
               </button>
             </div>
-            <p class="t-muted home__hint">Condividi il codice con l'avversario</p>
+            <p class="t-muted home__hint">{{ 'home.newGame.shareHint' | translate }}</p>
             <div class="home__waiting">
               <span class="home__dot"></span>
-              <span class="t-muted">In attesa dell'avversario…</span>
+              <span class="t-muted">{{ 'home.newGame.waiting' | translate }}</span>
             </div>
           } @else {
-            <p class="t-muted home__hint">Genera un codice e condividilo</p>
+            <p class="t-muted home__hint">{{ 'home.newGame.hint' | translate }}</p>
           }
         </div>
 
@@ -46,7 +55,7 @@
               [disabled]="cancelling()"
               (click)="cancelGame()"
             >
-              {{ cancelling() ? 'Annullamento…' : 'Annulla' }}
+              {{ (cancelling() ? 'home.newGame.cancelling' : 'home.newGame.cancel') | translate }}
             </button>
           } @else {
             <button
@@ -54,7 +63,7 @@
               [disabled]="creating()"
               (click)="createGame()"
             >
-              {{ creating() ? 'Creazione…' : 'Crea Partita' }}
+              {{ (creating() ? 'home.newGame.creating' : 'home.newGame.create') | translate }}
             </button>
           }
         </div>
@@ -62,14 +71,14 @@
 
       <!-- Unisciti -->
       <div class="panel panel--raised home__panel">
-        <h2 class="t-heading home__panel-title">Unisciti</h2>
+        <h2 class="t-heading home__panel-title">{{ 'home.join.title' | translate }}</h2>
 
         <div class="home__panel-body">
-          <p class="t-muted home__hint">Inserisci il codice ricevuto</p>
+          <p class="t-muted home__hint">{{ 'home.join.hint' | translate }}</p>
           <input
             class="home__input"
             [formControl]="codeControl"
-            placeholder="CODICE"
+            [placeholder]="'home.join.placeholder' | translate"
             maxlength="6"
             autocomplete="off"
             (keydown.enter)="joinGame()"
@@ -85,7 +94,7 @@
             [disabled]="joining() || codeControl.value.length < 6"
             (click)="joinGame()"
           >
-            {{ joining() ? 'Connessione…' : 'Entra' }}
+            {{ (joining() ? 'home.join.connecting' : 'home.join.connect') | translate }}
           </button>
         </div>
       </div>

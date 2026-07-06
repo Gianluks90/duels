@@ -8,6 +8,8 @@ import {
 import { DialogRef } from '@angular/cdk/dialog';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
+import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface RulebookSection {
   id: string;
@@ -18,12 +20,15 @@ interface RulebookSection {
 @Component({
   selector: 'app-rulebook-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconButtonComponent, TranslatePipe],
   templateUrl: './rulebook-dialog.component.html',
   styleUrl: './rulebook-dialog.component.scss',
 })
 export class RulebookDialogComponent implements OnInit {
   private readonly dialogRef = inject(DialogRef);
   private readonly sanitizer = inject(DomSanitizer);
+
+  protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
   protected readonly sections = signal<RulebookSection[]>([]);
   protected readonly activeId = signal<string>('');

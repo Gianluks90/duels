@@ -9,11 +9,14 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { GameService, type GameDoc } from '../../services/game.service';
 import { AuthService } from '../../services/auth.service';
+import { TranslationService } from '../../services/translation.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-result',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
+  imports: [TranslatePipe],
   templateUrl: './result.component.html',
   styleUrl: './result.component.scss',
 })
@@ -22,6 +25,7 @@ export class ResultComponent implements OnInit {
   private readonly game = inject(GameService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(TranslationService);
 
   protected readonly gameDoc = signal<GameDoc | null>(null);
 

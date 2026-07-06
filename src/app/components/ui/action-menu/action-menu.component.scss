@@ -1,0 +1,38 @@
+.action-menu-trigger {
+  cursor: pointer;
+}
+
+// Same panel language as the tooltip (brown bg, gold border, square corners).
+.action-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+  padding: var(--sp-1);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  border-radius: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+
+  &__item {
+    display: block;
+    width: 100%;
+    padding: var(--sp-2) var(--sp-3);
+    background: none;
+    border: none;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: rgba(122, 92, 30, 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}

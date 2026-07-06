@@ -221,7 +221,7 @@
     width: var(--hand-card-width, 84px);
     height: calc(var(--hand-card-width, 84px) * 1.5);
     transform-origin: bottom center; // pivots from a shared base point, like cards held in hand
-    transition: left 150ms ease, transform 150ms ease;
+    transition: left 150ms ease, transform 150ms ease, box-shadow 150ms ease;
 
     &--mirrored {
       transform-origin: top center;
@@ -233,6 +233,16 @@
       background-position: center;
       border: 1px solid var(--border-gold);
       border-radius: 6px;
+    }
+
+    // Hovering a Fonte Arcana card (or Residuo) highlights the hand cards it needs —
+    // gold if the combo is completable right now, blue if only part of it is in hand.
+    &--gold {
+      box-shadow: 0 0 0 3px #d4a847, 0 0 18px 4px rgba(212, 168, 71, 0.7);
+    }
+
+    &--blue {
+      box-shadow: 0 0 0 3px #2f7fd0, 0 0 18px 4px rgba(47, 127, 208, 0.6);
     }
   }
 
@@ -337,6 +347,41 @@
     flex-direction: column;
     width: var(--wand-card-width, 168px);
     flex-shrink: 0;
+  }
+
+  // Overlay banner across the 3 sections — group label only, not a shared
+  // container (the wand cards themselves stay fully separate, unlike Fonte
+  // Arcana's group panel). Sized to the row via left/right:0 on the already-
+  // absolute .board__wand-panels; pointer-events:none so it never blocks
+  // clicks on the wand cards underneath it.
+  &__wand-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 30px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--border-gold);
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-heading);
+    pointer-events: none;
+
+    &--player {
+      bottom: 0;
+      border-radius: 8px 8px 0 0;
+    }
+
+    &--opponent {
+      top: 0;
+      border-radius: 0 0 8px 8px;
+    }
   }
 
   &__wand-peek {

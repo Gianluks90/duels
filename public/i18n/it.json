@@ -1,0 +1,257 @@
+{
+  "common": {
+    "elements": {
+      "fire": "Fuoco",
+      "water": "Acqua",
+      "air": "Aria",
+      "earth": "Terra",
+      "thunder": "Tuono",
+      "poison": "Veleno",
+      "ice": "Ghiaccio",
+      "lava": "Lava",
+      "light": "Luce",
+      "dark": "Oscurità",
+      "residium": "Residuo"
+    },
+    "turnPhases": {
+      "attesa": { "label": "Attesa", "description": "Attendi che l'avversario concluda il suo turno" },
+      "preparazione": { "label": "Preparazione", "description": "Vengono risolti alcuni effetti di inizio turno" },
+      "raccolta": { "label": "Raccolta", "description": "Raccogli le risorse" },
+      "azione": { "label": "Azione", "description": "Effettua delle azioni" },
+      "incantesimo": { "label": "Incantesimo", "description": "Vengono lanciati gli incantesimi selezionati" },
+      "fine": { "label": "Fine", "description": "Vengono risolti alcuni effetti di fine turno prima di concluderlo" }
+    }
+  },
+
+  "playerHud": {
+    "settingsAria": "Impostazioni partita",
+    "phaseAria": "Fase: {phase}",
+    "opponentTurnAria": "Turno dell'avversario",
+    "hpAria": "{name}: {value} vita su {max}",
+    "manaAria": "Mana: {value} di {max}",
+    "manaTooltip": "Mana disponibile {value}",
+    "hpTooltip": "Punti vita: {current} + {shield} = {total}"
+  },
+
+  "board": {
+    "you": "Tu",
+    "opponent": "Avversario",
+    "opponentZoneAria": "Zona avversario",
+    "playerZoneAria": "La tua zona",
+    "handAriaOpponent": "Mano avversario, {count} carte coperte",
+    "handAriaPlayer": "La tua mano",
+    "deckRemaining": "Mazzo: {count} carte rimanenti",
+    "deckDiscarded": "Scarti: {count} carte scartate",
+    "fonteAria": "Fonte Arcana",
+    "wand": {
+      "title": "Bacchetta",
+      "tip": "Punta",
+      "body": "Asta",
+      "handle": "Manico",
+      "tipEffect": "Trascina qui un elemento per conservarlo fino al turno successivo",
+      "bodyEffect": "Resistenza ai danni da {element}, vulnerabilità ai danni da {opposite}",
+      "bodyEffectEmpty": "Nessuna protezione attiva al momento",
+      "handleEffect": "Hai il 20% di possibilità di duplicare {element} quando pescato",
+      "handleEffectEmpty": "Hai il 10% di possibilità di duplicare un elemento base appena pescato"
+    },
+    "fonte": {
+      "residuo": "Residuo",
+      "base": "Base",
+      "scarti": "Scarti",
+      "avanzato": "Avanzato",
+      "description": "Combina e rimuovi due o più elementi base per ottenere un elemento avanzato",
+      "recipeTooltip": "{name}: {a} + {b}",
+      "combineAction": "Combina: {a} + {b}"
+    },
+    "toolbar": {
+      "grimoireAria": "Apri il Grimorio",
+      "grimoireTooltip": "Grimorio",
+      "rulebookAria": "Apri il regolamento",
+      "rulebookTooltip": "Regolamento"
+    }
+  },
+
+  "home": {
+    "debug": "Debug",
+    "grimoire": "Grimorio",
+    "rulebook": "Regolamento",
+    "options": "Opzioni",
+    "avatarAria": "Profilo",
+    "menu": {
+      "profile": "Profilo",
+      "signOut": "Esci"
+    },
+    "newGame": {
+      "title": "Nuova Partita",
+      "copy": "Copia",
+      "copied": "Copiato!",
+      "shareHint": "Condividi il codice con l'avversario",
+      "waiting": "In attesa dell'avversario…",
+      "hint": "Genera un codice e condividilo",
+      "cancel": "Annulla",
+      "cancelling": "Annullamento…",
+      "create": "Crea Partita",
+      "creating": "Creazione…"
+    },
+    "join": {
+      "title": "Unisciti",
+      "hint": "Inserisci il codice ricevuto",
+      "placeholder": "CODICE",
+      "connect": "Entra",
+      "connecting": "Connessione…",
+      "unknownError": "Errore sconosciuto.",
+      "errors": {
+        "game-not-found": "Partita non trovata.",
+        "game-full-or-started": "La partita è già al completo o iniziata.",
+        "already-host": "Sei già l'host di questa partita."
+      }
+    }
+  },
+
+  "login": {
+    "subtitle": "Un duello tra gentilmaghi",
+    "signIn": "Entra con Google",
+    "signingIn": "Accesso in corso...",
+    "error": "Accesso non riuscito. Riprova."
+  },
+
+  "setup": {
+    "handle": {
+      "title": "Manico",
+      "desc": "10% di duplicare ogni elemento pescato. Incastona un elemento per portarlo al 20%, ma solo per quell'elemento.",
+      "noneAria": "Nessun incastonamento",
+      "effectWith": "20% di duplicare <strong>{element}</strong>",
+      "effectWithout": "10% universale · nessun elemento incastonato"
+    },
+    "body": {
+      "title": "Corpo",
+      "desc": "Incastona un elemento per ottenere protezione da esso (1 danno annullato) e vulnerabilità al suo opposto (+1 danno).",
+      "effectWith": "Protegge da <strong>{element}</strong> · Vulnerabile a <strong>{opposite}</strong>",
+      "effectWithout": "Nessuna protezione elementale"
+    },
+    "manaPreview": "Mana disponibile: {mana}",
+    "confirm": "Conferma Bacchetta",
+    "saving": "Salvataggio…",
+    "ready": {
+      "title": "Bacchetta confermata!",
+      "bothReady": "Entrambi pronti. Avvio del duello…",
+      "waitingFor": "In attesa di {name}…",
+      "opponentFallback": "l'avversario"
+    }
+  },
+
+  "result": {
+    "win": { "title": "Vittoria!", "subtitle": "Hai sconfitto il tuo avversario." },
+    "loss": { "title": "Sconfitta", "subtitle": "Il tuo avversario ha vinto il duello." },
+    "draw": { "title": "Duello concluso", "subtitle": "La partita è terminata." },
+    "vs": "vs",
+    "opponentFallback": "Avversario",
+    "backHome": "Torna alla Home"
+  },
+
+  "grimoire": {
+    "dialogAria": "Grimorio degli incantesimi",
+    "title": "Grimorio",
+    "closeAria": "Chiudi il grimorio",
+    "filterGroupAria": "Filtra per elemento",
+    "spellListAria": "Elenco incantesimi",
+    "empty": "Nessun incantesimo.",
+    "formulaAria": "Formula dell'incantesimo",
+    "manaAria": "{cost} mana",
+    "effects": {
+      "damage": "Infligge {amount} danno all'avversario.",
+      "damageIgnoreShields": "Infligge {amount} danno, ignora gli scudi.",
+      "damageSelf": "Infligge {amount} danno a sé stessi.",
+      "heal": "Recupera {amount} punto ferita.",
+      "shieldAdd": "Aggiunge {amount} scudo.",
+      "shieldRemoveOpponent": "Rimuove {amount} scudo all'avversario.",
+      "poisonAdd": "Applica {amount} veleno all'avversario.",
+      "iceAdd": "Applica {amount} ghiaccio all'avversario.",
+      "opponentLoseMana": "L'avversario perde {amount} mana.",
+      "opponentDiscardRandom": "L'avversario scarta {amount} carta dalla mano.",
+      "revealOpponentHand": "Rivela la mano dell'avversario.",
+      "fonteReset": "Resetta la Fonte Arcana."
+    }
+  },
+
+  "rulebook": {
+    "title": "Regolamento",
+    "closeAria": "Chiudi",
+    "navAria": "Sezioni regolamento"
+  },
+
+  "gameSettings": {
+    "title": "Impostazioni Partita",
+    "closeAria": "Chiudi",
+    "surrender": "Arrenditi",
+    "surrenderDesc": "Concludi subito la partita in corso.",
+    "confirmText": "Sei sicuro di volerti arrendere? La partita terminerà <strong>subito</strong>.",
+    "cancel": "Annulla",
+    "confirmSurrender": "Confermo, arrenditi",
+    "surrendering": "Arrendendosi…"
+  },
+
+  "options": {
+    "title": "Opzioni",
+    "close": "Chiudi",
+    "preferences": {
+      "title": "Preferenze",
+      "language": "Lingua",
+      "audio": "Audio",
+      "audioOn": "Attivo",
+      "audioOff": "Disattivo"
+    },
+    "debug": {
+      "title": "Debug",
+      "firebaseConsole": "Firebase Console",
+      "open": "Apri"
+    }
+  },
+
+  "profile": {
+    "title": "Profilo",
+    "close": "Chiudi",
+    "info": {
+      "title": "Informazioni",
+      "name": "Nome visualizzato",
+      "photoUrl": "URL immagine personalizzata",
+      "save": "Salva",
+      "saving": "Salvataggio…",
+      "saved": "Salvato!"
+    },
+    "cardBack": {
+      "title": "Dorso carte"
+    },
+    "danger": {
+      "title": "Zona Pericolosa",
+      "deleteAccount": "Elimina Account",
+      "deleteDesc": "Rimuove definitivamente il tuo account e tutti i dati associati.",
+      "delete": "Elimina",
+      "confirmText": "Sei sicuro? Questa azione è irreversibile. Il tuo account e tutti i tuoi dati verranno eliminati permanentemente.",
+      "cancel": "Annulla",
+      "confirmDelete": "Confermo, elimina",
+      "deleting": "Eliminazione…",
+      "unknownError": "Errore sconosciuto.",
+      "reauthRequired": "Per sicurezza, esci e accedi nuovamente prima di eliminare l'account."
+    }
+  },
+
+  "spells": {
+    "fire_bolt": {
+      "name": "Dardo di Fuoco",
+      "flavorText": "Evocare un Dardo di fuoco ti fa sentire proprio bene, senti il potere che fluisce dalle mani ed esplode ad una certa distanza. Emozionante!."
+    },
+    "water_lance": {
+      "name": "Lama d'Acqua",
+      "flavorText": "Hai mai provato a lanciare un getto d'acqua ad una grande velocità? Ottieni lo stesso effetto di una sciabolata, ma più bagnato."
+    },
+    "air_slash": {
+      "name": "Raffica d'Aria",
+      "flavorText": "Non la sentirai nemmeno arrivare e quando ti colpirà, ti farà girare la testa e ti farà sentire come se fossi in un tornado."
+    },
+    "earth_shard": {
+      "name": "Frammento di Terra",
+      "flavorText": "Un frammento di terra può sembrare innocuo, ma se lanciato con forza, può diventare un proiettile letale. La natura è potente e imprevedibile."
+    }
+  }
+}

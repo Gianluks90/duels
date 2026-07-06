@@ -3,39 +3,32 @@ import { DialogRef } from '@angular/cdk/dialog';
 import type { Element } from '../../models/element.model';
 import { elementIconPath } from '../../models/element.model';
 import { CardComponent } from '../../components/card/card.component';
+import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { TranslationService } from '../../services/translation.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import type { Spell } from '../../models/spell.model';
 import { SPELL_CATALOG } from '../../data/spells';
 
-interface ElementFilter {
-  element: Element;
-  label: string;
-}
+const FILTER_ELEMENTS: readonly Element[] = [
+  'fire', 'water', 'air', 'earth',
+  'thunder', 'ice', 'poison', 'lava',
+  'light', 'dark', 'residium',
+];
 
 @Component({
   selector: 'app-grimoire-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardComponent],
+  imports: [CardComponent, IconButtonComponent, TranslatePipe],
   templateUrl: './grimoire-dialog.component.html',
   styleUrl: './grimoire-dialog.component.scss',
 })
 export class GrimoireDialogComponent {
   private readonly dialogRef = inject(DialogRef);
+  protected readonly i18n = inject(TranslationService);
 
+  protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly elementIconPath = elementIconPath;
-
-  protected readonly elementFilters: ElementFilter[] = [
-    { element: 'fire',     label: 'Fuoco' },
-    { element: 'water',    label: 'Acqua' },
-    { element: 'air',      label: 'Aria' },
-    { element: 'earth',    label: 'Terra' },
-    { element: 'thunder',  label: 'Tuono' },
-    { element: 'ice',      label: 'Ghiaccio' },
-    { element: 'poison',   label: 'Veleno' },
-    { element: 'lava',     label: 'Lava' },
-    { element: 'light',    label: 'Luce' },
-    { element: 'dark',     label: 'Oscurità' },
-    { element: 'residium', label: 'Residio' },
-  ];
+  protected readonly filterElements = FILTER_ELEMENTS;
 
   protected readonly activeFilters = signal<ReadonlySet<Element>>(new Set());
   protected readonly selectedSpellId = signal<string>(SPELL_CATALOG[0]?.id ?? '');
@@ -63,43 +56,51 @@ export class GrimoireDialogComponent {
     this.selectedSpellId.set(id);
   }
 
+  protected spellName(spell: Spell): string {
+    return this.i18n.t(`spells.${spell.id}.name`);
+  }
+
+  /** null when the dictionary has no flavorText entry for this spell (t() falls back to the raw key). */
+  protected spellFlavorText(spell: Spell): string | null {
+    const key = `spells.${spell.id}.flavorText`;
+    const text = this.i18n.t(key);
+    return text === key ? null : text;
+  }
+
   protected effectLabel(effects: Spell['effects']): string {
     return effects
       .map(e => {
+        const amount = e.amount ?? 1;
         switch (e.type) {
           case 'damage':
-            return `Infligge ${e.amount ?? 1} danno all'avversario.`;
+            return this.i18n.t('grimoire.effects.damage', { amount });
           case 'damage_ignore_shields':
-            return `Infligge ${e.amount ?? 1} danno, ignora gli scudi.`;
+            return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
           case 'damage_self':
-            return `Infligge ${e.amount ?? 1} danno a sé stessi.`;
+            return this.i18n.t('grimoire.effects.damageSelf', { amount });
           case 'heal':
-            return `Recupera ${e.amount ?? 1} punto ferita.`;
+            return this.i18n.t('grimoire.effects.heal', { amount });
           case 'shield_add':
-            return `Aggiunge ${e.amount ?? 1} scudo.`;
+            return this.i18n.t('grimoire.effects.shieldAdd', { amount });
           case 'shield_remove_opponent':
-            return `Rimuove ${e.amount ?? 1} scudo all'avversario.`;
+            return this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount });
           case 'poison_add':
-            return `Applica ${e.amount ?? 1} veleno all'avversario.`;
+            return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
-            return `Applica ${e.amount ?? 1} ghiaccio all'avversario.`;
+            return this.i18n.t('grimoire.effects.iceAdd', { amount });
           case 'opponent_lose_mana':
-            return `L'avversario perde ${e.amount ?? 1} mana.`;
+            return this.i18n.t('grimoire.effects.opponentLoseMana', { amount });
           case 'opponent_discard_random':
-            return `L'avversario scarta ${e.amount ?? 1} carta dalla mano.`;
+            return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
           case 'reveal_opponent_hand':
-            return "Rivela la mano dell'avversario.";
+            return this.i18n.t('grimoire.effects.revealOpponentHand');
           case 'fonte_reset':
-            return 'Resetta la Fonte Arcana.';
+            return this.i18n.t('grimoire.effects.fonteReset');
           default:
             return e.type;
         }
       })
       .join(' ');
-  }
-
-  protected range(n: number): number[] {
-    return Array.from({ length: n }, (_, i) => i);
   }
 
   protected close(): void {

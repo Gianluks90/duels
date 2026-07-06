@@ -1,19 +1,23 @@
-import { Component, ChangeDetectionStrategy, inject, signal, DestroyRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, DestroyRef, OnInit } from '@angular/core';
 import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import { AuthService } from '../../services/auth.service';
 import { GameService } from '../../services/game.service';
+import { TranslationService } from '../../services/translation.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
 import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
+import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
+import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/action-menu/action-menu.component';
 
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ActionMenuComponent, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -24,9 +28,15 @@ export class HomeComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);
+  protected readonly i18n = inject(TranslationService);
 
   protected readonly profile = this.auth.profile;
   protected readonly isDebugUser = this.auth.isDebugUser;
+
+  protected readonly avatarMenuItems = computed<ActionMenuItem[]>(() => [
+    { label: this.i18n.t('home.menu.profile'), action: () => this.openProfile() },
+    { label: this.i18n.t('home.menu.signOut'), action: () => this.signOut() },
+  ]);
 
   protected readonly roomCode = signal<string | null>(null);
   protected readonly creating = signal(false);
@@ -90,6 +100,15 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  protected openProfile(): void {
+    this.dialog.open(ProfileDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+  }
+
   protected async createGame(): Promise<void> {
     const user = this.auth.user();
     if (!user) return;
@@ -144,9 +163,17 @@ export class HomeComponent implements OnInit {
       await this.game.joinGame(code, user);
       this.router.navigate(['/setup', code]);
     } catch (err) {
-      this.joinError.set(err instanceof Error ? err.message : 'Errore sconosciuto.');
+      this.joinError.set(this.joinErrorMessage(err));
       this.joining.set(false);
     }
+  }
+
+  /** GameService throws stable error codes (not messages) — translated here, at the presentation layer. */
+  private joinErrorMessage(err: unknown): string {
+    const code = err instanceof Error ? err.message : '';
+    const key = `home.join.errors.${code}`;
+    const translated = this.i18n.t(key);
+    return translated === key ? this.i18n.t('home.join.unknownError') : translated;
   }
 
   protected async copyCode(): Promise<void> {

@@ -33,13 +33,3 @@ const ELEMENT_ICONS: Record<Element, string> = {
 export function elementIconPath(element: Element): string {
   return ELEMENT_ICONS[element];
 }
-
-const ELEMENT_LABELS: Record<Element, string> = {
-  fire: 'Fuoco', water: 'Acqua', air: 'Aria', earth: 'Terra',
-  thunder: 'Tuono', poison: 'Veleno', ice: 'Ghiaccio', lava: 'Lava',
-  light: 'Luce', dark: 'Oscurità', residium: 'Residuo',
-};
-
-export function elementLabel(element: Element): string {
-  return ELEMENT_LABELS[element];
-}

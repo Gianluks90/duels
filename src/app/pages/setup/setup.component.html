@@ -11,10 +11,8 @@
 
         <!-- Handle socket -->
         <section class="setup__section panel panel--raised">
-          <h2 class="t-heading setup__section-title">Manico</h2>
-          <p class="t-muted setup__section-desc">
-            10% di duplicare ogni elemento pescato. Incastona un elemento per portarlo al 20%, ma solo per quell'elemento.
-          </p>
+          <h2 class="t-heading setup__section-title">{{ 'setup.handle.title' | translate }}</h2>
+          <p class="t-muted setup__section-desc">{{ 'setup.handle.desc' | translate }}</p>
 
           <div class="setup__socket-row">
             @for (el of baseElements; track el) {
@@ -22,7 +20,7 @@
                 class="setup__socket-btn"
                 [class.setup__socket-btn--selected]="handleSocket() === el"
                 [attr.aria-pressed]="handleSocket() === el"
-                [attr.aria-label]="elementLabel(el)"
+                [attr.aria-label]="i18n.elementLabel(el)"
                 (click)="setHandleSocket(el)"
               >
                 <app-card [element]="el" [size]="56" />
@@ -31,28 +29,20 @@
             <button
               class="setup__socket-btn setup__socket-btn--none"
               [class.setup__socket-btn--selected]="handleSocket() === null"
-              aria-label="Nessun incastonamento"
+              [attr.aria-label]="'setup.handle.noneAria' | translate"
               (click)="setHandleSocket(null)"
             >
               —
             </button>
           </div>
 
-          <p class="setup__socket-effect t-muted">
-            @if (handleSocket(); as el) {
-              20% di duplicare <strong>{{ elementLabel(el) }}</strong>
-            } @else {
-              10% universale · nessun elemento incastonato
-            }
-          </p>
+          <p class="setup__socket-effect t-muted" [innerHTML]="handleEffectText()"></p>
         </section>
 
         <!-- Body socket -->
         <section class="setup__section panel panel--raised">
-          <h2 class="t-heading setup__section-title">Corpo</h2>
-          <p class="t-muted setup__section-desc">
-            Incastona un elemento per ottenere protezione da esso (1 danno annullato) e vulnerabilità al suo opposto (+1 danno).
-          </p>
+          <h2 class="t-heading setup__section-title">{{ 'setup.body.title' | translate }}</h2>
+          <p class="t-muted setup__section-desc">{{ 'setup.body.desc' | translate }}</p>
 
           <div class="setup__socket-row">
             @for (el of baseElements; track el) {
@@ -60,7 +50,7 @@
                 class="setup__socket-btn"
                 [class.setup__socket-btn--selected]="bodySocket() === el"
                 [attr.aria-pressed]="bodySocket() === el"
-                [attr.aria-label]="elementLabel(el)"
+                [attr.aria-label]="i18n.elementLabel(el)"
                 (click)="setBodySocket(el)"
               >
                 <app-card [element]="el" [size]="56" />
@@ -69,53 +59,37 @@
             <button
               class="setup__socket-btn setup__socket-btn--none"
               [class.setup__socket-btn--selected]="bodySocket() === null"
-              aria-label="Nessun incastonamento"
+              [attr.aria-label]="'setup.handle.noneAria' | translate"
               (click)="setBodySocket(null)"
             >
               —
             </button>
           </div>
 
-          <p class="setup__socket-effect t-muted">
-            @if (bodySocket(); as el) {
-              Protegge da <strong>{{ elementLabel(el) }}</strong>
-              · Vulnerabile a <strong>{{ elementLabel(ELEMENT_OPPOSITES[el]) }}</strong>
-            } @else {
-              Nessuna protezione elementale
-            }
-          </p>
+          <p class="setup__socket-effect t-muted" [innerHTML]="bodyEffectText()"></p>
         </section>
 
       </div>
 
       <div class="setup__footer panel">
-        <span class="t-muted setup__mana-preview">
-          Mana disponibile: <strong>{{ BASE_TOTAL_MANA }}</strong>
-        </span>
+        <span class="t-muted setup__mana-preview">{{ 'setup.manaPreview' | translate:{ mana: BASE_TOTAL_MANA } }}</span>
         <button
           class="btn btn--primary setup__confirm"
           [disabled]="saving()"
           (click)="confirmWand()"
         >
-          {{ saving() ? 'Salvataggio…' : 'Conferma Bacchetta' }}
+          {{ (saving() ? 'setup.saving' : 'setup.confirm') | translate }}
         </button>
       </div>
     }
 
     @if (iAmReady()) {
       <div class="setup__waiting panel panel--raised">
-        <h2 class="t-heading">Bacchetta confermata!</h2>
+        <h2 class="t-heading">{{ 'setup.ready.title' | translate }}</h2>
         @if (opponentReady()) {
-          <p class="t-muted">Entrambi pronti. Avvio del duello…</p>
+          <p class="t-muted">{{ 'setup.ready.bothReady' | translate }}</p>
         } @else {
-          <p class="t-muted">
-            In attesa di
-            @if (opponentName(); as name) {
-              <strong>{{ name }}</strong>
-            } @else {
-              <strong>l'avversario</strong>
-            }…
-          </p>
+          <p class="t-muted">{{ waitingText() }}</p>
         }
         <div class="setup__dots">
           <span class="setup__dot"></span>

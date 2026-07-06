@@ -1,16 +1,20 @@
-import { Component, ChangeDetectionStrategy, computed, input, output } from '@angular/core';
-import { TURN_PHASES, turnPhaseLabel, turnPhaseDescription, type TurnPhase } from '../../models/turn-phase.model';
+import { Component, ChangeDetectionStrategy, computed, input, output, inject } from '@angular/core';
+import { TURN_PHASES, type TurnPhase } from '../../models/turn-phase.model';
 import type { Health } from '../../models/player.model';
 import { TooltipDirective } from '../ui/tooltip/tooltip.directive';
+import { TranslationService } from '../../services/translation.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-player-hud',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TooltipDirective],
+  imports: [TooltipDirective, TranslatePipe],
   templateUrl: './player-hud.component.html',
   styleUrl: './player-hud.component.scss',
 })
 export class PlayerHudComponent {
+  protected readonly i18n = inject(TranslationService);
+
   readonly name      = input.required<string>();
   readonly health    = input.required<Health>();
   readonly mana      = input.required<number>();
@@ -25,8 +29,6 @@ export class PlayerHudComponent {
   readonly settingsClick = output<void>();
 
   protected readonly phases = TURN_PHASES;
-  protected readonly turnPhaseLabel = turnPhaseLabel;
-  protected readonly turnPhaseDescription = turnPhaseDescription;
 
   protected readonly firstName = computed(() => {
     const full = this.name();
@@ -44,9 +46,25 @@ export class PlayerHudComponent {
   /** The number shown above the bar merges current + shield — the tooltip (only present when there's a shield) spells out the breakdown. */
   protected readonly displayedHp = computed(() => this.health().current + this.health().shield);
 
+  protected readonly phaseAria = computed(() =>
+    this.isMyTurn()
+      ? this.i18n.t('playerHud.phaseAria', { phase: this.i18n.turnPhaseLabel(this.phase()) })
+      : this.i18n.t('playerHud.opponentTurnAria'),
+  );
+
+  protected readonly hpAria = computed(() =>
+    this.i18n.t('playerHud.hpAria', { name: this.firstName(), value: this.displayedHp(), max: this.health().max }),
+  );
+
+  protected readonly manaAria = computed(() =>
+    this.i18n.t('playerHud.manaAria', { value: this.mana(), max: this.maxMana() }),
+  );
+
+  protected readonly manaTooltip = computed(() => this.i18n.t('playerHud.manaTooltip', { value: this.mana() }));
+
   protected readonly hpTooltip = computed(() => {
     const { current, shield } = this.health();
-    return shield > 0 ? `Punti vita: ${current} + ${shield} = ${current + shield}` : null;
+    return shield > 0 ? this.i18n.t('playerHud.hpTooltip', { current, shield, total: current + shield }) : null;
   });
 
   private percentOf(value: number): number {

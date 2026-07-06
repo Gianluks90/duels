@@ -19,12 +19,6 @@
     font-size: 0.85rem;
   }
 
-  &__close {
-    padding: var(--sp-1) var(--sp-3);
-    font-size: 0.7rem;
-    line-height: 1;
-  }
-
   &__body {
     padding: var(--sp-4);
     display: flex;
@@ -43,11 +37,6 @@
       border-color: rgba(71, 120, 212, 0.3);
       background: rgba(71, 120, 212, 0.05);
     }
-
-    &--danger {
-      border-color: rgba(139, 16, 16, 0.4);
-      background: rgba(139, 16, 16, 0.05);
-    }
   }
 
   &__section-title {
@@ -55,14 +44,53 @@
     color: var(--accent-hover);
   }
 
-  &__debug-row {
+  &__pref-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--sp-4);
   }
 
-  &__danger-row {
+  &__pref-label {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+  }
+
+  &__select {
+    padding: var(--sp-1) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-gold);
+    color: var(--text-heading);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  // Reuses .btn--secondary's language but as a fixed-width switch-style readout (Attivo/Disattivo).
+  &__toggle {
+    min-width: 84px;
+    padding: var(--sp-1) var(--sp-3);
+    background: transparent;
+    border: 1px solid var(--border-gold);
+    color: var(--text-heading);
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--transition);
+
+    &:hover {
+      background: rgba(122, 92, 30, 0.12);
+    }
+
+    &[aria-checked='false'] {
+      color: var(--text-muted);
+    }
+  }
+
+  &__debug-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -73,36 +101,5 @@
     font-size: 0.8rem;
     color: var(--text-primary);
     margin-bottom: var(--sp-1);
-  }
-
-  &__danger-desc {
-    font-size: 0.7rem;
-  }
-
-  &__confirm {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-3);
-  }
-
-  &__confirm-text {
-    font-size: 0.8rem;
-    line-height: 1.5;
-    color: var(--text-primary);
-
-    strong {
-      color: var(--accent-hover);
-    }
-  }
-
-  &__error {
-    font-size: 0.75rem;
-    color: var(--accent-hover);
-  }
-
-  &__confirm-actions {
-    display: flex;
-    gap: var(--sp-2);
-    justify-content: flex-end;
   }
 }
