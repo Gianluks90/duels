@@ -16,6 +16,8 @@ import {
 import { type User } from 'firebase/auth';
 import { FirebaseService } from './firebase.service';
 import type { Wand } from '../models/wand.model';
+import type { GameState } from '../models/game.model';
+import { createInitialGameState } from '../game/deck-builder';
 
 export interface GameDoc {
   id: string;
@@ -31,6 +33,7 @@ export interface GameDoc {
   guestWand: Wand | null;
   guestReady: boolean;
   createdAt: number;
+  state: GameState | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -58,6 +61,7 @@ export class GameService {
       guestWand: null,
       guestReady: false,
       createdAt: Date.now(),
+      state: null,
     };
     await setDoc(doc(this.db, 'games', gameId), data);
     return gameId;
@@ -92,20 +96,26 @@ export class GameService {
   async createDebugGame(user: User): Promise<string> {
     const gameId = this.generateRoomCode();
     const defaultWand: Wand = { handleSocket: null, bodySocket: null, tipSlot: null };
+    const hostName = user.displayName ?? 'Mago';
+    const guestName = 'Avversario Debug';
     const data: GameDoc = {
       id: gameId,
       status: 'playing',
       hostId: user.uid,
-      hostName: user.displayName ?? 'Mago',
+      hostName,
       hostPhoto: user.photoURL,
       hostWand: defaultWand,
       hostReady: true,
       guestId: 'debug-guest',
-      guestName: 'Avversario Debug',
+      guestName,
       guestPhoto: null,
       guestWand: defaultWand,
       guestReady: true,
       createdAt: Date.now(),
+      state: createInitialGameState(
+        { name: hostName, wand: defaultWand },
+        { name: guestName, wand: defaultWand },
+      ),
     };
     await setDoc(doc(this.db, 'games', gameId), data);
     return gameId;

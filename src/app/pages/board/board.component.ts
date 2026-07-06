@@ -4,6 +4,7 @@ import {
   inject,
   signal,
   computed,
+  effect,
   DestroyRef,
   OnInit,
   viewChild,
@@ -15,6 +16,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import { GameService, type GameDoc } from '../../services/game.service';
+import { GameEngineService } from '../../services/game-engine.service';
 import { AuthService } from '../../services/auth.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
@@ -29,8 +31,8 @@ import type { BaseElement, Element, AdvancedElement } from '../../models/element
 import { ADVANCED_RECIPES } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
-import type { TurnPhase } from '../../models/turn-phase.model';
-import type { Health } from '../../models/player.model';
+import type { Card } from '../../models/card.model';
+import type { PlayerId } from '../../models/player.model';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -70,9 +72,6 @@ const FONTE_CARD_WIDTH = 76;
 /** Gap between the 3 Fonte Arcana groups (Residuo | Base | Fonte Arcana). */
 const FONTE_GROUP_GAP = 32;
 
-/** Pool a combined Fonte slot is refilled from (mock only — a real Avanzato deck draw comes once the board is wired up). */
-const ADVANCED_ELEMENT_POOL: readonly AdvancedElement[] = ['thunder', 'poison', 'ice', 'lava'];
-
 /** What's currently hovered in the Fonte row — 'fixed' for an advanced card (one specific pair), 'opposite' for Residuo Arcano (any base + its opposite). */
 type HoverRecipe = { kind: 'fixed'; pair: readonly [BaseElement, BaseElement] } | { kind: 'opposite' };
 
@@ -87,6 +86,7 @@ type HoverRecipe = { kind: 'fixed'; pair: readonly [BaseElement, BaseElement] } 
 export class BoardComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly game = inject(GameService);
+  private readonly gameEngine = inject(GameEngineService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -128,43 +128,75 @@ export class BoardComponent implements OnInit {
   protected readonly gameId = signal<string>('');
   protected readonly gameDoc = signal<GameDoc | null>(null);
 
-  // Mock game state — will be replaced by real GameState from Firestore
-  // (shield mirrors the future PlayerTokens.shield, 0–3 — the player has one here to preview the bar's shield segment)
-  protected readonly playerHealth   = signal<Health>({ max: 20, current: 14, shield: 2 });
-  protected readonly opponentHealth = signal<Health>({ max: 20, current: 20, shield: 0 });
-  protected readonly playerMana   = signal(3);
-  protected readonly opponentMana = signal(2);
-  protected readonly maxMana      = signal(6);
-  protected readonly isPlayerTurn = signal(true);
-  protected readonly turnPhase    = signal<TurnPhase>('azione');
+  /** Stato di gioco reale, letto dal campo `state` del documento Firestore (null finché la partita non è iniziata). */
+  protected readonly state = computed(() => this.gameDoc()?.state ?? null);
 
-  protected readonly opponentHandCount = signal(5);
-  protected readonly fonteCards = signal<Element[]>(['thunder', 'ice', 'poison', 'thunder']);
-  protected readonly playerHand = signal<Element[]>(['fire', 'air', 'water', 'earth', 'fire']);
-
-  /** Set while hovering a Fonte Arcana card or Residuo Arcano — drives the gold/blue highlight on matching hand cards. */
-  protected readonly hoveredRecipe = signal<HoverRecipe | null>(null);
-
-  protected readonly residuoDeckCount   = signal(8);
-  protected readonly commonDeckCount    = signal(20);
-  protected readonly baseDeckCount      = signal(40);
-  protected readonly baseDiscardCount   = signal(5);
-  protected readonly baseDiscardTop     = signal<Element>('earth');
-  protected readonly fonteDiscardCount  = signal(3);
-  protected readonly fonteDiscardTop    = signal<Element>('poison');
-  protected readonly playerDiscardCount   = signal(2);
-  protected readonly playerDiscardTop     = signal<Element>('water');
-  protected readonly playerDeckCount      = signal(12);
-  protected readonly opponentDeckCount    = signal(10);
-  protected readonly opponentDiscardCount = signal(1);
-  protected readonly opponentDiscardTop   = signal<Element>('air');
-
-  private readonly myRole = computed<'host' | 'guest' | null>(() => {
+  private readonly myRole = computed<PlayerId | null>(() => {
     const doc = this.gameDoc();
     const uid = this.auth.user()?.uid;
     if (!doc || !uid) return null;
     return doc.hostId === uid ? 'host' : 'guest';
   });
+
+  private readonly me = computed(() => {
+    const s = this.state();
+    const role = this.myRole();
+    return s && role ? s.players[role] : null;
+  });
+
+  private readonly opponentState = computed(() => {
+    const s = this.state();
+    const role = this.myRole();
+    if (!s || !role) return null;
+    return s.players[role === 'host' ? 'guest' : 'host'];
+  });
+
+  protected readonly playerHealth = computed(() => ({
+    max: 20,
+    current: this.me()?.hp ?? 20,
+    shield: this.me()?.tokens.shield ?? 0,
+  }));
+  protected readonly opponentHealth = computed(() => ({
+    max: 20,
+    current: this.opponentState()?.hp ?? 20,
+    shield: this.opponentState()?.tokens.shield ?? 0,
+  }));
+
+  protected readonly isPlayerTurn = computed(() => this.state()?.currentTurn === this.myRole());
+  /** 'attesa' non è mai persistito: è il valore mostrato solo a chi non è di turno (regolamento v2, 4.1). */
+  protected readonly playerDisplayedPhase = computed(() => (this.isPlayerTurn() ? this.state()!.phase : 'attesa'));
+  protected readonly opponentDisplayedPhase = computed(() => (!this.isPlayerTurn() ? this.state()!.phase : 'attesa'));
+
+  protected readonly opponentHandCount = computed(() => this.opponentState()?.hand.length ?? 0);
+  protected readonly fonteCards = computed<Element[]>(() => this.state()?.fonteElementale.map(c => c.element) ?? []);
+  protected readonly playerHand = computed<Element[]>(() => this.me()?.hand.map(c => c.element) ?? []);
+
+  /** Set while hovering a Fonte Arcana card or Residuo Arcano — drives the gold/blue highlight on matching hand cards. */
+  protected readonly hoveredRecipe = signal<HoverRecipe | null>(null);
+
+  protected readonly residuoDeckCount = computed(() => this.state()?.residiumDeck.length ?? 0);
+
+  protected readonly advancedDeckCount = computed(() => this.state()?.advancedDeck.length ?? 0);
+  protected readonly advancedDiscardCount = computed(() => this.state()?.advancedDiscards.length ?? 0);
+  protected readonly advancedDiscardTop = computed(() => this.topOf(this.state()?.advancedDiscards));
+
+  protected readonly commonDeckCount = computed(() => this.state()?.commonDeck.length ?? 0);
+  protected readonly commonDiscardCount = computed(() => this.state()?.commonDiscards.length ?? 0);
+  protected readonly commonDiscardTop = computed(() => this.topOf(this.state()?.commonDiscards));
+
+  protected readonly playerDeckCount = computed(() => this.me()?.deck.length ?? 0);
+  protected readonly playerDiscardCount = computed(() => this.me()?.discards.length ?? 0);
+  protected readonly playerDiscardTop = computed(() => this.topOf(this.me()?.discards));
+
+  protected readonly opponentDeckCount = computed(() => this.opponentState()?.deck.length ?? 0);
+  protected readonly opponentDiscardCount = computed(() => this.opponentState()?.discards.length ?? 0);
+  protected readonly opponentDiscardTop = computed(() => this.topOf(this.opponentState()?.discards));
+
+  /** Le 2 carte pescate dal mazzo comune in attesa di scelta — solo locale, nessuna scrittura su Firestore finché non si sceglie quale tenere (regolamento 4.3). */
+  protected readonly pendingCollect = computed(() => this.me()?.pendingCollect ?? null);
+  protected readonly canCollect = computed(() =>
+    this.isPlayerTurn() && this.state()?.phase === 'raccolta' && !this.me()?.hasCollectedThisTurn && !this.pendingCollect(),
+  );
 
   protected readonly playerName = computed(() => {
     const doc = this.gameDoc();
@@ -193,23 +225,44 @@ export class BoardComponent implements OnInit {
   });
 
   protected readonly playerTip    = computed(() => this.playerWand()?.tipSlot ?? null);
-  // TEMP mock — remove: shows the peek-card treatment on Asta without a live game.
-  protected readonly playerBody   = computed(() => this.playerWand()?.bodySocket ?? 'fire');
+  protected readonly playerBody   = computed(() => this.playerWand()?.bodySocket ?? null);
   protected readonly playerHandle = computed(() => this.playerWand()?.handleSocket ?? null);
 
   protected readonly opponentTip    = computed(() => this.opponentWand()?.tipSlot ?? null);
-  // TEMP mock — remove: shows the peek-card treatment on Asta without a live game.
-  protected readonly opponentBody   = computed(() => this.opponentWand()?.bodySocket ?? 'fire');
+  protected readonly opponentBody   = computed(() => this.opponentWand()?.bodySocket ?? null);
   protected readonly opponentHandle = computed(() => this.opponentWand()?.handleSocket ?? null);
 
   protected readonly opponentHandRange = computed(() =>
     Array.from({ length: this.opponentHandCount() }, (_, i) => i)
   );
 
+  /** Evita di pianificare più volte lo stesso avanzamento automatico (l'effect sotto può rieseguire per motivi non correlati). */
+  private autoAdvanceKey: string | null = null;
+
   constructor() {
     afterNextRender(() => {
       this.observeWidth(this.playerHandTrackRef(), this.playerHandTrackWidth);
       this.observeWidth(this.opponentHandTrackRef(), this.opponentHandTrackWidth);
+    });
+
+    // Aiuto di test finché non c'è un vero secondo giocatore: nella partita di debug
+    // (guestId 'debug-guest', vedi game.service.ts) nessun client reale guida il turno
+    // dell'avversario — senza questo, il turno resterebbe bloccato su 'guest' per sempre.
+    // Fa avanzare l'avversario di debug attraverso tutte le fasi (senza raccogliere né
+    // combinare nulla) finché il turno non torna al giocatore reale. Da rimuovere/sostituire
+    // quando ci sarà un modo vero di testare con due client.
+    effect(() => {
+      const s = this.state();
+      const doc = this.gameDoc();
+      if (!s || !doc || doc.guestId !== 'debug-guest' || s.currentTurn !== 'guest') return;
+
+      const key = `${s.turnNumber}:${s.phase}`;
+      if (key === this.autoAdvanceKey) return;
+      this.autoAdvanceKey = key;
+
+      const gameId = this.gameId();
+      const timer = setTimeout(() => void this.gameEngine.advancePhase(gameId, 'guest'), 500);
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
   }
 
@@ -284,7 +337,7 @@ export class BoardComponent implements OnInit {
     });
   }
 
-  /** Regolamento.md's Fonte Elementale rule: scartare le 2 basi corrispondenti per prendere l'avanzata dalla Fonte. */
+  /** Regolamento v2, 2.3/2.6: scartare le 2 basi corrispondenti per prendere l'avanzata dalla Fonte. */
   protected fonteMenuItems(el: Element, slotIndex: number): ActionMenuItem[] {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
     if (!recipe) return [];
@@ -292,7 +345,7 @@ export class BoardComponent implements OnInit {
     return [{
       label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
       action: () => this.combineAdvanced(slotIndex, a, b),
-      disabled: !this.hasBaseCards(a, b),
+      disabled: !this.isPlayerTurn() || this.state()?.phase !== 'azione' || !this.hasBaseCards(a, b),
     }];
   }
 
@@ -349,27 +402,35 @@ export class BoardComponent implements OnInit {
     return hand.includes(opposite) ? 'gold' : 'blue';
   }
 
-  /** Mock resolution — discards the 2 base cards, sends the combined card to the player's discards, and refills the Fonte slot. Will move to a real Firestore transaction once the board is wired up. */
-  private combineAdvanced(slotIndex: number, a: BaseElement, b: BaseElement): void {
-    const hand = [...this.playerHand()];
-    const ia = hand.indexOf(a);
-    if (ia === -1) return;
-    hand.splice(ia, 1);
-    const ib = hand.indexOf(b);
-    if (ib === -1) return;
-    hand.splice(ib, 1);
-    this.playerHand.set(hand);
+  private async combineAdvanced(slotIndex: number, a: BaseElement, b: BaseElement): Promise<void> {
+    const role = this.myRole();
+    if (!role) return;
+    await this.gameEngine.combineElements(this.gameId(), role, slotIndex, a, b);
+  }
 
-    const combined = this.fonteCards()[slotIndex];
-    this.playerDiscardCount.update(count => count + 1);
-    this.playerDiscardTop.set(combined);
+  /** Fase Raccolta (4.3), primo passo: pesca 2 carte dal mazzo comune (il servizio rimescola se serve). */
+  protected async drawTwo(): Promise<void> {
+    const role = this.myRole();
+    if (!role || !this.canCollect()) return;
+    await this.gameEngine.startCollect(this.gameId(), role);
+  }
 
-    this.fonteCards.update(cards => {
-      const next = [...cards];
-      next[slotIndex] = ADVANCED_ELEMENT_POOL[Math.floor(Math.random() * ADVANCED_ELEMENT_POOL.length)];
-      return next;
-    });
-    this.commonDeckCount.update(count => Math.max(0, count - 1));
+  /** Fase Raccolta (4.3), secondo passo: tieni una delle 2 carte in sospeso. */
+  protected async keepCard(kept: Card): Promise<void> {
+    const role = this.myRole();
+    if (!role) return;
+    await this.gameEngine.keepCard(this.gameId(), role, kept.id);
+  }
+
+  /** Avanza la propria fase di turno; da 'fine' passa davvero il turno all'avversario (motore in src/app/game/turn-engine.ts). */
+  protected async advancePhase(): Promise<void> {
+    const role = this.myRole();
+    if (!role || !this.isPlayerTurn()) return;
+    await this.gameEngine.advancePhase(this.gameId(), role);
+  }
+
+  private topOf(cards: readonly Card[] | undefined): Element | null {
+    return cards && cards.length > 0 ? cards[cards.length - 1].element : null;
   }
 
   protected openGameSettings(): void {

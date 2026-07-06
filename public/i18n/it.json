@@ -23,13 +23,15 @@
     }
   },
 
+  "card": {
+    "manaAria": "{value} mana"
+  },
+
   "playerHud": {
     "settingsAria": "Impostazioni partita",
     "phaseAria": "Fase: {phase}",
     "opponentTurnAria": "Turno dell'avversario",
     "hpAria": "{name}: {value} vita su {max}",
-    "manaAria": "Mana: {value} di {max}",
-    "manaTooltip": "Mana disponibile {value}",
     "hpTooltip": "Punti vita: {current} + {shield} = {total}"
   },
 
@@ -61,13 +63,18 @@
       "avanzato": "Avanzato",
       "description": "Combina e rimuovi due o più elementi base per ottenere un elemento avanzato",
       "recipeTooltip": "{name}: {a} + {b}",
-      "combineAction": "Combina: {a} + {b}"
+      "combineAction": "Combina: {a} + {b}",
+      "collectTooltip": "Pesca 2 carte, tienine 1 (fase Raccolta)",
+      "collectPrompt": "Scegli quale carta tenere"
     },
     "toolbar": {
       "grimoireAria": "Apri il Grimorio",
       "grimoireTooltip": "Grimorio",
       "rulebookAria": "Apri il regolamento",
       "rulebookTooltip": "Regolamento"
+    },
+    "turn": {
+      "advance": "Prossima fase"
     }
   },
 
@@ -129,7 +136,6 @@
       "effectWith": "Protegge da <strong>{element}</strong> · Vulnerabile a <strong>{opposite}</strong>",
       "effectWithout": "Nessuna protezione elementale"
     },
-    "manaPreview": "Mana disponibile: {mana}",
     "confirm": "Conferma Bacchetta",
     "saving": "Salvataggio…",
     "ready": {

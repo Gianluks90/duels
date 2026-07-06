@@ -5,7 +5,6 @@ export type SpellEffectType =
   | 'damage_ignore_shields'
   | 'damage_self'
   | 'damage_halve_opponent'
-  | 'damage_cursed'
   | 'damage_from_fonte'
   | 'heal'
   | 'shield_add'

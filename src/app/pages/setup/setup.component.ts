@@ -10,9 +10,10 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { GameService, type GameDoc } from '../../services/game.service';
+import { GameEngineService } from '../../services/game-engine.service';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { BASE_TOTAL_MANA, ELEMENT_OPPOSITES } from '../../models/wand.model';
+import { ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { BaseElement } from '../../models/element.model';
 import { CardComponent } from '../../components/card/card.component';
 
@@ -27,18 +28,20 @@ import { CardComponent } from '../../components/card/card.component';
 export class SetupComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly game = inject(GameService);
+  private readonly gameEngine = inject(GameEngineService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly i18n = inject(TranslationService);
 
-  protected readonly BASE_TOTAL_MANA = BASE_TOTAL_MANA;
   protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
   protected readonly baseElements: BaseElement[] = ['fire', 'water', 'air', 'earth'];
 
   protected readonly gameId = signal<string>('');
   protected readonly gameDoc = signal<GameDoc | null>(null);
   protected readonly saving = signal(false);
+  /** Evita di richiedere tryStartGame ad ogni singolo tick di onSnapshot mentre l'avvio è già in corso. */
+  private startRequested = false;
 
   protected readonly handleSocket = signal<BaseElement | null>(null);
   protected readonly bodySocket = signal<BaseElement | null>(null);
@@ -104,6 +107,12 @@ export class SetupComponent implements OnInit {
       if (doc?.status === 'playing') {
         unsub();
         this.router.navigate(['/game', id]);
+        return;
+      }
+      // Solo l'host prova ad avviare la partita, per evitare che entrambi i client corrano a scriverla insieme.
+      if (!this.startRequested && doc?.status === 'setup' && doc.hostReady && doc.guestReady && this.myRole() === 'host') {
+        this.startRequested = true;
+        void this.gameEngine.tryStartGame(id);
       }
     });
 

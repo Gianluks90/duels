@@ -17,8 +17,6 @@ export class PlayerHudComponent {
 
   readonly name      = input.required<string>();
   readonly health    = input.required<Health>();
-  readonly mana      = input.required<number>();
-  readonly maxMana   = input.required<number>();
   readonly isMyTurn  = input<boolean>(false);
   /** The current turn's phase — only actually highlighted when isMyTurn(), since the other player has no "current phase" of their own. */
   readonly phase     = input<TurnPhase>('raccolta');
@@ -55,12 +53,6 @@ export class PlayerHudComponent {
   protected readonly hpAria = computed(() =>
     this.i18n.t('playerHud.hpAria', { name: this.firstName(), value: this.displayedHp(), max: this.health().max }),
   );
-
-  protected readonly manaAria = computed(() =>
-    this.i18n.t('playerHud.manaAria', { value: this.mana(), max: this.maxMana() }),
-  );
-
-  protected readonly manaTooltip = computed(() => this.i18n.t('playerHud.manaTooltip', { value: this.mana() }));
 
   protected readonly hpTooltip = computed(() => {
     const { current, shield } = this.health();

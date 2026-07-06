@@ -11,10 +11,8 @@
       [width]="hudWidth"
       [name]="opponentName()"
       [health]="opponentHealth()"
-      [mana]="opponentMana()"
-      [maxMana]="maxMana()"
       [isMyTurn]="!isPlayerTurn()"
-      [phase]="turnPhase()"
+      [phase]="opponentDisplayedPhase()"
       [mirrored]="true"
     />
 
@@ -108,6 +106,13 @@
                        [appTooltip]="'board.toolbar.rulebookTooltip' | translate" tooltipPosition="right" />
     </div>
 
+    <!-- Avanzamento di turno: solo il giocatore di turno può farlo avanzare. -->
+    <div class="board__turn-control">
+      <button type="button" class="btn btn--primary" [disabled]="!isPlayerTurn()" (click)="advancePhase()">
+        {{ 'board.turn.advance' | translate }}
+      </button>
+    </div>
+
     <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
 
       <!-- Group 1: Residuo Arcano — a single pile, always face up -->
@@ -115,10 +120,13 @@
         <app-deck [size]="fonteCardWidth" [count]="residuoDeckCount()" [faceUp]="true" [topElement]="'residium'" [label]="'board.fonte.residuo' | translate" />
       </div>
 
-      <!-- Group 2: Base — draw (face down, left) and scarti (face up, right, messy) -->
+      <!-- Group 2: Base — mazzo comune (face down, left, cliccabile in fase Raccolta) e scarti (face up, right, messy) -->
       <div class="board__fonte-group">
-        <app-deck [size]="fonteCardWidth" [count]="baseDeckCount()" [label]="'board.fonte.base' | translate" />
-        <app-deck [size]="fonteCardWidth" [count]="baseDiscardCount()" [faceUp]="true" [topElement]="baseDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
+        <button type="button" class="board__deck-trigger" [class.board__deck-trigger--active]="canCollect()" [disabled]="!canCollect()"
+                (click)="drawTwo()" [appTooltip]="'board.fonte.collectTooltip' | translate" tooltipPosition="top">
+          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.base' | translate" />
+        </button>
+        <app-deck [size]="fonteCardWidth" [count]="commonDiscardCount()" [faceUp]="true" [topElement]="commonDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
       </div>
 
       <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
@@ -129,7 +137,7 @@
         </div>
 
         <div class="board__fonte-group-content">
-          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.avanzato' | translate" />
+          <app-deck [size]="fonteCardWidth" [count]="advancedDeckCount()" [label]="'board.fonte.avanzato' | translate" />
 
           <div class="board__fonte-row" role="region" [attr.aria-label]="'board.fonteAria' | translate">
             @for (card of fonteCards(); track $index) {
@@ -140,7 +148,7 @@
             }
           </div>
 
-          <app-deck [size]="fonteCardWidth" [count]="fonteDiscardCount()" [faceUp]="true" [topElement]="fonteDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
+          <app-deck [size]="fonteCardWidth" [count]="advancedDiscardCount()" [faceUp]="true" [topElement]="advancedDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
         </div>
 
         <div class="board__fonte-footer">
@@ -150,6 +158,20 @@
       </div>
 
     </div>
+
+    <!-- Raccolta: le 2 carte pescate, in attesa che il giocatore scelga quale tenere. -->
+    @if (pendingCollect(); as pair) {
+      <div class="board__collect-overlay" role="dialog" [attr.aria-label]="'board.fonte.collectPrompt' | translate">
+        <p class="board__collect-prompt">{{ 'board.fonte.collectPrompt' | translate }}</p>
+        <div class="board__collect-cards">
+          @for (card of pair; track card.id) {
+            <button type="button" class="board__collect-card" (click)="keepCard(card)">
+              <app-card [element]="card.element" [size]="handArcCardWidth" />
+            </button>
+          }
+        </div>
+      </div>
+    }
 
   </section>
 
@@ -164,10 +186,8 @@
       [width]="hudWidth"
       [name]="playerName()"
       [health]="playerHealth()"
-      [mana]="playerMana()"
-      [maxMana]="maxMana()"
       [isMyTurn]="isPlayerTurn()"
-      [phase]="turnPhase()"
+      [phase]="playerDisplayedPhase()"
       [mirrored]="false"
       (settingsClick)="openGameSettings()"
     />

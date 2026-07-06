@@ -53,20 +53,20 @@
     <div class="grimoire__page grimoire__page--right">
       @if (selectedSpell(); as spell) {
         <div class="grimoire__detail">
-          <h3 class="grimoire__spell-name">{{ spellName(spell) }}</h3>
+          <div class="grimoire__spell-header">
+            <h3 class="grimoire__spell-name">{{ spellName(spell) }}</h3>
+            <span class="grimoire__mana-badge" [attr.aria-label]="'grimoire.manaAria' | translate:{ cost: spell.manaCost }">{{ spell.manaCost }}</span>
+          </div>
 
           <div class="grimoire__rule" aria-hidden="true"></div>
 
-          <div class="grimoire__formula">
-            <div class="grimoire__formula-elements" [attr.aria-label]="'grimoire.formulaAria' | translate">
-              @for (el of spell.formula; track $index; let last = $last) {
-                <app-card [element]="el" [size]="40" />
-                @if (!last) {
-                  <span class="grimoire__formula-op" aria-hidden="true">+</span>
-                }
+          <div class="grimoire__formula-elements" [attr.aria-label]="'grimoire.formulaAria' | translate">
+            @for (el of spell.formula; track $index; let last = $last) {
+              <app-card [element]="el" [size]="40" [showMana]="false" />
+              @if (!last) {
+                <span class="grimoire__formula-op" aria-hidden="true">+</span>
               }
-            </div>
-            <span class="grimoire__mana-count" [attr.aria-label]="'grimoire.manaAria' | translate:{ cost: spell.manaCost }">{{ spell.manaCost }}</span>
+            }
           </div>
 
           <div class="grimoire__rule" aria-hidden="true"></div>

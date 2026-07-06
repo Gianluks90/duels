@@ -19,11 +19,9 @@ npx firebase-tools deploy --only firestore:rules  # deploy Firestore rules
 
 ## Project Overview
 
-This is a digital companion/implementation for **MAGI**, a 1v1 physical card game. The full game rules and card definitions are in [documentation/](documentation/):
+This is a digital companion/implementation for **MAGI**, a 1v1 physical card game. The authoritative rulebook is [documentation/rulebook/v2/rules.md](documentation/rulebook/v2/rules.md) — setup, card types, mana, turn structure (6 phases), spells, and the golden rule. The in-app rulebook dialog (`public/config/rulebook/it/*.md`) is sourced from it.
 
-- [regolamento.md](documentation/regolamento.md) — turn structure, Fonte Elementale, wand mechanics
-- [idee.md](documentation/idee.md) — approved game elements, mana spheres, card counts
-- [grimorio.md](documentation/grimorio.md) — wand-tip spells (Incantesimi Legati)
+Earlier design notes in [documentation/rulebook/v1/](documentation/rulebook/v1/) and [documentation/spells_ideas.md](documentation/spells_ideas.md) are superseded brainstorm material, kept for history — not authoritative.
 
 ## Architecture
 

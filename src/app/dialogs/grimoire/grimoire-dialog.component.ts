@@ -9,10 +9,12 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import type { Spell } from '../../models/spell.model';
 import { SPELL_CATALOG } from '../../data/spells';
 
+// Residuo Arcano excluded on purpose — it's a wildcard, not an element, and no
+// spell formula involves it (for now).
 const FILTER_ELEMENTS: readonly Element[] = [
   'fire', 'water', 'air', 'earth',
   'thunder', 'ice', 'poison', 'lava',
-  'light', 'dark', 'residium',
+  'light', 'dark',
 ];
 
 @Component({

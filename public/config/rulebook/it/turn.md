@@ -1,32 +1,37 @@
 # Struttura del Turno
 
-Ogni turno si articola in quattro fasi eseguite nell'ordine:
+Il turno si articola in sei fasi, sempre nello stesso ordine.
 
-## 1. Raccolta
+## 1. Attesa
 
-Scegli *una sola* opzione:
+Attendi che il turno dell'avversario termini.
 
-- **Ottieni mana** — riempie il tuo pool fino al limite massimo della bacchetta
-- **Pesca 1 carta Elemento Base** — va direttamente nei tuoi scarti personali (non in mano)
+## 2. Preparazione
 
-Non è possibile fare entrambe nello stesso turno.
+Vengono risolti gli effetti di inizio turno:
 
-## 2. Gioco delle Carte
+- vengono inflitti i danni da veleno;
+- le carte Congelamento pescate si sciolgono (vengono rimosse dal gioco).
 
-Puoi eseguire una o più delle seguenti azioni, nell'ordine che preferisci:
+## 3. Raccolta
 
-- **Lanciare un incantesimo** dalla mano, pagando il costo in mana
-- **Raccogliere un Elemento Avanzato** dalla Fonte Arcana — scarta i componenti base dalla mano, ottieni l'avanzato negli scarti personali
-- **Preparare una formula** — scarta dalla mano gli elementi necessari, genera la carta incantesimo negli scarti personali
+Se lo desideri, puoi raccogliere risorse: peschi 2 carte dal mazzo comune, ne scegli una e scarti l'altra. La carta scelta va nella pila degli scarti del tuo mazzo — non in mano.
 
-> Se esegui una raccolta (base o avanzata) non puoi raccogliere mana nello stesso turno. Puoi comunque lanciare incantesimi se hai mana accumulato dai turni precedenti.
+> Quando un mazzo si esaurisce — il tuo, quello comune o quello avanzato — si ricompone rimescolando la propria pila degli scarti. Se è il tuo mazzo a rimescolarsi e sei avvelenato, il livello di avvelenamento si riduce di 1.
 
-## 3. Abilità Bacchetta
+## 4. Azione
 
-Puoi attivare l'abilità del **Corpo** della bacchetta, se la condizione è soddisfatta. Ogni abilità si può usare al massimo una volta per turno.
+Puoi, nell'ordine che preferisci:
 
-## 4. Fine Turno
+- combinare elementi per ottenere elementi avanzati o potenti dalla Fonte Arcana;
+- creare incantesimi dal Grimorio, se possiedi gli elementi della formula;
+- scegliere quali incantesimi in mano lanciare nella fase successiva, se puoi pagarne il costo;
+- conservare un elemento preso dalla mano nella punta della bacchetta.
 
-Se hai meno di 5 carte in mano, pesca dal tuo mazzo personale fino a tornare a 5.
+## 5. Incantesimo
 
-Puoi **scartare volontariamente** una o più carte prima di pescare, per accelerare la ricerca di carte specifiche.
+Vengono risolti gli effetti degli incantesimi scelti nella fase precedente (e di cui è stato pagato il costo). Gli incantesimi risolti vanno poi nella pila degli scarti.
+
+## 6. Fine
+
+Tutte le carte non utilizzate rimaste in mano vengono scartate. Peschi una nuova mano di 5 carte.

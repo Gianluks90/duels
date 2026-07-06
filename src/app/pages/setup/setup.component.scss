@@ -113,19 +113,11 @@
   &__footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     padding: var(--sp-3) var(--sp-5);
     border-bottom: none;
     border-left: none;
     border-right: none;
-  }
-
-  &__mana-preview {
-    font-size: 0.8rem;
-
-    strong {
-      color: var(--text-heading);
-    }
   }
 
   &__confirm {

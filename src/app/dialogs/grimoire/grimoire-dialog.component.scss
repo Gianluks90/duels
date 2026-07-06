@@ -185,25 +185,49 @@
     }
   }
 
+  &__spell-header {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    margin: 0 0 var(--sp-3);
+  }
+
   &__spell-name {
     font-family: var(--font-display);
     font-size: 2.2rem;
     color: var(--ink-heading);
     line-height: 1.05;
-    margin: 0 0 var(--sp-3);
+    margin: 0;
+    flex-grow: 1;
+  }
+
+  // Same dark-circle badge as the corner Mana badge on app-card (card.component.scss),
+  // so the cost reads consistently wherever Mana shows up.
+  &__mana-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.1rem;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: #212121;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    font-family: var(--font-ui);
+    font-size: 1.05rem;
+    // font-weight: 700;
+    color: #2f7fd0;
+    -webkit-text-stroke: 1px #8fd0ff;
+    text-shadow:
+      0 0 4px rgba(0, 0, 0, 0.9),
+      0 1px 2px rgba(0, 0, 0, 0.85);
+    user-select: none;
   }
 
   &__rule {
     height: 1px;
     background: var(--ink-line);
     margin: var(--sp-3) 0;
-  }
-
-  &__formula {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--sp-2);
   }
 
   &__formula-elements {
@@ -218,19 +242,6 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--ink-muted);
-  }
-
-  // Same treatment as the mana value on the vita panel (player-hud.component.scss).
-  &__mana-count {
-    font-family: var(--font-ui);
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #2f7fd0;
-    -webkit-text-stroke: 1.5px #8fd0ff;
-    text-shadow:
-      0 0 8px rgba(0, 0, 0, 0.9),
-      0 2px 3px rgba(0, 0, 0, 0.8);
-    flex-shrink: 0;
   }
 
   &__effect {

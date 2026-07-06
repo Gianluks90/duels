@@ -259,7 +259,7 @@
       inset 0 -3px 5px rgba(0, 0, 0, 0.55);
   }
 
-  // Mana + HP values, protruding above the bar together, sharing a baseline.
+  // HP value, protruding above the bar.
   &__values {
     position: absolute;
     right: 6px;
@@ -285,20 +285,6 @@
     &--interactive {
       cursor: pointer;
     }
-  }
-
-  // Same blue as the hp-bar's shield fill used to be, now that shield is silver instead —
-  // the gradient's vivid mid-tone, not its pale top highlight.
-  &__mana-value {
-    font-family: var(--font-ui);
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #2f7fd0;
-    cursor: pointer;
-    -webkit-text-stroke: 1.5px #8fd0ff;
-    text-shadow:
-      0 0 8px rgba(0, 0, 0, 0.9),
-      0 2px 3px rgba(0, 0, 0, 0.8);
   }
 }
 

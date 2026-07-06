@@ -12,6 +12,21 @@ export const ADVANCED_RECIPES: Record<AdvancedElement, [BaseElement, BaseElement
 
 export const SUPERIOR_FORMULA: BaseElement[] = ['fire', 'water', 'air', 'earth'];
 
+/** Mana value of each element — base elements are worth 1, advanced/superior 2, Residuo Arcano 0 (regolamento v2, 2.2/2.3/2.4/2.5). */
+export const ELEMENT_MANA: Record<Element, number> = {
+  fire: 1,
+  water: 1,
+  air: 1,
+  earth: 1,
+  thunder: 2,
+  poison: 2,
+  ice: 2,
+  lava: 2,
+  light: 2,
+  dark: 2,
+  residium: 0,
+};
+
 export function elementImagePath(element: Element): string {
   return `/cards/${element}.png`;
 }

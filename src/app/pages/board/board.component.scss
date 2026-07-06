@@ -67,6 +67,14 @@
     gap: 8px;
   }
 
+  // Mirrors __toolbar on the opposite corner — the only turn-level action in this milestone.
+  &__turn-control {
+    position: absolute;
+    top: var(--sp-2);
+    left: var(--sp-4);
+    z-index: 3;
+  }
+
   // ── Player meta (name + mana dots) ──────────────────────────────────────────
   &__meta {
     display: flex;
@@ -314,6 +322,69 @@
     color: var(--text-muted);
     line-height: 1.35;
     max-width: 260px;
+  }
+
+  // Wraps the mazzo comune deck so it's clickable during Raccolta — plain
+  // button reset, the visual feedback is entirely the glow below.
+  &__deck-trigger {
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: not-allowed;
+    opacity: 0.6;
+
+    &--active {
+      cursor: pointer;
+      opacity: 1;
+      box-shadow: 0 0 0 3px #d4a847, 0 0 18px 4px rgba(212, 168, 71, 0.5);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+    }
+  }
+
+  // Raccolta: the 2 drawn cards, waiting for the player to pick one to keep.
+  &__collect-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-4) var(--sp-6);
+    background: var(--bg-panel-raised);
+    border: 1px solid var(--border-gold);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  &__collect-prompt {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-heading);
+  }
+
+  &__collect-cards {
+    display: flex;
+    gap: var(--sp-4);
+  }
+
+  &__collect-card {
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &:hover {
+      transform: translateY(-6px);
+    }
   }
 
   // ── Wand panels (player + opponent) ─────────────────────────────────────────

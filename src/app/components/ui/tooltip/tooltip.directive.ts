@@ -36,6 +36,10 @@ let nextId = 0;
     '(focusin)': 'show()',
     '(focusout)': 'hide()',
     '(keydown.escape)': 'hide()',
+    // A click usually triggers an action elsewhere (e.g. opening a dialog) without
+    // moving the mouse or reliably blurring the trigger — without this the tooltip
+    // is left dangling, stuck open behind whatever the click just opened.
+    '(click)': 'hide()',
   },
 })
 export class TooltipDirective {

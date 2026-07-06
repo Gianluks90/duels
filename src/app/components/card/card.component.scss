@@ -13,17 +13,70 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
 }
 
+// Casts the frame's shadow onto the artwork underneath (a "boxed"/inset look).
+// A ::after (rather than the host's own box-shadow) so it paints on top of
+// .card__art, which otherwise fully occludes it edge-to-edge.
+:host::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
 // Artwork layer — fills the card
 .card__art {
   object-fit: cover;
 }
 
-// Icon layer — centered with breathing room, pops above the artwork
-.card__icon {
-  object-fit: contain;
-  padding: 18%;
+// Corner badges carved into the frame — Mana top-left (always the visible
+// corner even at heavy hand-fan overlap, see README), element icon bottom-right
+// (accessibility aid, not the primary read). Solid fill (not the artwork's
+// drop-shadow trick) so the number stays legible over any illustration.
+.card__badge {
+  position: absolute;
+  // Above the :host::after boxed-shadow overlay (which, being an ::after, paints
+  // on top of these otherwise) — without this its blur darkens the corners
+  // right where the badges sit, washing out the icon against its own circle.
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
   box-sizing: border-box;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9));
+  background: #212121;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+// Colored/outlined digit style (blue fill, light stroke, dark shadow) — a
+// recognizable "mana digit" look, scaled down to fit the badge.
+.card__badge--mana {
+  top: 3%;
+  left: 3%;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  line-height: 1;
+  color: #2f7fd0;
+  -webkit-text-stroke: 1px #8fd0ff;
+  text-shadow:
+    0 0 4px rgba(0, 0, 0, 0.9),
+    0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+.card__badge--element {
+  // Bigger than the shared 30% — the element icon is the one we want to read
+  // clearly at a glance, badge circle grows with it.
+  width: 42%;
+  bottom: 3%;
+  right: 3%;
+  object-fit: contain;
+  // % padding resolves against the containing block's width (the whole card,
+  // since this is absolutely positioned) — not against this badge's own 42%
+  // box. 8% here ≈ 20% of the badge's own width, which is the actual target.
+  padding: 8%;
 }
 
 // Header layer — compact icon + name, for when the card is mostly hidden behind another element

@@ -1,26 +1,28 @@
-# Mana e Sfere
+# Mana
 
-Il mana è rappresentato da **sfere** pescate da un sacchetto comune condiviso tra i due giocatori.
+Il Mana è la risorsa necessaria per lanciare gli incantesimi. Ogni elemento — base, avanzato o potente — ha un valore in mana:
 
-## Tipi di Sfera
+| Tipo di elemento | Valore mana |
+|---|---|
+| Base | 1 |
+| Avanzato | 2 |
+| Potente | 2 |
+| Residuo Arcano | 0 — non è un elemento |
 
-| Tipo | Valore mana | Effetto alla pesca |
-|------|------------|---------------------|
-| Base | 1 | Nessuno |
-| Prismatica | 2 | Nessuno |
-| Vitale | 1 | Ripristina 1 Punto Vita |
-| Caotica | 1 | Subisci 1 danno |
+Il mana non è un serbatoio che accumuli: **è il valore delle carte che hai in mano** in quel momento. Per lanciare un incantesimo ti serve in mano un valore di mana almeno pari al suo costo — le carte usate per pagarlo vengono scartate.
 
-Le sfere **Vitale** e **Caotica** attivano il loro effetto istantaneamente non appena vengono pescate, poi diventano mana normale da 1.
+## Mana Speciale
 
-## Limite massimo
+Su poche carte elemento base compaiono dei mana speciali: 2 copie ciascuno, 6 in totale.
 
-Il tuo limite di mana è la somma dei bonus dei tre pezzi della bacchetta. Con la configurazione base ogni pezzo contribuisce 2 mana, per un totale di **6**.
+### Prismatico
 
-## Raccolta del mana
+Vale 2 mana comuni fin da subito, invece di 1.
 
-Durante la fase di Raccolta puoi scegliere di raccogliere mana fino al tuo limite massimo. Il mana non utilizzato rimane disponibile nei turni successivi — accumularlo è una strategia valida.
+### Vitale
 
-## Costo degli incantesimi
+Ripristina 2 Punti Salute quando lo raccogli. Una volta applicato l'effetto, diventa un elemento con mana comune dal valore di 1.
 
-Ogni incantesimo ha un costo in mana che va pagato al momento del lancio. La sfera Prismatica vale 2 mana per il pagamento.
+### Caotico
+
+Infligge 2 danni al giocatore che lo raccoglie. Una volta applicato l'effetto, diventa un elemento con mana comune dal valore di 2.

@@ -23,13 +23,15 @@
     }
   },
 
+  "card": {
+    "manaAria": "{value} mana"
+  },
+
   "playerHud": {
     "settingsAria": "Game settings",
     "phaseAria": "Phase: {phase}",
     "opponentTurnAria": "Opponent's turn",
     "hpAria": "{name}: {value} hp out of {max}",
-    "manaAria": "Mana: {value} out of {max}",
-    "manaTooltip": "Mana available {value}",
     "hpTooltip": "Hit points: {current} + {shield} = {total}"
   },
 
@@ -61,13 +63,18 @@
       "avanzato": "Advanced",
       "description": "Combine and remove two or more base elements to get an advanced element",
       "recipeTooltip": "{name}: {a} + {b}",
-      "combineAction": "Combine: {a} + {b}"
+      "combineAction": "Combine: {a} + {b}",
+      "collectTooltip": "Draw 2 cards, keep 1 (Collection phase)",
+      "collectPrompt": "Choose which card to keep"
     },
     "toolbar": {
       "grimoireAria": "Open the Grimoire",
       "grimoireTooltip": "Grimoire",
       "rulebookAria": "Open the rulebook",
       "rulebookTooltip": "Rulebook"
+    },
+    "turn": {
+      "advance": "Next phase"
     }
   },
 
@@ -129,7 +136,6 @@
       "effectWith": "Protects from <strong>{element}</strong> · Vulnerable to <strong>{opposite}</strong>",
       "effectWithout": "No elemental protection"
     },
-    "manaPreview": "Mana available: {mana}",
     "confirm": "Confirm Wand",
     "saving": "Saving…",
     "ready": {

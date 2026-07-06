@@ -1,8 +1,9 @@
 import type { BaseElement } from './element.model';
+import { ELEMENT_MANA } from './element.model';
 import type { Card } from './card.model';
 import type { Wand } from './wand.model';
 
-export type PlayerId = 'p1' | 'p2';
+export type PlayerId = 'host' | 'guest';
 export type CardBackSkin = 'dark' | 'light';
 
 export interface PlayerTokens {
@@ -24,18 +25,14 @@ export interface PlayerState {
   wand: Wand;
 
   // Vita
-  hp: number;           // sfere rosse rimaste (guaribili), parte da 10
-  curseSlots: number;   // slot permanenti da danno non curabile, parte da 0
-                        // maxHp guaribile = 10 - curseSlots
-
-  // Mana
-  mana: number;         // mana corrente
-  maxMana: number;      // somma dei manaBonus dei tre pezzi della bacchetta
+  hp: number;           // Punti Salute correnti, parte da 20 (regolamento v2, 1.3)
 
   // Carte
   hand: Card[];         // max 5
   deck: Card[];
   discards: Card[];
+  /** Le 2 carte pescate in fase Raccolta, in attesa che il giocatore scelga quale tenere (regolamento 4.3). Persistito — non un semplice stato locale — così la scelta sopravvive a un mazzo appena rimescolato. */
+  pendingCollect: [Card, Card] | null;
 
   // Segnalini
   tokens: PlayerTokens;
@@ -54,4 +51,9 @@ export interface PlayerState {
   // Effetti attivi
   handRevealed: boolean;               // Occhio del Sole
   immuneToElement: BaseElement | null; // Abbraccio Radiante
+}
+
+/** Il mana non è un pool salvato: è la somma del valore delle carte in mano in quel momento (regolamento v2, 3.1). */
+export function computePlayerMana(hand: readonly Card[]): number {
+  return hand.reduce((sum, card) => sum + ELEMENT_MANA[card.element], 0);
 }

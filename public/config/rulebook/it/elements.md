@@ -1,45 +1,46 @@
 # Elementi
 
-Gli elementi sono il materiale grezzo della magia. Si raccolgono, si combinano e si trasformano in incantesimi.
+Ad eccezione del Residuo Arcano — un jolly, non un vero elemento — tutte le carte sono **elementi** e si dividono in tre categorie: **base**, **avanzato**, **potente**.
 
 ## Elementi Base
 
-| Elemento | Temi |
-|----------|------|
-| Fuoco | Danni diretti, distruzione, esplosioni |
-| Acqua | Guarigione, rallentamento, manipolazione |
-| Aria | Evasione, velocità, destabilizzazione |
-| Terra | Difesa, blocchi, protezioni |
+| Elemento | Mana |
+|---|---|
+| Fuoco | 1 |
+| Acqua | 1 |
+| Aria | 1 |
+| Terra | 1 |
 
-Ogni giocatore inizia con un mazzo di **10 carte**: 2 per ciascun elemento base + 2 casuali (con almeno 1 per tipo garantito).
+Si ottengono dal mazzo comune durante la fase di Raccolta.
 
 ## Elementi Avanzati
 
-Si ottengono combinando 2 elementi base dalla propria mano e raccogliendo la carta corrispondente dalla Fonte Arcana.
+Valgono 2 mana ciascuno e si ottengono combinando gli elementi base necessari, se la combinazione è visibile nella Fonte Arcana, durante la fase Azione.
 
-| Elemento | Formula | Effetto |
-|----------|---------|---------|
-| Fulmine | Fuoco + Aria | Danni che ignorano le difese |
-| Veleno | Acqua + Terra | Carta inserita nel mazzo avversario |
-| Ghiaccio | Acqua + Aria | Riduce le carte pescate dell'avversario |
-| Lava | Fuoco + Terra | Crea difese riflettenti |
+| Elemento | Formula |
+|---|---|
+| Ghiaccio | Acqua + Aria |
+| Tuono | Aria + Fuoco |
+| Lava | Fuoco + Terra |
+| Veleno | Terra + Acqua |
 
-> Una carta avanzata "vale" come tutte le sue componenti. I due elementi base usati per ottenerla vengono rimossi definitivamente dal gioco.
+Gli elementi avanzati danno accesso a incantesimi più potenti, che tendenzialmente applicano anche effetti speciali:
 
-## Elementi Superiori
+- **Ghiaccio** — gli incantesimi che lo includono possono applicare **Congelamento**: il bersaglio aggiunge carte Congelamento alla propria pila degli scarti, che occupano spazio e si sciolgono (vengono rimosse dal gioco) durante la fase di Preparazione.
+- **Tuono** — gli incantesimi che lo includono possono non finire mai negli scarti, tornando invece sul fondo del mazzo del giocatore.
+- **Lava** — gli incantesimi che lo includono possono consumare carte per alleggerire il mazzo, e sono noti per creare scudi ai Punti Salute.
+- **Veleno** — gli incantesimi che lo includono possono applicare **Avvelenamento**: il bersaglio subisce danni in fase di Preparazione in base al livello raggiunto; il livello si riduce di 1 ogni volta che il mazzo del giocatore avvelenato viene rimescolato dai propri scarti.
 
-**Luce** e **Tenebra** richiedono 1 carta per ciascun elemento base (4 in totale). Compaiono nella Fonte Arcana solo nella fase avanzata di gioco.
+## Elementi Potenti ed Esplosione Arcana
 
-- **Luce** — grandi cure, rimozione debuff, barriere
-- **Tenebra** — danni devastanti, effetti oscuri, controllo
+Luce e Tenebra valgono 2 mana ciascuno e si ottengono combinando Fuoco + Acqua + Aria + Terra nella Fonte Arcana.
+
+Quando due elementi potenti diversi si trovano nello stesso luogo — la tua mano, oppure la Fonte Arcana — avviene un'**esplosione elementale**: 1 danno al bersaglio (se accade in mano, solo a chi la possiede; se accade nella Fonte Arcana, a entrambi i giocatori).
 
 ## Residuo Arcano
 
-Si ottiene scartando dalla mano due elementi **opposti**: Fuoco + Acqua oppure Aria + Terra.
+Il Residuo Arcano non vale alcun mana e non è un elemento: non segue nessuna regola riferita agli elementi. Si ottiene combinando due elementi base opposti — Fuoco + Acqua, oppure Aria + Terra — durante la fase Azione.
 
-Appartiene a un mazzo separato (8 carte) ed è sempre disponibile in partita. Quando viene pescato può:
+Quando lo peschi hai un turno per usarlo, dopodiché si consuma. Fino ad allora vale come un qualsiasi elemento base ai fini di una combinazione.
 
-1. **Sostituire un elemento base** in una formula di incantesimo
-2. **Valere 2 mana aggiuntivi** durante la raccolta mana
-
-Se non viene usato nel turno in cui lo peschi, viene rimosso dal tuo mazzo.
+> **Consumare** e **Scartare** non sono la stessa cosa: una carta consumata torna sempre negli scarti del mazzo comune a cui appartiene (base o avanzato); una carta scartata torna sempre negli scarti del suo proprietario.

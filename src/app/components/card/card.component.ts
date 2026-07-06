@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, computed, inject } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import type { Element } from '../../models/element.model';
-import { elementImagePath, elementIconPath } from '../../models/element.model';
+import { elementImagePath, elementIconPath, ELEMENT_MANA } from '../../models/element.model';
 import { TranslationService } from '../../services/translation.service';
 
 @Component({
@@ -16,7 +16,10 @@ import { TranslationService } from '../../services/translation.service';
         <span class="card__header-label">{{ label() }}</span>
       </div>
     } @else {
-      <img class="card__icon" [ngSrc]="iconSrc()" alt="" aria-hidden="true" fill />
+      @if (showMana() && manaValue() > 0) {
+        <span class="card__badge card__badge--mana" [attr.aria-label]="manaAria()">{{ manaValue() }}</span>
+      }
+      <img class="card__badge card__badge--element" [src]="iconSrc()" alt="" aria-hidden="true" />
     }
   `,
   styleUrl: './card.component.scss',
@@ -35,14 +38,18 @@ export class CardComponent {
   readonly size = input<number>(40);
   /** Set on whichever card instance is expected to be the LCP element (e.g. the first hand card) — disables lazy loading and hints the browser to fetch it eagerly. */
   readonly priority = input<boolean>(false);
-  /** Shows a compact icon+name header instead of the centered icon overlay — for when the card is mostly hidden behind another element and only an edge peeks out. */
+  /** Shows a compact icon+name header instead of the corner badges — for when the card is mostly hidden behind another element and only an edge peeks out. */
   readonly header = input<boolean>(false);
   /** Which edge the header bar is pinned to. */
   readonly headerAlign = input<'top' | 'bottom'>('top');
+  /** Hides the Mana corner badge — for contexts where the card is rendered too small for it, or the cost is already shown elsewhere (e.g. the grimoire's formula cards). */
+  readonly showMana = input<boolean>(true);
 
   protected readonly height = computed(() => Math.round(this.size() * 1.5));
   protected readonly radius = computed(() => Math.min(Math.round(this.size() * 0.09), 10));
   protected readonly artSrc = computed(() => elementImagePath(this.element()));
   protected readonly iconSrc = computed(() => elementIconPath(this.element()));
   protected readonly label = computed(() => this.i18n.elementLabel(this.element()));
+  protected readonly manaValue = computed(() => ELEMENT_MANA[this.element()]);
+  protected readonly manaAria = computed(() => this.i18n.t('card.manaAria', { value: this.manaValue() }));
 }

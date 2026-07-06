@@ -59,8 +59,6 @@
         }
       </div>
       <div class="hud__values">
-        <span class="hud__mana-value" tabindex="0" [attr.aria-label]="manaAria()"
-              [appTooltip]="manaTooltip()" [tooltipPosition]="mirrored() ? 'bottom' : 'top'">{{ mana() }}</span>
         @if (hpTooltip(); as tip) {
           <span class="hud__hp-value hud__hp-value--interactive" tabindex="0" [appTooltip]="tip" [tooltipPosition]="mirrored() ? 'bottom' : 'top'">{{ displayedHp() }}</span>
         } @else {

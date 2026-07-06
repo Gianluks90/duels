@@ -10,23 +10,28 @@
     "contentUrl": "/config/rulebook/it/turn.md"
   },
   {
+    "id": "elements",
+    "title": "Elementi",
+    "contentUrl": "/config/rulebook/it/elements.md"
+  },
+  {
     "id": "source",
     "title": "Fonte Arcana",
     "contentUrl": "/config/rulebook/it/source.md"
   },
   {
     "id": "mana",
-    "title": "Mana e Sfere",
+    "title": "Mana",
     "contentUrl": "/config/rulebook/it/mana.md"
-  },
-  {
-    "id": "elements",
-    "title": "Elementi",
-    "contentUrl": "/config/rulebook/it/elements.md"
   },
   {
     "id": "wand",
     "title": "Bacchetta",
     "contentUrl": "/config/rulebook/it/wand.md"
+  },
+  {
+    "id": "spells",
+    "title": "Incantesimi",
+    "contentUrl": "/config/rulebook/it/spells.md"
   }
 ]
