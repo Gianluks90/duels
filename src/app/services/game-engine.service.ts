@@ -8,6 +8,7 @@ import type { PlayerId } from '../models/player.model';
 import { createInitialGameState } from '../game/deck-builder';
 import {
   advanceTurnPhase,
+  castSpell as castSpellReducer,
   combineElements as combineElementsReducer,
   combineSuperior as combineSuperiorReducer,
   combineResidue as combineResidueReducer,
@@ -83,6 +84,11 @@ export class GameEngineService {
   /** Avanza la fase del giocatore di turno lungo il ciclo delle 6 fasi; da 'fine' passa davvero il turno. */
   async advancePhase(gameId: string, role: PlayerId): Promise<void> {
     await this.mutate(gameId, state => advanceTurnPhase(state, role));
+  }
+
+  /** Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagando il costo con le carte indicate. L'effetto si risolve più avanti, al passaggio in fase Incantesimo (dentro advancePhase). */
+  async castSpell(gameId: string, role: PlayerId, spellCardId: string, paidCardIds: readonly string[]): Promise<void> {
+    await this.mutate(gameId, state => castSpellReducer(state, role, spellCardId, paidCardIds));
   }
 
   private async mutate(gameId: string, transform: (state: GameState) => GameState): Promise<void> {

@@ -6,10 +6,10 @@
 Vengono preparati i seguenti mazzi:
 - _Residuo Arcano_: 8 carte, posizionato scoperto nell'area comune;
 - _Mazzo comune_: 60 carte, posizionato coperto nell'area comune;
-- _Mazzo avanzato_: 20 carte (4 copie ciascuno di Ghiaccio, Veleno, Tuono e Lava, 16 carte totali; 2 copie ciascuno di Luce e Tenebra, 4 carte totali — di cui però 1 copia per elemento potente parte già negli scarti del mazzo avanzato, non tra le carte da rimescolare: bilancia la disponibilità totale di Luce/Tenebra, dato che ogni giocatore ne parte già con 1 copia a testa nel proprio mazzo personale, 1.2), posizionato coperto nell'area comune. Dal mazzo avanzato vengono rivelate subito 4 carte, disposte in fila accanto al mazzo: il mazzo coperto e le 4 carte rivelate formano insieme la _Fonte Arcana_.
+- _Mazzo avanzato_: 20 carte (4 copie ciascuno di Ghiaccio, Veleno, Tuono e Lava, 16 carte totali; 2 copie ciascuno di Luce e Tenebra, 4 carte totali), posizionato coperto nell'area comune. Dal mazzo avanzato vengono rivelate subito 4 carte, disposte in fila accanto al mazzo: il mazzo coperto e le 4 carte rivelate formano insieme la _Fonte Arcana_. Due delle 4 carte Luce e Tenebra sono nella pila degli scarti del mazzo avanzato fin dall'inizio, per includerle nel gioco prima va esaurito una volta il mazzo avanzato e rimescolati gli scarti.
 
 **1.2 - Preparazione dei mazzi dei giocatori**
-Il mazzo iniziale di un giocatore è composto dalle _carte iniziali_: 2 carte per ciascun elemento base, 1 carta elemento potente "Luce" e 1 carta elemento potente "Tenebra". Il mazzo viene mescolato e posizionato coperto nell'area del giocatore.
+Il mazzo iniziale di un giocatore è composto dalle _carte iniziali_: 2 carte per ciascun elemento base. Il mazzo viene mescolato e posizionato coperto nell'area del giocatore. Gli elementi potenti "Luce" e "Tenebra" non fanno parte del mazzo iniziale: si ottengono solo combinando nella Fonte Arcana (2.4), come qualunque altro elemento potente.
 
 **1.3 - Punti Salute**
 Ogni giocatore inizia la partita con 20 _Punti Salute_. Quando questi si riducono a 0 o meno, per qualsiasi motivo, vince la partita il giocatore che ne ha ancora almeno 1.

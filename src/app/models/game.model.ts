@@ -8,6 +8,8 @@ export type ExplosionLocation = 'hand' | 'fonte';
 export interface ExplosionEvent {
   location: ExplosionLocation;
   affectedRoles: readonly PlayerId[];
+  /** Le carte esattamente consumate (1 Luce + 1 Tenebra) — permette al client di mostrarne il vero volto invece di dedurre cos'è esploso confrontando la mano prima/dopo. */
+  cards: readonly Card[];
 }
 
 export interface GameState {

@@ -83,6 +83,9 @@
     },
     "turn": {
       "advance": "Prossima fase"
+    },
+    "hand": {
+      "castAction": "Lancia {name}"
     }
   },
 
@@ -194,6 +197,16 @@
     "navAria": "Sezioni regolamento"
   },
 
+  "castSpell": {
+    "dialogAria": "Lancia incantesimo",
+    "title": "Lancia {name}",
+    "closeAria": "Annulla",
+    "handListAria": "Carte disponibili per il pagamento",
+    "manaCounter": "{paid} / {cost} mana",
+    "cancel": "Annulla",
+    "confirm": "Conferma lancio"
+  },
+
   "gameSettings": {
     "title": "Impostazioni Partita",
     "closeAria": "Chiudi",
@@ -266,6 +279,14 @@
     "earth_shard": {
       "name": "Frammento di Terra",
       "flavorText": "Un frammento di terra può sembrare innocuo, ma se lanciato con forza, può diventare un proiettile letale. La natura è potente e imprevedibile."
+    },
+    "starter_bolt": {
+      "name": "Scintilla Iniziale",
+      "flavorText": "Il primo incantesimo che ogni mago impara — semplice, ma capace di lasciare il segno."
+    },
+    "starter_balm": {
+      "name": "Balsamo Iniziale",
+      "flavorText": "Un rimedio antico, tramandato a ogni mago fin dal primo giorno di apprendistato."
     }
   }
 }

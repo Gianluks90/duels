@@ -1,0 +1,25 @@
+<div class="cast-spell-dialog" role="dialog" aria-modal="true" [attr.aria-label]="'castSpell.dialogAria' | translate">
+  <header class="cast-spell-dialog__header">
+    <h2 class="t-heading cast-spell-dialog__title">{{ 'castSpell.title' | translate:{ name: spellName() } }}</h2>
+    <app-icon-button [icon]="closeIcon" [ariaLabel]="'castSpell.closeAria' | translate" [size]="32" (iconClick)="cancel()" />
+  </header>
+
+  <div class="cast-spell-dialog__body">
+    <ul class="cast-spell-dialog__hand" role="listbox" [attr.aria-label]="'castSpell.handListAria' | translate">
+      @for (card of payableHand; track card.id) {
+        <li class="cast-spell-dialog__hand-item" [class.cast-spell-dialog__hand-item--selected]="selectedIds().has(card.id)"
+            role="option" [attr.aria-selected]="selectedIds().has(card.id)" (click)="toggle(card.id)">
+          <app-card [element]="card.element" [manaBonus]="card.manaBonus ?? 0" [size]="56" />
+        </li>
+      }
+    </ul>
+
+    <div class="cast-spell-dialog__footer">
+      <span class="cast-spell-dialog__mana-counter">{{ 'castSpell.manaCounter' | translate:{ paid: totalPaid(), cost: spell()?.manaCost ?? 0 } }}</span>
+      <div class="cast-spell-dialog__actions">
+        <button class="btn btn--secondary" (click)="cancel()">{{ 'castSpell.cancel' | translate }}</button>
+        <button class="btn btn--primary" [disabled]="!canConfirm()" (click)="confirm()">{{ 'castSpell.confirm' | translate }}</button>
+      </div>
+    </div>
+  </div>
+</div>

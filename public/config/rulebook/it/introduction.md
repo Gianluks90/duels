@@ -20,7 +20,7 @@ Il mazzo coperto e le 4 carte rivelate formano insieme la **Fonte Arcana** (vedi
 
 ## Il tuo mazzo
 
-Il mazzo iniziale di un giocatore è composto dalle **carte iniziali**: 2 carte per ciascun elemento base (Fuoco, Acqua, Aria, Terra) e 1 carta per ciascun elemento potente (Luce, Tenebra) — 10 carte in totale, mescolate e tenute coperte nella tua area.
+Il mazzo iniziale di un giocatore è composto dalle **carte iniziali**: 2 carte per ciascun elemento base (Fuoco, Acqua, Aria, Terra) — 8 carte in totale, mescolate e tenute coperte nella tua area. Luce e Tenebra non ne fanno parte: si ottengono solo combinando nella Fonte Arcana, come ogni altro elemento potente.
 
 Subito dopo peschi 5 carte dal tuo mazzo: questa è la tua **mano iniziale**.
 

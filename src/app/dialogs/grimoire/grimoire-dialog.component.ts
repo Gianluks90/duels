@@ -90,8 +90,6 @@ export class GrimoireDialogComponent {
             return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
             return this.i18n.t('grimoire.effects.iceAdd', { amount });
-          case 'opponent_lose_mana':
-            return this.i18n.t('grimoire.effects.opponentLoseMana', { amount });
           case 'opponent_discard_random':
             return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
           case 'reveal_opponent_hand':

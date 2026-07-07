@@ -15,8 +15,6 @@ export type SpellEffectType =
   | 'poison_clear_self'
   | 'opponent_discard_random'
   | 'opponent_discard_hand'
-  | 'opponent_lose_mana'
-  | 'opponent_reduce_next_collect'
   | 'opponent_skip_collect'
   | 'reveal_opponent_hand'
   | 'element_immunity'

@@ -33,6 +33,8 @@ export interface PlayerState {
   discards: Card[];
   /** Le 2 carte pescate in fase Raccolta, in attesa che il giocatore scelga quale tenere (regolamento 4.3). Persistito — non un semplice stato locale — così la scelta sopravvive a un mazzo appena rimescolato. */
   pendingCollect: [Card, Card] | null;
+  /** Le carte incantesimo lanciate in fase Azione, in attesa di risoluzione al passaggio in fase Incantesimo (regolamento 5.2/5.3). Persistito, non locale, per lo stesso motivo di pendingCollect. */
+  pendingSpells: Card[];
 
   // Segnalini
   tokens: PlayerTokens;
@@ -57,6 +59,7 @@ export interface PlayerState {
 export function computePlayerMana(hand: readonly Card[]): number {
   return hand.reduce((sum, card) => {
     if (card.tier === 'freeze') return sum; // non-carta (2.3.1): nessun valore di mana
+    if (card.tier === 'spell') return sum; // un incantesimo non è un elemento (3.1): il suo `element` serve solo per l'arte
     return sum + ELEMENT_MANA[card.element] + (card.manaBonus ?? 0);
   }, 0);
 }

@@ -25,9 +25,58 @@
   pointer-events: none;
 }
 
+// Rotazione simulata: la larghezza si riduce a zero e ricresce intorno al centro
+// orizzontale, invece di un vero rotateY 3D. Usa la proprietà standalone `scale`
+// (non `transform: scale()`) apposta: un chiamante può già avere impostato il
+// proprio `transform` inline (es. il ventaglio della mano) — `scale` si compone
+// con esso invece di sovrascriverlo, stessa idea di `--vanishing`/`--exploding`
+// in board.component.scss. Il volto mostrato si scambia a metà (vedi
+// CARD_FLIP_HALF_MS in card.component.ts), esattamente quando la carta è invisibile.
+:host(.card--flipping) {
+  animation: card-flip 300ms ease;
+}
+
+@keyframes card-flip {
+  0%, 100% {
+    scale: 1 1;
+  }
+  50% {
+    scale: 0 1;
+  }
+}
+
 // Artwork layer — fills the card
 .card__art {
   object-fit: cover;
+}
+
+// Placeholder temporaneo per le carte incantesimo (nessuna arte propria ancora, regolamento 5) —
+// sfondo pergamena neutro con gradiente centrale + gettone scuro con l'icona bacchetta-stelle.
+.card__spell-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 42%, #f4e8c9 0%, #e2cd9c 55%, #cbae72 100%);
+}
+
+.card__spell-token {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  // Stesso sfondo/ombra dei gettoni negli angoli (.card__badge) — coerenza visiva tra i due.
+  background: #212121;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card__spell-icon {
+  width: 74%;
+  height: 74%;
 }
 
 // Corner badges carved into the frame — Mana top-left (always the visible
@@ -64,6 +113,13 @@
   text-shadow:
     0 0 4px rgba(0, 0, 0, 0.9),
     0 1px 2px rgba(0, 0, 0, 0.85);
+}
+
+// Un incantesimo TOGLIE mana (lo paghi scartando carte), non lo dà come un elemento — rosso invece
+// del blu standard di .card__badge--mana per segnalare subito la differenza, a colpo d'occhio.
+.card__badge--mana-cost {
+  color: #d02f2f;
+  -webkit-text-stroke: 1px #ff9d9d;
 }
 
 .card__badge--element {

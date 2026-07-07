@@ -83,6 +83,9 @@
     },
     "turn": {
       "advance": "Next phase"
+    },
+    "hand": {
+      "castAction": "Cast {name}"
     }
   },
 
@@ -194,6 +197,16 @@
     "navAria": "Rulebook sections"
   },
 
+  "castSpell": {
+    "dialogAria": "Cast a spell",
+    "title": "Cast {name}",
+    "closeAria": "Cancel",
+    "handListAria": "Cards available as payment",
+    "manaCounter": "{paid} / {cost} mana",
+    "cancel": "Cancel",
+    "confirm": "Confirm cast"
+  },
+
   "gameSettings": {
     "title": "Game Settings",
     "closeAria": "Close",
@@ -266,6 +279,14 @@
     "earth_shard": {
       "name": "Earth Shard",
       "flavorText": "A shard of earth may look harmless, but thrown with enough force, it becomes a lethal projectile. Nature is powerful and unpredictable."
+    },
+    "starter_bolt": {
+      "name": "Starter Spark",
+      "flavorText": "The first spell every mage learns — simple, but still leaves a mark."
+    },
+    "starter_balm": {
+      "name": "Starter Balm",
+      "flavorText": "An ancient remedy, passed down to every mage since their first day of apprenticeship."
     }
   }
 }

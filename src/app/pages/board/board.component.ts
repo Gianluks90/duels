@@ -28,12 +28,15 @@ import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/ac
 import { GameSettingsDialogComponent } from '../../dialogs/game-settings/game-settings-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
+import { CastSpellDialogComponent, type CastSpellDialogData } from '../../dialogs/cast-spell/cast-spell-dialog.component';
 import type { BaseElement, Element, AdvancedElement, SuperiorElement } from '../../models/element.model';
 import { ADVANCED_RECIPES, SUPERIOR_FORMULA } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { Card } from '../../models/card.model';
 import type { PlayerId, PlayerState } from '../../models/player.model';
+import { computePlayerMana } from '../../models/player.model';
+import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -86,13 +89,18 @@ const EXPLOSION_GHOST_DURATION_MS = 700;
 /** Durata del lampo + scossa sull'intera riga della Fonte Arcana quando un'Esplosione elementale (2.4) avviene lì — deve combaciare con @keyframes fonte-explode in board.component.scss. */
 const FONTE_EXPLOSION_DURATION_MS = 500;
 
-/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione non finisce.
- *  `kind` sceglie l'animazione CSS: 'expiry' per Congelamento/Residuo (lift + fade), 'explosion' per Esplosione elementale (2.4, lampo + scossa). */
+/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione (lift + fade) non finisce — Congelamento/Residuo (Card.expiresAt). L'Esplosione elementale (2.4) ha un proprio meccanismo dedicato, vedi handExplosions più sotto. */
 interface VanishingGhost {
   card: Card;
   index: number;
   total: number;
-  kind: 'expiry' | 'explosion';
+  kind: 'expiry';
+}
+
+/** Esplosione elementale (2.4) risolta in mano — le 2 carte (1 Luce + 1 Tenebra) prese direttamente dall'evento, non dedotte confrontando la mano prima/dopo (impossibile: si consumano nella stessa transazione atomica in cui entrano in mano, il client non vede mai lo stato intermedio). */
+interface HandExplosion {
+  role: PlayerId;
+  cards: readonly Card[];
 }
 
 @Component({
@@ -345,8 +353,16 @@ export class BoardComponent implements OnInit {
   /** Carte "temporanee" già sparite da playerHand() ma non ancora mostrate come tali (es. Congelamento, sciolto in modo atomico dentro l'endTurn dell'avversario — il nostro client la vede già sparita, senza un "prima" da segnare proattivamente) — restano a video come ghost nella loro vecchia posizione finché l'animazione non finisce. */
   protected readonly vanishingGhosts = signal<readonly VanishingGhost[]>([]);
   private lastKnownHand: Card[] = [];
-  /** Evita di processare due volte lo stesso batch di Esplosione elementale (2.4) nell'effect di diff della mano sotto. */
+
+  /** Esplosioni elementali (2.4) risolte in una mano nell'ultimo batch — una entry per ruolo colpito, con le carte vere prese dall'evento (vedi HandExplosion sopra). Popolata dall'effect dedicato sotto, non dal diff di playerHand(): le carte si consumano nella stessa transazione in cui entrano in mano, quindi non compaiono mai in un render precedente da cui poterle dedurre. */
+  protected readonly handExplosions = signal<readonly HandExplosion[]>([]);
+  /** true per un attimo dopo la comparsa di handExplosions() — pilota il flip di rivelazione (CardComponent.revealed) delle carte coinvolte, invece di mostrarle già scoperte di scatto. */
+  protected readonly handExplosionRevealed = signal(false);
+  /** Evita di riprocessare due volte lo stesso batch nell'effect dedicato sotto. */
   private lastProcessedHandExplosionBatchId: number | null = null;
+
+  protected readonly playerHandExplosion = computed(() => this.handExplosions().find(e => e.role === this.myRole()) ?? null);
+  protected readonly opponentHandExplosion = computed(() => this.handExplosions().find(e => e.role === this.opponentRole()) ?? null);
 
   /** true per la durata del lampo + scossa quando un'Esplosione elementale (2.4) avviene in Fonte Arcana (danneggia entrambi i giocatori, quindi non è legata a un ruolo). */
   protected readonly fonteExploding = signal(false);
@@ -447,45 +463,44 @@ export class BoardComponent implements OnInit {
       }
 
       const surprises = goneWithIndex.filter(({ card }) => card.expiresAt && !alreadyShown.has(card.id));
-
-      // Esplosione elementale (2.4): Luce+Tenebra sparite dalla mano insieme a un evento 'hand' per
-      // questo ruolo nell'ULTIMO batch (non ancora processato) — il gate sul batch evita di scambiare
-      // uno scarto Luce/Tenebra qualunque (es. fine turno) per un'esplosione.
-      const s = this.state();
-      const role = this.myRole();
-      const isNewExplosionBatch = !!s && s.explosionBatchId !== this.lastProcessedHandExplosionBatchId;
-      const hasHandExplosionForMe = isNewExplosionBatch && !!role &&
-        s!.lastExplosions.some(e => e.location === 'hand' && e.affectedRoles.includes(role));
-      if (isNewExplosionBatch) this.lastProcessedHandExplosionBatchId = s!.explosionBatchId;
-
-      const explosionSurprises = hasHandExplosionForMe
-        ? goneWithIndex.filter(({ card }) => card.element === 'light' || card.element === 'dark')
-        : [];
-
-      if (surprises.length === 0 && explosionSurprises.length === 0) return;
+      if (surprises.length === 0) return;
 
       const total = previous.length;
-      const ghosts: VanishingGhost[] = [
-        ...surprises.map(({ card, index }) => ({ card, index, total, kind: 'expiry' as const })),
-        ...explosionSurprises.map(({ card, index }) => ({ card, index, total, kind: 'explosion' as const })),
-      ];
+      const ghosts: VanishingGhost[] = surprises.map(({ card, index }) => ({ card, index, total, kind: 'expiry' as const }));
       this.vanishingGhosts.update(list => [...list, ...ghosts]);
 
-      if (surprises.length > 0) {
-        const ids = surprises.map(({ card }) => card.id);
-        const timer = setTimeout(() => {
-          this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
-        }, VANISH_DURATION_MS);
-        this.destroyRef.onDestroy(() => clearTimeout(timer));
-      }
+      const ids = surprises.map(({ card }) => card.id);
+      const timer = setTimeout(() => {
+        this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
+      }, VANISH_DURATION_MS);
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
+    });
 
-      if (explosionSurprises.length > 0) {
-        const ids = explosionSurprises.map(({ card }) => card.id);
-        const timer = setTimeout(() => {
-          this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
-        }, EXPLOSION_GHOST_DURATION_MS);
-        this.destroyRef.onDestroy(() => clearTimeout(timer));
-      }
+    // Esplosione elementale (2.4) in una mano: le carte vere arrivano direttamente dall'evento
+    // (ExplosionEvent.cards), non da un diff — vedi il commento su HandExplosion sopra sul perché
+    // il diff non può funzionare qui. Rivela le carte con un breve ritardo (handExplosionRevealed)
+    // così il flip stesso comunica "ecco cos'è esploso", poi lampo+scossa (stessa animazione CSS
+    // della Fonte) e sparizione. Vale sia per la propria mano sia per quella dell'avversario: prima
+    // d'ora le carte dell'avversario non erano mai visibili, ora lo sono per questo istante.
+    effect(() => {
+      const s = this.state();
+      if (!s || s.explosionBatchId === this.lastProcessedHandExplosionBatchId) return;
+      this.lastProcessedHandExplosionBatchId = s.explosionBatchId;
+
+      const events = s.lastExplosions.filter(e => e.location === 'hand');
+      if (events.length === 0) return;
+
+      this.handExplosions.set(events.map(e => ({ role: e.affectedRoles[0], cards: e.cards })));
+      this.handExplosionRevealed.set(false);
+
+      const revealTimer = setTimeout(() => this.handExplosionRevealed.set(true), 100);
+      this.destroyRef.onDestroy(() => clearTimeout(revealTimer));
+
+      const clearTimer = setTimeout(() => {
+        this.handExplosions.set([]);
+        this.handExplosionRevealed.set(false);
+      }, EXPLOSION_GHOST_DURATION_MS);
+      this.destroyRef.onDestroy(() => clearTimeout(clearTimer));
     });
 
     // Esplosione elementale (2.4) in Fonte Arcana: danneggia entrambi i giocatori, non è legata a
@@ -652,6 +667,64 @@ export class BoardComponent implements OnInit {
     }));
   }
 
+  /** Regolamento 5.2: lancia una carta incantesimo dalla mano — solo in Azione, nel proprio turno. Niente voci per le carte che non sono incantesimi. */
+  protected handCardMenuItems(card: Card): ActionMenuItem[] {
+    if (card.tier !== 'spell' || !this.isPlayerTurn() || this.state()?.phase !== 'azione') return [];
+    const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
+    if (!spell) return [];
+
+    const payableHand = this.playerHand().filter(c => c.id !== card.id && c.tier !== 'spell' && c.tier !== 'freeze');
+    return [{
+      label: this.i18n.t('board.hand.castAction', { name: this.i18n.t(`spells.${spell.id}.name`) }),
+      action: () => this.openCastSpellDialog(card, payableHand),
+      disabled: computePlayerMana(payableHand) < spell.manaCost,
+    }];
+  }
+
+  /** Apre il dialog di pagamento e lancia davvero l'incantesimo solo se il giocatore conferma una selezione (annullare chiude senza risultato, vedi CastSpellDialogComponent). */
+  protected openCastSpellDialog(card: Card, payableHand: Card[]): void {
+    const role = this.myRole();
+    if (!role) return;
+
+    this.dialog.open<string[] | undefined, CastSpellDialogData>(CastSpellDialogComponent, {
+      data: { spellCard: card, payableHand },
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    }).closed.subscribe(paidCardIds => {
+      if (paidCardIds?.length) void this.gameEngine.castSpell(this.gameId(), role, card.id, paidCardIds);
+    });
+  }
+
+  /** Nome tradotto dell'incantesimo rappresentato da questa carta — stringa vuota se non è (più) una carta incantesimo valida. */
+  protected spellName(card: Card): string {
+    if (!card.spellId) return '';
+    return this.i18n.t(`spells.${card.spellId}.name`);
+  }
+
+  /** Solo damage/heal — gli unici 2 SpellEffectType risolti oggi (vedi resolveSpells in turn-engine.ts). Riusa le stesse chiavi i18n del grimorio per restare coerente col testo mostrato lì. */
+  protected spellEffectSummary(card: Card): string {
+    const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
+    if (!spell) return '';
+    return spell.effects.map(e => {
+      const amount = e.amount ?? 1;
+      switch (e.type) {
+        case 'damage': return this.i18n.t('grimoire.effects.damage', { amount });
+        case 'heal': return this.i18n.t('grimoire.effects.heal', { amount });
+        default: return e.type;
+      }
+    }).join(' ');
+  }
+
+  /** null se il dizionario non ha una voce flavorText per questo incantesimo (t() ricade sulla chiave grezza). */
+  protected spellFlavor(card: Card): string | null {
+    if (!card.spellId) return null;
+    const key = `spells.${card.spellId}.flavorText`;
+    const text = this.i18n.t(key);
+    return text === key ? null : text;
+  }
+
   /** "Resistenza ai danni da Fuoco, vulnerabilità ai danni da Acqua" — or the empty-socket fallback. */
   protected bodyEffectText(el: BaseElement | null): string {
     if (!el) return this.i18n.t('board.wand.bodyEffectEmpty');
@@ -671,7 +744,8 @@ export class BoardComponent implements OnInit {
   private hasAllBaseCards(elements: readonly BaseElement[]): boolean {
     const hand = [...this.playerHand()];
     for (const el of elements) {
-      const exactIndex = hand.findIndex(card => card.element === el);
+      // tier === 'base' esclude una carta magia (Card.spellId) che riusa lo stesso elemento solo per la propria arte.
+      const exactIndex = hand.findIndex(card => card.element === el && card.tier === 'base');
       if (exactIndex !== -1) {
         hand.splice(exactIndex, 1);
         continue;
@@ -712,7 +786,8 @@ export class BoardComponent implements OnInit {
   protected handCardHighlight(el: Element): 'gold' | 'blue' | null {
     const recipe = this.hoveredRecipe();
     if (!recipe) return null;
-    const hand = this.playerHand().map(card => card.element);
+    // Esclude le carte magia (tier 'spell'): riusano un elemento base solo per la propria arte, non sono una base vera.
+    const hand = this.playerHand().filter(card => card.tier === 'base').map(card => card.element);
 
     if (recipe.kind === 'fixed') {
       const [a, b] = recipe.pair;

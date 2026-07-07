@@ -25,4 +25,19 @@ export const SPELL_CATALOG: Spell[] = [
     manaCost: 2,
     effects: [{ type: 'damage', amount: 1 }],
   },
+  // formula: [] — non ottenibili dal flusso di creazione del grimorio (regolamento 5.1, non ancora
+  // implementato): queste 2 sono seminate direttamente nel mazzo iniziale di ogni giocatore (vedi
+  // deck-builder.ts), un'eccezione dichiarata alla regola "ogni incantesimo si crea".
+  {
+    id: 'starter_bolt',
+    formula: [],
+    manaCost: 3,
+    effects: [{ type: 'damage', amount: 2 }],
+  },
+  {
+    id: 'starter_balm',
+    formula: [],
+    manaCost: 3,
+    effects: [{ type: 'heal', amount: 1 }],
+  },
 ];

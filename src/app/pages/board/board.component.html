@@ -44,6 +44,18 @@
                [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
                aria-hidden="true"></div>
         }
+
+        <!-- Esplosione elementale (2.4) nella mano dell'avversario — le sue carte, altrimenti mai
+             visibili, si rivelano per l'istante dell'esplosione (vedi handExplosions in board.component.ts). -->
+        @if (opponentHandExplosion(); as ex) {
+          <div class="board__hand-explosion">
+            @for (card of ex.cards; track card.id) {
+              <app-card [class.board__hand-card--exploding]="handExplosionRevealed()"
+                        [element]="card.element" [manaBonus]="card.manaBonus ?? 0"
+                        [size]="handArcCardWidth" [revealed]="handExplosionRevealed()" aria-hidden="true" />
+            }
+          </div>
+        }
       </div>
 
       <div class="board__hand-box-side">
@@ -228,21 +240,44 @@
 
       <div class="board__hand-track" #playerHandTrack role="region" [attr.aria-label]="'board.handAriaPlayer' | translate">
         @for (card of playerHand(); track card.id) {
-          <app-card class="board__hand-card" [element]="card.element" [manaBonus]="card.manaBonus ?? 0" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
-                    [class.board__hand-card--gold]="handCardHighlight(card.element) === 'gold'"
-                    [class.board__hand-card--blue]="handCardHighlight(card.element) === 'blue'"
-                    [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
-                    [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
+          <!-- Tooltip ricco solo per le carte incantesimo — dichiarato qui (non dentro un @if) così il
+               ref #spellTip resta visibile alla app-card sotto, nella stessa iterazione. -->
+          <ng-template #spellTip>
+            <strong>{{ spellName(card) }}</strong>
+            <hr class="hand-spell-tooltip__rule" />
+            <p class="hand-spell-tooltip__effect">{{ spellEffectSummary(card) }}</p>
+            @if (spellFlavor(card); as flavor) {
+              <p class="hand-spell-tooltip__flavor"><em>{{ flavor }}</em></p>
+            }
+          </ng-template>
+          <app-action-menu [items]="handCardMenuItems(card)">
+            <app-card class="board__hand-card" [element]="card.element" [spellId]="card.spellId ?? null" [manaBonus]="card.manaBonus ?? 0" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
+                      [class.board__hand-card--gold]="card.tier === 'base' && handCardHighlight(card.element) === 'gold'"
+                      [class.board__hand-card--blue]="card.tier === 'base' && handCardHighlight(card.element) === 'blue'"
+                      [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
+                      [appTooltip]="card.tier === 'spell' ? spellTip : null" tooltipPosition="top"
+                      [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
+          </app-action-menu>
         }
         <!-- Carte "temporanee" (Congelamento/Residuo) già sparite da playerHand() ma ancora in animazione
              di sparizione — restano nella loro vecchia posizione (indice/conteggio congelati al momento
              in cui sono sparite) finché l'animazione non finisce, invece di sparire di scatto. -->
         @for (ghost of vanishingGhosts(); track ghost.card.id) {
-          <app-card class="board__hand-card" [element]="ghost.card.element" [manaBonus]="ghost.card.manaBonus ?? 0"
+          <app-card class="board__hand-card board__hand-card--vanishing" [element]="ghost.card.element" [manaBonus]="ghost.card.manaBonus ?? 0"
                     [showMana]="ghost.card.tier !== 'freeze'" [size]="handArcCardWidth"
-                    [class.board__hand-card--vanishing]="ghost.kind === 'expiry'"
-                    [class.board__hand-card--exploding]="ghost.kind === 'explosion'"
                     [style]="handCardStyle(ghost.index, ghost.total, playerHandTrackWidth(), false)" aria-hidden="true" />
+        }
+
+        <!-- Esplosione elementale (2.4) nella propria mano — le carte vere prese dall'evento, si
+             rivelano con un flip prima di lampeggiare/scuotere e sparire (vedi handExplosions). -->
+        @if (playerHandExplosion(); as ex) {
+          <div class="board__hand-explosion">
+            @for (card of ex.cards; track card.id) {
+              <app-card [class.board__hand-card--exploding]="handExplosionRevealed()"
+                        [element]="card.element" [manaBonus]="card.manaBonus ?? 0"
+                        [size]="handArcCardWidth" [revealed]="handExplosionRevealed()" aria-hidden="true" />
+            }
+          </div>
         }
       </div>
 

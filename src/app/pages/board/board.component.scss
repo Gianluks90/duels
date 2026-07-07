@@ -269,6 +269,20 @@
     }
   }
 
+  // Esplosione elementale (2.4) in mano: le 1-2 carte vere consumate, centrate sopra il ventaglio
+  // (non fanno parte di handCardStyle — non hanno una posizione naturale nel ventaglio, dato che
+  // spariscono nella stessa transazione in cui vi entrano, vedi HandExplosion in board.component.ts).
+  &__hand-explosion {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: flex;
+    gap: var(--sp-2);
+    pointer-events: none;
+  }
+
   // ── Fonte Arcana (middle zone internals) ────────────────────────────────────
   // A raised panel wrapping the 3 groups (Residuo | Base draw+scarti | Fonte
   // Arcana draw+slots+scarti), centered in the zone with a fixed gap.
@@ -586,4 +600,17 @@
   0%, 100% { filter: brightness(1); translate: 0 0; }
   15%, 45% { filter: brightness(1.9); translate: -5px 0; }
   30%, 60% { filter: brightness(1.9); translate: 5px 0; }
+}
+
+// Tooltip di una carta incantesimo in mano (board.component.html, ng-template #spellTip) — reso
+// dentro .tooltip (tooltip.component.html) via CDK overlay, non annidato sotto .board.
+.hand-spell-tooltip__rule {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--sp-1) 0;
+}
+
+.hand-spell-tooltip__flavor {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-muted);
 }

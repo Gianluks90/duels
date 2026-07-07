@@ -3,7 +3,10 @@ import type { BaseElement, Element } from '../models/element.model';
 import { SUPERIOR_FORMULA } from '../models/element.model';
 import type { ExplosionEvent, GameState } from '../models/game.model';
 import type { PlayerId, PlayerState } from '../models/player.model';
+import { computePlayerMana } from '../models/player.model';
+import type { SpellEffect } from '../models/spell.model';
 import { TURN_PHASES, type ActiveTurnPhase } from '../models/turn-phase.model';
+import { SPELL_CATALOG } from '../data/spells';
 import { drawUpTo, HAND_SIZE } from './deck-builder';
 
 function updatePlayer(state: GameState, role: PlayerId, patch: Partial<PlayerState>): GameState {
@@ -16,9 +19,10 @@ function updatePlayer(state: GameState, role: PlayerId, patch: Partial<PlayerSta
   };
 }
 
+/** Il controllo sul tier evita che una carta non-base che riusa un elemento base solo per la propria arte (es. una carta incantesimo, vedi Card.spellId) venga scambiata per la base vera in una combinazione. */
 function removeOneByElement(cards: readonly Card[], element: BaseElement): { removed: Card | null; rest: Card[] } {
   const rest = [...cards];
-  const index = rest.findIndex(c => c.element === element);
+  const index = rest.findIndex(c => c.element === element && c.tier === 'base');
   if (index === -1) return { removed: null, rest };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
@@ -104,6 +108,38 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
     discards: [...player.discards, kept],
     pendingCollect: null,
     hasCollectedThisTurn: true,
+  });
+}
+
+/**
+ * Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagandone subito il costo in mana
+ * scartando le carte indicate. L'effetto NON si applica qui — resta in sospeso in pendingSpells fino
+ * al passaggio in fase Incantesimo (vedi resolveSpells, agganciata in advanceTurnPhase), come da
+ * regolamento 4.4/4.5. No-op se: non sei di turno, non sei in Azione, la carta non è un incantesimo
+ * valido, o le carte di pagamento indicate non coprono il costo (tier 'spell'/'freeze' esclusi dal
+ * pagamento: non sono elementi, 3.1).
+ */
+export function castSpell(state: GameState, role: PlayerId, spellCardId: string, paidCardIds: readonly string[]): GameState {
+  if (role !== state.currentTurn || state.phase !== 'azione') return state;
+
+  const player = state.players[role];
+  const spellCard = player.hand.find(c => c.id === spellCardId && c.tier === 'spell');
+  if (!spellCard?.spellId) return state;
+
+  const spell = SPELL_CATALOG.find(s => s.id === spellCard.spellId);
+  if (!spell) return state;
+
+  const paidCards = paidCardIds.map(id => player.hand.find(c => c.id === id)).filter((c): c is Card => !!c);
+  if (paidCards.length !== paidCardIds.length) return state;
+  if (paidCards.some(c => c.tier === 'spell' || c.tier === 'freeze')) return state;
+  if (computePlayerMana(paidCards) < spell.manaCost) return state;
+
+  const spentIds = new Set([spellCardId, ...paidCardIds]);
+  return updatePlayer(state, role, {
+    hand: player.hand.filter(c => !spentIds.has(c.id)),
+    discards: [...player.discards, ...paidCards],
+    pendingSpells: [...player.pendingSpells, spellCard],
+    spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
   });
 }
 
@@ -243,7 +279,11 @@ export function advanceTurnPhase(state: GameState, role: PlayerId): GameState {
   const isLastPhase = currentIndex === playablePhases.length - 1;
 
   if (!isLastPhase) {
-    return { ...state, phase: playablePhases[currentIndex + 1] };
+    const nextPhase = playablePhases[currentIndex + 1];
+    const advanced: GameState = { ...state, phase: nextPhase };
+    // Fase Incantesimo (4.5): le magie lanciate in Azione (pendingSpells) si risolvono qui, subito —
+    // stesso schema di endTurn con Preparazione: chi osserva lo stato la vede già risolta.
+    return nextPhase === 'incantesimo' ? resolveSpells(advanced, role) : advanced;
   }
 
   return endTurn(state, role);
@@ -304,21 +344,61 @@ function resolvePreparation(state: GameState, target: PlayerId): GameState {
   return updatePlayer(state, target, { hp: player.hp - poisonDamage, hand });
 }
 
-function removeOneByExactElement(cards: readonly Card[], element: Element): Card[] {
+/** Applica un singolo effetto di un incantesimo lanciato — solo 'damage'/'heal' per ora (v1 minima); gli altri ~16 SpellEffectType non hanno ancora una risoluzione (no-op). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+function applySpellEffect(state: GameState, casterRole: PlayerId, effect: SpellEffect): GameState {
+  const opponentRole: PlayerId = casterRole === 'host' ? 'guest' : 'host';
+  switch (effect.type) {
+    case 'damage': {
+      const opponent = state.players[opponentRole];
+      return updatePlayer(state, opponentRole, { hp: opponent.hp - (effect.amount ?? 0) });
+    }
+    case 'heal': {
+      const caster = state.players[casterRole];
+      return updatePlayer(state, casterRole, { hp: caster.hp + (effect.amount ?? 0) });
+    }
+    default:
+      return state;
+  }
+}
+
+/**
+ * Fase Incantesimo (4.5/5.3): risolve le magie lanciate in Azione (pendingSpells) — applica gli
+ * effetti di ciascuna, poi le sposta tutte negli scarti del lanciatore e svuota pendingSpells.
+ * Agganciata dentro advanceTurnPhase, non da un endpoint separato.
+ */
+function resolveSpells(state: GameState, role: PlayerId): GameState {
+  const player = state.players[role];
+  if (player.pendingSpells.length === 0) return state;
+
+  let next = state;
+  for (const spellCard of player.pendingSpells) {
+    const spell = SPELL_CATALOG.find(s => s.id === spellCard.spellId);
+    if (!spell) continue;
+    for (const effect of spell.effects) next = applySpellEffect(next, role, effect);
+  }
+
+  const caster = next.players[role];
+  return updatePlayer(next, role, { discards: [...caster.discards, ...player.pendingSpells], pendingSpells: [] });
+}
+
+function extractOneByExactElement(cards: readonly Card[], element: Element): { removed: Card | null; rest: Card[] } {
   const rest = [...cards];
   const index = rest.findIndex(c => c.element === element);
-  if (index !== -1) rest.splice(index, 1);
-  return rest;
+  if (index === -1) return { removed: null, rest };
+  const [removed] = rest.splice(index, 1);
+  return { removed, rest };
 }
 
 /**
  * Esplosione elementale (2.4): quando Luce e Tenebra si trovano nello stesso luogo — la mano di un
  * giocatore, o la Fonte Arcana — esplodono: 1 danno al bersaglio (solo al proprietario se in mano,
- * a entrambi i giocatori se nella Fonte Arcana) e le 2 carte si consumano (spariscono, non vanno
- * scartate — altrimenti bisognerebbe tracciare quali coppie sono "già esplose" per non farle
- * ri-esplodere a ogni controllo successivo). In loop per il caso limite di più di 1 copia
- * compresente. Va richiamata dopo qualunque cambiamento che potrebbe aver introdotto un elemento
- * potente in una mano o in Fonte Arcana (inizio partita, endTurn, combineElements/combineSuperior).
+ * a entrambi i giocatori se nella Fonte Arcana) e le 2 carte si consumano. Per definizione di
+ * "consumare" (2.4, nota su Consumare/Scartare): tornano negli scarti del mazzo comune a cui
+ * appartengono, cioè il mazzo avanzato — non nella pila del proprietario (altrimenti, essendo mano
+ * e mazzo personale dello stesso giocatore, rientrerebbero prima o poi nella sua stessa mano e
+ * riesploderebbero all'infinito). In loop per il caso limite di più di 1 copia compresente. Va
+ * richiamata dopo qualunque cambiamento che potrebbe aver introdotto un elemento potente in una
+ * mano o in Fonte Arcana (inizio partita, endTurn, combineElements/combineSuperior).
  *
  * Ogni esplosione risolta qui è invisibile al client finché non arriva il nuovo stato (si è già
  * consumata, proprio come lo scioglimento del Congelamento) — `lastExplosions`/`explosionBatchId`
@@ -332,24 +412,37 @@ export function resolveElementalExplosions(state: GameState): GameState {
   for (const role of ['host', 'guest'] as const) {
     let player = next.players[role];
     while (player.hand.some(c => c.element === 'light') && player.hand.some(c => c.element === 'dark')) {
-      const hand = removeOneByExactElement(removeOneByExactElement(player.hand, 'light'), 'dark');
+      const { removed: light, rest: afterLight } = extractOneByExactElement(player.hand, 'light');
+      const { removed: dark, rest: hand } = extractOneByExactElement(afterLight, 'dark');
       next = updatePlayer(next, role, { hand, hp: player.hp - 1 });
+      next = { ...next, advancedDiscards: [...next.advancedDiscards, light!, dark!] };
       player = next.players[role];
-      events.push({ location: 'hand', affectedRoles: [role] });
+      events.push({ location: 'hand', affectedRoles: [role], cards: [light!, dark!] });
     }
   }
 
   while (next.fonteElementale.some(c => c.element === 'light') && next.fonteElementale.some(c => c.element === 'dark')) {
-    const fonteElementale = removeOneByExactElement(removeOneByExactElement(next.fonteElementale, 'light'), 'dark');
+    const { removed: light, rest: afterLight } = extractOneByExactElement(next.fonteElementale, 'light');
+    const { removed: dark, rest: afterDark } = extractOneByExactElement(afterLight, 'dark');
+
+    // 2.6: i 2 slot appena esplosi si rimpiazzano subito con 2 nuove carte pescate dal mazzo
+    // avanzato (stessa pescata di takeFromFonte) — restano vuoti solo nel caso limite in cui anche
+    // gli scarti del mazzo avanzato (già aggiornati con light/dark appena consumate) siano esauriti.
+    const { drawn: replacements, deck: advancedDeck, discards: advancedDiscards } =
+      drawUpTo(next.advancedDeck, [...next.advancedDiscards, light!, dark!], 2);
+    const fonteElementale = [...afterDark, ...replacements];
+
     next = {
       ...next,
       fonteElementale,
+      advancedDeck,
+      advancedDiscards,
       players: {
         host: { ...next.players.host, hp: next.players.host.hp - 1 },
         guest: { ...next.players.guest, hp: next.players.guest.hp - 1 },
       },
     };
-    events.push({ location: 'fonte', affectedRoles: ['host', 'guest'] });
+    events.push({ location: 'fonte', affectedRoles: ['host', 'guest'], cards: [light!, dark!] });
   }
 
   if (events.length === 0) return next;

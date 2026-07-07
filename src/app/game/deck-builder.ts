@@ -8,6 +8,17 @@ const BASE_ELEMENTS: readonly BaseElement[] = ['fire', 'water', 'air', 'earth'];
 const SUPERIOR_ELEMENTS: readonly SuperiorElement[] = ['light', 'dark'];
 
 /**
+ * Le 2 magie seminate nel mazzo iniziale di ogni giocatore (vedi buildPlayerStartingDeck) —
+ * un'eccezione dichiarata a "ogni incantesimo si crea" (5.1, non ancora implementato), al posto di
+ * Luce/Tenebra rimosse dalle carte iniziali. `element` è solo per l'arte (CardComponent) — usare
+ * sempre un elemento base: mai 'light'/'dark' (rientrerebbero nei controlli di resolveElementalExplosions).
+ */
+const STARTER_SPELLS: ReadonlyArray<{ spellId: string; element: BaseElement }> = [
+  { spellId: 'starter_bolt', element: 'fire' },
+  { spellId: 'starter_balm', element: 'water' },
+];
+
+/**
  * Placeholder — rules.md non specifica la ripartizione per elemento del mazzo comune (60 carte),
  * solo il totale. 15 per elemento è una scelta provvisoria (nessuna carta mana speciale inclusa,
  * dato che quell'effetto è fuori scope in questa milestone). Da rivedere insieme al mana speciale.
@@ -64,11 +75,11 @@ export function buildResiduumDeck(makeCard: CardFactory): Card[] {
   return repeat(makeCard, 'residium', 'residium', RESIDIUM_COUNT).map(card => ({ ...card, expiresAt: 'fine' as const }));
 }
 
-/** Carte iniziali di un giocatore (regolamento 1.2): 2 per elemento base + 1 Luce + 1 Tenebra. */
+/** Carte iniziali di un giocatore (regolamento 1.2): 2 per elemento base + le 2 magie di STARTER_SPELLS. Luce e Tenebra non ne fanno parte — si ottengono solo combinando nella Fonte Arcana (2.4), come qualunque altro elemento potente. */
 export function buildPlayerStartingDeck(makeCard: CardFactory): Card[] {
-  const base = BASE_ELEMENTS.flatMap(el => repeat(makeCard, 'base', el, STARTING_BASE_COUNT));
-  const superior = SUPERIOR_ELEMENTS.flatMap(el => repeat(makeCard, 'superior', el, 1));
-  return [...base, ...superior];
+  const bases = BASE_ELEMENTS.flatMap(el => repeat(makeCard, 'base', el, STARTING_BASE_COUNT));
+  const spells = STARTER_SPELLS.map(({ spellId, element }) => ({ ...makeCard('spell', element), spellId }));
+  return [...bases, ...spells];
 }
 
 export interface DrawResult {
@@ -114,6 +125,7 @@ function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactor
     deck,
     discards: [],
     pendingCollect: null,
+    pendingSpells: [],
     tokens: { shield: 0, poison: 0, ice: 0 },
     cardBack: 'dark',
     hasCollectedThisTurn: false,
@@ -131,10 +143,10 @@ export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): G
 
   const commonDeck = shuffle(buildCommonDeck(makeCard));
 
-  // 1.1: una copia per elemento potente parte già negli scarti del mazzo avanzato — bilancia la
-  // disponibilità totale di Luce/Tenebra, dato che ogni giocatore ne parte già con 1 copia a testa
-  // nel proprio mazzo personale (1.2). Tolte PRIMA di rimescolare, così Fonte Arcana e mazzo
-  // avanzato partono con una sola copia "attiva" per tipo, non due.
+  // 1.1: 1 copia di Luce e 1 di Tenebra (su 2 ciascuna nel mazzo avanzato) partono già negli scarti
+  // del mazzo avanzato, non tra le carte da rimescolare — tornano in gioco solo quando il mazzo
+  // avanzato si esaurisce una volta e i suoi scarti vengono rimescolati (1.7). Tolte PRIMA di
+  // rimescolare, così Fonte Arcana e mazzo avanzato partono con una sola copia "attiva" per tipo.
   const fullAdvancedDeck = buildAdvancedDeck(makeCard);
   const advancedDiscards: Card[] = [];
   const activeAdvancedDeck = [...fullAdvancedDeck];
