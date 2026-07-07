@@ -331,10 +331,14 @@
     cursor: not-allowed;
     opacity: 0.6;
 
+    // outline (not box-shadow) so outline-offset can give the ring some air instead of
+    // gluing it straight to the deck's own edge; the pulse is just the glow breathing.
     &--active {
       cursor: pointer;
       opacity: 1;
-      box-shadow: 0 0 0 3px #d4a847, 0 0 18px 4px rgba(212, 168, 71, 0.5);
+      outline: 2px solid #d4a847;
+      outline-offset: 5px;
+      animation: deck-trigger-pulse 2.6s ease-in-out infinite;
     }
 
     &:disabled {
@@ -520,5 +524,14 @@
   }
   40% {
     transform: scale(1.18);
+  }
+}
+
+@keyframes deck-trigger-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px 2px rgba(212, 168, 71, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 14px 4px rgba(212, 168, 71, 0.55);
   }
 }

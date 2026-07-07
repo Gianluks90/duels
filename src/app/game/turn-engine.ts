@@ -1,5 +1,6 @@
 import type { Card } from '../models/card.model';
 import type { BaseElement } from '../models/element.model';
+import { SUPERIOR_FORMULA } from '../models/element.model';
 import type { GameState } from '../models/game.model';
 import type { PlayerId, PlayerState } from '../models/player.model';
 import { TURN_PHASES } from '../models/turn-phase.model';
@@ -85,11 +86,34 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
 }
 
 /**
- * Fase Azione (2.3/2.4/2.6): combina 2 elementi base dalla mano per ottenere la carta rivelata nello
+ * Prende la carta rivelata nello slot indicato della Fonte Arcana e rimpiazza subito lo slot dal
+ * mazzo avanzato (rimescolando i suoi scarti se esaurito, caso limite: se anche quelli sono
+ * esauriti lo slot preso non si rimpiazza — la Fonte Arcana mostra una carta in meno finché
+ * qualcosa non torna negli scarti). Condivisa da combineElements e combineSuperior, che differiscono
+ * solo su quali/quante basi consumano dalla mano.
+ */
+function takeFromFonte(state: GameState, fonteSlotIndex: number): { state: GameState; obtained: Card } | null {
+  const obtained = state.fonteElementale[fonteSlotIndex];
+  if (!obtained) return null;
+
+  const { drawn, deck: advancedDeck, discards: advancedDiscards } = drawUpTo(state.advancedDeck, state.advancedDiscards, 1);
+  const replacement = drawn[0] ?? null;
+
+  const fonteElementale = [...state.fonteElementale];
+  if (replacement) {
+    fonteElementale[fonteSlotIndex] = replacement;
+  } else {
+    fonteElementale.splice(fonteSlotIndex, 1);
+  }
+
+  return { state: { ...state, fonteElementale, advancedDeck, advancedDiscards }, obtained };
+}
+
+/**
+ * Fase Azione (2.3/2.6): combina 2 elementi base dalla mano per ottenere la carta rivelata nello
  * slot indicato della Fonte Arcana. Le 2 basi vengono consumate negli scarti del mazzo comune, la
- * carta ottenuta va negli scarti del giocatore, lo slot si rimpiazza subito dal mazzo avanzato
- * (rimescolando i suoi scarti se esaurito). No-op se non sei di turno o se la mano non contiene gli
- * elementi richiesti.
+ * carta ottenuta va negli scarti del giocatore. No-op se non sei di turno o se la mano non contiene
+ * gli elementi richiesti.
  */
 export function combineElements(
   state: GameState,
@@ -106,33 +130,37 @@ export function combineElements(
   const { removed: cardB, rest: handAfterB } = removeOneByElement(handAfterA, b);
   if (!cardB) return state;
 
-  const obtained = state.fonteElementale[fonteSlotIndex];
-  if (!obtained) return state;
+  const taken = takeFromFonte(state, fonteSlotIndex);
+  if (!taken) return state;
 
-  const { drawn, deck: advancedDeck, discards: advancedDiscards } = drawUpTo(state.advancedDeck, state.advancedDiscards, 1);
-  const replacement = drawn[0] ?? null;
+  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, cardA, cardB] };
+  return updatePlayer(withTable, role, { hand: handAfterB, discards: [...player.discards, taken.obtained] });
+}
 
-  // Caso limite (2.6): se anche gli scarti del mazzo avanzato sono esauriti, lo slot preso non si
-  // rimpiazza — la Fonte Arcana mostra semplicemente una carta in meno finché qualcosa non torna negli scarti.
-  const fonteElementale = [...state.fonteElementale];
-  if (replacement) {
-    fonteElementale[fonteSlotIndex] = replacement;
-  } else {
-    fonteElementale.splice(fonteSlotIndex, 1);
+/**
+ * Fase Azione (2.4/2.6): combina i 4 elementi base della formula fissa (Fuoco+Acqua+Aria+Terra)
+ * dalla mano per ottenere l'elemento potente rivelato nello slot indicato della Fonte Arcana —
+ * stessa meccanica di combineElements, solo con 4 basi invece di 2. No-op se non sei di turno o se
+ * la mano non contiene tutti e 4 gli elementi richiesti.
+ */
+export function combineSuperior(state: GameState, role: PlayerId, fonteSlotIndex: number): GameState {
+  if (role !== state.currentTurn) return state;
+
+  const player = state.players[role];
+  let hand = player.hand;
+  const consumed: Card[] = [];
+  for (const element of SUPERIOR_FORMULA) {
+    const { removed, rest } = removeOneByElement(hand, element);
+    if (!removed) return state;
+    consumed.push(removed);
+    hand = rest;
   }
 
-  const withTable: GameState = {
-    ...state,
-    fonteElementale,
-    advancedDeck,
-    advancedDiscards,
-    commonDiscards: [...state.commonDiscards, cardA, cardB],
-  };
+  const taken = takeFromFonte(state, fonteSlotIndex);
+  if (!taken) return state;
 
-  return updatePlayer(withTable, role, {
-    hand: handAfterB,
-    discards: [...player.discards, obtained],
-  });
+  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumed] };
+  return updatePlayer(withTable, role, { hand, discards: [...player.discards, taken.obtained] });
 }
 
 /**

@@ -26,6 +26,13 @@
     position: absolute;
     inset: 0;
   }
+
+  // For when an external highlight (e.g. board.component's pulsing outline around the whole
+  // trigger button) already marks this pile — without this its own static border doubles up
+  // right next to that outline. border-color (not border: none) keeps the box's own size intact.
+  &--no-border {
+    border-color: transparent;
+  }
 }
 
 .deck__stack {
@@ -36,6 +43,23 @@
 .deck__top {
   position: absolute;
   inset: 0;
+}
+
+.deck__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border-radius: 6px;
+  padding: 4px;
+  text-align: center;
+
+  &--boxed {
+    border: 1px dashed var(--border-subtle);
+  }
 }
 
 .deck__info {

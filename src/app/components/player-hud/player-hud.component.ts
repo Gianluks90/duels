@@ -19,6 +19,8 @@ export class PlayerHudComponent {
   readonly health    = input.required<Health>();
   readonly mirrored  = input<boolean>(false);
   readonly width     = input<number>(264);
+  /** Google account photo (GameDoc.hostPhoto/guestPhoto) — null shows the name's initial instead, same fallback as the home page avatar. */
+  readonly photoUrl  = input<string | null>(null);
   /** Livello di Avvelenamento (0–3, regolamento 2.3.4) — un teschio per livello, accanto al valore di vita. */
   readonly poisonLevel = input<number>(0);
   /** true finché il giocatore ha ancora carte Congelamento non sciolte in circolazione (mano, mazzo o scarti — regolamento 2.3.1). */
@@ -32,6 +34,7 @@ export class PlayerHudComponent {
   protected readonly isPoisoned = computed(() => this.poisonLevel() > 0);
 
   protected readonly firstName = computed(() => firstNameOf(this.name()));
+  protected readonly avatarInitial = computed(() => (this.name().charAt(0) || '?').toUpperCase());
 
   /** Normally == max, so the bar behaves exactly as before; only stretches when shield pushes the total past max, so the shield segment is never clipped. */
   private readonly totalUnits = computed(() => Math.max(this.health().max, this.health().current + this.health().shield));

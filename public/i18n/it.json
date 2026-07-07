@@ -68,7 +68,10 @@
       "avanzato": "Avanzato",
       "description": "Combina e rimuovi due o più elementi base per ottenere un elemento avanzato",
       "recipeTooltip": "{name}: {a} + {b}",
+      "recipeTooltipSuperior": "{name}: {formula}",
       "combineAction": "Combina: {a} + {b}",
+      "combineActionSuperior": "Combina: {formula}",
+      "residuoTooltip": "Residuo Arcano: {pairA} / {pairB}",
       "collectTooltip": "Pesca 2 carte, tienine 1 (fase Raccolta)",
       "collectPrompt": "Scegli quale carta tenere"
     },

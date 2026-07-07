@@ -10,6 +10,7 @@
       [style.--visible-content-height.px]="visibleContentHeight"
       [width]="hudWidth"
       [name]="opponentName()"
+      [photoUrl]="opponentPhoto()"
       [health]="opponentHealth()"
       [poisonLevel]="opponentPoisonLevel()"
       [frozen]="opponentFrozen()"
@@ -26,9 +27,13 @@
          [style.left.px]="handBoxWandInset"
          [style.right.px]="handBoxHudInset">
 
+      <!-- Specchiato rispetto al riquadro del giocatore: là il mazzo è adiacente all'HUD (sinistra) e
+           gli scarti adiacenti alla bacchetta (destra); qui l'HUD è a destra e la bacchetta a sinistra,
+           quindi l'ordine si inverte per mantenere le stesse adiacenze relative. -->
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'board.deckRemaining' | translate:{ count: opponentDeckCount() }" tooltipPosition="bottom" />
+        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [topManaBonus]="opponentDiscardTopManaBonus()" [messy]="true" [showLabel]="false" [showCount]="false"
+                  [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
+                  [appTooltip]="'board.deckDiscarded' | translate:{ count: opponentDiscardCount() }" tooltipPosition="bottom" />
       </div>
 
       <div class="board__hand-track" #opponentHandTrack
@@ -41,8 +46,8 @@
       </div>
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'board.deckDiscarded' | translate:{ count: opponentDiscardCount() }" tooltipPosition="bottom" />
+        <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false"
+                  [appTooltip]="'board.deckRemaining' | translate:{ count: opponentDeckCount() }" tooltipPosition="bottom" />
       </div>
 
     </div>
@@ -56,13 +61,17 @@
 
       <div class="board__wand-title board__wand-title--opponent">{{ 'board.wand.title' | translate }}</div>
 
+      <!-- Ordine invertito rispetto al riquadro del giocatore (punta, asta, manico): là la bacchetta
+           è a destra quindi la punta (adiacente alla mano) è a sinistra e il manico all'estremità
+           destra dello schermo; qui la bacchetta è a sinistra, quindi manico all'estremità sinistra
+           e punta adiacente alla mano, per mantenere le stesse adiacenze relative. -->
       <div class="board__wand-panel">
-        <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentTip() ? elementColorVar(opponentTip()!) : null">
-          <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
+        <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentHandle() ? elementColorVar(opponentHandle()!) : null">
+          <p class="board__wand-card-effect">{{ handleEffectText(opponentHandle()) }}</p>
           <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
+          <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
         </div>
-        @if (opponentTip(); as el) {
+        @if (opponentHandle(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
                     [headerAlign]="'bottom'" [style.margin-top.px]="-wandPeekOverlap" />
         }
@@ -81,12 +90,12 @@
       </div>
 
       <div class="board__wand-panel">
-        <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentHandle() ? elementColorVar(opponentHandle()!) : null">
-          <p class="board__wand-card-effect">{{ handleEffectText(opponentHandle()) }}</p>
+        <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentTip() ? elementColorVar(opponentTip()!) : null">
+          <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
           <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
+          <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
         </div>
-        @if (opponentHandle(); as el) {
+        @if (opponentTip(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
                     [headerAlign]="'bottom'" [style.margin-top.px]="-wandPeekOverlap" />
         }
@@ -109,17 +118,20 @@
     <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
 
       <!-- Group 1: Residuo Arcano — a single pile, always face up -->
-      <div class="board__fonte-group" (mouseenter)="onResiduoHover()" (mouseleave)="onFonteHoverEnd()">
-        <app-deck [size]="fonteCardWidth" [count]="residuoDeckCount()" [faceUp]="true" [topElement]="'residium'" [label]="'board.fonte.residuo' | translate" />
+      <div class="board__fonte-group">
+        <app-action-menu [items]="residuoMenuItems()" (mouseenter)="onResiduoHover()" (mouseleave)="onFonteHoverEnd()">
+          <app-deck [size]="fonteCardWidth" [count]="residuoDeckCount()" [faceUp]="true" [topElement]="'residium'" [label]="'board.fonte.residuo' | translate"
+                    [appTooltip]="residuoTooltip()" tooltipPosition="top" />
+        </app-action-menu>
       </div>
 
       <!-- Group 2: Base — mazzo comune (face down, left, cliccabile in fase Raccolta) e scarti (face up, right, messy) -->
       <div class="board__fonte-group">
         <button type="button" class="board__deck-trigger" [class.board__deck-trigger--active]="canCollect()" [disabled]="!canCollect()"
                 (click)="drawTwo()" [appTooltip]="'board.fonte.collectTooltip' | translate" tooltipPosition="top">
-          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.base' | translate" />
+          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.base' | translate" [showBorder]="!canCollect()" />
         </button>
-        <app-deck [size]="fonteCardWidth" [count]="commonDiscardCount()" [faceUp]="true" [topElement]="commonDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
+        <app-deck [size]="fonteCardWidth" [count]="commonDiscardCount()" [faceUp]="true" [topElement]="commonDiscardTop()" [topManaBonus]="commonDiscardTopManaBonus()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
       </div>
 
       <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
@@ -141,7 +153,7 @@
             }
           </div>
 
-          <app-deck [size]="fonteCardWidth" [count]="advancedDiscardCount()" [faceUp]="true" [topElement]="advancedDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" />
+          <app-deck [size]="fonteCardWidth" [count]="advancedDiscardCount()" [faceUp]="true" [topElement]="advancedDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
         </div>
 
         <div class="board__fonte-footer">
@@ -188,6 +200,7 @@
       [style.--visible-content-height.px]="visibleContentHeight"
       [width]="hudWidth"
       [name]="playerName()"
+      [photoUrl]="playerPhoto()"
       [health]="playerHealth()"
       [poisonLevel]="playerPoisonLevel()"
       [frozen]="playerFrozen()"
@@ -220,7 +233,8 @@
       </div>
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [messy]="true" [showLabel]="false" [showCount]="false"
+        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [topManaBonus]="playerDiscardTopManaBonus()" [messy]="true" [showLabel]="false" [showCount]="false"
+                  [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
                   [appTooltip]="'board.deckDiscarded' | translate:{ count: playerDiscardCount() }" tooltipPosition="top" />
       </div>
 

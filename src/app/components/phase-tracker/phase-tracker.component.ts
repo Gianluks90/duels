@@ -26,14 +26,17 @@ export class PhaseTrackerComponent {
 
   readonly advance = output<void>();
 
-  protected readonly phases = TURN_PHASES;
+  /** 'attesa' esclusa dalla UI: ora che c'è un unico tracker condiviso (non uno per pannello), mostrare
+   *  un pallino sempre "fatto" per una fase che non è mai quella attiva non aggiunge informazione —
+   *  il turno mostrato parte da Preparazione. Resta comunque il primo valore in TURN_PHASES lato logica. */
+  protected readonly phases: readonly TurnPhase[] = TURN_PHASES.filter(p => p !== 'attesa');
   protected readonly turnLabel = computed(() =>
     this.i18n.t('phaseTracker.turnLabel', { name: firstNameOf(this.turnPlayerName()) }),
   );
-  private readonly currentIndex = computed(() => TURN_PHASES.indexOf(this.phase()));
+  private readonly currentIndex = computed(() => this.phases.indexOf(this.phase()));
 
   protected stepState(p: TurnPhase): StepState {
-    const index = TURN_PHASES.indexOf(p);
+    const index = this.phases.indexOf(p);
     if (index === this.currentIndex()) return 'active';
     return index < this.currentIndex() ? 'done' : 'future';
   }

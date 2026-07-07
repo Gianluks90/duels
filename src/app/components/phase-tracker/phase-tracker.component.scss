@@ -80,6 +80,8 @@
   animation: tracker-pulse 2s ease-in-out infinite;
 }
 
+// Opaque pill background — without it the connecting line (z-index: 0, but full-bleed
+// behind the whole row) shows straight through the letterforms instead of stopping at the dot.
 .tracker__step-label {
   font-family: var(--font-ui);
   font-size: 0.62rem;
@@ -88,11 +90,16 @@
   letter-spacing: 0.06em;
   color: var(--text-muted);
   white-space: nowrap;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
 }
 
 .tracker__step--active .tracker__step-label {
   color: var(--text-heading);
   font-weight: 700;
+  border-color: var(--border-gold);
 }
 
 .tracker__advance {

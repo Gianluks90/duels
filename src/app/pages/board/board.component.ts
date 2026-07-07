@@ -28,8 +28,8 @@ import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/ac
 import { GameSettingsDialogComponent } from '../../dialogs/game-settings/game-settings-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
-import type { BaseElement, Element, AdvancedElement } from '../../models/element.model';
-import { ADVANCED_RECIPES } from '../../models/element.model';
+import type { BaseElement, Element, AdvancedElement, SuperiorElement } from '../../models/element.model';
+import { ADVANCED_RECIPES, SUPERIOR_FORMULA } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { Card } from '../../models/card.model';
@@ -74,7 +74,10 @@ const FONTE_CARD_WIDTH = 76;
 const FONTE_GROUP_GAP = 32;
 
 /** What's currently hovered in the Fonte row — 'fixed' for an advanced card (one specific pair), 'opposite' for Residuo Arcano (any base + its opposite). */
-type HoverRecipe = { kind: 'fixed'; pair: readonly [BaseElement, BaseElement] } | { kind: 'opposite' };
+type HoverRecipe =
+  | { kind: 'fixed'; pair: readonly [BaseElement, BaseElement] }
+  | { kind: 'superior' }
+  | { kind: 'opposite' };
 
 @Component({
   selector: 'app-board',
@@ -188,19 +191,26 @@ export class BoardComponent implements OnInit {
 
   protected readonly advancedDeckCount = computed(() => this.state()?.advancedDeck.length ?? 0);
   protected readonly advancedDiscardCount = computed(() => this.state()?.advancedDiscards.length ?? 0);
-  protected readonly advancedDiscardTop = computed(() => this.topOf(this.state()?.advancedDiscards));
+  // Elementi avanzati/potenti non ricevono mai il bonus manico (solo le basi pescate dal mazzo comune, 1.4.3) — nessun topManaBonus qui.
+  protected readonly advancedDiscardTop = computed(() => this.topOf(this.state()?.advancedDiscards)?.element ?? null);
 
   protected readonly commonDeckCount = computed(() => this.state()?.commonDeck.length ?? 0);
   protected readonly commonDiscardCount = computed(() => this.state()?.commonDiscards.length ?? 0);
-  protected readonly commonDiscardTop = computed(() => this.topOf(this.state()?.commonDiscards));
+  private readonly commonDiscardTopCard = computed(() => this.topOf(this.state()?.commonDiscards));
+  protected readonly commonDiscardTop = computed(() => this.commonDiscardTopCard()?.element ?? null);
+  protected readonly commonDiscardTopManaBonus = computed(() => this.commonDiscardTopCard()?.manaBonus ?? 0);
 
   protected readonly playerDeckCount = computed(() => this.me()?.deck.length ?? 0);
   protected readonly playerDiscardCount = computed(() => this.me()?.discards.length ?? 0);
-  protected readonly playerDiscardTop = computed(() => this.topOf(this.me()?.discards));
+  private readonly playerDiscardTopCard = computed(() => this.topOf(this.me()?.discards));
+  protected readonly playerDiscardTop = computed(() => this.playerDiscardTopCard()?.element ?? null);
+  protected readonly playerDiscardTopManaBonus = computed(() => this.playerDiscardTopCard()?.manaBonus ?? 0);
 
   protected readonly opponentDeckCount = computed(() => this.opponentState()?.deck.length ?? 0);
   protected readonly opponentDiscardCount = computed(() => this.opponentState()?.discards.length ?? 0);
-  protected readonly opponentDiscardTop = computed(() => this.topOf(this.opponentState()?.discards));
+  private readonly opponentDiscardTopCard = computed(() => this.topOf(this.opponentState()?.discards));
+  protected readonly opponentDiscardTop = computed(() => this.opponentDiscardTopCard()?.element ?? null);
+  protected readonly opponentDiscardTopManaBonus = computed(() => this.opponentDiscardTopCard()?.manaBonus ?? 0);
 
   /** Le 2 carte pescate dal mazzo comune in attesa di scelta — solo locale, nessuna scrittura su Firestore finché non si sceglie quale tenere (regolamento 4.3). */
   protected readonly pendingCollect = computed(() => this.me()?.pendingCollect ?? null);
@@ -222,6 +232,18 @@ export class BoardComponent implements OnInit {
     const opponent = this.i18n.t('board.opponent');
     if (!doc) return opponent;
     return this.myRole() === 'host' ? (doc.guestName ?? opponent) : doc.hostName;
+  });
+
+  protected readonly playerPhoto = computed(() => {
+    const doc = this.gameDoc();
+    if (!doc) return null;
+    return this.myRole() === 'host' ? doc.hostPhoto : doc.guestPhoto;
+  });
+
+  protected readonly opponentPhoto = computed(() => {
+    const doc = this.gameDoc();
+    if (!doc) return null;
+    return this.myRole() === 'host' ? doc.guestPhoto : doc.hostPhoto;
   });
 
   protected readonly playerWand = computed<Wand | null>(() => {
@@ -409,27 +431,71 @@ export class BoardComponent implements OnInit {
     return `var(--el-${el})`;
   }
 
-  /** Recipe tooltip for an advanced card ("Fulmine: Fuoco + Aria") — null for elements with no 2-base recipe (base/superior/residium), so the directive stays silent. */
+  /** Recipe tooltip for an advanced ("Fulmine: Fuoco + Aria") or superior ("Luce: Fuoco + Acqua + Aria + Terra") card — null for base/residium, so the directive stays silent. */
   protected recipeTooltip(el: Element): string | null {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
-    if (!recipe) return null;
-    return this.i18n.t('board.fonte.recipeTooltip', {
-      name: this.i18n.elementLabel(el),
-      a: this.i18n.elementLabel(recipe[0]),
-      b: this.i18n.elementLabel(recipe[1]),
-    });
+    if (recipe) {
+      return this.i18n.t('board.fonte.recipeTooltip', {
+        name: this.i18n.elementLabel(el),
+        a: this.i18n.elementLabel(recipe[0]),
+        b: this.i18n.elementLabel(recipe[1]),
+      });
+    }
+
+    if (this.isSuperior(el)) {
+      return this.i18n.t('board.fonte.recipeTooltipSuperior', {
+        name: this.i18n.elementLabel(el),
+        formula: this.superiorFormulaLabel(),
+      });
+    }
+
+    return null;
   }
 
-  /** Regolamento v2, 2.3/2.6: scartare le 2 basi corrispondenti per prendere l'avanzata dalla Fonte. */
+  /** "Residuo Arcano: Fuoco + Acqua / Aria + Terra" (2.5) — le 2 coppie di elementi base opposti che lo producono. */
+  protected readonly residuoTooltip = computed(() =>
+    this.i18n.t('board.fonte.residuoTooltip', {
+      pairA: `${this.i18n.elementLabel('fire')} + ${this.i18n.elementLabel('water')}`,
+      pairB: `${this.i18n.elementLabel('air')} + ${this.i18n.elementLabel('earth')}`,
+    }),
+  );
+
+  /** Regolamento v2, 2.3/2.4/2.6: scartare le basi corrispondenti (2 per un avanzato, le 4 della formula fissa per un potente) per prendere la carta dalla Fonte. */
   protected fonteMenuItems(el: Element, slotIndex: number): ActionMenuItem[] {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
-    if (!recipe) return [];
-    const [a, b] = recipe;
-    return [{
+    if (recipe) {
+      const [a, b] = recipe;
+      return [{
+        label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
+        action: () => this.combineAdvanced(slotIndex, a, b),
+        disabled: !this.isPlayerTurn() || this.state()?.phase !== 'azione' || !this.hasAllBaseCards(recipe),
+      }];
+    }
+
+    if (this.isSuperior(el)) {
+      return [{
+        label: this.i18n.t('board.fonte.combineActionSuperior', { formula: this.superiorFormulaLabel() }),
+        action: () => this.combineSuperior(slotIndex),
+        disabled: !this.isPlayerTurn() || this.state()?.phase !== 'azione' || !this.hasAllBaseCards(SUPERIOR_FORMULA),
+      }];
+    }
+
+    return [];
+  }
+
+  /**
+   * Bottone Combina mostrato ma sempre disabilitato: ottenere un Residuo (2.5) richiede una pila di
+   * scarti dedicata e una regola di scadenza ("si consuma dopo un turno se non utilizzato") non
+   * ancora modellate in GameState — a differenza di fonteMenuItems non è ancora una riduzione pura
+   * di stato esistente. Mostra comunque le 2 coppie possibili, coerenti col tooltip.
+   */
+  protected residuoMenuItems(): ActionMenuItem[] {
+    const pairs: ReadonlyArray<readonly [BaseElement, BaseElement]> = [['fire', 'water'], ['air', 'earth']];
+    return pairs.map(([a, b]) => ({
       label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
-      action: () => this.combineAdvanced(slotIndex, a, b),
-      disabled: !this.isPlayerTurn() || this.state()?.phase !== 'azione' || !this.hasBaseCards(a, b),
-    }];
+      action: () => {},
+      disabled: true,
+    }));
   }
 
   /** "Resistenza ai danni da Fuoco, vulnerabilità ai danni da Acqua" — or the empty-socket fallback. */
@@ -447,17 +513,31 @@ export class BoardComponent implements OnInit {
     return this.i18n.t('board.wand.handleEffect', { element: this.i18n.elementLabel(el) });
   }
 
-  private hasBaseCards(a: BaseElement, b: BaseElement): boolean {
+  private hasAllBaseCards(elements: readonly BaseElement[]): boolean {
     const hand = this.playerHand().map(card => card.element);
-    const ia = hand.indexOf(a);
-    if (ia === -1) return false;
-    hand.splice(ia, 1);
-    return hand.includes(b);
+    for (const el of elements) {
+      const index = hand.indexOf(el);
+      if (index === -1) return false;
+      hand.splice(index, 1);
+    }
+    return true;
+  }
+
+  private isSuperior(el: Element): el is SuperiorElement {
+    return el === 'light' || el === 'dark';
+  }
+
+  private superiorFormulaLabel(): string {
+    return SUPERIOR_FORMULA.map(el => this.i18n.elementLabel(el)).join(' + ');
   }
 
   protected onFonteHover(el: Element): void {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
-    this.hoveredRecipe.set(recipe ? { kind: 'fixed', pair: recipe } : null);
+    if (recipe) {
+      this.hoveredRecipe.set({ kind: 'fixed', pair: recipe });
+      return;
+    }
+    this.hoveredRecipe.set(this.isSuperior(el) ? { kind: 'superior' } : null);
   }
 
   protected onResiduoHover(): void {
@@ -480,6 +560,11 @@ export class BoardComponent implements OnInit {
       return hand.includes(a) && hand.includes(b) ? 'gold' : 'blue';
     }
 
+    if (recipe.kind === 'superior') {
+      if (!SUPERIOR_FORMULA.includes(el as BaseElement)) return null;
+      return SUPERIOR_FORMULA.every(e => hand.includes(e)) ? 'gold' : 'blue';
+    }
+
     if (!(el in ELEMENT_OPPOSITES)) return null;
     const opposite = ELEMENT_OPPOSITES[el as BaseElement];
     return hand.includes(opposite) ? 'gold' : 'blue';
@@ -489,6 +574,12 @@ export class BoardComponent implements OnInit {
     const role = this.myRole();
     if (!role) return;
     await this.gameEngine.combineElements(this.gameId(), role, slotIndex, a, b);
+  }
+
+  private async combineSuperior(slotIndex: number): Promise<void> {
+    const role = this.myRole();
+    if (!role) return;
+    await this.gameEngine.combineSuperior(this.gameId(), role, slotIndex);
   }
 
   /** Fase Raccolta (4.3), primo passo: pesca 2 carte dal mazzo comune (il servizio rimescola se serve). */
@@ -522,8 +613,8 @@ export class BoardComponent implements OnInit {
     await this.gameEngine.advancePhase(this.gameId(), role);
   }
 
-  private topOf(cards: readonly Card[] | undefined): Element | null {
-    return cards && cards.length > 0 ? cards[cards.length - 1].element : null;
+  private topOf(cards: readonly Card[] | undefined): Card | null {
+    return cards && cards.length > 0 ? cards[cards.length - 1] : null;
   }
 
   private hasFreezeCards(player: PlayerState | null | undefined): boolean {

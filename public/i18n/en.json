@@ -68,7 +68,10 @@
       "avanzato": "Advanced",
       "description": "Combine and remove two or more base elements to get an advanced element",
       "recipeTooltip": "{name}: {a} + {b}",
+      "recipeTooltipSuperior": "{name}: {formula}",
       "combineAction": "Combine: {a} + {b}",
+      "combineActionSuperior": "Combine: {formula}",
+      "residuoTooltip": "Residuum: {pairA} / {pairB}",
       "collectTooltip": "Draw 2 cards, keep 1 (Collection phase)",
       "collectPrompt": "Choose which card to keep"
     },

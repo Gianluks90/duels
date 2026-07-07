@@ -14,7 +14,16 @@
 
     <!-- Name (+ settings, only on our own panel) -->
     <div class="hud__name-row">
-      <span class="hud__name t-heading">{{ firstName() }}</span>
+      <div class="hud__identity">
+        <span class="hud__avatar" aria-hidden="true">
+          @if (photoUrl(); as url) {
+            <img [src]="url" alt="" referrerpolicy="no-referrer" />
+          } @else {
+            <span>{{ avatarInitial() }}</span>
+          }
+        </span>
+        <span class="hud__name t-heading">{{ firstName() }}</span>
+      </div>
       @if (!mirrored()) {
         <button type="button" class="hud__settings" (click)="settingsClick.emit()" [attr.aria-label]="'playerHud.settingsAria' | translate">
           <span class="hud__settings-icon" aria-hidden="true"></span>

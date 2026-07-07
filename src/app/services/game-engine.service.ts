@@ -9,6 +9,7 @@ import { createInitialGameState } from '../game/deck-builder';
 import {
   advanceTurnPhase,
   combineElements as combineElementsReducer,
+  combineSuperior as combineSuperiorReducer,
   keepCard as keepCardReducer,
   startCollect as startCollectReducer,
 } from '../game/turn-engine';
@@ -55,6 +56,11 @@ export class GameEngineService {
   /** Fase Azione: combina 2 elementi base dalla mano per ottenere la carta rivelata in uno slot della Fonte Arcana. */
   async combineElements(gameId: string, role: PlayerId, fonteSlotIndex: number, a: BaseElement, b: BaseElement): Promise<void> {
     await this.mutate(gameId, state => combineElementsReducer(state, role, fonteSlotIndex, a, b));
+  }
+
+  /** Fase Azione: combina i 4 elementi base (Fuoco+Acqua+Aria+Terra) per ottenere l'elemento potente rivelato in uno slot della Fonte Arcana. */
+  async combineSuperior(gameId: string, role: PlayerId, fonteSlotIndex: number): Promise<void> {
+    await this.mutate(gameId, state => combineSuperiorReducer(state, role, fonteSlotIndex));
   }
 
   /** Avanza la fase del giocatore di turno lungo il ciclo delle 6 fasi; da 'fine' passa davvero il turno. */
