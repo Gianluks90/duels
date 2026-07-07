@@ -24,6 +24,17 @@ function removeOneByElement(cards: readonly Card[], element: BaseElement): { rem
 }
 
 /**
+ * Bonus manico (regolamento 1.4.3): 10% di possibilità di +1 mana permanente su un elemento base
+ * appena pescato dal mazzo comune; se il manico ha un elemento incastonato, la possibilità sale al
+ * 20% ma vale solo per quell'elemento (nessun bonus generico al 10% per gli altri, in quel caso).
+ */
+function rollHandleBonus(card: Card, handleSocket: BaseElement | null): Card {
+  const chance = handleSocket === null ? 0.1 : handleSocket === card.element ? 0.2 : 0;
+  if (chance === 0 || Math.random() >= chance) return card;
+  return { ...card, manaBonus: (card.manaBonus ?? 0) + 1 };
+}
+
+/**
  * Fase Raccolta (4.3), primo passo: pesca 2 carte dal mazzo comune (rimescolando i suoi scarti se
  * esaurito, regolamento 1.7) e le tiene in sospeso in attesa della scelta del giocatore — persistito,
  * non locale, così il mazzo non si disallinea tra il "peek" e la scelta effettiva. No-op se non sei
@@ -38,8 +49,14 @@ export function startCollect(state: GameState, role: PlayerId): GameState {
   const { drawn, deck, discards } = drawUpTo(state.commonDeck, state.commonDiscards, 2);
   if (drawn.length < 2) return state;
 
+  const handleSocket = player.wand.handleSocket;
+  const pending: [Card, Card] = [
+    rollHandleBonus(drawn[0], handleSocket),
+    rollHandleBonus(drawn[1], handleSocket),
+  ];
+
   const withDeck: GameState = { ...state, commonDeck: deck, commonDiscards: discards };
-  return updatePlayer(withDeck, role, { pendingCollect: [drawn[0], drawn[1]] });
+  return updatePlayer(withDeck, role, { pendingCollect: pending });
 }
 
 /**
@@ -144,22 +161,72 @@ function endTurn(state: GameState, role: PlayerId): GameState {
 
   // Tutte le carte non utilizzate in mano si scartano (vanno negli scarti del proprio mazzo)
   // prima di pescare la mano fresca — se il mazzo si esaurisce, drawUpTo rimescola questi stessi
-  // scarti nel mazzo (regolamento 1.7), riducendo di 1 il livello di avvelenamento in una milestone futura.
-  const { drawn, deck, discards } = drawUpTo(player.deck, [...player.discards, ...player.hand], HAND_SIZE);
+  // scarti nel mazzo (regolamento 1.7), il che riduce di 1 il livello di avvelenamento (2.3.4/1.7).
+  const { drawn, deck, discards, reshuffled } = drawUpTo(player.deck, [...player.discards, ...player.hand], HAND_SIZE);
+  const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
 
   const stateAfterEnd = updatePlayer(state, role, {
     hand: drawn,
     deck,
     discards,
+    tokens: { ...player.tokens, poison },
     hasCollectedThisTurn: false,
     hasUsedWandAbility: false,
     spellsPlayedThisTurn: 0,
   });
 
-  return {
+  const stateForNextTurn: GameState = {
     ...stateAfterEnd,
     currentTurn: otherRole,
     phase: 'preparazione',
     turnNumber: state.turnNumber + 1,
   };
+
+  // Fase Preparazione (4.2): risolta subito per chi sta per iniziare il turno, non per chi lo ha
+  // appena concluso — non richiede un passo separato, dato che l'unico modo di entrare in
+  // 'preparazione' è proprio questo handoff di turno (o l'inizio partita, dove i due contatori sono
+  // comunque a zero).
+  return resolvePreparation(stateForNextTurn, otherRole);
+}
+
+/**
+ * Fase Preparazione (4.2): 1 danno per ogni livello di Avvelenamento accumulato, e scioglimento
+ * (rimozione dal gioco, non scarto) delle carte Congelamento eventualmente in mano.
+ */
+function resolvePreparation(state: GameState, target: PlayerId): GameState {
+  const player = state.players[target];
+  const poisonDamage = player.tokens.poison;
+  const hand = player.hand.filter(card => card.tier !== 'freeze');
+
+  return updatePlayer(state, target, { hp: player.hp - poisonDamage, hand });
+}
+
+const MAX_POISON = 3;
+
+/**
+ * Avvelenamento (2.3.4): incrementa il livello di veleno del bersaglio, cap a 3. Pensata per essere
+ * chiamata dagli incantesimi che lo applicano — non ancora implementati, quindi al momento nessun
+ * chiamante reale: il decadimento (endTurn) e la risoluzione (resolvePreparation) sopra sono già
+ * testabili a prescindere, dato che agiscono sul livello accumulato in `PlayerTokens.poison`.
+ */
+export function applyPoison(state: GameState, target: PlayerId, amount: number): GameState {
+  const player = state.players[target];
+  const poison = Math.min(MAX_POISON, player.tokens.poison + amount);
+  return updatePlayer(state, target, { tokens: { ...player.tokens, poison } });
+}
+
+/**
+ * Congelamento (2.3.1): aggiunge `count` carte Congelamento (non-carte, tier 'freeze') agli scarti
+ * del bersaglio — finiscono quindi nel suo mazzo alla prossima rimescolata. Pensata per essere
+ * chiamata dagli incantesimi che lo applicano — non ancora implementati (vedi nota su applyPoison).
+ */
+export function applyFreeze(state: GameState, target: PlayerId, count: number): GameState {
+  if (count <= 0) return state;
+  const player = state.players[target];
+  const freezeCards: Card[] = Array.from({ length: count }, () => ({
+    id: `freeze-${crypto.randomUUID()}`,
+    tier: 'freeze',
+    element: 'ice',
+  }));
+  return updatePlayer(state, target, { discards: [...player.discards, ...freezeCards] });
 }

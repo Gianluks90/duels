@@ -1,0 +1,21 @@
+<div class="tracker">
+  <p class="tracker__turn">{{ turnLabel() }}</p>
+
+  <div class="tracker__steps" role="list" [attr.aria-label]="'phaseTracker.stepsAria' | translate">
+    <div class="tracker__line" aria-hidden="true"></div>
+    @for (p of phases; track p) {
+      <div class="tracker__step" role="listitem" tabindex="0"
+           [class.tracker__step--done]="stepState(p) === 'done'"
+           [class.tracker__step--active]="stepState(p) === 'active'"
+           [attr.aria-current]="stepState(p) === 'active' ? 'step' : null"
+           [appTooltip]="i18n.turnPhaseDescription(p)" tooltipPosition="top">
+        <span class="tracker__step-dot" aria-hidden="true"></span>
+        <span class="tracker__step-label">{{ i18n.turnPhaseLabel(p) }}</span>
+      </div>
+    }
+  </div>
+
+  <button type="button" class="btn btn--primary tracker__advance" [disabled]="!canAdvance()" (click)="advance.emit()">
+    {{ 'board.turn.advance' | translate }}
+  </button>
+</div>

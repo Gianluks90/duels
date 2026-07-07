@@ -29,10 +29,15 @@
 
   "playerHud": {
     "settingsAria": "Impostazioni partita",
-    "phaseAria": "Fase: {phase}",
-    "opponentTurnAria": "Turno dell'avversario",
     "hpAria": "{name}: {value} vita su {max}",
-    "hpTooltip": "Punti vita: {current} + {shield} = {total}"
+    "hpTooltip": "Punti vita: {current} + {shield} = {total}",
+    "poisonAria": "Avvelenamento: livello {level}",
+    "frozenAria": "Congelato: rischio di pescare carte Congelamento invece di carte utili"
+  },
+
+  "phaseTracker": {
+    "stepsAria": "Fasi del turno",
+    "turnLabel": "Turno di: {name}"
   },
 
   "board": {
@@ -53,8 +58,8 @@
       "tipEffect": "Trascina qui un elemento per conservarlo fino al turno successivo",
       "bodyEffect": "Resistenza ai danni da {element}, vulnerabilità ai danni da {opposite}",
       "bodyEffectEmpty": "Nessuna protezione attiva al momento",
-      "handleEffect": "Hai il 20% di possibilità di duplicare {element} quando pescato",
-      "handleEffectEmpty": "Hai il 10% di possibilità di duplicare un elemento base appena pescato"
+      "handleEffect": "Hai il 20% di possibilità di ottenere +1 mana permanente su {element} quando viene pescato",
+      "handleEffectEmpty": "Hai il 10% di possibilità di ottenere +1 mana permanente su un elemento base appena pescato"
     },
     "fonte": {
       "residuo": "Residuo",

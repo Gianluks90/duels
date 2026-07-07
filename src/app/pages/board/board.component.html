@@ -11,8 +11,8 @@
       [width]="hudWidth"
       [name]="opponentName()"
       [health]="opponentHealth()"
-      [isMyTurn]="!isPlayerTurn()"
-      [phase]="opponentDisplayedPhase()"
+      [poisonLevel]="opponentPoisonLevel()"
+      [frozen]="opponentFrozen()"
       [mirrored]="true"
     />
 
@@ -106,13 +106,6 @@
                        [appTooltip]="'board.toolbar.rulebookTooltip' | translate" tooltipPosition="right" />
     </div>
 
-    <!-- Avanzamento di turno: solo il giocatore di turno può farlo avanzare. -->
-    <div class="board__turn-control">
-      <button type="button" class="btn btn--primary" [disabled]="!isPlayerTurn()" (click)="advancePhase()">
-        {{ 'board.turn.advance' | translate }}
-      </button>
-    </div>
-
     <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
 
       <!-- Group 1: Residuo Arcano — a single pile, always face up -->
@@ -159,6 +152,15 @@
 
     </div>
 
+    <!-- Tracker di fase: unico e condiviso (non duplicato per pannello) — mostra le 6 fasi in linea
+         e il bottone di avanzamento manuale, abilitato solo quando è davvero possibile farlo. -->
+    <app-phase-tracker
+      [turnPlayerName]="turnPlayerName()"
+      [phase]="state()!.phase"
+      [canAdvance]="canAdvancePhase()"
+      (advance)="advancePhase()"
+    />
+
     <!-- Raccolta: le 2 carte pescate, in attesa che il giocatore scelga quale tenere. -->
     @if (pendingCollect(); as pair) {
       <div class="board__collect-overlay" role="dialog" [attr.aria-label]="'board.fonte.collectPrompt' | translate">
@@ -166,7 +168,8 @@
         <div class="board__collect-cards">
           @for (card of pair; track card.id) {
             <button type="button" class="board__collect-card" (click)="keepCard(card)">
-              <app-card [element]="card.element" [size]="handArcCardWidth" />
+              <app-card [element]="card.element" [manaBonus]="collectCardManaBonus(card)" [size]="handArcCardWidth"
+                        [class.board__collect-card__art--bonus]="collectCardRevealing(card)" />
             </button>
           }
         </div>
@@ -186,8 +189,8 @@
       [width]="hudWidth"
       [name]="playerName()"
       [health]="playerHealth()"
-      [isMyTurn]="isPlayerTurn()"
-      [phase]="playerDisplayedPhase()"
+      [poisonLevel]="playerPoisonLevel()"
+      [frozen]="playerFrozen()"
       [mirrored]="false"
       (settingsClick)="openGameSettings()"
     />
@@ -208,10 +211,10 @@
       </div>
 
       <div class="board__hand-track" #playerHandTrack role="region" [attr.aria-label]="'board.handAriaPlayer' | translate">
-        @for (card of playerHand(); track $index) {
-          <app-card class="board__hand-card" [element]="card" [size]="handArcCardWidth" [priority]="$index === 0"
-                    [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
-                    [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
+        @for (card of playerHand(); track card.id) {
+          <app-card class="board__hand-card" [element]="card.element" [manaBonus]="card.manaBonus ?? 0" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
+                    [class.board__hand-card--gold]="handCardHighlight(card.element) === 'gold'"
+                    [class.board__hand-card--blue]="handCardHighlight(card.element) === 'blue'"
                     [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
         }
       </div>

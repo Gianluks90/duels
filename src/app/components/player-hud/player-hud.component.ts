@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, computed, input, output, inject } from '@angular/core';
-import { TURN_PHASES, type TurnPhase } from '../../models/turn-phase.model';
-import type { Health } from '../../models/player.model';
+import { firstNameOf, type Health } from '../../models/player.model';
+import { elementIconPath } from '../../models/element.model';
 import { TooltipDirective } from '../ui/tooltip/tooltip.directive';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -17,22 +17,21 @@ export class PlayerHudComponent {
 
   readonly name      = input.required<string>();
   readonly health    = input.required<Health>();
-  readonly isMyTurn  = input<boolean>(false);
-  /** The current turn's phase — only actually highlighted when isMyTurn(), since the other player has no "current phase" of their own. */
-  readonly phase     = input<TurnPhase>('raccolta');
   readonly mirrored  = input<boolean>(false);
   readonly width     = input<number>(264);
+  /** Livello di Avvelenamento (0–3, regolamento 2.3.4) — un teschio per livello, accanto al valore di vita. */
+  readonly poisonLevel = input<number>(0);
+  /** true finché il giocatore ha ancora carte Congelamento non sciolte in circolazione (mano, mazzo o scarti — regolamento 2.3.1). */
+  readonly frozen = input<boolean>(false);
 
   /** Only rendered when !mirrored() — the opponent's panel has no settings button. */
   readonly settingsClick = output<void>();
 
-  protected readonly phases = TURN_PHASES;
+  protected readonly poisonIcon = elementIconPath('poison');
+  protected readonly poisonRange = computed(() => Array.from({ length: this.poisonLevel() }, (_, i) => i));
+  protected readonly isPoisoned = computed(() => this.poisonLevel() > 0);
 
-  protected readonly firstName = computed(() => {
-    const full = this.name();
-    const idx = full.indexOf(' ');
-    return idx > 0 ? full.slice(0, idx) : full;
-  });
+  protected readonly firstName = computed(() => firstNameOf(this.name()));
 
   /** Normally == max, so the bar behaves exactly as before; only stretches when shield pushes the total past max, so the shield segment is never clipped. */
   private readonly totalUnits = computed(() => Math.max(this.health().max, this.health().current + this.health().shield));
@@ -44,15 +43,12 @@ export class PlayerHudComponent {
   /** The number shown above the bar merges current + shield — the tooltip (only present when there's a shield) spells out the breakdown. */
   protected readonly displayedHp = computed(() => this.health().current + this.health().shield);
 
-  protected readonly phaseAria = computed(() =>
-    this.isMyTurn()
-      ? this.i18n.t('playerHud.phaseAria', { phase: this.i18n.turnPhaseLabel(this.phase()) })
-      : this.i18n.t('playerHud.opponentTurnAria'),
-  );
-
   protected readonly hpAria = computed(() =>
     this.i18n.t('playerHud.hpAria', { name: this.firstName(), value: this.displayedHp(), max: this.health().max }),
   );
+
+  protected readonly poisonAria = computed(() => this.i18n.t('playerHud.poisonAria', { level: this.poisonLevel() }));
+  protected readonly frozenAria = computed(() => this.i18n.t('playerHud.frozenAria'));
 
   protected readonly hpTooltip = computed(() => {
     const { current, shield } = this.health();

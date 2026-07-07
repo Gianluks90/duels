@@ -21,6 +21,7 @@ import { AuthService } from '../../services/auth.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
 import { PlayerHudComponent } from '../../components/player-hud/player-hud.component';
+import { PhaseTrackerComponent } from '../../components/phase-tracker/phase-tracker.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
 import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/action-menu/action-menu.component';
@@ -32,7 +33,7 @@ import { ADVANCED_RECIPES } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { Card } from '../../models/card.model';
-import type { PlayerId } from '../../models/player.model';
+import type { PlayerId, PlayerState } from '../../models/player.model';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -79,7 +80,7 @@ type HoverRecipe = { kind: 'fixed'; pair: readonly [BaseElement, BaseElement] } 
   selector: 'app-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [CardComponent, DeckComponent, PlayerHudComponent, IconButtonComponent, TooltipDirective, ActionMenuComponent, TranslatePipe],
+  imports: [CardComponent, DeckComponent, PlayerHudComponent, PhaseTrackerComponent, IconButtonComponent, TooltipDirective, ActionMenuComponent, TranslatePipe],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
@@ -162,14 +163,23 @@ export class BoardComponent implements OnInit {
     shield: this.opponentState()?.tokens.shield ?? 0,
   }));
 
+  protected readonly playerPoisonLevel = computed(() => this.me()?.tokens.poison ?? 0);
+  protected readonly opponentPoisonLevel = computed(() => this.opponentState()?.tokens.poison ?? 0);
+
+  /** true finché restano carte Congelamento (2.3.1) non sciolte in circolazione — in mano, mazzo o scarti, non solo in mano. */
+  protected readonly playerFrozen = computed(() => this.hasFreezeCards(this.me()));
+  protected readonly opponentFrozen = computed(() => this.hasFreezeCards(this.opponentState()));
+
   protected readonly isPlayerTurn = computed(() => this.state()?.currentTurn === this.myRole());
-  /** 'attesa' non è mai persistito: è il valore mostrato solo a chi non è di turno (regolamento v2, 4.1). */
-  protected readonly playerDisplayedPhase = computed(() => (this.isPlayerTurn() ? this.state()!.phase : 'attesa'));
-  protected readonly opponentDisplayedPhase = computed(() => (!this.isPlayerTurn() ? this.state()!.phase : 'attesa'));
+  /** Nome di chi ha il turno in corso — mostrato dal tracker di fase centrale (unico, non duplicato per pannello). */
+  protected readonly turnPlayerName = computed(() => (this.isPlayerTurn() ? this.playerName() : this.opponentName()));
+  /** Azione è l'unica fase che non si auto-avanza mai da sola (l'effect nel costruttore gestisce le altre 4) — richiede sempre un input reale del giocatore. */
+  protected readonly canAdvancePhase = computed(() => this.isPlayerTurn() && this.state()?.phase === 'azione');
 
   protected readonly opponentHandCount = computed(() => this.opponentState()?.hand.length ?? 0);
   protected readonly fonteCards = computed<Element[]>(() => this.state()?.fonteElementale.map(c => c.element) ?? []);
-  protected readonly playerHand = computed<Element[]>(() => this.me()?.hand.map(c => c.element) ?? []);
+  /** Full Card objects (not just Element) so a card carrying a permanent bonus manico (regolamento 1.4.3) still shows its boosted mana value once drawn into hand. */
+  protected readonly playerHand = computed<Card[]>(() => this.me()?.hand ?? []);
 
   /** Set while hovering a Fonte Arcana card or Residuo Arcano — drives the gold/blue highlight on matching hand cards. */
   protected readonly hoveredRecipe = signal<HoverRecipe | null>(null);
@@ -194,6 +204,8 @@ export class BoardComponent implements OnInit {
 
   /** Le 2 carte pescate dal mazzo comune in attesa di scelta — solo locale, nessuna scrittura su Firestore finché non si sceglie quale tenere (regolamento 4.3). */
   protected readonly pendingCollect = computed(() => this.me()?.pendingCollect ?? null);
+  /** Id delle carte pescate il cui bonus manico (regolamento 1.4.3) è già stato rivelato in UI — il bonus è già risolto lato stato, ma resta nascosto un attimo per farlo notare (vedi l'effect nel costruttore). */
+  protected readonly revealedBonusIds = signal<ReadonlySet<string>>(new Set());
   protected readonly canCollect = computed(() =>
     this.isPlayerTurn() && this.state()?.phase === 'raccolta' && !this.me()?.hasCollectedThisTurn && !this.pendingCollect(),
   );
@@ -238,6 +250,32 @@ export class BoardComponent implements OnInit {
 
   /** Evita di pianificare più volte lo stesso avanzamento automatico (l'effect sotto può rieseguire per motivi non correlati). */
   private autoAdvanceKey: string | null = null;
+  /** Come sopra, ma per l'auto-avanzamento del giocatore reale (vedi effect dedicato nel costruttore) — chiave separata da autoAdvanceKey perché sono due avanzamenti indipendenti (ruoli diversi). */
+  private turnAutoAdvanceKey: string | null = null;
+  /** Evita di ripianificare la rivelazione del bonus manico se l'effect sotto rieseguisce senza che la coppia pescata sia davvero cambiata. */
+  private revealedBonusKey: string | null = null;
+
+  /**
+   * Quali fasi si risolvono già da sole (regolamento v2, sez. 4) e quando è il momento di
+   * avanzare: Preparazione applica i suoi effetti in modo sincrono dentro `endTurn` (vedi
+   * turn-engine.ts), quindi è già pronta appena la si vede; Raccolta aspetta che il giocatore
+   * abbia davvero scelto quale carta tenere; Incantesimo è sempre "nessun incantesimo giocato"
+   * finché non esisterà un modo per lanciarli; Finale fa scarto+ripesca dentro `endTurn` stesso,
+   * al momento dell'avanzamento. Azione resta l'unica manuale (vedi canAdvancePhase).
+   */
+  private readonly autoAdvanceReady = computed(() => {
+    if (!this.isPlayerTurn()) return false;
+    switch (this.state()?.phase) {
+      case 'preparazione': return true;
+      case 'raccolta': return !!this.me()?.hasCollectedThisTurn;
+      case 'incantesimo': return true;
+      case 'fine': return true;
+      default: return false;
+    }
+  });
+
+  /** Preparazione dà un attimo per notare gli effetti appena risolti (danno da veleno, carte Congelamento sciolte); le altre 3 fasi automatiche non hanno nulla da mostrare, quindi passano più in fretta. */
+  private readonly autoAdvanceDelayMs = computed(() => (this.state()?.phase === 'preparazione' ? 2000 : 500));
 
   constructor() {
     afterNextRender(() => {
@@ -262,6 +300,51 @@ export class BoardComponent implements OnInit {
 
       const gameId = this.gameId();
       const timer = setTimeout(() => void this.gameEngine.advancePhase(gameId, 'guest'), 500);
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
+    });
+
+    // Automazione avanzamento fasi (giocatore reale): Preparazione/Raccolta/Incantesimo/Finale
+    // avanzano da sole quando è il tuo turno — vedi autoAdvanceReady sopra per il "quando" di
+    // ciascuna. Azione non rientra mai qui: canAdvancePhase la lascia sempre manuale.
+    effect(() => {
+      if (!this.autoAdvanceReady()) {
+        this.turnAutoAdvanceKey = null;
+        return;
+      }
+
+      const s = this.state();
+      const role = this.myRole();
+      if (!s || !role) return;
+
+      const key = `${s.turnNumber}:${s.phase}`;
+      if (key === this.turnAutoAdvanceKey) return;
+      this.turnAutoAdvanceKey = key;
+
+      const gameId = this.gameId();
+      const timer = setTimeout(() => void this.gameEngine.advancePhase(gameId, role), this.autoAdvanceDelayMs());
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
+    });
+
+    // Raccolta: il bonus manico (regolamento 1.4.3, +1 mana permanente) è già risolto nello stato
+    // appena le 2 carte vengono pescate — qui lo teniamo solo nascosto in UI per un attimo, cosicché
+    // la rivelazione (scale up/down + valore di mana aggiornato) si noti invece di apparire già fatta.
+    effect(() => {
+      const pair = this.pendingCollect();
+      if (!pair) {
+        this.revealedBonusKey = null;
+        this.revealedBonusIds.set(new Set());
+        return;
+      }
+
+      const key = `${pair[0].id}:${pair[1].id}`;
+      if (key === this.revealedBonusKey) return;
+      this.revealedBonusKey = key;
+      this.revealedBonusIds.set(new Set());
+
+      const boosted = pair.filter(card => (card.manaBonus ?? 0) > 0).map(card => card.id);
+      if (boosted.length === 0) return;
+
+      const timer = setTimeout(() => this.revealedBonusIds.set(new Set(boosted)), 900);
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
   }
@@ -365,7 +448,7 @@ export class BoardComponent implements OnInit {
   }
 
   private hasBaseCards(a: BaseElement, b: BaseElement): boolean {
-    const hand = [...this.playerHand()];
+    const hand = this.playerHand().map(card => card.element);
     const ia = hand.indexOf(a);
     if (ia === -1) return false;
     hand.splice(ia, 1);
@@ -389,7 +472,7 @@ export class BoardComponent implements OnInit {
   protected handCardHighlight(el: Element): 'gold' | 'blue' | null {
     const recipe = this.hoveredRecipe();
     if (!recipe) return null;
-    const hand = this.playerHand();
+    const hand = this.playerHand().map(card => card.element);
 
     if (recipe.kind === 'fixed') {
       const [a, b] = recipe.pair;
@@ -422,6 +505,16 @@ export class BoardComponent implements OnInit {
     await this.gameEngine.keepCard(this.gameId(), role, kept.id);
   }
 
+  /** 0 finché il bonus manico di questa carta pescata non è ancora stato rivelato in UI, il valore reale dopo. */
+  protected collectCardManaBonus(card: Card): number {
+    return this.revealedBonusIds().has(card.id) ? (card.manaBonus ?? 0) : 0;
+  }
+
+  /** true nell'istante in cui il bonus manico viene rivelato — pilota l'animazione one-shot sulla carta. */
+  protected collectCardRevealing(card: Card): boolean {
+    return this.revealedBonusIds().has(card.id);
+  }
+
   /** Avanza la propria fase di turno; da 'fine' passa davvero il turno all'avversario (motore in src/app/game/turn-engine.ts). */
   protected async advancePhase(): Promise<void> {
     const role = this.myRole();
@@ -431,6 +524,11 @@ export class BoardComponent implements OnInit {
 
   private topOf(cards: readonly Card[] | undefined): Element | null {
     return cards && cards.length > 0 ? cards[cards.length - 1].element : null;
+  }
+
+  private hasFreezeCards(player: PlayerState | null | undefined): boolean {
+    if (!player) return false;
+    return [...player.hand, ...player.deck, ...player.discards].some(card => card.tier === 'freeze');
   }
 
   protected openGameSettings(): void {

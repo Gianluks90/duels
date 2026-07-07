@@ -55,5 +55,14 @@ export interface PlayerState {
 
 /** Il mana non è un pool salvato: è la somma del valore delle carte in mano in quel momento (regolamento v2, 3.1). */
 export function computePlayerMana(hand: readonly Card[]): number {
-  return hand.reduce((sum, card) => sum + ELEMENT_MANA[card.element], 0);
+  return hand.reduce((sum, card) => {
+    if (card.tier === 'freeze') return sum; // non-carta (2.3.1): nessun valore di mana
+    return sum + ELEMENT_MANA[card.element] + (card.manaBonus ?? 0);
+  }, 0);
+}
+
+/** Solo il primo nome (split sul primo spazio) — usato ovunque un nome visualizzato debba restare compatto (HUD, tracker di fase). */
+export function firstNameOf(fullName: string): string {
+  const idx = fullName.indexOf(' ');
+  return idx > 0 ? fullName.slice(0, idx) : fullName;
 }

@@ -35,20 +35,40 @@
       left: 6px;
       flex-direction: row-reverse;
     }
-
-    .hud__phase {
-      flex-direction: row-reverse;
-    }
   }
 
-  // Now that __phases is a single row (not a stacked list of 6), space-between
-  // no longer over-stretches things — it spreads name/phase/bar evenly across
-  // the full visible height instead of leaving dead space below a tight pack.
   &__content {
+    position: relative; // stays above __frozen-overlay (z-index: 0), which is a sibling within .hud
+    z-index: 1;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: var(--visible-content-height, 92px);
+  }
+
+  // Congelamento (2.3.1): texture di ghiaccio (quasi bianca di suo, da qui il velo azzurro) su
+  // tutto il box — un ::after-like overlay ma come elemento reale (serve un proprio z-index sotto
+  // __content, cosa che uno pseudo-elemento condividerebbe con quello già usato altrove per i bordi
+  // delle carte, non applicabile qui perché .hud non ne ha uno suo).
+  &__frozen-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(rgba(140, 190, 255, 0.3), rgba(140, 190, 255, 0.3)),
+      url('/images/freeze.png') center / cover no-repeat;
+  }
+
+  // Visually hidden but announced — per lo stato di Congelamento, comunicato altrimenti solo
+  // dall'overlay decorativo qui sopra (WCAG 1.4.1: non solo colore/texture per veicolare informazione).
+  &__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   // ── Name row ────────────────────────────────────────────────────────────────
@@ -94,123 +114,6 @@
     text-transform: capitalize;
   }
 
-  // ── Turn phase ───────────────────────────────────────────────────────────────
-  // Only the current phase (of the 6: attesa/preparazione/raccolta/azione/
-  // incantesimo/fine) is shown here — hovering or focusing it opens a tooltip
-  // (see #phasesTooltip below) listing all of them in order.
-  &__phases {
-    display: flex;
-    flex-direction: column;
-  }
-
-  // Text stays fully readable regardless of whose turn it is — only the dot
-  // (color/glow/pulse below) tells current from not-current.
-  &__phase {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    height: 13px;
-
-    &--current {
-      cursor: pointer;
-    }
-
-    &--active {
-      .hud__phase-dot {
-        background: var(--accent-hover);
-        box-shadow: 0 0 5px rgba(176, 24, 24, 0.6);
-        animation: phase-pulse 2s ease-in-out infinite;
-      }
-
-      .hud__phase-label {
-        transform: scale(1);
-        font-weight: 700;
-        color: var(--text-heading);
-      }
-    }
-  }
-
-  // ── Turn phases tooltip content (all 6, in order, with descriptions) ───────
-  // Unconstrained space here (unlike the compact indicator above), so labels
-  // use a normal, constant font-size — no scale trick, no dimming; the dot
-  // alone marks which phase is current.
-  &__phases-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-3);
-  }
-
-  &__phase-entry {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--sp-2);
-  }
-
-  &__phase-entry-dot {
-    width: 7px;
-    height: 7px;
-    margin-top: 4px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    flex-shrink: 0;
-
-    .hud__phase-entry--active & {
-      background: var(--accent-hover);
-      box-shadow: 0 0 5px rgba(176, 24, 24, 0.6);
-      animation: phase-pulse 2s ease-in-out infinite;
-    }
-  }
-
-  &__phase-entry-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  &__phase-entry-name {
-    font-family: var(--font-ui);
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-heading);
-  }
-
-  &__phase-entry-desc {
-    font-size: 0.78rem;
-    color: var(--text-primary);
-    line-height: 1.35;
-  }
-
-  &__phase-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    flex-shrink: 0;
-  }
-
-  // Font-size is fixed at the "active" (standard) size always — the smaller
-  // look of inactive phases comes from transform: scale() instead, which
-  // animates on the compositor (no layout reflow) and keeps the row's own
-  // layout width/height constant regardless of scale.
-  &__phase-label {
-    font-family: var(--font-ui);
-    font-size: 0.62rem;
-    font-weight: 400;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-muted);
-    white-space: nowrap;
-    transform-origin: left center;
-    transform: scale(0.68);
-    transition: transform 0.2s ease, color 0.2s ease;
-  }
-
-  &--mirrored &__phase-label {
-    transform-origin: right center;
-  }
-
   // ── HP bar: a pill-shaped track (fully rounded, clipped) with the value
   // protruding above it — the value sits outside the clipped track so its
   // overflow never gets cut off by the pill's rounded/hidden edges.
@@ -244,6 +147,11 @@
     box-shadow:
       inset 0 2px 2px rgba(255, 255, 255, 0.4),
       inset 0 -3px 5px rgba(0, 0, 0, 0.55);
+
+    // Avvelenamento (2.3.4): rosso → verde malato, un'ulteriore conferma visiva oltre ai teschi.
+    &--poisoned {
+      background: linear-gradient(180deg, #b6d94f 0%, #7a9a2e 32%, #4a5c18 68%, #2e3a10 100%);
+    }
   }
 
   // Bonus effective hp from shield tokens — sits right after the red fill
@@ -259,7 +167,7 @@
       inset 0 -3px 5px rgba(0, 0, 0, 0.55);
   }
 
-  // HP value, protruding above the bar.
+  // HP value (+ poison skulls, same baseline), protruding above the bar.
   &__values {
     position: absolute;
     right: 6px;
@@ -269,6 +177,32 @@
     align-items: baseline;
     gap: 6px;
     z-index: 1;
+  }
+
+  // Avvelenamento (2.3.4): un teschio per livello (0–3), stesso linguaggio visivo del badge Mana
+  // sulle carte (cerchio scuro pieno + icona) — occupa lo spazio dove prima stava il valore di mana.
+  &__poison {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  &__poison-skull {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #212121;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+
+  &__poison-skull-icon {
+    width: 60%;
+    height: 60%;
+    object-fit: contain;
   }
 
   &__hp-value {
@@ -285,18 +219,5 @@
     &--interactive {
       cursor: pointer;
     }
-  }
-}
-
-@keyframes phase-pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(176, 24, 24, 0.6);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(1.25);
-    box-shadow: 0 0 0 5px rgba(176, 24, 24, 0);
   }
 }

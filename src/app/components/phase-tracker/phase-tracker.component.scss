@@ -1,0 +1,113 @@
+:host {
+  display: block;
+}
+
+// Same panel language as .board__fonte-container right above it (background/border/shadow),
+// so the two read as one continuous unit rather than a loose row of controls.
+.tracker {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: var(--sp-3) var(--sp-6);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+}
+
+.tracker__turn {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+
+.tracker__steps {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0; // lets this flex item actually shrink between the fixed-width label and button
+}
+
+// Sits behind the dots (z-index 0 vs 1) — centered on the steps row regardless of each
+// step's own content height, rather than a magic-number offset tuned for one layout.
+.tracker__line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--border-subtle);
+  z-index: 0;
+}
+
+// Dot to the left of its label (not stacked above it) — reads as more aligned with the
+// turn label and button either side of it, all sitting on the same row.
+.tracker__step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tracker__step-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg-panel);
+  border: 2px solid var(--border-subtle);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.tracker__step--done .tracker__step-dot {
+  background: var(--border-gold);
+  border-color: var(--border-gold);
+}
+
+.tracker__step--active .tracker__step-dot {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 0 6px rgba(176, 24, 24, 0.6);
+  animation: tracker-pulse 2s ease-in-out infinite;
+}
+
+.tracker__step-label {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tracker__step--active .tracker__step-label {
+  color: var(--text-heading);
+  font-weight: 700;
+}
+
+.tracker__advance {
+  flex-shrink: 0;
+}
+
+@keyframes tracker-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(176, 24, 24, 0.6);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.25);
+    box-shadow: 0 0 0 5px rgba(176, 24, 24, 0);
+  }
+}

@@ -29,10 +29,15 @@
 
   "playerHud": {
     "settingsAria": "Game settings",
-    "phaseAria": "Phase: {phase}",
-    "opponentTurnAria": "Opponent's turn",
     "hpAria": "{name}: {value} hp out of {max}",
-    "hpTooltip": "Hit points: {current} + {shield} = {total}"
+    "hpTooltip": "Hit points: {current} + {shield} = {total}",
+    "poisonAria": "Poisoned: level {level}",
+    "frozenAria": "Frozen: risk of drawing Freeze cards instead of useful ones"
+  },
+
+  "phaseTracker": {
+    "stepsAria": "Turn phases",
+    "turnLabel": "Turn: {name}"
   },
 
   "board": {
@@ -53,8 +58,8 @@
       "tipEffect": "Drag an element here to keep it until next turn",
       "bodyEffect": "Resistance to {element} damage, vulnerability to {opposite} damage",
       "bodyEffectEmpty": "No active protection right now",
-      "handleEffect": "You have a 20% chance to duplicate {element} when drawn",
-      "handleEffectEmpty": "You have a 10% chance to duplicate a base element as soon as it's drawn"
+      "handleEffect": "You have a 20% chance to get +1 permanent mana on {element} when drawn",
+      "handleEffectEmpty": "You have a 10% chance to get +1 permanent mana on a base element as soon as it's drawn"
     },
     "fonte": {
       "residuo": "Residuum",

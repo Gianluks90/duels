@@ -23,8 +23,12 @@
     // }
 
     &--fonte {
-      flex-direction: row;
-      align-items: stretch; // lets the inner container fill the zone's full height — no more "container in a container"
+      // Column, not row: besides .board__fonte-container (100% width) this zone now also
+      // stacks the phase tracker below it — a row direction put them side by side instead,
+      // squeezing the container off-center to make room. align-items: stretch here now
+      // stretches horizontally (cross axis), which .board__fonte-container's own width: 100%
+      // already matched anyway.
+      align-items: stretch;
       justify-content: center;
     }
 
@@ -67,13 +71,6 @@
     gap: 8px;
   }
 
-  // Mirrors __toolbar on the opposite corner — the only turn-level action in this milestone.
-  &__turn-control {
-    position: absolute;
-    top: var(--sp-2);
-    left: var(--sp-4);
-    z-index: 3;
-  }
 
   // ── Player meta (name + mana dots) ──────────────────────────────────────────
   &__meta {
@@ -387,6 +384,12 @@
     }
   }
 
+  // Bonus manico (regolamento 1.4.3): quando scatta su una carta pescata in Raccolta, il valore
+  // boostato si rivela con un piccolo "gonfiore" invece di apparire già applicato.
+  &__collect-card__art--bonus {
+    animation: collect-mana-bonus 0.6s ease-out;
+  }
+
   // ── Wand panels (player + opponent) ─────────────────────────────────────────
   // Each panel stacks two real cards: the wand-section card (label, hr, full
   // effect text) and — slid in behind it — the actual element card (app-card,
@@ -508,5 +511,14 @@
     text-align: center;
     color: var(--text-muted);
     line-height: 1.35;
+  }
+}
+
+@keyframes collect-mana-bonus {
+  0%, 100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.18);
   }
 }

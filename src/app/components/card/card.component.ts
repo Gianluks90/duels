@@ -44,12 +44,14 @@ export class CardComponent {
   readonly headerAlign = input<'top' | 'bottom'>('top');
   /** Hides the Mana corner badge — for contexts where the card is rendered too small for it, or the cost is already shown elsewhere (e.g. the grimoire's formula cards). */
   readonly showMana = input<boolean>(true);
+  /** Bonus manico (regolamento 1.4.3) permanently carried by this card instance — added on top of the element's base mana value. */
+  readonly manaBonus = input<number>(0);
 
   protected readonly height = computed(() => Math.round(this.size() * 1.5));
   protected readonly radius = computed(() => Math.min(Math.round(this.size() * 0.09), 10));
   protected readonly artSrc = computed(() => elementImagePath(this.element()));
   protected readonly iconSrc = computed(() => elementIconPath(this.element()));
   protected readonly label = computed(() => this.i18n.elementLabel(this.element()));
-  protected readonly manaValue = computed(() => ELEMENT_MANA[this.element()]);
+  protected readonly manaValue = computed(() => ELEMENT_MANA[this.element()] + this.manaBonus());
   protected readonly manaAria = computed(() => this.i18n.t('card.manaAria', { value: this.manaValue() }));
 }
