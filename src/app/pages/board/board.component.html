@@ -228,7 +228,16 @@
           <app-card class="board__hand-card" [element]="card.element" [manaBonus]="card.manaBonus ?? 0" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
                     [class.board__hand-card--gold]="handCardHighlight(card.element) === 'gold'"
                     [class.board__hand-card--blue]="handCardHighlight(card.element) === 'blue'"
+                    [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
                     [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
+        }
+        <!-- Carte "temporanee" (Congelamento/Residuo) già sparite da playerHand() ma ancora in animazione
+             di sparizione — restano nella loro vecchia posizione (indice/conteggio congelati al momento
+             in cui sono sparite) finché l'animazione non finisce, invece di sparire di scatto. -->
+        @for (ghost of vanishingGhosts(); track ghost.card.id) {
+          <app-card class="board__hand-card board__hand-card--vanishing" [element]="ghost.card.element" [manaBonus]="ghost.card.manaBonus ?? 0"
+                    [showMana]="ghost.card.tier !== 'freeze'" [size]="handArcCardWidth"
+                    [style]="handCardStyle(ghost.index, ghost.total, playerHandTrackWidth(), false)" aria-hidden="true" />
         }
       </div>
 

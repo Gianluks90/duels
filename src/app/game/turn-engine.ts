@@ -3,7 +3,7 @@ import type { BaseElement } from '../models/element.model';
 import { SUPERIOR_FORMULA } from '../models/element.model';
 import type { GameState } from '../models/game.model';
 import type { PlayerId, PlayerState } from '../models/player.model';
-import { TURN_PHASES } from '../models/turn-phase.model';
+import { TURN_PHASES, type ActiveTurnPhase } from '../models/turn-phase.model';
 import { drawUpTo, HAND_SIZE } from './deck-builder';
 
 function updatePlayer(state: GameState, role: PlayerId, patch: Partial<PlayerState>): GameState {
@@ -22,6 +22,28 @@ function removeOneByElement(cards: readonly Card[], element: BaseElement): { rem
   if (index === -1) return { removed: null, rest };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
+}
+
+/**
+ * Come removeOneByElement, ma se l'elemento richiesto non è in mano ripiega su un Residuo Arcano
+ * (2.5): "vale come un qualsiasi elemento base ai fini di qualsiasi combinazione". Usata da ogni
+ * combinazione — avanzati, potenti, e la stessa combinazione che produce un Residuo — al posto della
+ * sola removeOneByElement, così il jolly funziona ovunque uniformemente.
+ */
+function removeOneByElementOrResidue(cards: readonly Card[], element: BaseElement): { removed: Card | null; rest: Card[] } {
+  const exact = removeOneByElement(cards, element);
+  if (exact.removed) return exact;
+
+  const rest = [...cards];
+  const index = rest.findIndex(c => c.tier === 'residium');
+  if (index === -1) return { removed: null, rest: [...cards] };
+  const [removed] = rest.splice(index, 1);
+  return { removed, rest };
+}
+
+/** Filtra dalla mano le carte "temporanee" (Card.expiresAt) che scadono alla fase indicata — sciolte o consumate, mai scartate (regolamento 2.3.1, 2.5). */
+function resolveExpiringCards(hand: readonly Card[], phase: ActiveTurnPhase): Card[] {
+  return hand.filter(card => card.expiresAt !== phase);
 }
 
 /**
@@ -110,10 +132,11 @@ function takeFromFonte(state: GameState, fonteSlotIndex: number): { state: GameS
 }
 
 /**
- * Fase Azione (2.3/2.6): combina 2 elementi base dalla mano per ottenere la carta rivelata nello
- * slot indicato della Fonte Arcana. Le 2 basi vengono consumate negli scarti del mazzo comune, la
- * carta ottenuta va negli scarti del giocatore. No-op se non sei di turno o se la mano non contiene
- * gli elementi richiesti.
+ * Fase Azione (2.3/2.6): combina 2 elementi base dalla mano (o un Residuo Arcano al loro posto,
+ * 2.5) per ottenere la carta rivelata nello slot indicato della Fonte Arcana. Le basi vere vengono
+ * consumate negli scarti del mazzo comune; un eventuale Residuo usato come jolly si consuma invece
+ * per sempre (non ha una propria pila scarti). La carta ottenuta va negli scarti del giocatore.
+ * No-op se non sei di turno o se la mano non contiene gli elementi richiesti (basi o Residuo).
  */
 export function combineElements(
   state: GameState,
@@ -125,23 +148,24 @@ export function combineElements(
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
-  const { removed: cardA, rest: handAfterA } = removeOneByElement(player.hand, a);
+  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a);
   if (!cardA) return state;
-  const { removed: cardB, rest: handAfterB } = removeOneByElement(handAfterA, b);
+  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b);
   if (!cardB) return state;
 
   const taken = takeFromFonte(state, fonteSlotIndex);
   if (!taken) return state;
 
-  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, cardA, cardB] };
+  const consumedBases = [cardA, cardB].filter(c => c.tier !== 'residium');
+  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
   return updatePlayer(withTable, role, { hand: handAfterB, discards: [...player.discards, taken.obtained] });
 }
 
 /**
- * Fase Azione (2.4/2.6): combina i 4 elementi base della formula fissa (Fuoco+Acqua+Aria+Terra)
- * dalla mano per ottenere l'elemento potente rivelato nello slot indicato della Fonte Arcana —
- * stessa meccanica di combineElements, solo con 4 basi invece di 2. No-op se non sei di turno o se
- * la mano non contiene tutti e 4 gli elementi richiesti.
+ * Fase Azione (2.4/2.6): combina i 4 elementi base della formula fissa (Fuoco+Acqua+Aria+Terra),
+ * o Residui Arcani al loro posto (2.5), dalla mano per ottenere l'elemento potente rivelato nello
+ * slot indicato della Fonte Arcana — stessa meccanica di combineElements, solo con 4 basi invece di
+ * 2. No-op se non sei di turno o se la mano non contiene tutti e 4 gli elementi richiesti (basi o Residuo).
  */
 export function combineSuperior(state: GameState, role: PlayerId, fonteSlotIndex: number): GameState {
   if (role !== state.currentTurn) return state;
@@ -150,7 +174,7 @@ export function combineSuperior(state: GameState, role: PlayerId, fonteSlotIndex
   let hand = player.hand;
   const consumed: Card[] = [];
   for (const element of SUPERIOR_FORMULA) {
-    const { removed, rest } = removeOneByElement(hand, element);
+    const { removed, rest } = removeOneByElementOrResidue(hand, element);
     if (!removed) return state;
     consumed.push(removed);
     hand = rest;
@@ -159,8 +183,42 @@ export function combineSuperior(state: GameState, role: PlayerId, fonteSlotIndex
   const taken = takeFromFonte(state, fonteSlotIndex);
   if (!taken) return state;
 
-  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumed] };
+  const consumedBases = consumed.filter(c => c.tier !== 'residium');
+  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
   return updatePlayer(withTable, role, { hand, discards: [...player.discards, taken.obtained] });
+}
+
+/**
+ * Fase Azione (2.5): combina 2 elementi base opposti dalla mano (Fuoco+Acqua o Aria+Terra — o un
+ * Residuo al loro posto) per ottenere un Residuo Arcano dal pool condiviso di 8 copie sempre
+ * scoperto (non un vero mazzo pescabile: qui semplicemente si toglie una copia dall'array). Va
+ * negli scarti del giocatore, come la carta ottenuta da combineElements/combineSuperior — non
+ * subito in mano: spendere 2 carte per ottenerne 1 sola d'immediato uso obbligato avrebbe spesso
+ * sprecato l'azione (mano rimasta scarsa, nessuna vera occasione di comporre altro nello stesso
+ * turno). Verrà ripescato più avanti insieme a una mano fresca da 5, con più probabilità di trovare
+ * carte compatibili — l'urgenza "un turno per utilizzarlo" (Card.expiresAt 'fine', vedi
+ * buildResiduumDeck) scatta da quel momento, non da quando viene creato. No-op se non sei di turno,
+ * se la mano non contiene gli elementi richiesti, o se il pool è esaurito.
+ */
+export function combineResidue(state: GameState, role: PlayerId, a: BaseElement, b: BaseElement): GameState {
+  if (role !== state.currentTurn) return state;
+
+  const player = state.players[role];
+  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a);
+  if (!cardA) return state;
+  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b);
+  if (!cardB) return state;
+
+  const [obtained, ...residiumDeck] = state.residiumDeck;
+  if (!obtained) return state;
+
+  const consumedBases = [cardA, cardB].filter(c => c.tier !== 'residium');
+  const withDeck: GameState = {
+    ...state,
+    residiumDeck,
+    commonDiscards: [...state.commonDiscards, ...consumedBases],
+  };
+  return updatePlayer(withDeck, role, { hand: handAfterB, discards: [...player.discards, obtained] });
 }
 
 /**
@@ -187,10 +245,15 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   const player = state.players[role];
   const otherRole: PlayerId = role === 'host' ? 'guest' : 'host';
 
+  // Fase Finale (4.6): un Residuo Arcano ancora in mano a questo punto si consuma per sempre (2.5,
+  // Card.expiresAt 'fine') — va escluso PRIMA dello scarto della mano, altrimenti finirebbe negli
+  // scarti del giocatore come una carta qualunque, cosa che "consumarsi" non è.
+  const handAfterExpiry = resolveExpiringCards(player.hand, 'fine');
+
   // Tutte le carte non utilizzate in mano si scartano (vanno negli scarti del proprio mazzo)
   // prima di pescare la mano fresca — se il mazzo si esaurisce, drawUpTo rimescola questi stessi
   // scarti nel mazzo (regolamento 1.7), il che riduce di 1 il livello di avvelenamento (2.3.4/1.7).
-  const { drawn, deck, discards, reshuffled } = drawUpTo(player.deck, [...player.discards, ...player.hand], HAND_SIZE);
+  const { drawn, deck, discards, reshuffled } = drawUpTo(player.deck, [...player.discards, ...handAfterExpiry], HAND_SIZE);
   const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
 
   const stateAfterEnd = updatePlayer(state, role, {
@@ -219,12 +282,13 @@ function endTurn(state: GameState, role: PlayerId): GameState {
 
 /**
  * Fase Preparazione (4.2): 1 danno per ogni livello di Avvelenamento accumulato, e scioglimento
- * (rimozione dal gioco, non scarto) delle carte Congelamento eventualmente in mano.
+ * (rimozione dal gioco, non scarto) delle carte Congelamento eventualmente in mano (Card.expiresAt
+ * 'preparazione', vedi applyFreeze).
  */
 function resolvePreparation(state: GameState, target: PlayerId): GameState {
   const player = state.players[target];
   const poisonDamage = player.tokens.poison;
-  const hand = player.hand.filter(card => card.tier !== 'freeze');
+  const hand = resolveExpiringCards(player.hand, 'preparazione');
 
   return updatePlayer(state, target, { hp: player.hp - poisonDamage, hand });
 }
@@ -255,6 +319,7 @@ export function applyFreeze(state: GameState, target: PlayerId, count: number): 
     id: `freeze-${crypto.randomUUID()}`,
     tier: 'freeze',
     element: 'ice',
+    expiresAt: 'preparazione',
   }));
   return updatePlayer(state, target, { discards: [...player.discards, ...freezeCards] });
 }

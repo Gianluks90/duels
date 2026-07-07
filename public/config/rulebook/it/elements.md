@@ -39,8 +39,8 @@ Quando due elementi potenti diversi si trovano nello stesso luogo — la tua man
 
 ## Residuo Arcano
 
-Il Residuo Arcano non vale alcun mana e non è un elemento: non segue nessuna regola riferita agli elementi. Si ottiene combinando due elementi base opposti — Fuoco + Acqua, oppure Aria + Terra — durante la fase Azione.
+Il Residuo Arcano non vale alcun mana e non è un elemento: non segue nessuna regola riferita agli elementi. Si ottiene combinando due elementi base opposti — Fuoco + Acqua, oppure Aria + Terra — durante la fase Azione; appartiene a un mazzo speciale di sole 8 copie, senza scarti propri — una copia persa o consumata non torna mai disponibile per il resto della partita.
 
-Quando lo peschi hai un turno per usarlo, dopodiché si consuma. Fino ad allora vale come un qualsiasi elemento base ai fini di una combinazione.
+Il residuo ottenuto va nei tuoi scarti, non subito in mano. Quando lo peschi da lì hai un turno per usarlo, dopodiché si consuma. Fino ad allora vale come un qualsiasi elemento base ai fini di una combinazione.
 
 > **Consumare** e **Scartare** non sono la stessa cosa: una carta consumata torna sempre negli scarti del mazzo comune a cui appartiene (base o avanzato); una carta scartata torna sempre negli scarti del suo proprietario.

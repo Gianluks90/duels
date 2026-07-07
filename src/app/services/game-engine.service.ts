@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, runTransaction } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 import type { GameDoc } from './game.service';
 import type { BaseElement } from '../models/element.model';
@@ -10,11 +10,19 @@ import {
   advanceTurnPhase,
   combineElements as combineElementsReducer,
   combineSuperior as combineSuperiorReducer,
+  combineResidue as combineResidueReducer,
   keepCard as keepCardReducer,
   startCollect as startCollectReducer,
 } from '../game/turn-engine';
 
-/** Motore di turno: ogni azione rilegge lo stato da Firestore, applica un reducer puro (src/app/game/), riscrive il risultato. Nessuna transazione — solo il giocatore di turno scrive stato condiviso durante il proprio turno (vedi documentation/rulebook/v2/rules.md e il piano di implementazione). */
+/**
+ * Motore di turno: ogni azione rilegge lo stato da Firestore, applica un reducer puro
+ * (src/app/game/), riscrive il risultato — dentro una transazione (`mutate`), non un
+ * getDoc+updateDoc separati: due scritture concorrenti (es. il proprio auto-avanzamento e quello
+ * dell'avversario di debug, quasi simultanei) altrimenti potevano correre in read-modify-write,
+ * con quella basata sullo snapshot più vecchio che sovrascriveva l'altra "resuscitando" stato già
+ * superato (bug reale osservato: un Residuo Arcano consumato a fine turno tornava disponibile).
+ */
 @Injectable({ providedIn: 'root' })
 export class GameEngineService {
   private readonly db = inject(FirebaseService).db;
@@ -63,6 +71,11 @@ export class GameEngineService {
     await this.mutate(gameId, state => combineSuperiorReducer(state, role, fonteSlotIndex));
   }
 
+  /** Fase Azione: combina 2 elementi base opposti per ottenere un Residuo Arcano dal pool condiviso. */
+  async combineResidue(gameId: string, role: PlayerId, a: BaseElement, b: BaseElement): Promise<void> {
+    await this.mutate(gameId, state => combineResidueReducer(state, role, a, b));
+  }
+
   /** Avanza la fase del giocatore di turno lungo il ciclo delle 6 fasi; da 'fine' passa davvero il turno. */
   async advancePhase(gameId: string, role: PlayerId): Promise<void> {
     await this.mutate(gameId, state => advanceTurnPhase(state, role));
@@ -70,13 +83,15 @@ export class GameEngineService {
 
   private async mutate(gameId: string, transform: (state: GameState) => GameState): Promise<void> {
     const ref = doc(this.db, 'games', gameId);
-    const snapshot = await getDoc(ref);
-    if (!snapshot.exists()) return;
+    await runTransaction(this.db, async tx => {
+      const snapshot = await tx.get(ref);
+      if (!snapshot.exists()) return;
 
-    const data = snapshot.data() as GameDoc;
-    if (!data.state) return;
+      const data = snapshot.data() as GameDoc;
+      if (!data.state) return;
 
-    const state = transform(data.state);
-    await updateDoc(ref, { state });
+      const state = transform(data.state);
+      tx.update(ref, { state });
+    });
   }
 }

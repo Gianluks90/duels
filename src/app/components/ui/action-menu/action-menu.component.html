@@ -1,4 +1,5 @@
-<div class="action-menu-trigger" [cdkMenuTriggerFor]="menu">
+<div class="action-menu-trigger" [class.action-menu-trigger--inert]="items().length === 0"
+     [cdkMenuTriggerFor]="items().length > 0 ? menu : null">
   <ng-content />
 </div>
 

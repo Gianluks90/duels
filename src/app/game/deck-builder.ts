@@ -62,9 +62,9 @@ export function buildAdvancedDeck(makeCard: CardFactory): Card[] {
   return [...advanced, ...superior];
 }
 
-/** Residuo Arcano: 8 copie, sempre scoperto (regolamento 2.5). */
+/** Residuo Arcano: 8 copie, sempre scoperto (regolamento 2.5) — "il giocatore ha un turno per utilizzarlo, dopodiché si consuma": expiresAt 'fine' vale solo da quando finisce in mano (assegnato qui una volta per tutte, dato che è sempre lo stesso per ogni copia). */
 export function buildResiduumDeck(makeCard: CardFactory): Card[] {
-  return repeat(makeCard, 'residium', 'residium', RESIDIUM_COUNT);
+  return repeat(makeCard, 'residium', 'residium', RESIDIUM_COUNT).map(card => ({ ...card, expiresAt: 'fine' as const }));
 }
 
 /** Carte iniziali di un giocatore (regolamento 1.2): 2 per elemento base + 1 Luce + 1 Tenebra. */

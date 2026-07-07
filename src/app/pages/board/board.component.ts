@@ -79,6 +79,16 @@ type HoverRecipe =
   | { kind: 'superior' }
   | { kind: 'opposite' };
 
+/** Durata dell'animazione di sparizione delle carte "temporanee" (Congelamento/Residuo, Card.expiresAt) — deve combaciare con @keyframes hand-card-vanish in board.component.scss. */
+const VANISH_DURATION_MS = 1000;
+
+/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione non finisce. */
+interface VanishingGhost {
+  card: Card;
+  index: number;
+  total: number;
+}
+
 @Component({
   selector: 'app-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -296,8 +306,24 @@ export class BoardComponent implements OnInit {
     }
   });
 
-  /** Preparazione dà un attimo per notare gli effetti appena risolti (danno da veleno, carte Congelamento sciolte); le altre 3 fasi automatiche non hanno nulla da mostrare, quindi passano più in fretta. */
-  private readonly autoAdvanceDelayMs = computed(() => (this.state()?.phase === 'preparazione' ? 2000 : 500));
+  /**
+   * Preparazione dà un attimo per notare gli effetti appena risolti (danno da veleno, carte
+   * Congelamento sciolte). Finale allunga il ritardo solo se in mano c'è un Residuo in scadenza
+   * (Card.expiresAt 'fine'), così l'animazione di sparizione (VANISH_DURATION_MS) ha il tempo di
+   * giocare prima che endTurn lo rimuova davvero — altrimenti niente da mostrare, resta rapida.
+   */
+  private readonly autoAdvanceDelayMs = computed(() => {
+    const phase = this.state()?.phase;
+    if (phase === 'preparazione') return 2000;
+    if (phase === 'fine' && (this.me()?.hand ?? []).some(card => card.expiresAt === 'fine')) return VANISH_DURATION_MS;
+    return 500;
+  });
+
+  /** Id delle carte "temporanee" ancora presenti in playerHand() ma già in animazione di sparizione (es. Residuo, marcato non appena si programma il ritardo di Finale sopra — vedi l'effect nel costruttore). */
+  protected readonly vanishingCardIds = signal<ReadonlySet<string>>(new Set());
+  /** Carte "temporanee" già sparite da playerHand() ma non ancora mostrate come tali (es. Congelamento, sciolto in modo atomico dentro l'endTurn dell'avversario — il nostro client la vede già sparita, senza un "prima" da segnare proattivamente) — restano a video come ghost nella loro vecchia posizione finché l'animazione non finisce. */
+  protected readonly vanishingGhosts = signal<readonly VanishingGhost[]>([]);
+  private lastKnownHand: Card[] = [];
 
   constructor() {
     afterNextRender(() => {
@@ -342,8 +368,67 @@ export class BoardComponent implements OnInit {
       if (key === this.turnAutoAdvanceKey) return;
       this.turnAutoAdvanceKey = key;
 
+      // Finale: un Residuo in scadenza (Card.expiresAt 'fine') è ancora davvero in mano a questo
+      // punto — endTurn non è ancora stato chiamato — quindi lo marchiamo "in sparizione" subito,
+      // in parallelo al ritardo appena esteso sopra (autoAdvanceDelayMs), invece di aspettare che
+      // sparisca per davvero e animarlo solo a cose fatte. Nessun timer di pulizia qui apposta: lo
+      // fa l'effect sotto, quando osserva la rimozione REALE — un timer locale indipendente correva
+      // il rischio di ripulire il segnale prima che la scrittura Firestore (rete, quindi più lenta
+      // del timer) arrivasse, facendo scambiare l'effect sotto la sparizione per una "sorpresa" e
+      // ri-animarla da capo come ghost (il bug della doppia animazione appena osservato in gioco).
+      if (s.phase === 'fine') {
+        const expiringIds = (this.me()?.hand ?? []).filter(card => card.expiresAt === 'fine').map(card => card.id);
+        if (expiringIds.length > 0) {
+          this.vanishingCardIds.update(set => new Set([...set, ...expiringIds]));
+        }
+      }
+
       const gameId = this.gameId();
       const timer = setTimeout(() => void this.gameEngine.advancePhase(gameId, role), this.autoAdvanceDelayMs());
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
+    });
+
+    // Carte "temporanee" (Congelamento/Residuo, Card.expiresAt) che spariscono da playerHand() —
+    // unico punto che ripulisce vanishingCardIds (niente timer indipendenti altrove, vedi sopra):
+    // se una carta sparita era già marcata "in sparizione" (Residuo, marcato proattivamente
+    // sopra), l'abbiamo già mostrata/la stiamo mostrando nel loop principale — qui si ripulisce
+    // solo il segnale. Se invece sparisce "di sorpresa" (Congelamento, risolto in modo atomico
+    // dentro l'endTurn dell'avversario — il nostro client la vede già sparita, mai "prima"),
+    // diventa un ghost nella sua vecchia posizione con la stessa animazione.
+    effect(() => {
+      const current = this.playerHand();
+      const previous = this.lastKnownHand;
+      this.lastKnownHand = current;
+      if (previous.length === 0) return;
+
+      const currentIds = new Set(current.map(card => card.id));
+      const goneWithIndex = previous
+        .map((card, index) => ({ card, index }))
+        .filter(({ card }) => !currentIds.has(card.id));
+      if (goneWithIndex.length === 0) return;
+
+      const alreadyShown = this.vanishingCardIds();
+
+      const stillMarkedIds = goneWithIndex.filter(({ card }) => alreadyShown.has(card.id)).map(({ card }) => card.id);
+      if (stillMarkedIds.length > 0) {
+        this.vanishingCardIds.update(set => {
+          const next = new Set(set);
+          stillMarkedIds.forEach(id => next.delete(id));
+          return next;
+        });
+      }
+
+      const surprises = goneWithIndex.filter(({ card }) => card.expiresAt && !alreadyShown.has(card.id));
+      if (surprises.length === 0) return;
+
+      const total = previous.length;
+      const ghosts: VanishingGhost[] = surprises.map(({ card, index }) => ({ card, index, total }));
+      this.vanishingGhosts.update(list => [...list, ...ghosts]);
+
+      const ids = ghosts.map(g => g.card.id);
+      const timer = setTimeout(() => {
+        this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
+      }, VANISH_DURATION_MS);
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
 
@@ -460,15 +545,17 @@ export class BoardComponent implements OnInit {
     }),
   );
 
-  /** Regolamento v2, 2.3/2.4/2.6: scartare le basi corrispondenti (2 per un avanzato, le 4 della formula fissa per un potente) per prendere la carta dalla Fonte. */
+  /** Regolamento v2, 2.3/2.4/2.6: scartare le basi corrispondenti (2 per un avanzato, le 4 della formula fissa per un potente) per prendere la carta dalla Fonte. Niente voci fuori da Azione — la ricetta la spiega già il tooltip della carta, un bottone sempre disabilitato non aggiungerebbe nulla. */
   protected fonteMenuItems(el: Element, slotIndex: number): ActionMenuItem[] {
+    if (!this.isPlayerTurn() || this.state()?.phase !== 'azione') return [];
+
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
     if (recipe) {
       const [a, b] = recipe;
       return [{
         label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
         action: () => this.combineAdvanced(slotIndex, a, b),
-        disabled: !this.isPlayerTurn() || this.state()?.phase !== 'azione' || !this.hasAllBaseCards(recipe),
+        disabled: !this.hasAllBaseCards(recipe),
       }];
     }
 
@@ -476,25 +563,22 @@ export class BoardComponent implements OnInit {
       return [{
         label: this.i18n.t('board.fonte.combineActionSuperior', { formula: this.superiorFormulaLabel() }),
         action: () => this.combineSuperior(slotIndex),
-        disabled: !this.isPlayerTurn() || this.state()?.phase !== 'azione' || !this.hasAllBaseCards(SUPERIOR_FORMULA),
+        disabled: !this.hasAllBaseCards(SUPERIOR_FORMULA),
       }];
     }
 
     return [];
   }
 
-  /**
-   * Bottone Combina mostrato ma sempre disabilitato: ottenere un Residuo (2.5) richiede una pila di
-   * scarti dedicata e una regola di scadenza ("si consuma dopo un turno se non utilizzato") non
-   * ancora modellate in GameState — a differenza di fonteMenuItems non è ancora una riduzione pura
-   * di stato esistente. Mostra comunque le 2 coppie possibili, coerenti col tooltip.
-   */
+  /** Regolamento 2.5: combina 2 elementi base opposti (o un Residuo al loro posto) per ottenerne uno nuovo dal pool condiviso. Niente voci fuori da Azione, o se il pool è già esaurito per il resto della partita. */
   protected residuoMenuItems(): ActionMenuItem[] {
+    if (!this.isPlayerTurn() || this.state()?.phase !== 'azione' || this.residuoDeckCount() === 0) return [];
+
     const pairs: ReadonlyArray<readonly [BaseElement, BaseElement]> = [['fire', 'water'], ['air', 'earth']];
     return pairs.map(([a, b]) => ({
       label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
-      action: () => {},
-      disabled: true,
+      action: () => this.combineResidue(a, b),
+      disabled: !this.hasAllBaseCards([a, b]),
     }));
   }
 
@@ -513,12 +597,18 @@ export class BoardComponent implements OnInit {
     return this.i18n.t('board.wand.handleEffect', { element: this.i18n.elementLabel(el) });
   }
 
+  /** Un Residuo Arcano in mano vale come un elemento base mancante (2.5) — controllato qui invece che sui soli elementi, dato che serve la carta intera per distinguerlo da una base vera. */
   private hasAllBaseCards(elements: readonly BaseElement[]): boolean {
-    const hand = this.playerHand().map(card => card.element);
+    const hand = [...this.playerHand()];
     for (const el of elements) {
-      const index = hand.indexOf(el);
-      if (index === -1) return false;
-      hand.splice(index, 1);
+      const exactIndex = hand.findIndex(card => card.element === el);
+      if (exactIndex !== -1) {
+        hand.splice(exactIndex, 1);
+        continue;
+      }
+      const residueIndex = hand.findIndex(card => card.tier === 'residium');
+      if (residueIndex === -1) return false;
+      hand.splice(residueIndex, 1);
     }
     return true;
   }
@@ -567,7 +657,8 @@ export class BoardComponent implements OnInit {
 
     if (!(el in ELEMENT_OPPOSITES)) return null;
     const opposite = ELEMENT_OPPOSITES[el as BaseElement];
-    return hand.includes(opposite) ? 'gold' : 'blue';
+    // Un Residuo in mano vale come l'opposto mancante (2.5).
+    return (hand.includes(opposite) || hand.includes('residium')) ? 'gold' : 'blue';
   }
 
   private async combineAdvanced(slotIndex: number, a: BaseElement, b: BaseElement): Promise<void> {
@@ -580,6 +671,12 @@ export class BoardComponent implements OnInit {
     const role = this.myRole();
     if (!role) return;
     await this.gameEngine.combineSuperior(this.gameId(), role, slotIndex);
+  }
+
+  private async combineResidue(a: BaseElement, b: BaseElement): Promise<void> {
+    const role = this.myRole();
+    if (!role) return;
+    await this.gameEngine.combineResidue(this.gameId(), role, a, b);
   }
 
   /** Fase Raccolta (4.3), primo passo: pesca 2 carte dal mazzo comune (il servizio rimescola se serve). */

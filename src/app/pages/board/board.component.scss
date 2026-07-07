@@ -249,6 +249,15 @@
     &--blue {
       box-shadow: 0 0 0 3px #2f7fd0, 0 0 18px 4px rgba(47, 127, 208, 0.6);
     }
+
+    // Carte "temporanee" (Congelamento/Residuo) che stanno per sparire — si alzano e svaniscono,
+    // come se qualcosa le sollevasse via dalla mano, invece di sparire di scatto. Anima `top`
+    // (non `transform`) apposta: `transform` qui è già occupato dal posizionamento del ventaglio
+    // (handCardStyle), animarlo in un @keyframes lo sovrascriverebbe invece di comporsi con esso.
+    &--vanishing {
+      pointer-events: none;
+      animation: hand-card-vanish 1s ease-in forwards;
+    }
   }
 
   // ── Fonte Arcana (middle zone internals) ────────────────────────────────────
@@ -533,5 +542,16 @@
   }
   50% {
     box-shadow: 0 0 14px 4px rgba(212, 168, 71, 0.55);
+  }
+}
+
+@keyframes hand-card-vanish {
+  0% {
+    opacity: 1;
+    top: 0;
+  }
+  100% {
+    opacity: 0;
+    top: -60px;
   }
 }

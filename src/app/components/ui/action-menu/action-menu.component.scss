@@ -1,5 +1,11 @@
 .action-menu-trigger {
   cursor: pointer;
+
+  // No voci disponibili (fuori da Azione, o pool esaurito) — niente popup vuoto da aprire, il
+  // contenuto proiettato (carta/pila) resta comunque cliccabile per altri scopi (es. il suo tooltip).
+  &--inert {
+    cursor: default;
+  }
 }
 
 // Same panel language as the tooltip (brown bg, gold border, square corners).
