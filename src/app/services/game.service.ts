@@ -18,6 +18,7 @@ import { FirebaseService } from './firebase.service';
 import type { Wand } from '../models/wand.model';
 import type { GameState } from '../models/game.model';
 import { createInitialGameState } from '../game/deck-builder';
+import { resolveElementalExplosions } from '../game/turn-engine';
 
 export interface GameDoc {
   id: string;
@@ -112,10 +113,12 @@ export class GameService {
       guestWand: defaultWand,
       guestReady: true,
       createdAt: Date.now(),
-      state: createInitialGameState(
+      // Esplosione elementale (2.4): come in tryStartGame, la mano iniziale o la Fonte Arcana
+      // appena rivelata potrebbero già contenere sia Luce che Tenebra fin dal primo istante.
+      state: resolveElementalExplosions(createInitialGameState(
         { name: hostName, wand: defaultWand },
         { name: guestName, wand: defaultWand },
-      ),
+      )),
     };
     await setDoc(doc(this.db, 'games', gameId), data);
     return gameId;

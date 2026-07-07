@@ -36,13 +36,21 @@
          values protrude above it, side by side on the same baseline -->
     <div class="hud__hp-bar" [attr.aria-label]="hpAria()">
       <div class="hud__hp-track">
-        <div class="hud__hp-fill" [class.hud__hp-fill--poisoned]="isPoisoned()" [style.width.%]="hpPercent()" aria-hidden="true"></div>
+        <div class="hud__hp-fill" [class.hud__hp-fill--poisoned]="isPoisoned()"
+             [class.hud__hp-fill--damage-flash]="activeDamageAmount() !== null"
+             [style.width.%]="hpPercent()" aria-hidden="true"></div>
         @if (hasShield()) {
           <div class="hud__hp-shield-fill" [style.width.%]="shieldPercent()"
                [style.left.%]="mirrored() ? null : hpPercent()" [style.right.%]="mirrored() ? hpPercent() : null"
                aria-hidden="true"></div>
         }
       </div>
+      <!-- Esplosione elementale (2.4, o altre fonti di danno future): numero fluttuante che sale e
+           svanisce — funziona anche quando la causa non è visibile (es. mano coperta dell'avversario).
+           Fuori da .hud__hp-track apposta: quello ha overflow: hidden e lo taglierebbe mentre sale. -->
+      @if (activeDamageAmount(); as amount) {
+        <span class="hud__damage-flash" aria-hidden="true">-{{ amount }}</span>
+      }
       <div class="hud__values">
         @if (isPoisoned()) {
           <span class="hud__poison" [attr.aria-label]="poisonAria()">

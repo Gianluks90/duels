@@ -1,10 +1,10 @@
 # Fonte Arcana
 
-La Fonte Arcana è l'area comune dove trasformi gli elementi base in elementi avanzati e potenti. È composta dal mazzo avanzato (22 carte: 18 elementi avanzati + 4 potenti), tenuto coperto, e da **4 carte sempre rivelate** accanto ad esso.
+La Fonte Arcana è l'area comune dove trasformi gli elementi base in elementi avanzati e potenti. È composta dal mazzo avanzato (20 carte: 16 elementi avanzati, 4 per tipo, + 4 potenti), tenuto coperto, e da **4 carte sempre rivelate** accanto ad esso.
 
 ## Come si usa
 
-Durante la fase Azione, se hai in mano gli elementi base richiesti da una delle 4 carte rivelate, puoi combinarli: gli elementi usati vengono consumati o scartati (a tua scelta) e la carta ottenuta va nella tua pila degli scarti.
+Durante la fase Azione, se hai in mano gli elementi base richiesti da una delle 4 carte rivelate, puoi combinarli: gli elementi usati si consumano (tornano negli scarti del mazzo comune, non nei tuoi) e la carta ottenuta va nella tua pila degli scarti.
 
 ## Rimpiazzo
 

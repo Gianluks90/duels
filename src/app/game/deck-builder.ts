@@ -14,11 +14,8 @@ const SUPERIOR_ELEMENTS: readonly SuperiorElement[] = ['light', 'dark'];
  */
 const COMMON_DECK_SPLIT: Record<BaseElement, number> = { fire: 15, water: 15, air: 15, earth: 15 };
 
-/**
- * Placeholder — rules.md dà solo il totale (18 avanzati su 4 tipi, che non si divide equamente).
- * Ripartizione arbitraria, da rivedere quando si definisce il contenuto reale delle carte.
- */
-const ADVANCED_ELEMENT_SPLIT: Record<AdvancedElement, number> = { thunder: 4, poison: 5, ice: 4, lava: 5 };
+/** 4 copie per elemento avanzato (regolamento 1.1: mazzo avanzato da 20 carte, 16 avanzati + 4 potenti). */
+const ADVANCED_ELEMENT_SPLIT: Record<AdvancedElement, number> = { thunder: 4, poison: 4, ice: 4, lava: 4 };
 
 const SUPERIOR_ELEMENT_COUNT = 2;    // per elemento potente, nel mazzo avanzato (regolamento 1.1: 4 potenti totali)
 const RESIDIUM_COUNT = 8;
@@ -133,7 +130,20 @@ export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): G
   const makeCard = createCardFactory();
 
   const commonDeck = shuffle(buildCommonDeck(makeCard));
-  const shuffledAdvancedDeck = shuffle(buildAdvancedDeck(makeCard));
+
+  // 1.1: una copia per elemento potente parte già negli scarti del mazzo avanzato — bilancia la
+  // disponibilità totale di Luce/Tenebra, dato che ogni giocatore ne parte già con 1 copia a testa
+  // nel proprio mazzo personale (1.2). Tolte PRIMA di rimescolare, così Fonte Arcana e mazzo
+  // avanzato partono con una sola copia "attiva" per tipo, non due.
+  const fullAdvancedDeck = buildAdvancedDeck(makeCard);
+  const advancedDiscards: Card[] = [];
+  const activeAdvancedDeck = [...fullAdvancedDeck];
+  for (const el of SUPERIOR_ELEMENTS) {
+    const index = activeAdvancedDeck.findIndex(c => c.element === el);
+    if (index !== -1) advancedDiscards.push(...activeAdvancedDeck.splice(index, 1));
+  }
+
+  const shuffledAdvancedDeck = shuffle(activeAdvancedDeck);
   const fonteElementale = shuffledAdvancedDeck.slice(0, FONTE_VISIBLE_COUNT);
   const advancedDeck = shuffledAdvancedDeck.slice(FONTE_VISIBLE_COUNT);
   const residiumDeck = buildResiduumDeck(makeCard);
@@ -152,8 +162,10 @@ export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): G
     commonDiscards: [],
     fonteElementale,
     advancedDeck,
-    advancedDiscards: [],
+    advancedDiscards,
     residiumDeck,
+    explosionBatchId: 0,
+    lastExplosions: [],
     winner: null,
     createdAt: Date.now(),
   };

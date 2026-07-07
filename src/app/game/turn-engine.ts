@@ -1,7 +1,7 @@
 import type { Card } from '../models/card.model';
-import type { BaseElement } from '../models/element.model';
+import type { BaseElement, Element } from '../models/element.model';
 import { SUPERIOR_FORMULA } from '../models/element.model';
-import type { GameState } from '../models/game.model';
+import type { ExplosionEvent, GameState } from '../models/game.model';
 import type { PlayerId, PlayerState } from '../models/player.model';
 import { TURN_PHASES, type ActiveTurnPhase } from '../models/turn-phase.model';
 import { drawUpTo, HAND_SIZE } from './deck-builder';
@@ -158,7 +158,11 @@ export function combineElements(
 
   const consumedBases = [cardA, cardB].filter(c => c.tier !== 'residium');
   const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
-  return updatePlayer(withTable, role, { hand: handAfterB, discards: [...player.discards, taken.obtained] });
+  const withHand = updatePlayer(withTable, role, { hand: handAfterB, discards: [...player.discards, taken.obtained] });
+
+  // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
+  // essere Luce o Tenebra (la carta ottenuta qui è sempre un avanzato, mai un potente).
+  return resolveElementalExplosions(withHand);
 }
 
 /**
@@ -185,7 +189,11 @@ export function combineSuperior(state: GameState, role: PlayerId, fonteSlotIndex
 
   const consumedBases = consumed.filter(c => c.tier !== 'residium');
   const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
-  return updatePlayer(withTable, role, { hand, discards: [...player.discards, taken.obtained] });
+  const withHand = updatePlayer(withTable, role, { hand, discards: [...player.discards, taken.obtained] });
+
+  // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
+  // essere l'elemento potente opposto a quello appena ottenuto qui (che va negli scarti, non in mano).
+  return resolveElementalExplosions(withHand);
 }
 
 /**
@@ -277,7 +285,10 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   // appena concluso — non richiede un passo separato, dato che l'unico modo di entrare in
   // 'preparazione' è proprio questo handoff di turno (o l'inizio partita, dove i due contatori sono
   // comunque a zero).
-  return resolvePreparation(stateForNextTurn, otherRole);
+  const stateAfterPreparation = resolvePreparation(stateForNextTurn, otherRole);
+
+  // Esplosione elementale (2.4): la mano appena pescata potrebbe contenere sia Luce che Tenebra.
+  return resolveElementalExplosions(stateAfterPreparation);
 }
 
 /**
@@ -291,6 +302,58 @@ function resolvePreparation(state: GameState, target: PlayerId): GameState {
   const hand = resolveExpiringCards(player.hand, 'preparazione');
 
   return updatePlayer(state, target, { hp: player.hp - poisonDamage, hand });
+}
+
+function removeOneByExactElement(cards: readonly Card[], element: Element): Card[] {
+  const rest = [...cards];
+  const index = rest.findIndex(c => c.element === element);
+  if (index !== -1) rest.splice(index, 1);
+  return rest;
+}
+
+/**
+ * Esplosione elementale (2.4): quando Luce e Tenebra si trovano nello stesso luogo — la mano di un
+ * giocatore, o la Fonte Arcana — esplodono: 1 danno al bersaglio (solo al proprietario se in mano,
+ * a entrambi i giocatori se nella Fonte Arcana) e le 2 carte si consumano (spariscono, non vanno
+ * scartate — altrimenti bisognerebbe tracciare quali coppie sono "già esplose" per non farle
+ * ri-esplodere a ogni controllo successivo). In loop per il caso limite di più di 1 copia
+ * compresente. Va richiamata dopo qualunque cambiamento che potrebbe aver introdotto un elemento
+ * potente in una mano o in Fonte Arcana (inizio partita, endTurn, combineElements/combineSuperior).
+ *
+ * Ogni esplosione risolta qui è invisibile al client finché non arriva il nuovo stato (si è già
+ * consumata, proprio come lo scioglimento del Congelamento) — `lastExplosions`/`explosionBatchId`
+ * esistono solo per permettere al client di accorgersene e giocare un'animazione, non sono un log
+ * storico: se non succede nulla restano quelli di sempre, invariati.
+ */
+export function resolveElementalExplosions(state: GameState): GameState {
+  let next = state;
+  const events: ExplosionEvent[] = [];
+
+  for (const role of ['host', 'guest'] as const) {
+    let player = next.players[role];
+    while (player.hand.some(c => c.element === 'light') && player.hand.some(c => c.element === 'dark')) {
+      const hand = removeOneByExactElement(removeOneByExactElement(player.hand, 'light'), 'dark');
+      next = updatePlayer(next, role, { hand, hp: player.hp - 1 });
+      player = next.players[role];
+      events.push({ location: 'hand', affectedRoles: [role] });
+    }
+  }
+
+  while (next.fonteElementale.some(c => c.element === 'light') && next.fonteElementale.some(c => c.element === 'dark')) {
+    const fonteElementale = removeOneByExactElement(removeOneByExactElement(next.fonteElementale, 'light'), 'dark');
+    next = {
+      ...next,
+      fonteElementale,
+      players: {
+        host: { ...next.players.host, hp: next.players.host.hp - 1 },
+        guest: { ...next.players.guest, hp: next.players.guest.hp - 1 },
+      },
+    };
+    events.push({ location: 'fonte', affectedRoles: ['host', 'guest'] });
+  }
+
+  if (events.length === 0) return next;
+  return { ...next, lastExplosions: events, explosionBatchId: next.explosionBatchId + 1 };
 }
 
 const MAX_POISON = 3;

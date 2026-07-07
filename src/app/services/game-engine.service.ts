@@ -12,6 +12,7 @@ import {
   combineSuperior as combineSuperiorReducer,
   combineResidue as combineResidueReducer,
   keepCard as keepCardReducer,
+  resolveElementalExplosions,
   startCollect as startCollectReducer,
 } from '../game/turn-engine';
 
@@ -43,10 +44,13 @@ export class GameEngineService {
     if (!data.hostReady || !data.guestReady) return;
     if (!data.hostWand || !data.guestWand) return;
 
-    const state = createInitialGameState(
+    // Esplosione elementale (2.4): la mano iniziale (pescata dal proprio mazzo, con 1 Luce + 1
+    // Tenebra ciascuno, 1.2) o la Fonte Arcana appena rivelata potrebbero già contenere entrambi
+    // gli elementi potenti fin dal primo istante.
+    const state = resolveElementalExplosions(createInitialGameState(
       { name: data.hostName, wand: data.hostWand },
       { name: data.guestName ?? data.hostName, wand: data.guestWand },
-    );
+    ));
 
     await updateDoc(ref, { status: 'playing', state });
   }

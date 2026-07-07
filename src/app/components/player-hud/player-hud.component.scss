@@ -190,6 +190,12 @@
     &--poisoned {
       background: linear-gradient(180deg, #b6d94f 0%, #7a9a2e 32%, #4a5c18 68%, #2e3a10 100%);
     }
+
+    // Esplosione elementale (2.4) — "lampo": un impulso bianco/dorato sopra il fill, durata
+    // allineata a DAMAGE_FLASH_DURATION_MS (player-hud.component.ts).
+    &--damage-flash {
+      animation: hp-damage-flash 1000ms ease-out;
+    }
   }
 
   // Bonus effective hp from shield tokens — sits right after the red fill
@@ -203,6 +209,23 @@
     box-shadow:
       inset 0 2px 2px rgba(255, 255, 255, 0.4),
       inset 0 -3px 5px rgba(0, 0, 0, 0.55);
+  }
+
+  // Esplosione elementale (2.4) — numero fluttuante "-N" che sale e svanisce sopra la barra,
+  // fratello di .hud__hp-track (non figlio: quello ha overflow: hidden e lo taglierebbe).
+  &__damage-flash {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translate(-50%, 0);
+    font-family: var(--font-ui);
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #ff5a4a;
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 2;
+    animation: hud-damage-number 1000ms ease-out;
   }
 
   // HP value (+ poison skulls, same baseline), protruding above the bar.
@@ -257,5 +280,37 @@
     &--interactive {
       cursor: pointer;
     }
+  }
+}
+
+// Esplosione elementale (2.4) — durata di entrambe: 1000ms, in sync con DAMAGE_FLASH_DURATION_MS
+// (player-hud.component.ts). Top-level: le @keyframes non possono stare dentro un blocco &.
+@keyframes hp-damage-flash {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow:
+      inset 0 2px 2px rgba(255, 255, 255, 0.4),
+      inset 0 -3px 5px rgba(0, 0, 0, 0.55);
+  }
+  15%, 45% {
+    filter: brightness(1.9);
+    box-shadow:
+      inset 0 0 12px rgba(255, 255, 255, 0.9),
+      inset 0 -3px 5px rgba(0, 0, 0, 0.55);
+  }
+}
+
+@keyframes hud-damage-number {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -4px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px);
   }
 }

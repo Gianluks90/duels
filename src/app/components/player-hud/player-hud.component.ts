@@ -1,9 +1,18 @@
-import { Component, ChangeDetectionStrategy, computed, input, output, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, input, output, inject, signal, effect, DestroyRef } from '@angular/core';
 import { firstNameOf, type Health } from '../../models/player.model';
 import { elementIconPath } from '../../models/element.model';
 import { TooltipDirective } from '../ui/tooltip/tooltip.directive';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+
+/** Durata del pulse rosso + numero fluttuante quando arriva un DamageEvent — deve combaciare con @keyframes hud-damage-number/hp-damage-flash in player-hud.component.scss. */
+const DAMAGE_FLASH_DURATION_MS = 1000;
+
+/** Un colpo subito da mostrare una tantum — `id` deve cambiare solo quando è successo davvero qualcosa di nuovo (es. GameState.explosionBatchId), non a ogni render. */
+export interface DamageEvent {
+  id: number;
+  amount: number;
+}
 
 @Component({
   selector: 'app-player-hud',
@@ -14,6 +23,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 })
 export class PlayerHudComponent {
   protected readonly i18n = inject(TranslationService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly name      = input.required<string>();
   readonly health    = input.required<Health>();
@@ -25,9 +35,27 @@ export class PlayerHudComponent {
   readonly poisonLevel = input<number>(0);
   /** true finché il giocatore ha ancora carte Congelamento non sciolte in circolazione (mano, mazzo o scarti — regolamento 2.3.1). */
   readonly frozen = input<boolean>(false);
+  /** Colpo subito da segnalare (es. Esplosione elementale, 2.4) — funziona anche quando la causa non è visibile a schermo (es. nella mano coperta dell'avversario), dato che qui basta sapere "quanto" e "quando", non "perché". */
+  readonly damageEvent = input<DamageEvent | null>(null);
 
   /** Only rendered when !mirrored() — the opponent's panel has no settings button. */
   readonly settingsClick = output<void>();
+
+  /** null finché non c'è un colpo da mostrare; altrimenti l'ammontare, per il tempo dell'animazione. */
+  protected readonly activeDamageAmount = signal<number | null>(null);
+  private lastDamageEventId: number | null = null;
+
+  constructor() {
+    effect(() => {
+      const event = this.damageEvent();
+      if (!event || event.id === this.lastDamageEventId) return;
+      this.lastDamageEventId = event.id;
+
+      this.activeDamageAmount.set(event.amount);
+      const timer = setTimeout(() => this.activeDamageAmount.set(null), DAMAGE_FLASH_DURATION_MS);
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
+    });
+  }
 
   protected readonly poisonIcon = elementIconPath('poison');
   protected readonly poisonRange = computed(() => Array.from({ length: this.poisonLevel() }, (_, i) => i));

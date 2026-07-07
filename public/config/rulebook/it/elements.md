@@ -31,11 +31,11 @@ Gli elementi avanzati danno accesso a incantesimi più potenti, che tendenzialme
 - **Lava** — gli incantesimi che lo includono possono consumare carte per alleggerire il mazzo, e sono noti per creare scudi ai Punti Salute.
 - **Veleno** — gli incantesimi che lo includono possono applicare **Avvelenamento**: il bersaglio subisce danni in fase di Preparazione in base al livello raggiunto; il livello si riduce di 1 ogni volta che il mazzo del giocatore avvelenato viene rimescolato dai propri scarti.
 
-## Elementi Potenti ed Esplosione Arcana
+## Elementi Potenti ed Esplosione Elementale
 
 Luce e Tenebra valgono 2 mana ciascuno e si ottengono combinando Fuoco + Acqua + Aria + Terra nella Fonte Arcana.
 
-Quando due elementi potenti diversi si trovano nello stesso luogo — la tua mano, oppure la Fonte Arcana — avviene un'**esplosione elementale**: 1 danno al bersaglio (se accade in mano, solo a chi la possiede; se accade nella Fonte Arcana, a entrambi i giocatori).
+Quando due elementi potenti diversi si trovano nello stesso luogo — la tua mano, oppure la Fonte Arcana — avviene un'**esplosione elementale**: 1 danno al bersaglio (se accade in mano, solo a chi la possiede; se accade nella Fonte Arcana, a entrambi i giocatori) e le 2 carte coinvolte si consumano.
 
 ## Residuo Arcano
 

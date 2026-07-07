@@ -20,7 +20,7 @@ import { GameEngineService } from '../../services/game-engine.service';
 import { AuthService } from '../../services/auth.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
-import { PlayerHudComponent } from '../../components/player-hud/player-hud.component';
+import { PlayerHudComponent, type DamageEvent } from '../../components/player-hud/player-hud.component';
 import { PhaseTrackerComponent } from '../../components/phase-tracker/phase-tracker.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
@@ -81,12 +81,18 @@ type HoverRecipe =
 
 /** Durata dell'animazione di sparizione delle carte "temporanee" (Congelamento/Residuo, Card.expiresAt) — deve combaciare con @keyframes hand-card-vanish in board.component.scss. */
 const VANISH_DURATION_MS = 1000;
+/** Durata dell'animazione "lampo + scossa" delle carte Luce/Tenebra coinvolte in un'Esplosione elementale (2.4) in mano — deve combaciare con @keyframes hand-card-explode in board.component.scss. */
+const EXPLOSION_GHOST_DURATION_MS = 700;
+/** Durata del lampo + scossa sull'intera riga della Fonte Arcana quando un'Esplosione elementale (2.4) avviene lì — deve combaciare con @keyframes fonte-explode in board.component.scss. */
+const FONTE_EXPLOSION_DURATION_MS = 500;
 
-/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione non finisce. */
+/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione non finisce.
+ *  `kind` sceglie l'animazione CSS: 'expiry' per Congelamento/Residuo (lift + fade), 'explosion' per Esplosione elementale (2.4, lampo + scossa). */
 interface VanishingGhost {
   card: Card;
   index: number;
   total: number;
+  kind: 'expiry' | 'explosion';
 }
 
 @Component({
@@ -158,12 +164,27 @@ export class BoardComponent implements OnInit {
     return s && role ? s.players[role] : null;
   });
 
+  private readonly opponentRole = computed<PlayerId | null>(() => {
+    const role = this.myRole();
+    return role ? (role === 'host' ? 'guest' : 'host') : null;
+  });
+
   private readonly opponentState = computed(() => {
     const s = this.state();
-    const role = this.myRole();
-    if (!s || !role) return null;
-    return s.players[role === 'host' ? 'guest' : 'host'];
+    const role = this.opponentRole();
+    return s && role ? s.players[role] : null;
   });
+
+  /** Esplosione elementale (2.4): quante volte questo ruolo è stato colpito nell'ultimo batch (2.4 può risolvere più coppie in un colpo solo) — null finché non ce n'è una da mostrare. Il "lampo" sulla barra vita funziona sempre, anche quando la causa non è visibile (mano coperta dell'avversario). */
+  private damageEventFor(role: PlayerId | null): DamageEvent | null {
+    const s = this.state();
+    if (!s || !role) return null;
+    const amount = s.lastExplosions.filter(e => e.affectedRoles.includes(role)).length;
+    return amount > 0 ? { id: s.explosionBatchId, amount } : null;
+  }
+
+  protected readonly playerDamageEvent = computed(() => this.damageEventFor(this.myRole()));
+  protected readonly opponentDamageEvent = computed(() => this.damageEventFor(this.opponentRole()));
 
   protected readonly playerHealth = computed(() => ({
     max: 20,
@@ -324,6 +345,13 @@ export class BoardComponent implements OnInit {
   /** Carte "temporanee" già sparite da playerHand() ma non ancora mostrate come tali (es. Congelamento, sciolto in modo atomico dentro l'endTurn dell'avversario — il nostro client la vede già sparita, senza un "prima" da segnare proattivamente) — restano a video come ghost nella loro vecchia posizione finché l'animazione non finisce. */
   protected readonly vanishingGhosts = signal<readonly VanishingGhost[]>([]);
   private lastKnownHand: Card[] = [];
+  /** Evita di processare due volte lo stesso batch di Esplosione elementale (2.4) nell'effect di diff della mano sotto. */
+  private lastProcessedHandExplosionBatchId: number | null = null;
+
+  /** true per la durata del lampo + scossa quando un'Esplosione elementale (2.4) avviene in Fonte Arcana (danneggia entrambi i giocatori, quindi non è legata a un ruolo). */
+  protected readonly fonteExploding = signal(false);
+  /** Evita di riprocessare due volte lo stesso batch nell'effect dedicato sotto. */
+  private lastProcessedFonteExplosionBatchId: number | null = null;
 
   constructor() {
     afterNextRender(() => {
@@ -419,16 +447,58 @@ export class BoardComponent implements OnInit {
       }
 
       const surprises = goneWithIndex.filter(({ card }) => card.expiresAt && !alreadyShown.has(card.id));
-      if (surprises.length === 0) return;
+
+      // Esplosione elementale (2.4): Luce+Tenebra sparite dalla mano insieme a un evento 'hand' per
+      // questo ruolo nell'ULTIMO batch (non ancora processato) — il gate sul batch evita di scambiare
+      // uno scarto Luce/Tenebra qualunque (es. fine turno) per un'esplosione.
+      const s = this.state();
+      const role = this.myRole();
+      const isNewExplosionBatch = !!s && s.explosionBatchId !== this.lastProcessedHandExplosionBatchId;
+      const hasHandExplosionForMe = isNewExplosionBatch && !!role &&
+        s!.lastExplosions.some(e => e.location === 'hand' && e.affectedRoles.includes(role));
+      if (isNewExplosionBatch) this.lastProcessedHandExplosionBatchId = s!.explosionBatchId;
+
+      const explosionSurprises = hasHandExplosionForMe
+        ? goneWithIndex.filter(({ card }) => card.element === 'light' || card.element === 'dark')
+        : [];
+
+      if (surprises.length === 0 && explosionSurprises.length === 0) return;
 
       const total = previous.length;
-      const ghosts: VanishingGhost[] = surprises.map(({ card, index }) => ({ card, index, total }));
+      const ghosts: VanishingGhost[] = [
+        ...surprises.map(({ card, index }) => ({ card, index, total, kind: 'expiry' as const })),
+        ...explosionSurprises.map(({ card, index }) => ({ card, index, total, kind: 'explosion' as const })),
+      ];
       this.vanishingGhosts.update(list => [...list, ...ghosts]);
 
-      const ids = ghosts.map(g => g.card.id);
-      const timer = setTimeout(() => {
-        this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
-      }, VANISH_DURATION_MS);
+      if (surprises.length > 0) {
+        const ids = surprises.map(({ card }) => card.id);
+        const timer = setTimeout(() => {
+          this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
+        }, VANISH_DURATION_MS);
+        this.destroyRef.onDestroy(() => clearTimeout(timer));
+      }
+
+      if (explosionSurprises.length > 0) {
+        const ids = explosionSurprises.map(({ card }) => card.id);
+        const timer = setTimeout(() => {
+          this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
+        }, EXPLOSION_GHOST_DURATION_MS);
+        this.destroyRef.onDestroy(() => clearTimeout(timer));
+      }
+    });
+
+    // Esplosione elementale (2.4) in Fonte Arcana: danneggia entrambi i giocatori, non è legata a
+    // singole carte in mano (il template usa track $index sulla riga) — semplificato a un lampo +
+    // scossa sull'intera riga invece di un ghost per carta.
+    effect(() => {
+      const s = this.state();
+      if (!s || s.explosionBatchId === this.lastProcessedFonteExplosionBatchId) return;
+      this.lastProcessedFonteExplosionBatchId = s.explosionBatchId;
+      if (!s.lastExplosions.some(e => e.location === 'fonte')) return;
+
+      this.fonteExploding.set(true);
+      const timer = setTimeout(() => this.fonteExploding.set(false), FONTE_EXPLOSION_DURATION_MS);
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
 

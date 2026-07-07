@@ -14,7 +14,7 @@ All'inizio della partita vengono preparati:
 |---|---|---|
 | Residuo Arcano | 8 carte | scoperto |
 | Mazzo comune | 60 carte | coperto |
-| Mazzo avanzato | 22 carte (18 elementi avanzati + 4 elementi potenti) | coperto, con 4 carte subito rivelate accanto ad esso |
+| Mazzo avanzato | 20 carte (16 elementi avanzati, 4 per tipo, + 4 elementi potenti) | coperto, con 4 carte subito rivelate accanto ad esso |
 
 Il mazzo coperto e le 4 carte rivelate formano insieme la **Fonte Arcana** (vedi la sezione dedicata).
 

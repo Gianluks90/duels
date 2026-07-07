@@ -258,6 +258,15 @@
       pointer-events: none;
       animation: hand-card-vanish 1s ease-in forwards;
     }
+
+    // Esplosione elementale (2.4): Luce+Tenebra coinvolte lampeggiano e "scuotono" prima di sparire.
+    // Usa la proprietà `translate` standalone (non `transform: translate()`) apposta: `transform` qui
+    // è già occupato dal ventaglio (handCardStyle) — `translate` si compone con esso invece di sovrascriverlo,
+    // stesso motivo per cui --vanishing sopra usa `top` invece di `transform`.
+    &--exploding {
+      pointer-events: none;
+      animation: hand-card-explode 700ms ease-out forwards;
+    }
   }
 
   // ── Fonte Arcana (middle zone internals) ────────────────────────────────────
@@ -315,6 +324,12 @@
     display: flex;
     gap: var(--sp-3);
     align-items: center;
+
+    // Esplosione elementale (2.4) in Fonte Arcana: danneggia entrambi i giocatori, non singole carte
+    // (la riga usa track $index) — lampo + scossa semplificati sull'intera riga invece di un ghost per carta.
+    &--exploding {
+      animation: fonte-explode 500ms ease-out;
+    }
   }
 
   &__fonte-footer {
@@ -554,4 +569,21 @@
     opacity: 0;
     top: -60px;
   }
+}
+
+// Esplosione elementale (2.4) — "lampo + scossa": lampi bianco/dorati (via filter) + shake
+// orizzontale, poi svanisce. Durata in sync con EXPLOSION_GHOST_DURATION_MS (board.component.ts).
+@keyframes hand-card-explode {
+  0% { filter: brightness(1); translate: 0 0; }
+  15%, 45% { filter: brightness(2.2); translate: -6px 0; }
+  30%, 60% { filter: brightness(2.2); translate: 6px 0; }
+  100% { filter: brightness(1); translate: 0 0; opacity: 0; }
+}
+
+// Stessa idea semplificata per l'intera riga della Fonte Arcana (non singole carte, vedi nota su
+// .board__fonte-row--exploding). Durata in sync con FONTE_EXPLOSION_DURATION_MS (board.component.ts).
+@keyframes fonte-explode {
+  0%, 100% { filter: brightness(1); translate: 0 0; }
+  15%, 45% { filter: brightness(1.9); translate: -5px 0; }
+  30%, 60% { filter: brightness(1.9); translate: 5px 0; }
 }

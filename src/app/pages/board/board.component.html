@@ -14,6 +14,7 @@
       [health]="opponentHealth()"
       [poisonLevel]="opponentPoisonLevel()"
       [frozen]="opponentFrozen()"
+      [damageEvent]="opponentDamageEvent()"
       [mirrored]="true"
     />
 
@@ -144,7 +145,8 @@
         <div class="board__fonte-group-content">
           <app-deck [size]="fonteCardWidth" [count]="advancedDeckCount()" [label]="'board.fonte.avanzato' | translate" />
 
-          <div class="board__fonte-row" role="region" [attr.aria-label]="'board.fonteAria' | translate">
+          <div class="board__fonte-row" role="region" [attr.aria-label]="'board.fonteAria' | translate"
+               [class.board__fonte-row--exploding]="fonteExploding()">
             @for (card of fonteCards(); track $index) {
               <app-action-menu [items]="fonteMenuItems(card, $index)"
                                (mouseenter)="onFonteHover(card)" (mouseleave)="onFonteHoverEnd()">
@@ -204,6 +206,7 @@
       [health]="playerHealth()"
       [poisonLevel]="playerPoisonLevel()"
       [frozen]="playerFrozen()"
+      [damageEvent]="playerDamageEvent()"
       [mirrored]="false"
       (settingsClick)="openGameSettings()"
     />
@@ -235,8 +238,10 @@
              di sparizione — restano nella loro vecchia posizione (indice/conteggio congelati al momento
              in cui sono sparite) finché l'animazione non finisce, invece di sparire di scatto. -->
         @for (ghost of vanishingGhosts(); track ghost.card.id) {
-          <app-card class="board__hand-card board__hand-card--vanishing" [element]="ghost.card.element" [manaBonus]="ghost.card.manaBonus ?? 0"
+          <app-card class="board__hand-card" [element]="ghost.card.element" [manaBonus]="ghost.card.manaBonus ?? 0"
                     [showMana]="ghost.card.tier !== 'freeze'" [size]="handArcCardWidth"
+                    [class.board__hand-card--vanishing]="ghost.kind === 'expiry'"
+                    [class.board__hand-card--exploding]="ghost.kind === 'explosion'"
                     [style]="handCardStyle(ghost.index, ghost.total, playerHandTrackWidth(), false)" aria-hidden="true" />
         }
       </div>
