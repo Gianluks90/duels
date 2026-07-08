@@ -9,7 +9,7 @@
       @for (card of payableHand; track card.id) {
         <li class="cast-spell-dialog__hand-item" [class.cast-spell-dialog__hand-item--selected]="selectedIds().has(card.id)"
             role="option" [attr.aria-selected]="selectedIds().has(card.id)" (click)="toggle(card.id)">
-          <app-card [element]="card.element" [manaBonus]="card.manaBonus ?? 0" [size]="56" />
+          <app-card [element]="card.element" [manaBonus]="card.manaBonus ?? 0" [specialMana]="card.specialMana ?? null" [size]="56" />
         </li>
       }
     </ul>

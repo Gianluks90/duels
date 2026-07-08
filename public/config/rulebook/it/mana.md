@@ -13,16 +13,16 @@ Il mana non è un serbatoio che accumuli: **è il valore delle carte che hai in 
 
 ## Mana Speciale
 
-Su poche carte elemento base compaiono dei mana speciali: 2 copie ciascuno, 6 in totale.
+Su poche carte elemento base compaiono dei mana speciali: 2 copie ciascuno, 6 in totale. Sono modificatori legati alla carta stessa, che agiscono sull'incantesimo che paghi con quel mana — non su di te nel momento in cui la peschi o la tieni in mano.
 
 ### Prismatico
 
-Vale 2 mana comuni fin da subito, invece di 1.
+Vale sempre 1 mana in più rispetto al proprio valore, indipendentemente da qualsiasi altro modificatore attivo sulla carta (es. bonus manico).
 
 ### Vitale
 
-Ripristina 2 Punti Salute quando lo raccogli. Una volta applicato l'effetto, diventa un elemento con mana comune dal valore di 1.
+Se lo usi per pagare un incantesimo che bersaglia te stesso, recuperi 2 Punti Salute. Se l'incantesimo bersaglia l'avversario, non ha alcun effetto aggiuntivo: vale come un mana comune.
 
 ### Caotico
 
-Infligge 2 danni al giocatore che lo raccoglie. Una volta applicato l'effetto, diventa un elemento con mana comune dal valore di 2.
+Se lo usi per pagare un incantesimo che bersaglia l'avversario, l'avversario subisce 2 danni aggiuntivi. Se l'incantesimo bersaglia te stesso, non ha alcun effetto aggiuntivo: vale come un mana comune.

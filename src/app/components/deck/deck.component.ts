@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, input, computed } from '@angular/core';
 import { CardComponent } from '../card/card.component';
 import type { Element } from '../../models/element.model';
+import type { SpecialMana } from '../../models/card.model';
 
 /** Deterministic rotation angles for the messy discard-pile look, cycled by index — not Math.random(), so cards don't jitter on every change-detection run. */
 const MESSY_ROTATIONS = [-7, 5, -4, 6, -3];
@@ -20,7 +21,7 @@ const MESSY_STACK_SIZE = 3;
     @if (count() > 0) {
       @if (!messy()) {
         @if (faceUp() && topElement(); as el) {
-          <app-card [element]="el" [manaBonus]="topManaBonus()" [size]="size()" />
+          <app-card [element]="el" [manaBonus]="topManaBonus()" [specialMana]="topSpecialMana()" [size]="size()" />
         } @else {
           <div class="deck__back deck__back--stacked" [class.deck__back--no-border]="!showBorder()"
                [style.width.px]="size()" [style.height.px]="height()" aria-hidden="true"></div>
@@ -31,7 +32,7 @@ const MESSY_STACK_SIZE = 3;
             <div class="deck__back deck__back--layer" [style.transform]="rotation(i)" aria-hidden="true"></div>
           }
           @if (faceUp() && topElement(); as el) {
-            <app-card class="deck__top" [element]="el" [manaBonus]="topManaBonus()" [size]="size()" [style.transform]="rotation(backSlots().length)" />
+            <app-card class="deck__top" [element]="el" [manaBonus]="topManaBonus()" [specialMana]="topSpecialMana()" [size]="size()" [style.transform]="rotation(backSlots().length)" />
           } @else {
             <div class="deck__back deck__back--layer" [style.transform]="rotation(backSlots().length)" aria-hidden="true"></div>
           }
@@ -86,6 +87,8 @@ export class DeckComponent {
   readonly topElement = input<Element | null>(null);
   /** Bonus manico (1.4.3) carried by that same top card, if any — without this, a permanently-boosted card would silently show its plain base value the moment it lands on top of a pile. */
   readonly topManaBonus = input<number>(0);
+  /** Mana speciale (3.2) carried by that same top card, if any — same reasoning as topManaBonus: without it, a special-mana card silently loses its badge the moment it lands on top of a pile. */
+  readonly topSpecialMana = input<SpecialMana | null>(null);
   /** Renders as a small, slightly scattered heap (a few rotated layers) instead of one neat stacked card — for discard piles. */
   readonly messy = input<boolean>(false);
   readonly label = input<string | null>(null);

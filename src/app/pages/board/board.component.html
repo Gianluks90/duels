@@ -32,7 +32,7 @@
            gli scarti adiacenti alla bacchetta (destra); qui l'HUD è a destra e la bacchetta a sinistra,
            quindi l'ordine si inverte per mantenere le stesse adiacenze relative. -->
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [topManaBonus]="opponentDiscardTopManaBonus()" [messy]="true" [showLabel]="false" [showCount]="false"
+        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [topManaBonus]="opponentDiscardTopManaBonus()" [topSpecialMana]="opponentDiscardTopSpecialMana()" [messy]="true" [showLabel]="false" [showCount]="false"
                   [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
                   [appTooltip]="'board.deckDiscarded' | translate:{ count: opponentDiscardCount() }" tooltipPosition="bottom" />
       </div>
@@ -144,7 +144,7 @@
                 (click)="drawTwo()" [appTooltip]="'board.fonte.collectTooltip' | translate" tooltipPosition="top">
           <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.base' | translate" [showBorder]="!canCollect()" />
         </button>
-        <app-deck [size]="fonteCardWidth" [count]="commonDiscardCount()" [faceUp]="true" [topElement]="commonDiscardTop()" [topManaBonus]="commonDiscardTopManaBonus()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
+        <app-deck [size]="fonteCardWidth" [count]="commonDiscardCount()" [faceUp]="true" [topElement]="commonDiscardTop()" [topManaBonus]="commonDiscardTopManaBonus()" [topSpecialMana]="commonDiscardTopSpecialMana()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
       </div>
 
       <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
@@ -194,7 +194,7 @@
         <div class="board__collect-cards">
           @for (card of pair; track card.id) {
             <button type="button" class="board__collect-card" (click)="keepCard(card)">
-              <app-card [element]="card.element" [manaBonus]="collectCardManaBonus(card)" [size]="handArcCardWidth"
+              <app-card [element]="card.element" [manaBonus]="collectCardManaBonus(card)" [specialMana]="card.specialMana ?? null" [size]="handArcCardWidth"
                         [class.board__collect-card__art--bonus]="collectCardRevealing(card)" />
             </button>
           }
@@ -251,7 +251,7 @@
             }
           </ng-template>
           <app-action-menu [items]="handCardMenuItems(card)">
-            <app-card class="board__hand-card" [element]="card.element" [spellId]="card.spellId ?? null" [manaBonus]="card.manaBonus ?? 0" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
+            <app-card class="board__hand-card" [element]="card.element" [spellId]="card.spellId ?? null" [manaBonus]="card.manaBonus ?? 0" [specialMana]="card.specialMana ?? null" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
                       [class.board__hand-card--gold]="card.tier === 'base' && handCardHighlight(card.element) === 'gold'"
                       [class.board__hand-card--blue]="card.tier === 'base' && handCardHighlight(card.element) === 'blue'"
                       [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
@@ -264,7 +264,7 @@
              in cui sono sparite) finché l'animazione non finisce, invece di sparire di scatto. -->
         @for (ghost of vanishingGhosts(); track ghost.card.id) {
           <app-card class="board__hand-card board__hand-card--vanishing" [element]="ghost.card.element" [manaBonus]="ghost.card.manaBonus ?? 0"
-                    [showMana]="ghost.card.tier !== 'freeze'" [size]="handArcCardWidth"
+                    [specialMana]="ghost.card.specialMana ?? null" [showMana]="ghost.card.tier !== 'freeze'" [size]="handArcCardWidth"
                     [style]="handCardStyle(ghost.index, ghost.total, playerHandTrackWidth(), false)" aria-hidden="true" />
         }
 
@@ -282,7 +282,7 @@
       </div>
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [topManaBonus]="playerDiscardTopManaBonus()" [messy]="true" [showLabel]="false" [showCount]="false"
+        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [topManaBonus]="playerDiscardTopManaBonus()" [topSpecialMana]="playerDiscardTopSpecialMana()" [messy]="true" [showLabel]="false" [showCount]="false"
                   [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
                   [appTooltip]="'board.deckDiscarded' | translate:{ count: playerDiscardCount() }" tooltipPosition="top" />
       </div>

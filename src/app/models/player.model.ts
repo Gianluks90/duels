@@ -6,6 +6,13 @@ import type { Wand } from './wand.model';
 export type PlayerId = 'host' | 'guest';
 export type CardBackSkin = 'dark' | 'light';
 
+/** Mana speciale (3.2.2/3.2.3): +1 PS/danno extra per ogni carta vitale/caotica usata per pagare, calcolato al momento del pagamento (castSpell) — le carte di pagamento vengono scartate subito, quindi non sarebbero più consultabili al momento della risoluzione in fase Incantesimo (resolveSpells). 0 se la magia non è stata pagata con quel tipo di mana, o se l'effetto corrispondente (heal per vitale, damage per caotico) non è nemmeno presente nella magia. */
+export interface PendingSpell {
+  card: Card;
+  vitalBonus: number;
+  chaoticBonus: number;
+}
+
 export interface PlayerTokens {
   shield: number;  // 0–3
   poison: number;  // 0–3
@@ -34,7 +41,7 @@ export interface PlayerState {
   /** Le 2 carte pescate in fase Raccolta, in attesa che il giocatore scelga quale tenere (regolamento 4.3). Persistito — non un semplice stato locale — così la scelta sopravvive a un mazzo appena rimescolato. */
   pendingCollect: [Card, Card] | null;
   /** Le carte incantesimo lanciate in fase Azione, in attesa di risoluzione al passaggio in fase Incantesimo (regolamento 5.2/5.3). Persistito, non locale, per lo stesso motivo di pendingCollect. */
-  pendingSpells: Card[];
+  pendingSpells: PendingSpell[];
 
   // Segnalini
   tokens: PlayerTokens;
@@ -55,12 +62,16 @@ export interface PlayerState {
   immuneToElement: BaseElement | null; // Abbraccio Radiante
 }
 
+/** Mana prismatico (3.2.1): +1 mana permanente sul proprio valore, sempre — indipendente da qualsiasi altro modificatore attivo sulla carta (es. manaBonus del bonus manico). */
+const PRISMATIC_MANA_BONUS = 1;
+
 /** Il mana non è un pool salvato: è la somma del valore delle carte in mano in quel momento (regolamento v2, 3.1). */
 export function computePlayerMana(hand: readonly Card[]): number {
   return hand.reduce((sum, card) => {
     if (card.tier === 'freeze') return sum; // non-carta (2.3.1): nessun valore di mana
     if (card.tier === 'spell') return sum; // un incantesimo non è un elemento (3.1): il suo `element` serve solo per l'arte
-    return sum + ELEMENT_MANA[card.element] + (card.manaBonus ?? 0);
+    const prismaticBonus = card.specialMana === 'prismatic' ? PRISMATIC_MANA_BONUS : 0;
+    return sum + ELEMENT_MANA[card.element] + (card.manaBonus ?? 0) + prismaticBonus;
   }, 0);
 }
 

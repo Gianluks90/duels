@@ -2,7 +2,7 @@ import type { Card } from '../models/card.model';
 import type { BaseElement, Element } from '../models/element.model';
 import { SUPERIOR_FORMULA } from '../models/element.model';
 import type { ExplosionEvent, GameState } from '../models/game.model';
-import type { PlayerId, PlayerState } from '../models/player.model';
+import type { PendingSpell, PlayerId, PlayerState } from '../models/player.model';
 import { computePlayerMana } from '../models/player.model';
 import type { SpellEffect } from '../models/spell.model';
 import { TURN_PHASES, type ActiveTurnPhase } from '../models/turn-phase.model';
@@ -111,6 +111,9 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
   });
 }
 
+/** Mana vitale/caotico (3.2.2/3.2.3): PS extra restituiti al lanciatore, o danni extra inflitti all'avversario, per ogni carta di quel tipo spesa in pagamento — calcolati qui (non in resolveSpells) perché le carte di pagamento vengono scartate subito e non sarebbero più consultabili al momento della risoluzione. Si applicano solo se la magia include un effetto rispettivamente 'heal'/'damage' (vedi applySpellEffect) — altrimenti restano inerti, la carta vale come un mana comune. */
+const SPECIAL_MANA_EFFECT_AMOUNT = 2;
+
 /**
  * Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagandone subito il costo in mana
  * scartando le carte indicate. L'effetto NON si applica qui — resta in sospeso in pendingSpells fino
@@ -134,11 +137,14 @@ export function castSpell(state: GameState, role: PlayerId, spellCardId: string,
   if (paidCards.some(c => c.tier === 'spell' || c.tier === 'freeze')) return state;
   if (computePlayerMana(paidCards) < spell.manaCost) return state;
 
+  const vitalBonus = paidCards.filter(c => c.specialMana === 'vital').length * SPECIAL_MANA_EFFECT_AMOUNT;
+  const chaoticBonus = paidCards.filter(c => c.specialMana === 'chaotic').length * SPECIAL_MANA_EFFECT_AMOUNT;
+
   const spentIds = new Set([spellCardId, ...paidCardIds]);
   return updatePlayer(state, role, {
     hand: player.hand.filter(c => !spentIds.has(c.id)),
     discards: [...player.discards, ...paidCards],
-    pendingSpells: [...player.pendingSpells, spellCard],
+    pendingSpells: [...player.pendingSpells, { card: spellCard, vitalBonus, chaoticBonus }],
     spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
   });
 }
@@ -344,17 +350,17 @@ function resolvePreparation(state: GameState, target: PlayerId): GameState {
   return updatePlayer(state, target, { hp: player.hp - poisonDamage, hand });
 }
 
-/** Applica un singolo effetto di un incantesimo lanciato — solo 'damage'/'heal' per ora (v1 minima); gli altri ~16 SpellEffectType non hanno ancora una risoluzione (no-op). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
-function applySpellEffect(state: GameState, casterRole: PlayerId, effect: SpellEffect): GameState {
+/** Applica un singolo effetto di un incantesimo lanciato — solo 'damage'/'heal' per ora (v1 minima); gli altri ~16 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+function applySpellEffect(state: GameState, casterRole: PlayerId, effect: SpellEffect, bonus: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus'>): GameState {
   const opponentRole: PlayerId = casterRole === 'host' ? 'guest' : 'host';
   switch (effect.type) {
     case 'damage': {
       const opponent = state.players[opponentRole];
-      return updatePlayer(state, opponentRole, { hp: opponent.hp - (effect.amount ?? 0) });
+      return updatePlayer(state, opponentRole, { hp: opponent.hp - (effect.amount ?? 0) - bonus.chaoticBonus });
     }
     case 'heal': {
       const caster = state.players[casterRole];
-      return updatePlayer(state, casterRole, { hp: caster.hp + (effect.amount ?? 0) });
+      return updatePlayer(state, casterRole, { hp: caster.hp + (effect.amount ?? 0) + bonus.vitalBonus });
     }
     default:
       return state;
@@ -363,22 +369,26 @@ function applySpellEffect(state: GameState, casterRole: PlayerId, effect: SpellE
 
 /**
  * Fase Incantesimo (4.5/5.3): risolve le magie lanciate in Azione (pendingSpells) — applica gli
- * effetti di ciascuna, poi le sposta tutte negli scarti del lanciatore e svuota pendingSpells.
- * Agganciata dentro advanceTurnPhase, non da un endpoint separato.
+ * effetti di ciascuna (più l'eventuale bonus di mana speciale calcolato al pagamento, 3.2.2/3.2.3),
+ * poi le sposta tutte negli scarti del lanciatore e svuota pendingSpells. Agganciata dentro
+ * advanceTurnPhase, non da un endpoint separato.
  */
 function resolveSpells(state: GameState, role: PlayerId): GameState {
   const player = state.players[role];
   if (player.pendingSpells.length === 0) return state;
 
   let next = state;
-  for (const spellCard of player.pendingSpells) {
-    const spell = SPELL_CATALOG.find(s => s.id === spellCard.spellId);
+  for (const pending of player.pendingSpells) {
+    const spell = SPELL_CATALOG.find(s => s.id === pending.card.spellId);
     if (!spell) continue;
-    for (const effect of spell.effects) next = applySpellEffect(next, role, effect);
+    for (const effect of spell.effects) next = applySpellEffect(next, role, effect, pending);
   }
 
   const caster = next.players[role];
-  return updatePlayer(next, role, { discards: [...caster.discards, ...player.pendingSpells], pendingSpells: [] });
+  return updatePlayer(next, role, {
+    discards: [...caster.discards, ...player.pendingSpells.map(p => p.card)],
+    pendingSpells: [],
+  });
 }
 
 function extractOneByExactElement(cards: readonly Card[], element: Element): { removed: Card | null; rest: Card[] } {

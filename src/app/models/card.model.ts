@@ -4,6 +4,9 @@ import type { ActiveTurnPhase } from './turn-phase.model';
 /** 'freeze' è una non-carta (regolamento 2.3.1): generata a runtime dal Congelamento, occupa spazio in mazzo/scarti/mano ma non ha valore di mana né entra in nessuna combinazione — si scioglie (sparisce) in fase Preparazione. 'spell' rappresenta un incantesimo lanciabile (regolamento 5.1-5.3): il suo `element` serve solo per l'arte/icona (vedi CardComponent), non per il mana né per le combinazioni alla Fonte Arcana. */
 export type CardTier = 'base' | 'advanced' | 'superior' | 'residium' | 'freeze' | 'spell';
 
+/** Mana speciale (regolamento 3.2): un modificatore legato alla carta stessa (non al giocatore che la pesca o la tiene in mano) — agisce sull'incantesimo pagato con quella carta. */
+export type SpecialMana = 'prismatic' | 'vital' | 'chaotic';
+
 export interface Card {
   id: string;
   tier: CardTier;
@@ -14,4 +17,16 @@ export interface Card {
   expiresAt?: ActiveTurnPhase;
   /** Presente solo quando tier === 'spell' — riferimento a una voce di SPELL_CATALOG (src/app/data/spells.ts). */
   spellId?: string;
+  /** Mana speciale (regolamento 3.2): assente per la stragrande maggioranza delle carte base — solo 6 su 60 lo portano (2 copie ciascuno), assegnato una volta per tutte alla creazione del mazzo comune (vedi deck-builder.ts). */
+  specialMana?: SpecialMana;
+}
+
+const SPECIAL_MANA_ICONS: Record<SpecialMana, string> = {
+  prismatic: '/icons/diamond_shine_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+  vital: '/icons/favorite_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg',
+  chaotic: '/icons/explosion_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+};
+
+export function specialManaIconPath(type: SpecialMana): string {
+  return SPECIAL_MANA_ICONS[type];
 }

@@ -1,5 +1,5 @@
 import type { AdvancedElement, BaseElement, Element, SuperiorElement } from '../models/element.model';
-import type { Card, CardTier } from '../models/card.model';
+import type { Card, CardTier, SpecialMana } from '../models/card.model';
 import type { GameState } from '../models/game.model';
 import type { PlayerId, PlayerState } from '../models/player.model';
 import type { Wand } from '../models/wand.model';
@@ -20,10 +20,13 @@ const STARTER_SPELLS: ReadonlyArray<{ spellId: string; element: BaseElement }> =
 
 /**
  * Placeholder — rules.md non specifica la ripartizione per elemento del mazzo comune (60 carte),
- * solo il totale. 15 per elemento è una scelta provvisoria (nessuna carta mana speciale inclusa,
- * dato che quell'effetto è fuori scope in questa milestone). Da rivedere insieme al mana speciale.
+ * solo il totale. 15 per elemento è una scelta provvisoria.
  */
 const COMMON_DECK_SPLIT: Record<BaseElement, number> = { fire: 15, water: 15, air: 15, earth: 15 };
+
+/** Mana speciale (3.2): 2 copie ciascuno di prismatico/vitale/caotico, assegnate a 6 carte casuali del mazzo comune (60 carte). */
+const SPECIAL_MANA_TYPES: readonly SpecialMana[] = ['prismatic', 'vital', 'chaotic'];
+const SPECIAL_MANA_COPIES_PER_TYPE = 2;
 
 /** 4 copie per elemento avanzato (regolamento 1.1: mazzo avanzato da 20 carte, 16 avanzati + 4 potenti). */
 const ADVANCED_ELEMENT_SPLIT: Record<AdvancedElement, number> = { thunder: 4, poison: 4, ice: 4, lava: 4 };
@@ -60,6 +63,24 @@ function repeat(makeCard: CardFactory, tier: CardTier, element: Element, count: 
 /** Mazzo comune (60 carte base) — vedi COMMON_DECK_SPLIT per la nota sul placeholder. */
 export function buildCommonDeck(makeCard: CardFactory): Card[] {
   return BASE_ELEMENTS.flatMap(el => repeat(makeCard, 'base', el, COMMON_DECK_SPLIT[el]));
+}
+
+/** Assegna il mana speciale (3.2) a un sottoinsieme casuale del mazzo comune — 2 copie ciascuno di prismatico/vitale/caotico. Puro, non muta l'array in input. */
+export function applySpecialMana(commonDeck: readonly Card[]): Card[] {
+  const shuffledIndexes = shuffle(commonDeck.map((_, index) => index));
+  const typeByIndex = new Map<number, SpecialMana>();
+  let cursor = 0;
+  for (const type of SPECIAL_MANA_TYPES) {
+    for (let i = 0; i < SPECIAL_MANA_COPIES_PER_TYPE; i++) {
+      typeByIndex.set(shuffledIndexes[cursor], type);
+      cursor++;
+    }
+  }
+
+  return commonDeck.map((card, index) => {
+    const specialMana = typeByIndex.get(index);
+    return specialMana ? { ...card, specialMana } : card;
+  });
 }
 
 /** Mazzo avanzato (22 carte: 18 elementi avanzati + 4 potenti) — vedi ADVANCED_ELEMENT_SPLIT per la nota sul placeholder. */
@@ -141,7 +162,7 @@ function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactor
 export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): GameState {
   const makeCard = createCardFactory();
 
-  const commonDeck = shuffle(buildCommonDeck(makeCard));
+  const commonDeck = applySpecialMana(shuffle(buildCommonDeck(makeCard)));
 
   // 1.1: 1 copia di Luce e 1 di Tenebra (su 2 ciascuna nel mazzo avanzato) partono già negli scarti
   // del mazzo avanzato, non tra le carte da rimescolare — tornano in gioco solo quando il mazzo

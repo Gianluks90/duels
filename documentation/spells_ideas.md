@@ -6,3 +6,4 @@
 **Congelamento**: congelare un bersaglo significa inserire nel suo mazzo degli scarti delle carte inutili che gli impediscono di pescare altre carte. Pensiamo ad una magia che faccia congelamento e basta, una mix danno e gelo e una più potente che mette subito 2 carte congelamento negli scarti del bersaglio. Bilanciare costi e formule.
 **Veleno**: nella fase di preparazione se un giocatore è avvelenato subisce 1 danno per livello di veleno (max 3). Il veleno si riduce di 1 livello ogni volta che gli scarti del giocatore vengono mescolati nel mazzo. Possiamo optare addirittura per 3 magie basate su questa logica che infliggano 1-3 livelli di veleno. Bilanciare costi e formule.
 **Fulmini e saette**: le magie del fulmine ignorano lo scudo del bersaglio. Possiamo anche qui creare un paio di magie con questo effetto. Bilanciare costi e formule.
+**Miglioramento carte**: magie che possono aumentare il valore di mana di una carta bersaglio (elemento base).

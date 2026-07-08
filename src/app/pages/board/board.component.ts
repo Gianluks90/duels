@@ -238,18 +238,22 @@ export class BoardComponent implements OnInit {
   private readonly commonDiscardTopCard = computed(() => this.topOf(this.state()?.commonDiscards));
   protected readonly commonDiscardTop = computed(() => this.commonDiscardTopCard()?.element ?? null);
   protected readonly commonDiscardTopManaBonus = computed(() => this.commonDiscardTopCard()?.manaBonus ?? 0);
+  /** Mana speciale (3.2): come commonDiscardTopManaBonus, senza questo una carta speciale perde il badge non appena finisce in cima a una pila (stesso bug già visto col bonus manico). */
+  protected readonly commonDiscardTopSpecialMana = computed(() => this.commonDiscardTopCard()?.specialMana ?? null);
 
   protected readonly playerDeckCount = computed(() => this.me()?.deck.length ?? 0);
   protected readonly playerDiscardCount = computed(() => this.me()?.discards.length ?? 0);
   private readonly playerDiscardTopCard = computed(() => this.topOf(this.me()?.discards));
   protected readonly playerDiscardTop = computed(() => this.playerDiscardTopCard()?.element ?? null);
   protected readonly playerDiscardTopManaBonus = computed(() => this.playerDiscardTopCard()?.manaBonus ?? 0);
+  protected readonly playerDiscardTopSpecialMana = computed(() => this.playerDiscardTopCard()?.specialMana ?? null);
 
   protected readonly opponentDeckCount = computed(() => this.opponentState()?.deck.length ?? 0);
   protected readonly opponentDiscardCount = computed(() => this.opponentState()?.discards.length ?? 0);
   private readonly opponentDiscardTopCard = computed(() => this.topOf(this.opponentState()?.discards));
   protected readonly opponentDiscardTop = computed(() => this.opponentDiscardTopCard()?.element ?? null);
   protected readonly opponentDiscardTopManaBonus = computed(() => this.opponentDiscardTopCard()?.manaBonus ?? 0);
+  protected readonly opponentDiscardTopSpecialMana = computed(() => this.opponentDiscardTopCard()?.specialMana ?? null);
 
   /** Le 2 carte pescate dal mazzo comune in attesa di scelta — solo locale, nessuna scrittura su Firestore finché non si sceglie quale tenere (regolamento 4.3). */
   protected readonly pendingCollect = computed(() => this.me()?.pendingCollect ?? null);

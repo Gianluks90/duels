@@ -1,6 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { SUPPORTED_LANGUAGES, type LanguageCode } from '../models/language.model';
 import type { Element } from '../models/element.model';
+import type { SpecialMana } from '../models/card.model';
 import type { TurnPhase } from '../models/turn-phase.model';
 
 interface DictionaryObject {
@@ -49,6 +50,10 @@ export class TranslationService {
 
   elementLabel(element: Element): string {
     return this.t(`common.elements.${element}`);
+  }
+
+  specialManaLabel(type: SpecialMana): string {
+    return this.t(`common.specialMana.${type}`);
   }
 
   turnPhaseLabel(phase: TurnPhase): string {

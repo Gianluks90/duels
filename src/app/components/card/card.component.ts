@@ -2,6 +2,8 @@ import { Component, ChangeDetectionStrategy, input, computed, inject, signal, ef
 import { NgOptimizedImage } from '@angular/common';
 import type { Element } from '../../models/element.model';
 import { elementImagePath, elementIconPath, ELEMENT_MANA } from '../../models/element.model';
+import type { SpecialMana } from '../../models/card.model';
+import { specialManaIconPath } from '../../models/card.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
 
@@ -31,6 +33,16 @@ const CARD_FLIP_HALF_MS = 150;
       } @else {
         @if (showMana() && manaValue() > 0) {
           <span class="card__badge card__badge--mana" [class.card__badge--mana-cost]="!!spell()" [attr.aria-label]="manaAria()">{{ manaValue() }}</span>
+        }
+        @if (showMana() && specialMana(); as type) {
+          <!-- Icona come maschera CSS (non un <img> a colore fisso): le SVG sorgente sono monocromatiche,
+               la maschera le ricolora con currentColor in base al tipo (vedi le classi -prismatic/-vital/-chaotic). -->
+          <span class="card__badge card__badge--special-mana"
+                [class.card__badge--special-mana-prismatic]="type === 'prismatic'"
+                [class.card__badge--special-mana-vital]="type === 'vital'"
+                [class.card__badge--special-mana-chaotic]="type === 'chaotic'"
+                [style.--special-mana-icon]="specialManaIconUrl()"
+                role="img" [attr.aria-label]="specialManaAria()"></span>
         }
         @if (!spell()) {
           <img class="card__badge card__badge--element" [src]="iconSrc()" alt="" aria-hidden="true" />
@@ -70,6 +82,8 @@ export class CardComponent {
   readonly revealed = input<boolean>(true);
   /** Presente solo per una carta incantesimo (Card.spellId) — sovrascrive mana/etichetta/arte derivati da element() con quelli della Spell in SPELL_CATALOG (placeholder finché non esiste un'arte dedicata per incantesimo, vedi card__spell-bg/card__spell-token). */
   readonly spellId = input<string | null>(null);
+  /** Mana speciale (regolamento 3.2) portato da questa carta — null per la stragrande maggioranza delle carte base. */
+  readonly specialMana = input<SpecialMana | null>(null);
 
   /** Placeholder temporaneo per tutte le carte incantesimo — nessuna arte dedicata per singola Spell ancora. */
   protected readonly spellIcon = '/icons/wand_stars_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
@@ -97,6 +111,19 @@ export class CardComponent {
     return spell ? spell.manaCost : ELEMENT_MANA[this.element()] + this.manaBonus();
   });
   protected readonly manaAria = computed(() => this.i18n.t('card.manaAria', { value: this.manaValue() }));
+  protected readonly specialManaIcon = computed(() => {
+    const type = this.specialMana();
+    return type ? specialManaIconPath(type) : null;
+  });
+  /** CSS mask-image richiede il valore completo `url(...)`, non il solo path — separato da specialManaIcon() perché quest'ultimo può tornare utile altrove (es. un domani un <img> in un altro contesto). */
+  protected readonly specialManaIconUrl = computed(() => {
+    const icon = this.specialManaIcon();
+    return icon ? `url(${icon})` : null;
+  });
+  protected readonly specialManaAria = computed(() => {
+    const type = this.specialMana();
+    return type ? this.i18n.t('card.specialManaAria', { name: this.i18n.specialManaLabel(type) }) : '';
+  });
 
   constructor() {
     effect(onCleanup => {

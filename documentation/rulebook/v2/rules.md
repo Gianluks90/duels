@@ -75,16 +75,16 @@ Nella Fonte Arcana sono sempre visibili 4 carte pescate dal mazzo avanzato. Quan
 Il _Mana_ è la risorsa necessaria per lanciare gli incantesimi. Ogni elemento (base, avanzato o potente) ha un valore in mana. Per lanciare un incantesimo è obbligatorio avere in mano almeno tanto mana quanto quello richiesto dalla carta.
 
 **3.2 - Mana speciale**
-Su poche carte elemento base sono presenti _mana speciali_, con effetti che si risolvono subito (vitale, caotico) o in modo permanente (prismatico). Ogni mana speciale è presente su 2 carte, per un totale di 6 mana speciali.
+Su poche carte elemento base sono presenti _mana speciali_: modificatori legati alla carta stessa, che agiscono sull'incantesimo pagato con quel mana — non su chi la pesca o la tiene in mano. Ogni mana speciale è presente su 2 carte, per un totale di 6 mana speciali.
 
 **3.2.1 - Mana prismatico**
-Gli elementi base con mana _prismatico_ valgono 2 mana comuni fin dall'inizio.
+Un elemento base con mana _prismatico_ vale sempre 1 mana in più rispetto al proprio valore, indipendentemente da qualsiasi altro modificatore attivo sulla carta (es. bonus manico, 1.4.3).
 
 **3.2.2 - Mana vitale**
-Gli elementi base con mana _vitale_ ripristinano 2 Punti Salute quando vengono raccolti. Una volta applicato l'effetto, la carta si trasforma in un elemento con mana comune dal valore di 1.
+Se un elemento base con mana _vitale_ viene speso per pagare un incantesimo che bersaglia chi lo lancia, chi lancia recupera 2 Punti Salute. Se l'incantesimo bersaglia l'avversario, il mana vitale non ha alcun effetto aggiuntivo: vale come un mana comune.
 
 **3.2.3 - Mana caotico**
-Gli elementi base con mana _caotico_ infliggono 2 danni al giocatore che li raccoglie. Una volta applicato l'effetto, la carta si trasforma in un elemento con mana comune dal valore di 2.
+Se un elemento base con mana _caotico_ viene speso per pagare un incantesimo che bersaglia l'avversario, l'avversario subisce 2 danni aggiuntivi. Se l'incantesimo bersaglia chi lo lancia, il mana caotico non ha alcun effetto aggiuntivo: vale come un mana comune.
 
 ## 4. Struttura del turno
 Il turno si articola nelle seguenti fasi.

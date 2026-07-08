@@ -122,6 +122,33 @@
   -webkit-text-stroke: 1px #ff9d9d;
 }
 
+// Mana speciale (3.2): un pallino più piccolo, in colonna sotto il valore di mana e allineato al suo
+// stesso bordo sinistro (left: 3%, lo stesso di .card__badge--mana sopra — non centrato: essendo più
+// piccolo, centrarlo rispetto al gettone del mana lo farebbe sembrare storto).
+.card__badge--special-mana {
+  width: 24%;
+  top: 26%;
+  left: 3%;
+
+  // L'icona è una maschera CSS, non un <img> — le SVG sorgente sono monocromatiche, `currentColor`
+  // le ricolora per tipo (classi sotto). `inset` qui è in % della dimensione di QUESTO badge (24% della
+  // carta), non dell'intera carta come sarebbe stato per un padding sull'<img> — un badge così piccolo
+  // con un padding pensato per il badge elemento (42% di carta) lasciava un'area di contenuto negativa,
+  // rendendo l'icona invisibile.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 20%;
+    background-color: currentColor;
+    -webkit-mask: var(--special-mana-icon) center / contain no-repeat;
+    mask: var(--special-mana-icon) center / contain no-repeat;
+  }
+
+  &-prismatic { color: #d4a847; }
+  &-vital     { color: #4caf50; }
+  &-chaotic   { color: #d02f2f; }
+}
+
 .card__badge--element {
   // Bigger than the shared 30% — the element icon is the one we want to read
   // clearly at a glance, badge circle grows with it.

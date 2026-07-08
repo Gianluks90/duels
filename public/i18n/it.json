@@ -13,6 +13,11 @@
       "dark": "Oscurità",
       "residium": "Residuo"
     },
+    "specialMana": {
+      "prismatic": "Prismatico",
+      "vital": "Vitale",
+      "chaotic": "Caotico"
+    },
     "turnPhases": {
       "attesa": { "label": "Attesa", "description": "Attendi che l'avversario concluda il suo turno" },
       "preparazione": { "label": "Preparazione", "description": "Vengono risolti alcuni effetti di inizio turno" },
@@ -24,7 +29,8 @@
   },
 
   "card": {
-    "manaAria": "{value} mana"
+    "manaAria": "{value} mana",
+    "specialManaAria": "Mana {name}"
   },
 
   "playerHud": {
