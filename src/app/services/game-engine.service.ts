@@ -12,6 +12,7 @@ import {
   combineElements as combineElementsReducer,
   combineSuperior as combineSuperiorReducer,
   combineResidue as combineResidueReducer,
+  holdAtTip as holdAtTipReducer,
   keepCard as keepCardReducer,
   resolveElementalExplosions,
   startCollect as startCollectReducer,
@@ -89,6 +90,11 @@ export class GameEngineService {
   /** Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagando il costo con le carte indicate. L'effetto si risolve più avanti, al passaggio in fase Incantesimo (dentro advancePhase). */
   async castSpell(gameId: string, role: PlayerId, spellCardId: string, paidCardIds: readonly string[]): Promise<void> {
     await this.mutate(gameId, state => castSpellReducer(state, role, spellCardId, paidCardIds));
+  }
+
+  /** Fase Azione (1.4.1/4.4): trattiene una carta base dalla mano nella punta della bacchetta. */
+  async holdAtTip(gameId: string, role: PlayerId, cardId: string): Promise<void> {
+    await this.mutate(gameId, state => holdAtTipReducer(state, role, cardId));
   }
 
   private async mutate(gameId: string, transform: (state: GameState) => GameState): Promise<void> {

@@ -27,7 +27,22 @@ const CARD_FLIP_HALF_MS = 150;
       }
       @if (header()) {
         <div class="card__header">
-          <img class="card__header-icon" [src]="iconSrc()" alt="" aria-hidden="true" />
+          <div class="card__header-icons">
+            @if (showMana() && manaValue() > 0) {
+              <span class="card__header-token card__header-token--mana" [class.card__header-token--mana-cost]="!!spell()" [attr.aria-label]="manaAria()">{{ manaValue() }}</span>
+            }
+            @if (showMana() && specialMana(); as type) {
+              <span class="card__header-token card__header-token--special"
+                    [class.card__header-token--special-prismatic]="type === 'prismatic'"
+                    [class.card__header-token--special-vital]="type === 'vital'"
+                    [class.card__header-token--special-chaotic]="type === 'chaotic'"
+                    [style.--special-mana-icon]="specialManaIconUrl()"
+                    role="img" [attr.aria-label]="specialManaAria()"></span>
+            }
+            <span class="card__header-token card__header-token--element">
+              <img [src]="iconSrc()" alt="" aria-hidden="true" />
+            </span>
+          </div>
           <span class="card__header-label">{{ label() }}</span>
         </div>
       } @else {

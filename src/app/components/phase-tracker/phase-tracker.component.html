@@ -10,7 +10,16 @@
            [attr.aria-current]="stepState(p) === 'active' ? 'step' : null"
            [appTooltip]="i18n.turnPhaseDescription(p)" tooltipPosition="top">
         <span class="tracker__step-dot" aria-hidden="true"></span>
-        <span class="tracker__step-label">{{ i18n.turnPhaseLabel(p) }}</span>
+        <div class="tracker__step-label-wrap">
+          <span class="tracker__step-label">{{ i18n.turnPhaseLabel(p) }}</span>
+          @if (p === 'incantesimo' && pendingSpellsCount() > 0) {
+            <div class="tracker__pending-spells" [attr.aria-label]="'phaseTracker.pendingSpellsAria' | translate:{ count: pendingSpellsCount() }">
+              @for (i of pendingSpellsRange(); track i) {
+                <span class="tracker__pending-spell-dot" aria-hidden="true"></span>
+              }
+            </div>
+          }
+        </div>
       </div>
     }
   </div>

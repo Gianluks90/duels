@@ -93,12 +93,12 @@ const EXPLOSION_GHOST_DURATION_MS = 700;
 /** Durata del lampo + scossa sull'intera riga della Fonte Arcana quando un'Esplosione elementale (2.4) avviene lì — deve combaciare con @keyframes fonte-explode in board.component.scss. */
 const FONTE_EXPLOSION_DURATION_MS = 500;
 
-/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione (lift + fade) non finisce — Congelamento/Residuo (Card.expiresAt). L'Esplosione elementale (2.4) ha un proprio meccanismo dedicato, vedi handExplosions più sotto. */
+/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione (lift + fade) non finisce — 'expiry' per Congelamento/Residuo (Card.expiresAt), 'toTip' per una carta appena trattenuta nella punta della bacchetta (1.4.1) — stessa animazione, azione deliberata del giocatore invece di una scadenza. L'Esplosione elementale (2.4) ha un proprio meccanismo dedicato, vedi handExplosions più sotto. */
 interface VanishingGhost {
   card: Card;
   index: number;
   total: number;
-  kind: 'expiry';
+  kind: 'expiry' | 'toTip';
 }
 
 /** Esplosione elementale (2.4) risolta in mano — le 2 carte (1 Luce + 1 Tenebra) prese direttamente dall'evento, non dedotte confrontando la mano prima/dopo (impossibile: si consumano nella stessa transazione atomica in cui entrano in mano, il client non vede mai lo stato intermedio). */
@@ -224,6 +224,12 @@ export class BoardComponent implements OnInit {
   /** Azione è l'unica fase che non si auto-avanza mai da sola (l'effect nel costruttore gestisce le altre 4) — richiede sempre un input reale del giocatore. */
   protected readonly canAdvancePhase = computed(() => this.isPlayerTurn() && this.state()?.phase === 'azione');
 
+  /** Incantesimi in coda del giocatore di turno (5.2) — pilota i puntini dorati sotto la fase Incantesimo nel tracker. Solo chi ha il turno può averne (si lanciano in Azione, si risolvono in modo sincrono al passaggio in Incantesimo — resolveSpells in turn-engine.ts — quindi non sopravvivono mai oltre la propria Azione). */
+  protected readonly currentTurnPendingSpellsCount = computed(() => {
+    const s = this.state();
+    return s ? s.players[s.currentTurn].pendingSpells.length : 0;
+  });
+
   protected readonly opponentHandCount = computed(() => this.opponentState()?.hand.length ?? 0);
   protected readonly fonteCards = computed<Element[]>(() => this.state()?.fonteElementale.map(c => c.element) ?? []);
   /** Full Card objects (not just Element) so a card carrying a permanent bonus manico (regolamento 1.4.3) still shows its boosted mana value once drawn into hand. */
@@ -295,17 +301,13 @@ export class BoardComponent implements OnInit {
     return this.myRole() === 'host' ? doc.guestPhoto : doc.hostPhoto;
   });
 
-  protected readonly playerWand = computed<Wand | null>(() => {
-    const doc = this.gameDoc();
-    if (!doc) return null;
-    return this.myRole() === 'host' ? doc.hostWand : doc.guestWand;
-  });
+  // Letto da state.players[role].wand (GameState, live), non da GameDoc.hostWand/guestWand — quel
+  // campo è solo l'istantanea presa al setup (l'input di createInitialGameState), mai più
+  // aggiornata in partita. Per handle/body non faceva differenza (permanenti, mai mutati dopo il
+  // setup), ma tipSlot (1.4.1) sì: holdAtTip/combineElements ecc. mutano solo la copia in state.
+  protected readonly playerWand = computed<Wand | null>(() => this.me()?.wand ?? null);
 
-  protected readonly opponentWand = computed<Wand | null>(() => {
-    const doc = this.gameDoc();
-    if (!doc) return null;
-    return this.myRole() === 'host' ? doc.guestWand : doc.hostWand;
-  });
+  protected readonly opponentWand = computed<Wand | null>(() => this.opponentState()?.wand ?? null);
 
   protected readonly playerTip    = computed(() => this.playerWand()?.tipSlot ?? null);
   protected readonly playerBody   = computed(() => this.playerWand()?.bodySocket ?? null);
@@ -363,6 +365,12 @@ export class BoardComponent implements OnInit {
   /** Carte "temporanee" già sparite da playerHand() ma non ancora mostrate come tali (es. Congelamento, sciolto in modo atomico dentro l'endTurn dell'avversario — il nostro client la vede già sparita, senza un "prima" da segnare proattivamente) — restano a video come ghost nella loro vecchia posizione finché l'animazione non finisce. */
   protected readonly vanishingGhosts = signal<readonly VanishingGhost[]>([]);
   private lastKnownHand: Card[] = [];
+
+  /** true per un attimo subito dopo che una nuova carta arriva nella punta della bacchetta (1.4.1) — pilota l'animazione d'ingresso nel pannello punta (vedi l'effect dedicato nel costruttore e board__wand-peek in board.component.scss). */
+  protected readonly tipEntering = signal(false);
+  /** La carta appena uscita dalla punta (consumata a Finale, spesa in una combinazione, o come mana per un incantesimo) — resta qui come ghost per la durata dell'animazione di sparizione (stessa hand-card-vanish già usata per le carte in mano), invece di sparire di scatto dal pannello. */
+  protected readonly tipVanishing = signal<Card | null>(null);
+  private lastKnownPlayerTip: Card | null = null;
 
   /** Esplosioni elementali (2.4) risolte in una mano nell'ultimo batch — una entry per ruolo colpito, con le carte vere prese dall'evento (vedi HandExplosion sopra). Popolata dall'effect dedicato sotto, non dal diff di playerHand(): le carte si consumano nella stessa transazione in cui entrano in mano, quindi non compaiono mai in un render precedente da cui poterle dedurre. */
   protected readonly handExplosions = signal<readonly HandExplosion[]>([]);
@@ -527,6 +535,35 @@ export class BoardComponent implements OnInit {
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
 
+    // Punta della bacchetta (1.4.1): stesso effect gestisce sia l'ingresso sia l'uscita, dato che
+    // playerTip() può solo passare da vuota a occupata o viceversa (holdAtTip rifiuta di sovrascrivere
+    // una punta già occupata — non esiste una transizione diretta carta A → carta B).
+    effect(() => {
+      const tip = this.playerTip();
+      const previous = this.lastKnownPlayerTip;
+      this.lastKnownPlayerTip = tip;
+
+      if (tip && tip.id !== previous?.id) {
+        // Nuova carta arrivata — tipEntering() resta true fin dal primo render in cui la carta
+        // compare (stesso ciclo sincrono di questo effect), poi torna false un istante dopo per far
+        // scattare la transizione CSS invece di un salto.
+        this.tipEntering.set(true);
+        const enterTimer = setTimeout(() => this.tipEntering.set(false), 20);
+        this.destroyRef.onDestroy(() => clearTimeout(enterTimer));
+        return;
+      }
+
+      if (!tip && previous) {
+        // La carta ha lasciato la punta — consumata a Finale (endTurn), spesa in una combinazione, o
+        // usata come mana per un incantesimo: in tutti e 3 i casi il client vede solo il "dopo", mai
+        // uno stato intermedio da cui dedurre la causa, e non serve distinguerli — stessa animazione
+        // di sparizione (hand-card-vanish) in ogni caso, invece di un salto secco nel pannello.
+        this.tipVanishing.set(previous);
+        const vanishTimer = setTimeout(() => this.tipVanishing.set(null), VANISH_DURATION_MS);
+        this.destroyRef.onDestroy(() => clearTimeout(vanishTimer));
+      }
+    });
+
     // Raccolta: il bonus manico (regolamento 1.4.3, +1 mana permanente) è già risolto nello stato
     // appena le 2 carte vengono pescate — qui lo teniamo solo nascosto in UI per un attimo, cosicché
     // la rivelazione (scale up/down + valore di mana aggiornato) si noti invece di apparire già fatta.
@@ -656,18 +693,41 @@ export class BoardComponent implements OnInit {
     }));
   }
 
-  /** Regolamento 5.2: lancia una carta incantesimo dalla mano — solo in Azione, nel proprio turno. Niente voci per le carte che non sono incantesimi. */
-  protected handCardMenuItems(card: Card): ActionMenuItem[] {
-    if (card.tier !== 'spell' || !this.isPlayerTurn() || this.state()?.phase !== 'azione') return [];
-    const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
-    if (!spell) return [];
+  /** Regolamento 5.2 (incantesimi) / 1.4.1-4.4 (punta della bacchetta) — le uniche 2 azioni disponibili da un menu su una carta in mano, mai insieme (una carta è o un incantesimo o una base, mai entrambe). Niente voci fuori da Azione/dal proprio turno, o per tier non pertinenti (avanzato/potente/Residuo/Congelamento non hanno azioni qui). */
+  protected handCardMenuItems(card: Card, index: number): ActionMenuItem[] {
+    if (!this.isPlayerTurn() || this.state()?.phase !== 'azione') return [];
 
-    const payableHand = this.playerHand().filter(c => c.id !== card.id && c.tier !== 'spell' && c.tier !== 'freeze');
-    return [{
-      label: this.i18n.t('board.hand.castAction', { name: this.i18n.t(`spells.${spell.id}.name`) }),
-      action: () => this.openCastSpellDialog(card, payableHand),
-      disabled: computePlayerMana(payableHand) < spell.manaCost,
-    }];
+    if (card.tier === 'spell') {
+      const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
+      if (!spell) return [];
+
+      // Include l'eventuale carta trattenuta nella punta della bacchetta (1.4.1) — conta come se
+      // fosse ancora in mano, quindi anche come mana pagabile per un incantesimo.
+      const tip = this.playerTip();
+      const payableHand = [...this.playerHand(), ...(tip ? [tip] : [])].filter(c => c.id !== card.id && c.tier !== 'spell' && c.tier !== 'freeze');
+      return [{
+        label: this.i18n.t('board.hand.castAction', { name: this.i18n.t(`spells.${spell.id}.name`) }),
+        action: () => this.openCastSpellDialog(card, payableHand),
+        disabled: computePlayerMana(payableHand) < spell.manaCost,
+      }];
+    }
+
+    if (card.tier === 'base') {
+      return [
+        {
+          label: this.i18n.t('board.hand.holdAtTipAction'),
+          action: () => this.holdAtTip(card, index),
+          disabled: !!this.playerWand()?.tipSlot,
+        },
+        {
+          label: this.i18n.t('board.hand.socketAction'),
+          action: () => {},
+          disabled: true,
+        },
+      ];
+    }
+
+    return [];
   }
 
   /** Apre il dialog di pagamento e lancia davvero l'incantesimo solo se il giocatore conferma una selezione (annullare chiude senza risultato, vedi CastSpellDialogComponent). */
@@ -684,6 +744,21 @@ export class BoardComponent implements OnInit {
     }).closed.subscribe(paidCardIds => {
       if (paidCardIds?.length) void this.gameEngine.castSpell(this.gameId(), role, card.id, paidCardIds);
     });
+  }
+
+  /** Regolamento 1.4.1/4.4: trattiene una carta base dalla mano nella punta della bacchetta — l'animazione di uscita dalla mano riusa lo stesso meccanismo/aspetto del Residuo in scadenza (vedi VanishingGhost, kind 'toTip'), quella d'ingresso nel pannello punta è pilotata dall'effect su playerTip() nel costruttore (tipEntering). */
+  protected holdAtTip(card: Card, index: number): void {
+    const role = this.myRole();
+    if (!role) return;
+
+    const total = this.playerHand().length;
+    this.vanishingGhosts.update(list => [...list, { card, index, total, kind: 'toTip' as const }]);
+    const timer = setTimeout(() => {
+      this.vanishingGhosts.update(list => list.filter(g => g.card.id !== card.id));
+    }, VANISH_DURATION_MS);
+    this.destroyRef.onDestroy(() => clearTimeout(timer));
+
+    void this.gameEngine.holdAtTip(this.gameId(), role, card.id);
   }
 
   /** Nome tradotto dell'incantesimo rappresentato da questa carta — stringa vuota se non è (più) una carta incantesimo valida. */
@@ -734,9 +809,10 @@ export class BoardComponent implements OnInit {
     return this.i18n.t('board.wand.handleEffect', { element: this.i18n.elementLabel(el) });
   }
 
-  /** Un Residuo Arcano in mano vale come un elemento base mancante (2.5) — controllato qui invece che sui soli elementi, dato che serve la carta intera per distinguerlo da una base vera. */
+  /** Un Residuo Arcano in mano vale come un elemento base mancante (2.5) — controllato qui invece che sui soli elementi, dato che serve la carta intera per distinguerlo da una base vera. Include anche l'eventuale carta trattenuta nella punta della bacchetta (1.4.1): conta come se fosse ancora in mano. */
   private hasAllBaseCards(elements: readonly BaseElement[]): boolean {
-    const hand = [...this.playerHand()];
+    const tip = this.playerTip();
+    const hand = tip ? [...this.playerHand(), tip] : [...this.playerHand()];
     for (const el of elements) {
       // tier === 'base' esclude una carta magia (Card.spellId) che riusa lo stesso elemento solo per la propria arte.
       const exactIndex = hand.findIndex(card => card.element === el && card.tier === 'base');
@@ -789,8 +865,10 @@ export class BoardComponent implements OnInit {
     if (!recipe || (card.tier !== 'base' && card.tier !== 'residium')) return null;
 
     const hand = this.playerHand();
+    const tip = this.playerTip();
     // Esclude le carte magia (tier 'spell'): riusano un elemento base solo per la propria arte, non sono una base vera.
-    const baseElements = hand.filter(c => c.tier === 'base').map(c => c.element);
+    // Include l'eventuale carta trattenuta nella punta della bacchetta (1.4.1): conta come se fosse ancora in mano.
+    const baseElements = hand.filter(c => c.tier === 'base').map(c => c.element).concat(tip ? [tip.element] : []);
     const residuoCount = hand.filter(c => c.tier === 'residium').length;
 
     const requiredSets: ReadonlyArray<readonly BaseElement[]> =
@@ -845,7 +923,10 @@ export class BoardComponent implements OnInit {
    * l'utente annulla la dialog (nessuna combinazione da fare).
    */
   private async resolveCombineChoice(elements: readonly BaseElement[]): Promise<Partial<Record<BaseElement, string>> | null> {
-    const hand = this.playerHand();
+    const tip = this.playerTip();
+    // Include l'eventuale carta nella punta della bacchetta (1.4.1) — conta come se fosse ancora in
+    // mano, sia per rilevare l'ambiguità sia come candidata scelta bile dentro CombineDialogComponent.
+    const hand = tip ? [...this.playerHand(), tip] : this.playerHand();
     const ambiguous = elements.filter(el => combineNeedsChoice(hand, el));
     if (ambiguous.length === 0) return {};
 

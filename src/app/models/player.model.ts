@@ -51,11 +51,10 @@ export interface PlayerState {
 
   // Flag di turno (si azzerano a ogni turno)
   hasCollectedThisTurn: boolean;
-  hasUsedWandAbility: boolean;
   spellsPlayedThisTurn: number;    // per Corpo Metallico
 
-  // Flag di partita
-  puntaSpellUsed: boolean;
+  /** Il turnNumber in cui la carta attualmente in wand.tipSlot è stata trattenuta (regolamento 1.4.1) — null se la punta è vuota. turnNumber incrementa una volta per turno di QUALSIASI giocatore, quindi i propri turni successivi sono sempre 2 numeri di distanza: se a fine turno questo valore non coincide più con GameState.turnNumber, la carta ha già passato un confine di turno e si consuma (vedi endTurn in turn-engine.ts). */
+  tipCardPlacedTurn: number | null;
 
   // Effetti attivi
   handRevealed: boolean;               // Occhio del Sole

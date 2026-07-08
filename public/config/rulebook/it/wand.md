@@ -6,7 +6,7 @@ Ogni giocatore possiede fin dall'inizio una bacchetta magica, divisa in tre sezi
 
 ## Punta
 
-La punta ha uno slot per conservare **un elemento base** da un turno all'altro.
+La punta ha uno slot per conservare **un elemento base** da un turno all'altro: durante la fase Azione puoi trattenere lì una carta base dalla mano. Finché resta nella punta conta come se fosse ancora in mano per qualunque combinazione. Se non la usi entro la fine del tuo turno successivo, si consuma (torna negli scarti del mazzo comune, non si scarta).
 
 ---
 

@@ -103,13 +103,13 @@
       </div>
 
       <div class="board__wand-panel">
-        <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentTip() ? elementColorVar(opponentTip()!) : null">
+        <div class="board__wand-card board__wand-card--opponent" [style.--el-color]="opponentTip() ? elementColorVar($any(opponentTip()!.element)) : null">
           <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
           <hr class="board__wand-card-hr" />
           <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
         </div>
-        @if (opponentTip(); as el) {
-          <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
+        @if (opponentTip(); as tip) {
+          <app-card class="board__wand-peek" [element]="tip.element" [manaBonus]="tip.manaBonus ?? 0" [specialMana]="tip.specialMana ?? null" [size]="wandCardWidth" [header]="true"
                     [headerAlign]="'bottom'" [style.margin-top.px]="-wandPeekOverlap" />
         }
       </div>
@@ -199,6 +199,7 @@
       [turnPlayerName]="turnPlayerName()"
       [phase]="state()!.phase"
       [canAdvance]="canAdvancePhase()"
+      [pendingSpellsCount]="currentTurnPendingSpellsCount()"
       (advance)="advancePhase()"
     />
 
@@ -296,7 +297,7 @@
             <hr class="rich-tooltip__rule" />
             <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
           </ng-template>
-          <app-action-menu [items]="handCardMenuItems(card)">
+          <app-action-menu [items]="handCardMenuItems(card, $index)">
             <app-card class="board__hand-card" [element]="card.element" [spellId]="card.spellId ?? null" [manaBonus]="card.manaBonus ?? 0" [specialMana]="card.specialMana ?? null" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
                       [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
                       [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
@@ -345,11 +346,35 @@
       <div class="board__wand-title board__wand-title--player">{{ 'board.wand.title' | translate }}</div>
 
       <div class="board__wand-panel">
-        @if (playerTip(); as el) {
-          <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
-                    [style.margin-bottom.px]="-wandPeekOverlap" />
+        @if (playerTip(); as tip) {
+          <!-- Stesso tooltip ricco delle carte in mano (vedi #specialManaTip nel loop della mano) — ref
+               separato perché quello è scoped a quel @for, non visibile qui. -->
+          <ng-template #tipSpecialManaTip>
+            <div class="rich-tooltip__header">
+              <strong>{{ i18n.specialManaLabel(tip.specialMana!) }}</strong>
+              <span class="rich-tooltip__special-icon"
+                    [class.rich-tooltip__special-icon--prismatic]="tip.specialMana === 'prismatic'"
+                    [class.rich-tooltip__special-icon--vital]="tip.specialMana === 'vital'"
+                    [class.rich-tooltip__special-icon--chaotic]="tip.specialMana === 'chaotic'"
+                    [style.--special-mana-icon]="'url(' + specialManaIconPath(tip.specialMana!) + ')'"
+                    aria-hidden="true"></span>
+            </div>
+            <hr class="rich-tooltip__rule" />
+            <p class="rich-tooltip__effect">{{ specialManaEffectText(tip.specialMana!) }}</p>
+          </ng-template>
+          <app-card class="board__wand-peek" [element]="tip.element" [manaBonus]="tip.manaBonus ?? 0" [specialMana]="tip.specialMana ?? null" [size]="wandCardWidth" [header]="true"
+                    [class.board__hand-card--gold]="handCardHighlight(tip) === 'gold'"
+                    [class.board__hand-card--blue]="handCardHighlight(tip) === 'blue'"
+                    [appTooltip]="tip.specialMana ? tipSpecialManaTip : null" tooltipPosition="top"
+                    [style.margin-bottom.px]="tipEntering() ? 0 : -wandPeekOverlap" />
         }
-        <div class="board__wand-card board__wand-card--player" [style.--el-color]="playerTip() ? elementColorVar(playerTip()!) : null">
+        <!-- Carta appena uscita dalla punta (consumata, spesa in una combinazione, o come mana per un
+             incantesimo) — stessa animazione di sparizione delle carte in mano, invece di un salto secco. -->
+        @if (tipVanishing(); as ghost) {
+          <app-card class="board__wand-peek board__hand-card--vanishing" [element]="ghost.element" [manaBonus]="ghost.manaBonus ?? 0" [specialMana]="ghost.specialMana ?? null"
+                    [size]="wandCardWidth" [header]="true" [style.margin-bottom.px]="-wandPeekOverlap" aria-hidden="true" />
+        }
+        <div class="board__wand-card board__wand-card--player" [style.--el-color]="playerTip() ? elementColorVar($any(playerTip()!.element)) : null">
           <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
           <hr class="board__wand-card-hr" />
           <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>

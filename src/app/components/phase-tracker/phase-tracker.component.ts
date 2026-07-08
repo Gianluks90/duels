@@ -23,8 +23,12 @@ export class PhaseTrackerComponent {
   readonly phase = input.required<TurnPhase>();
   /** Whether the manual "Prosegui" action is currently valid — disables (not hides) the button otherwise, since most phases will end up auto-advancing on their own. */
   readonly canAdvance = input<boolean>(false);
+  /** Incantesimi in coda del giocatore di turno (5.2), non ancora risolti — un puntino dorato lampeggiante per ciascuno, sotto la label della fase Incantesimo. */
+  readonly pendingSpellsCount = input<number>(0);
 
   readonly advance = output<void>();
+
+  protected readonly pendingSpellsRange = computed(() => Array.from({ length: this.pendingSpellsCount() }, (_, i) => i));
 
   /** 'attesa' esclusa dalla UI: ora che c'è un unico tracker condiviso (non uno per pannello), mostrare
    *  un pallino sempre "fatto" per una fase che non è mai quella attiva non aggiunge informazione —

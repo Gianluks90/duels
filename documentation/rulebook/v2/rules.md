@@ -18,7 +18,7 @@ Ogni giocatore inizia la partita con 20 _Punti Salute_. Quando questi si riducon
 Ogni giocatore possiede fin da subito una _bacchetta magica_, divisa in 3 sezioni: punta, asta e manico. Ogni sezione conferisce una capacità che il giocatore può sfruttare.
 
 **1.4.1 - Punta**
-La _punta_ della bacchetta ha uno slot per conservare un elemento base tra un turno e l'altro.
+La _punta_ della bacchetta ha uno slot per conservare un elemento base tra un turno e l'altro: durante la fase Azione (4.4) il giocatore può trattenere lì una carta base dalla propria mano. Finché resta nella punta, la carta conta come se fosse ancora in mano ai fini di qualunque combinazione. Se non viene usata entro la fine del turno successivo del giocatore, si consuma (torna negli scarti del mazzo comune, non si scarta).
 
 **1.4.2 - Asta**
 L'_asta_ della bacchetta non ha alcuna abilità finché non vi viene incastonato un elemento base. A seconda dell'elemento incastonato, il giocatore ottiene _resistenza_ (danni subiti ridotti di 1) a quell'elemento e _vulnerabilità_ (danni subiti aumentati di 1) al suo opposto.

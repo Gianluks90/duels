@@ -59,6 +59,12 @@
   gap: 6px;
 }
 
+// Solo ancoraggio di posizionamento per tracker__pending-spells sotto — position: absolute lì dentro
+// lo tiene fuori dal flusso apposta, così non allarga/sposta lo step (o l'intero tracker) quando compare.
+.tracker__step-label-wrap {
+  position: relative;
+}
+
 .tracker__step-dot {
   width: 14px;
   height: 14px;
@@ -104,6 +110,40 @@
 
 .tracker__advance {
   flex-shrink: 0;
+}
+
+// Un puntino per ogni incantesimo in coda (5.2) — visibile solo mentre il tracker è ancora su Azione
+// (si risolvono in modo sincrono al passaggio in Incantesimo, quindi non ci sono mai più una volta
+// che quella fase è davvero attiva): anticipa "ne hai N pronti" prima ancora di arrivarci.
+// position: absolute apposta (vedi tracker__step-label-wrap sopra): fuori dal flusso, così non
+// allarga lo step né sposta gli altri — centrato solo sotto la label, non sotto l'intero step (dot incluso).
+.tracker__pending-spells {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  display: flex;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.tracker__pending-spell-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border-gold);
+  box-shadow: 0 0 4px 1px rgba(212, 168, 71, 0.7);
+  animation: tracker-pending-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes tracker-pending-blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 
 @keyframes tracker-pulse {

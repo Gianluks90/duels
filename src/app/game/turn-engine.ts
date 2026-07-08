@@ -58,6 +58,29 @@ function removeOneByElementOrResidue(cards: readonly Card[], element: BaseElemen
 }
 
 /**
+ * Come removeOneByElementOrResidue, ma considera anche la carta trattenuta nella punta della
+ * bacchetta (1.4.1) come se fosse ancora in mano — costruisce il pool hand+tip, rimuove con la
+ * stessa logica invariata, poi capisce (per id) se a essere rimossa è stata la carta della punta,
+ * per svuotarla invece di toglierla da hand. Usata da tutte e 3 le combinazioni al posto della sola
+ * removeOneByElementOrResidue, così la punta funziona ovunque uniformemente come un Residuo.
+ */
+function removeFromHandOrTip(
+  hand: readonly Card[],
+  tipSlot: Card | null,
+  element: BaseElement,
+  chosenId?: string,
+): { removed: Card | null; hand: Card[]; tipSlot: Card | null } {
+  const pool = tipSlot ? [...hand, tipSlot] : hand;
+  const { removed } = removeOneByElementOrResidue(pool, element, chosenId);
+  if (!removed) return { removed: null, hand: [...hand], tipSlot };
+  if (tipSlot && removed.id === tipSlot.id) return { removed, hand: [...hand], tipSlot: null };
+  // `rest` di removeOneByElementOrResidue è calcolato sul pool combinato (hand+tip) — se a essere
+  // rimossa è una carta di hand, `rest` conterrebbe ancora la carta della punta in coda, duplicandola
+  // nella mano finale. Si filtra da `hand` direttamente, non da quel `rest`.
+  return { removed, hand: hand.filter(c => c.id !== removed.id), tipSlot };
+}
+
+/**
  * true se per questo elemento c'è una scelta reale da fare tra più carte in mano: o più copie esatte
  * (tier 'base') e almeno una porta qualcosa di prezioso (bonus manico o mana speciale) — l'auto-scelta
  * (la prima trovata) rischierebbe di consumare quella "buona" al posto di una equivalente semplice —
@@ -161,7 +184,11 @@ export function castSpell(state: GameState, role: PlayerId, spellCardId: string,
   const spell = SPELL_CATALOG.find(s => s.id === spellCard.spellId);
   if (!spell) return state;
 
-  const paidCards = paidCardIds.map(id => player.hand.find(c => c.id === id)).filter((c): c is Card => !!c);
+  // La carta trattenuta nella punta della bacchetta (1.4.1) conta come se fosse ancora in mano —
+  // anche come mana pagabile qui.
+  const tipCard = player.wand.tipSlot;
+  const payablePool = tipCard ? [...player.hand, tipCard] : player.hand;
+  const paidCards = paidCardIds.map(id => payablePool.find(c => c.id === id)).filter((c): c is Card => !!c);
   if (paidCards.length !== paidCardIds.length) return state;
   if (paidCards.some(c => c.tier === 'spell' || c.tier === 'freeze')) return state;
   if (computePlayerMana(paidCards) < spell.manaCost) return state;
@@ -170,11 +197,37 @@ export function castSpell(state: GameState, role: PlayerId, spellCardId: string,
   const chaoticBonus = paidCards.filter(c => c.specialMana === 'chaotic').length * SPECIAL_MANA_EFFECT_AMOUNT;
 
   const spentIds = new Set([spellCardId, ...paidCardIds]);
+  const tipWasSpent = !!tipCard && spentIds.has(tipCard.id);
   return updatePlayer(state, role, {
     hand: player.hand.filter(c => !spentIds.has(c.id)),
     discards: [...player.discards, ...paidCards],
     pendingSpells: [...player.pendingSpells, { card: spellCard, vitalBonus, chaoticBonus }],
     spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
+    wand: tipWasSpent ? { ...player.wand, tipSlot: null } : player.wand,
+    tipCardPlacedTurn: tipWasSpent ? null : player.tipCardPlacedTurn,
+  });
+}
+
+/**
+ * Fase Azione (1.4.1/4.4): trattiene una carta base dalla mano nella punta della bacchetta —
+ * disponibile come se fosse ancora in mano (vedi removeFromHandOrTip) durante il turno successivo
+ * del giocatore, si consuma se non usata entro la fine di quello (vedi endTurn). No-op se non sei
+ * di turno, non sei in Azione, la punta è già occupata, o la carta non è in mano con tier 'base'
+ * (niente Residuo: 1.4.1 dice letteralmente "un elemento base").
+ */
+export function holdAtTip(state: GameState, role: PlayerId, cardId: string): GameState {
+  if (role !== state.currentTurn || state.phase !== 'azione') return state;
+
+  const player = state.players[role];
+  if (player.wand.tipSlot) return state;
+
+  const card = player.hand.find(c => c.id === cardId && c.tier === 'base');
+  if (!card) return state;
+
+  return updatePlayer(state, role, {
+    hand: player.hand.filter(c => c.id !== cardId),
+    wand: { ...player.wand, tipSlot: card },
+    tipCardPlacedTurn: state.turnNumber,
   });
 }
 
@@ -223,9 +276,9 @@ export function combineElements(
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
-  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a, chosenIds?.[a]);
+  const { removed: cardA, hand: handAfterA, tipSlot: tipAfterA } = removeFromHandOrTip(player.hand, player.wand.tipSlot, a, chosenIds?.[a]);
   if (!cardA) return state;
-  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b, chosenIds?.[b]);
+  const { removed: cardB, hand: handAfterB, tipSlot: tipAfterB } = removeFromHandOrTip(handAfterA, tipAfterA, b, chosenIds?.[b]);
   if (!cardB) return state;
 
   const taken = takeFromFonte(state, fonteSlotIndex);
@@ -233,7 +286,11 @@ export function combineElements(
 
   const consumedBases = [cardA, cardB].filter(c => c.tier !== 'residium');
   const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
-  const withHand = updatePlayer(withTable, role, { hand: handAfterB, discards: [...player.discards, taken.obtained] });
+  const withHand = updatePlayer(withTable, role, {
+    hand: handAfterB,
+    discards: [...player.discards, taken.obtained],
+    wand: { ...player.wand, tipSlot: tipAfterB },
+  });
 
   // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
   // essere Luce o Tenebra (la carta ottenuta qui è sempre un avanzato, mai un potente).
@@ -257,12 +314,14 @@ export function combineSuperior(
 
   const player = state.players[role];
   let hand = player.hand;
+  let tipSlot = player.wand.tipSlot;
   const consumed: Card[] = [];
   for (const element of SUPERIOR_FORMULA) {
-    const { removed, rest } = removeOneByElementOrResidue(hand, element, chosenIds?.[element]);
+    const { removed, hand: nextHand, tipSlot: nextTip } = removeFromHandOrTip(hand, tipSlot, element, chosenIds?.[element]);
     if (!removed) return state;
     consumed.push(removed);
-    hand = rest;
+    hand = nextHand;
+    tipSlot = nextTip;
   }
 
   const taken = takeFromFonte(state, fonteSlotIndex);
@@ -270,7 +329,11 @@ export function combineSuperior(
 
   const consumedBases = consumed.filter(c => c.tier !== 'residium');
   const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
-  const withHand = updatePlayer(withTable, role, { hand, discards: [...player.discards, taken.obtained] });
+  const withHand = updatePlayer(withTable, role, {
+    hand,
+    discards: [...player.discards, taken.obtained],
+    wand: { ...player.wand, tipSlot },
+  });
 
   // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
   // essere l'elemento potente opposto a quello appena ottenuto qui (che va negli scarti, non in mano).
@@ -299,9 +362,9 @@ export function combineResidue(
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
-  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a, chosenIds?.[a]);
+  const { removed: cardA, hand: handAfterA, tipSlot: tipAfterA } = removeFromHandOrTip(player.hand, player.wand.tipSlot, a, chosenIds?.[a]);
   if (!cardA) return state;
-  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b, chosenIds?.[b]);
+  const { removed: cardB, hand: handAfterB, tipSlot: tipAfterB } = removeFromHandOrTip(handAfterA, tipAfterA, b, chosenIds?.[b]);
   if (!cardB) return state;
 
   const [obtained, ...residiumDeck] = state.residiumDeck;
@@ -313,7 +376,11 @@ export function combineResidue(
     residiumDeck,
     commonDiscards: [...state.commonDiscards, ...consumedBases],
   };
-  return updatePlayer(withDeck, role, { hand: handAfterB, discards: [...player.discards, obtained] });
+  return updatePlayer(withDeck, role, {
+    hand: handAfterB,
+    discards: [...player.discards, obtained],
+    wand: { ...player.wand, tipSlot: tipAfterB },
+  });
 }
 
 /**
@@ -344,6 +411,15 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   const player = state.players[role];
   const otherRole: PlayerId = role === 'host' ? 'guest' : 'host';
 
+  // Punta della bacchetta (1.4.1): una carta trattenuta lì che non è stata messa in QUESTO stesso
+  // turno (tipCardPlacedTurn !== state.turnNumber) ha già passato un confine di turno senza essere
+  // usata — si consuma. Non si scarta: è una base, torna negli scarti del mazzo comune, non in
+  // quelli del giocatore (definizione Consumare/Scartare, 2.4).
+  const tipExpired = !!player.wand.tipSlot && player.tipCardPlacedTurn !== state.turnNumber;
+  const wand = tipExpired ? { ...player.wand, tipSlot: null } : player.wand;
+  const tipCardPlacedTurn = tipExpired ? null : player.tipCardPlacedTurn;
+  const commonDiscardsAfterTip = tipExpired ? [...state.commonDiscards, player.wand.tipSlot!] : state.commonDiscards;
+
   // Fase Finale (4.6): un Residuo Arcano ancora in mano a questo punto si consuma per sempre (2.5,
   // Card.expiresAt 'fine') — va escluso PRIMA dello scarto della mano, altrimenti finirebbe negli
   // scarti del giocatore come una carta qualunque, cosa che "consumarsi" non è.
@@ -355,14 +431,16 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   const { drawn, deck, discards, reshuffled } = drawUpTo(player.deck, [...player.discards, ...handAfterExpiry], HAND_SIZE);
   const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
 
-  const stateAfterEnd = updatePlayer(state, role, {
+  const stateWithCommonDiscards: GameState = { ...state, commonDiscards: commonDiscardsAfterTip };
+  const stateAfterEnd = updatePlayer(stateWithCommonDiscards, role, {
     hand: drawn,
     deck,
     discards,
     tokens: { ...player.tokens, poison },
     hasCollectedThisTurn: false,
-    hasUsedWandAbility: false,
     spellsPlayedThisTurn: 0,
+    wand,
+    tipCardPlacedTurn,
   });
 
   const stateForNextTurn: GameState = {

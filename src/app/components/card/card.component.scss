@@ -162,7 +162,9 @@
   padding: 8%;
 }
 
-// Header layer — compact icon + name, for when the card is mostly hidden behind another element
+// Header layer — compact icon(s) + name, for when the card is mostly hidden behind another element.
+// space-between spinge il nome tutto a destra, lontano dall'icona (+ eventuale mana speciale) a
+// sinistra — prima un gap fisso li teneva vicini, con l'header spesso più largo del contenuto.
 .card__header {
   position: absolute;
   left: 0;
@@ -170,15 +172,68 @@
   top: 0;
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: space-between;
   padding: 7px 9px;
 }
 
-.card__header-icon {
-  width: 13px;
-  height: 13px;
+.card__header-icons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// Gettone condiviso dai 3 badge dell'header (mana, mana speciale, elemento) — stesso linguaggio
+// visivo dei badge d'angolo (.card__badge: cerchio scuro, ombra), solo più piccolo per stare in riga
+// invece che posizionato assoluto sull'angolo della carta.
+.card__header-token {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: #212121;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   flex-shrink: 0;
-  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.9));
+}
+
+.card__header-token--mana {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  line-height: 1;
+  color: #2f7fd0;
+  -webkit-text-stroke: 0.5px #8fd0ff;
+
+  &.card__header-token--mana-cost {
+    color: #d02f2f;
+    -webkit-text-stroke: 0.5px #ff9d9d;
+  }
+}
+
+.card__header-token--element img {
+  width: 10px;
+  height: 10px;
+  object-fit: contain;
+}
+
+// Stessa tecnica maschera CSS di .card__badge--special-mana, solo dimensionata per il gettone dell'header.
+.card__header-token--special {
+  position: relative;
+  color: var(--text-primary); // sovrascritto dai modificatori sotto, mai visibile da solo
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background-color: currentColor;
+    -webkit-mask: var(--special-mana-icon) center / contain no-repeat;
+    mask: var(--special-mana-icon) center / contain no-repeat;
+  }
+
+  &-prismatic { color: #d4a847; }
+  &-vital     { color: #4caf50; }
+  &-chaotic   { color: #d02f2f; }
 }
 
 .card__header-label {

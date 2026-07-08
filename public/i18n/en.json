@@ -48,7 +48,8 @@
 
   "phaseTracker": {
     "stepsAria": "Turn phases",
-    "turnLabel": "Turn: {name}"
+    "turnLabel": "Turn: {name}",
+    "pendingSpellsAria": "{count} spells queued"
   },
 
   "board": {
@@ -66,7 +67,7 @@
       "tip": "Tip",
       "body": "Body",
       "handle": "Handle",
-      "tipEffect": "Drag an element here to keep it until next turn",
+      "tipEffect": "Hold a base element here to use it on the next turn, do so or it will be consumed.",
       "bodyEffect": "Resistance to {element} damage, vulnerability to {opposite} damage",
       "bodyEffectEmpty": "No active protection right now",
       "handleEffect": "You have a 20% chance to get +1 permanent mana on {element} when drawn",
@@ -96,7 +97,9 @@
       "advance": "Next phase"
     },
     "hand": {
-      "castAction": "Cast {name}"
+      "castAction": "Cast {name}",
+      "holdAtTipAction": "Hold (tip)",
+      "socketAction": "Socket"
     }
   },
 

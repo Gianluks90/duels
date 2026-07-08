@@ -48,7 +48,8 @@
 
   "phaseTracker": {
     "stepsAria": "Fasi del turno",
-    "turnLabel": "Turno di: {name}"
+    "turnLabel": "Turno di: {name}",
+    "pendingSpellsAria": "{count} incantesimi in coda"
   },
 
   "board": {
@@ -66,7 +67,7 @@
       "tip": "Punta",
       "body": "Asta",
       "handle": "Manico",
-      "tipEffect": "Trascina qui un elemento per conservarlo fino al turno successivo",
+      "tipEffect": "Trattieni qui un elemento base per usarlo nel turno successivo, fallo o si consumerà.",
       "bodyEffect": "Resistenza ai danni da {element}, vulnerabilità ai danni da {opposite}",
       "bodyEffectEmpty": "Nessuna protezione attiva al momento",
       "handleEffect": "Hai il 20% di possibilità di ottenere +1 mana permanente su {element} quando viene pescato",
@@ -96,7 +97,9 @@
       "advance": "Prossima fase"
     },
     "hand": {
-      "castAction": "Lancia {name}"
+      "castAction": "Lancia {name}",
+      "holdAtTipAction": "Trattieni (punta)",
+      "socketAction": "Incastona"
     }
   },
 

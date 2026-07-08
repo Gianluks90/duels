@@ -503,6 +503,11 @@
   &__wand-peek {
     position: relative;
     z-index: 1;
+    // Punta della bacchetta (1.4.1): quando una carta arriva, margin-bottom/-top parte da 0 (nascosta
+    // dietro il cartellino) e transiziona al valore finale (-wandPeekOverlap, inline) — pilotato da
+    // tipEntering() in board.component.ts. Asta/manico non animano mai (nessun tipEntering per loro),
+    // la transizione qui non li riguarda: si applica solo quando il margine cambia davvero.
+    transition: margin-bottom 400ms ease, margin-top 400ms ease;
   }
 
   &__wand-card {

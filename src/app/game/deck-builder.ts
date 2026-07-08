@@ -150,9 +150,8 @@ function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactor
     tokens: { shield: 0, poison: 0, ice: 0 },
     cardBack: 'dark',
     hasCollectedThisTurn: false,
-    hasUsedWandAbility: false,
     spellsPlayedThisTurn: 0,
-    puntaSpellUsed: false,
+    tipCardPlacedTurn: null,
     handRevealed: false,
     immuneToElement: null,
   };
