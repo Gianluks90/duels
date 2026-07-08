@@ -66,19 +66,19 @@ export class GameEngineService {
     await this.mutate(gameId, state => keepCardReducer(state, role, keptId));
   }
 
-  /** Fase Azione: combina 2 elementi base dalla mano per ottenere la carta rivelata in uno slot della Fonte Arcana. */
-  async combineElements(gameId: string, role: PlayerId, fonteSlotIndex: number, a: BaseElement, b: BaseElement): Promise<void> {
-    await this.mutate(gameId, state => combineElementsReducer(state, role, fonteSlotIndex, a, b));
+  /** Fase Azione: combina 2 elementi base dalla mano per ottenere la carta rivelata in uno slot della Fonte Arcana. `chosenIds` forza quale copia usare per un elemento quando in mano ce n'era più di una valida (CombineDialogComponent, board.component.ts) — assente quando non c'era ambiguità, si procede con la scelta automatica di sempre. */
+  async combineElements(gameId: string, role: PlayerId, fonteSlotIndex: number, a: BaseElement, b: BaseElement, chosenIds?: Partial<Record<BaseElement, string>>): Promise<void> {
+    await this.mutate(gameId, state => combineElementsReducer(state, role, fonteSlotIndex, a, b, chosenIds));
   }
 
-  /** Fase Azione: combina i 4 elementi base (Fuoco+Acqua+Aria+Terra) per ottenere l'elemento potente rivelato in uno slot della Fonte Arcana. */
-  async combineSuperior(gameId: string, role: PlayerId, fonteSlotIndex: number): Promise<void> {
-    await this.mutate(gameId, state => combineSuperiorReducer(state, role, fonteSlotIndex));
+  /** Fase Azione: combina i 4 elementi base (Fuoco+Acqua+Aria+Terra) per ottenere l'elemento potente rivelato in uno slot della Fonte Arcana. `chosenIds`: vedi combineElements. */
+  async combineSuperior(gameId: string, role: PlayerId, fonteSlotIndex: number, chosenIds?: Partial<Record<BaseElement, string>>): Promise<void> {
+    await this.mutate(gameId, state => combineSuperiorReducer(state, role, fonteSlotIndex, chosenIds));
   }
 
-  /** Fase Azione: combina 2 elementi base opposti per ottenere un Residuo Arcano dal pool condiviso. */
-  async combineResidue(gameId: string, role: PlayerId, a: BaseElement, b: BaseElement): Promise<void> {
-    await this.mutate(gameId, state => combineResidueReducer(state, role, a, b));
+  /** Fase Azione: combina 2 elementi base opposti per ottenere un Residuo Arcano dal pool condiviso. `chosenIds`: vedi combineElements. */
+  async combineResidue(gameId: string, role: PlayerId, a: BaseElement, b: BaseElement, chosenIds?: Partial<Record<BaseElement, string>>): Promise<void> {
+    await this.mutate(gameId, state => combineResidueReducer(state, role, a, b, chosenIds));
   }
 
   /** Avanza la fase del giocatore di turno lungo il ciclo delle 6 fasi; da 'fine' passa davvero il turno. */

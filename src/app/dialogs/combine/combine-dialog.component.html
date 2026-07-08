@@ -1,0 +1,34 @@
+<div class="combine-dialog" role="dialog" aria-modal="true" [attr.aria-label]="'combineDialog.dialogAria' | translate">
+  <header class="combine-dialog__header">
+    <h2 class="t-heading combine-dialog__title">{{ 'combineDialog.title' | translate }}</h2>
+    <app-icon-button [icon]="closeIcon" [ariaLabel]="'combineDialog.closeAria' | translate" [size]="32" (iconClick)="cancel()" />
+  </header>
+
+  <div class="combine-dialog__body">
+    @for (element of elements; track element) {
+      <div class="combine-dialog__group" role="radiogroup" [attr.aria-label]="'combineDialog.groupAria' | translate:{ element: elementLabel(element) }">
+        <p class="combine-dialog__instructions">{{ 'combineDialog.instructions' | translate:{ element: elementLabel(element) } }}</p>
+        <ul class="combine-dialog__cards">
+          @for (card of candidatesFor(element); track card.id) {
+            <li class="combine-dialog__card" [class.combine-dialog__card--selected]="isSelected(element, card.id)"
+                [class.combine-dialog__card--taken]="isTaken(element, card.id)"
+                role="radio" [attr.aria-checked]="isSelected(element, card.id)" [attr.aria-disabled]="isTaken(element, card.id)"
+                (click)="select(element, card.id)">
+              <app-card [element]="card.element" [manaBonus]="card.manaBonus ?? 0" [specialMana]="card.specialMana ?? null" [size]="72" />
+              @if (isTaken(element, card.id)) {
+                <span class="combine-dialog__card-taken-label">{{ 'combineDialog.taken' | translate }}</span>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <div class="combine-dialog__footer">
+      <div class="combine-dialog__actions">
+        <button class="btn btn--secondary" (click)="cancel()">{{ 'combineDialog.cancel' | translate }}</button>
+        <button class="btn btn--primary" [disabled]="!canConfirm()" (click)="confirm()">{{ 'combineDialog.confirm' | translate }}</button>
+      </div>
+    </div>
+  </div>
+</div>

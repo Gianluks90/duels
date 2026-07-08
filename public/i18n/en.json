@@ -30,7 +30,12 @@
 
   "card": {
     "manaAria": "{value} mana",
-    "specialManaAria": "{name} mana"
+    "specialManaAria": "{name} mana",
+    "specialManaEffect": {
+      "prismatic": "Always worth 1 mana more than its own value, regardless of any other modifier active on the card.",
+      "vital": "If you use it to pay for a spell that targets yourself, you recover 2 Health Points. Otherwise it counts as common mana.",
+      "chaotic": "If you use it to pay for a spell that targets your opponent, it deals 2 extra damage. Otherwise it counts as common mana."
+    }
   },
 
   "playerHud": {
@@ -73,11 +78,11 @@
       "scarti": "Discards",
       "avanzato": "Advanced",
       "description": "Combine and remove two or more base elements to get an advanced element",
-      "recipeTooltip": "{name}: {a} + {b}",
-      "recipeTooltipSuperior": "{name}: {formula}",
+      "recipeMana": "Worth {value} mana",
       "combineAction": "Combine: {a} + {b}",
       "combineActionSuperior": "Combine: {formula}",
-      "residuoTooltip": "Residuum: {pairA} / {pairB}",
+      "residuoName": "Arcane Residuum",
+      "residuoExpiry": "Consumed at the end of the turn if not used.",
       "collectTooltip": "Draw 2 cards, keep 1 (Collection phase)",
       "collectPrompt": "Choose which card to keep"
     },
@@ -211,6 +216,17 @@
     "manaCounter": "{paid} / {cost} mana",
     "cancel": "Cancel",
     "confirm": "Confirm cast"
+  },
+
+  "combineDialog": {
+    "dialogAria": "Choose which card to use",
+    "title": "Choose which card to use",
+    "closeAria": "Cancel",
+    "instructions": "More than one card can cover {element}: choose which one to use.",
+    "groupAria": "Choice for {element}",
+    "taken": "Already chosen",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   },
 
   "gameSettings": {

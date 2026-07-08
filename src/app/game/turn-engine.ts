@@ -32,9 +32,21 @@ function removeOneByElement(cards: readonly Card[], element: BaseElement): { rem
  * Come removeOneByElement, ma se l'elemento richiesto non è in mano ripiega su un Residuo Arcano
  * (2.5): "vale come un qualsiasi elemento base ai fini di qualsiasi combinazione". Usata da ogni
  * combinazione — avanzati, potenti, e la stessa combinazione che produce un Residuo — al posto della
- * sola removeOneByElement, così il jolly funziona ovunque uniformemente.
+ * sola removeOneByElement, così il jolly funziona ovunque uniformemente. `chosenId`, quando presente,
+ * forza quale copia specifica rimuovere — una base esatta O un Residuo, a scelta dell'utente
+ * (CombineDialogComponent, quando c'era una scelta reale da fare, vedi combineNeedsChoice sotto) —
+ * invece della preferenza automatica di sempre (base esatta prima, Residuo solo come ripiego). Se non
+ * corrisponde a nessuna delle due, niente rimozione (nessun fallback silenzioso su un'altra carta).
  */
-function removeOneByElementOrResidue(cards: readonly Card[], element: BaseElement): { removed: Card | null; rest: Card[] } {
+function removeOneByElementOrResidue(cards: readonly Card[], element: BaseElement, chosenId?: string): { removed: Card | null; rest: Card[] } {
+  if (chosenId !== undefined) {
+    const rest = [...cards];
+    const index = rest.findIndex(c => c.id === chosenId && ((c.element === element && c.tier === 'base') || c.tier === 'residium'));
+    if (index === -1) return { removed: null, rest: [...cards] };
+    const [removed] = rest.splice(index, 1);
+    return { removed, rest };
+  }
+
   const exact = removeOneByElement(cards, element);
   if (exact.removed) return exact;
 
@@ -43,6 +55,23 @@ function removeOneByElementOrResidue(cards: readonly Card[], element: BaseElemen
   if (index === -1) return { removed: null, rest: [...cards] };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
+}
+
+/**
+ * true se per questo elemento c'è una scelta reale da fare tra più carte in mano: o più copie esatte
+ * (tier 'base') e almeno una porta qualcosa di prezioso (bonus manico o mana speciale) — l'auto-scelta
+ * (la prima trovata) rischierebbe di consumare quella "buona" al posto di una equivalente semplice —
+ * oppure una base esatta E un Residuo Arcano ENTRAMBI disponibili: usare l'uno o l'altro non è mai
+ * indifferente, dato che il Residuo è una risorsa scarsa (pool condiviso di 8 copie, nessuna pila
+ * scarti — una volta speso non torna più) da proteggere quando possibile, anche se la base esatta è
+ * del tutto semplice. Più copie di Residuo tra loro invece non generano mai una scelta (sono
+ * intercambiabili, nessun bonus possibile su quel tier). Usata da board.component.ts per decidere se
+ * serve aprire CombineDialogComponent prima di combinare.
+ */
+export function combineNeedsChoice(hand: readonly Card[], element: BaseElement): boolean {
+  const exact = hand.filter(c => c.element === element && c.tier === 'base');
+  if (exact.length > 1 && exact.some(c => (c.manaBonus ?? 0) > 0 || !!c.specialMana)) return true;
+  return exact.length >= 1 && hand.some(c => c.tier === 'residium');
 }
 
 /** Filtra dalla mano le carte "temporanee" (Card.expiresAt) che scadono alla fase indicata — sciolte o consumate, mai scartate (regolamento 2.3.1, 2.5). */
@@ -179,6 +208,9 @@ function takeFromFonte(state: GameState, fonteSlotIndex: number): { state: GameS
  * consumate negli scarti del mazzo comune; un eventuale Residuo usato come jolly si consuma invece
  * per sempre (non ha una propria pila scarti). La carta ottenuta va negli scarti del giocatore.
  * No-op se non sei di turno o se la mano non contiene gli elementi richiesti (basi o Residuo).
+ * `chosenIds`, quando presente, forza quale copia specifica usare per l'elemento indicato — arriva da
+ * CombineDialogComponent quando board.component.ts rileva un'ambiguità reale (hasValuableDuplicate),
+ * altrimenti resta vuoto e si procede con la scelta automatica di sempre (la prima trovata).
  */
 export function combineElements(
   state: GameState,
@@ -186,13 +218,14 @@ export function combineElements(
   fonteSlotIndex: number,
   a: BaseElement,
   b: BaseElement,
+  chosenIds?: Partial<Record<BaseElement, string>>,
 ): GameState {
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
-  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a);
+  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a, chosenIds?.[a]);
   if (!cardA) return state;
-  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b);
+  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b, chosenIds?.[b]);
   if (!cardB) return state;
 
   const taken = takeFromFonte(state, fonteSlotIndex);
@@ -212,15 +245,21 @@ export function combineElements(
  * o Residui Arcani al loro posto (2.5), dalla mano per ottenere l'elemento potente rivelato nello
  * slot indicato della Fonte Arcana — stessa meccanica di combineElements, solo con 4 basi invece di
  * 2. No-op se non sei di turno o se la mano non contiene tutti e 4 gli elementi richiesti (basi o Residuo).
+ * `chosenIds`: vedi combineElements sopra.
  */
-export function combineSuperior(state: GameState, role: PlayerId, fonteSlotIndex: number): GameState {
+export function combineSuperior(
+  state: GameState,
+  role: PlayerId,
+  fonteSlotIndex: number,
+  chosenIds?: Partial<Record<BaseElement, string>>,
+): GameState {
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
   let hand = player.hand;
   const consumed: Card[] = [];
   for (const element of SUPERIOR_FORMULA) {
-    const { removed, rest } = removeOneByElementOrResidue(hand, element);
+    const { removed, rest } = removeOneByElementOrResidue(hand, element, chosenIds?.[element]);
     if (!removed) return state;
     consumed.push(removed);
     hand = rest;
@@ -248,15 +287,21 @@ export function combineSuperior(state: GameState, role: PlayerId, fonteSlotIndex
  * turno). Verrà ripescato più avanti insieme a una mano fresca da 5, con più probabilità di trovare
  * carte compatibili — l'urgenza "un turno per utilizzarlo" (Card.expiresAt 'fine', vedi
  * buildResiduumDeck) scatta da quel momento, non da quando viene creato. No-op se non sei di turno,
- * se la mano non contiene gli elementi richiesti, o se il pool è esaurito.
+ * se la mano non contiene gli elementi richiesti, o se il pool è esaurito. `chosenIds`: vedi combineElements sopra.
  */
-export function combineResidue(state: GameState, role: PlayerId, a: BaseElement, b: BaseElement): GameState {
+export function combineResidue(
+  state: GameState,
+  role: PlayerId,
+  a: BaseElement,
+  b: BaseElement,
+  chosenIds?: Partial<Record<BaseElement, string>>,
+): GameState {
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
-  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a);
+  const { removed: cardA, rest: handAfterA } = removeOneByElementOrResidue(player.hand, a, chosenIds?.[a]);
   if (!cardA) return state;
-  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b);
+  const { removed: cardB, rest: handAfterB } = removeOneByElementOrResidue(handAfterA, b, chosenIds?.[b]);
   if (!cardB) return state;
 
   const [obtained, ...residiumDeck] = state.residiumDeck;

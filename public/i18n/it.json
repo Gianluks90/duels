@@ -30,7 +30,12 @@
 
   "card": {
     "manaAria": "{value} mana",
-    "specialManaAria": "Mana {name}"
+    "specialManaAria": "Mana {name}",
+    "specialManaEffect": {
+      "prismatic": "Vale sempre 1 mana in più rispetto al proprio valore, indipendentemente da altri modificatori attivi sulla carta.",
+      "vital": "Se lo usi per pagare un incantesimo che bersaglia te stesso, recuperi 2 Punti Salute. Altrimenti vale come un mana comune.",
+      "chaotic": "Se lo usi per pagare un incantesimo che bersaglia l'avversario, infligge 2 danni aggiuntivi. Altrimenti vale come un mana comune."
+    }
   },
 
   "playerHud": {
@@ -73,11 +78,11 @@
       "scarti": "Scarti",
       "avanzato": "Avanzato",
       "description": "Combina e rimuovi due o più elementi base per ottenere un elemento avanzato",
-      "recipeTooltip": "{name}: {a} + {b}",
-      "recipeTooltipSuperior": "{name}: {formula}",
+      "recipeMana": "Vale {value} mana",
       "combineAction": "Combina: {a} + {b}",
       "combineActionSuperior": "Combina: {formula}",
-      "residuoTooltip": "Residuo Arcano: {pairA} / {pairB}",
+      "residuoName": "Residuo Arcano",
+      "residuoExpiry": "Si consuma a fine turno se non lo usi.",
       "collectTooltip": "Pesca 2 carte, tienine 1 (fase Raccolta)",
       "collectPrompt": "Scegli quale carta tenere"
     },
@@ -211,6 +216,17 @@
     "manaCounter": "{paid} / {cost} mana",
     "cancel": "Annulla",
     "confirm": "Conferma lancio"
+  },
+
+  "combineDialog": {
+    "dialogAria": "Scegli quale carta usare",
+    "title": "Scegli quale carta usare",
+    "closeAria": "Annulla",
+    "instructions": "Più di una carta può coprire {element}: scegli quale usare.",
+    "groupAria": "Scelta per {element}",
+    "taken": "Già scelta",
+    "cancel": "Annulla",
+    "confirm": "Conferma"
   },
 
   "gameSettings": {

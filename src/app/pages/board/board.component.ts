@@ -15,6 +15,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
+import { firstValueFrom } from 'rxjs';
 import { GameService, type GameDoc } from '../../services/game.service';
 import { GameEngineService } from '../../services/game-engine.service';
 import { AuthService } from '../../services/auth.service';
@@ -29,13 +30,16 @@ import { GameSettingsDialogComponent } from '../../dialogs/game-settings/game-se
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
 import { CastSpellDialogComponent, type CastSpellDialogData } from '../../dialogs/cast-spell/cast-spell-dialog.component';
+import { CombineDialogComponent, type CombineDialogData } from '../../dialogs/combine/combine-dialog.component';
 import type { BaseElement, Element, AdvancedElement, SuperiorElement } from '../../models/element.model';
-import { ADVANCED_RECIPES, SUPERIOR_FORMULA } from '../../models/element.model';
+import { ADVANCED_RECIPES, ELEMENT_MANA, SUPERIOR_FORMULA } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
-import type { Card } from '../../models/card.model';
+import type { Card, SpecialMana } from '../../models/card.model';
+import { specialManaIconPath } from '../../models/card.model';
 import type { PlayerId, PlayerState } from '../../models/player.model';
 import { computePlayerMana } from '../../models/player.model';
+import { combineNeedsChoice } from '../../game/turn-engine';
 import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -123,6 +127,8 @@ export class BoardComponent implements OnInit {
   protected readonly i18n = inject(TranslationService);
 
   protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
+  protected readonly ELEMENT_MANA = ELEMENT_MANA;
+  protected readonly specialManaIconPath = specialManaIconPath;
 
   protected readonly wandCardWidth = WAND_CARD_WIDTH;
   private readonly wandPeekCardHeight = Math.round(WAND_CARD_WIDTH * 1.5);
@@ -605,34 +611,13 @@ export class BoardComponent implements OnInit {
     return `var(--el-${el})`;
   }
 
-  /** Recipe tooltip for an advanced ("Fulmine: Fuoco + Aria") or superior ("Luce: Fuoco + Acqua + Aria + Terra") card — null for base/residium, so the directive stays silent. */
-  protected recipeTooltip(el: Element): string | null {
+  /** Solo la formula ("Fuoco + Aria" per un avanzato, la formula fissa per un potente) — il nome e il valore in mana si mostrano a parte nel tooltip ricco della Fonte Arcana (board.component.html, ng-template #recipeTip). Stringa vuota per base/residium (mai il caso qui: fonteCards() contiene solo avanzati/potenti). */
+  protected recipeFormula(el: Element): string {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
-    if (recipe) {
-      return this.i18n.t('board.fonte.recipeTooltip', {
-        name: this.i18n.elementLabel(el),
-        a: this.i18n.elementLabel(recipe[0]),
-        b: this.i18n.elementLabel(recipe[1]),
-      });
-    }
-
-    if (this.isSuperior(el)) {
-      return this.i18n.t('board.fonte.recipeTooltipSuperior', {
-        name: this.i18n.elementLabel(el),
-        formula: this.superiorFormulaLabel(),
-      });
-    }
-
-    return null;
+    if (recipe) return `${this.i18n.elementLabel(recipe[0])} + ${this.i18n.elementLabel(recipe[1])}`;
+    if (this.isSuperior(el)) return this.superiorFormulaLabel();
+    return '';
   }
-
-  /** "Residuo Arcano: Fuoco + Acqua / Aria + Terra" (2.5) — le 2 coppie di elementi base opposti che lo producono. */
-  protected readonly residuoTooltip = computed(() =>
-    this.i18n.t('board.fonte.residuoTooltip', {
-      pairA: `${this.i18n.elementLabel('fire')} + ${this.i18n.elementLabel('water')}`,
-      pairB: `${this.i18n.elementLabel('air')} + ${this.i18n.elementLabel('earth')}`,
-    }),
-  );
 
   /** Regolamento v2, 2.3/2.4/2.6: scartare le basi corrispondenti (2 per un avanzato, le 4 della formula fissa per un potente) per prendere la carta dalla Fonte. Niente voci fuori da Azione — la ricetta la spiega già il tooltip della carta, un bottone sempre disabilitato non aggiungerebbe nulla. */
   protected fonteMenuItems(el: Element, slotIndex: number): ActionMenuItem[] {
@@ -729,6 +714,11 @@ export class BoardComponent implements OnInit {
     return text === key ? null : text;
   }
 
+  /** Spiegazione testuale dell'effetto del mana speciale (3.2) — tooltip su una carta che lo porta, dato che il solo badge/aria-label non lo spiega a chi non conosce già la regola. */
+  protected specialManaEffectText(type: SpecialMana): string {
+    return this.i18n.t(`card.specialManaEffect.${type}`);
+  }
+
   /** "Resistenza ai danni da Fuoco, vulnerabilità ai danni da Acqua" — or the empty-socket fallback. */
   protected bodyEffectText(el: BaseElement | null): string {
     if (!el) return this.i18n.t('board.wand.bodyEffectEmpty');
@@ -786,46 +776,88 @@ export class BoardComponent implements OnInit {
     this.hoveredRecipe.set(null);
   }
 
-  /** Gold = combo completable right now, blue = part of the recipe but not enough yet, null = unrelated to what's hovered. */
-  protected handCardHighlight(el: Element): 'gold' | 'blue' | null {
+  /**
+   * Gold = combo completabile subito, blue = ne fa parte ma non basta ancora, null = non c'entra con
+   * quanto in hover. Considera anche un eventuale Residuo Arcano in mano come sostituto jolly per
+   * l'elemento mancante (2.5) — sia per continuare a evidenziare le basi esatte (il Residuo può
+   * coprire un buco altrove nella stessa formula) sia per evidenziare il Residuo stesso quando è lui
+   * a completarla. Bug fix: prima filtrava via ogni carta non-base ancora prima di guardarla, quindi
+   * un Residuo in mano non veniva mai considerato, né qui né dal chiamante nel template.
+   */
+  protected handCardHighlight(card: Card): 'gold' | 'blue' | null {
     const recipe = this.hoveredRecipe();
-    if (!recipe) return null;
+    if (!recipe || (card.tier !== 'base' && card.tier !== 'residium')) return null;
+
+    const hand = this.playerHand();
     // Esclude le carte magia (tier 'spell'): riusano un elemento base solo per la propria arte, non sono una base vera.
-    const hand = this.playerHand().filter(card => card.tier === 'base').map(card => card.element);
+    const baseElements = hand.filter(c => c.tier === 'base').map(c => c.element);
+    const residuoCount = hand.filter(c => c.tier === 'residium').length;
 
-    if (recipe.kind === 'fixed') {
-      const [a, b] = recipe.pair;
-      if (el !== a && el !== b) return null;
-      return hand.includes(a) && hand.includes(b) ? 'gold' : 'blue';
+    const requiredSets: ReadonlyArray<readonly BaseElement[]> =
+      recipe.kind === 'fixed' ? [recipe.pair] :
+      recipe.kind === 'superior' ? [SUPERIOR_FORMULA] :
+      [['fire', 'water'], ['air', 'earth']]; // 'opposite' (hover sul Residuo): le 2 coppie che possono produrne uno nuovo
+
+    let best: 'gold' | 'blue' | null = null;
+    for (const required of requiredSets) {
+      const missing = required.filter(e => !baseElements.includes(e)).length;
+      // Una base esatta è rilevante solo se fa parte di QUESTA formula; un Residuo lo è solo se serve
+      // davvero a colmare un buco (altrimenti la formula si completa già senza toccarlo).
+      const relevant = card.tier === 'residium' ? missing > 0 : required.includes(card.element as BaseElement);
+      if (!relevant) continue;
+
+      if (missing <= residuoCount) return 'gold'; // il massimo possibile, nessun bisogno di continuare
+      best = 'blue';
     }
-
-    if (recipe.kind === 'superior') {
-      if (!SUPERIOR_FORMULA.includes(el as BaseElement)) return null;
-      return SUPERIOR_FORMULA.every(e => hand.includes(e)) ? 'gold' : 'blue';
-    }
-
-    if (!(el in ELEMENT_OPPOSITES)) return null;
-    const opposite = ELEMENT_OPPOSITES[el as BaseElement];
-    // Un Residuo in mano vale come l'opposto mancante (2.5).
-    return (hand.includes(opposite) || hand.includes('residium')) ? 'gold' : 'blue';
+    return best;
   }
 
   private async combineAdvanced(slotIndex: number, a: BaseElement, b: BaseElement): Promise<void> {
     const role = this.myRole();
     if (!role) return;
-    await this.gameEngine.combineElements(this.gameId(), role, slotIndex, a, b);
+    const chosenIds = await this.resolveCombineChoice([a, b]);
+    if (chosenIds === null) return;
+    await this.gameEngine.combineElements(this.gameId(), role, slotIndex, a, b, chosenIds);
   }
 
   private async combineSuperior(slotIndex: number): Promise<void> {
     const role = this.myRole();
     if (!role) return;
-    await this.gameEngine.combineSuperior(this.gameId(), role, slotIndex);
+    const chosenIds = await this.resolveCombineChoice(SUPERIOR_FORMULA);
+    if (chosenIds === null) return;
+    await this.gameEngine.combineSuperior(this.gameId(), role, slotIndex, chosenIds);
   }
 
   private async combineResidue(a: BaseElement, b: BaseElement): Promise<void> {
     const role = this.myRole();
     if (!role) return;
-    await this.gameEngine.combineResidue(this.gameId(), role, a, b);
+    const chosenIds = await this.resolveCombineChoice([a, b]);
+    if (chosenIds === null) return;
+    await this.gameEngine.combineResidue(this.gameId(), role, a, b, chosenIds);
+  }
+
+  /**
+   * Se per uno o più degli elementi richiesti c'è una scelta reale da fare (`combineNeedsChoice`:
+   * più copie esatte con almeno una preziosa, o una base esatta e un Residuo entrambi disponibili),
+   * apre `CombineDialogComponent` e aspetta la scelta dell'utente prima di procedere — altrimenti
+   * torna subito una mappa vuota, così la combinazione avviene senza alcuna interruzione come sempre
+   * (la scelta automatica in `turn-engine.ts` resta l'unica candidata comunque). Torna `null` se
+   * l'utente annulla la dialog (nessuna combinazione da fare).
+   */
+  private async resolveCombineChoice(elements: readonly BaseElement[]): Promise<Partial<Record<BaseElement, string>> | null> {
+    const hand = this.playerHand();
+    const ambiguous = elements.filter(el => combineNeedsChoice(hand, el));
+    if (ambiguous.length === 0) return {};
+
+    const ref = this.dialog.open<Partial<Record<BaseElement, string>> | undefined, CombineDialogData>(CombineDialogComponent, {
+      data: { elements: ambiguous, hand },
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+    const result = await firstValueFrom(ref.closed);
+    return result ?? null;
   }
 
   /** Fase Raccolta (4.3), primo passo: pesca 2 carte dal mazzo comune (il servizio rimescola se serve). */

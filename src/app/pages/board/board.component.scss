@@ -602,15 +602,54 @@
   30%, 60% { filter: brightness(1.9); translate: 5px 0; }
 }
 
-// Tooltip di una carta incantesimo in mano (board.component.html, ng-template #spellTip) — reso
-// dentro .tooltip (tooltip.component.html) via CDK overlay, non annidato sotto .board.
-.hand-spell-tooltip__rule {
+// Tooltip ricco (nome in grassetto, <hr>, corpo, nota finale in corsivo) — condiviso da quattro
+// ng-template diversi in board.component.html: #spellTip (carte incantesimo in mano), #recipeTip
+// (elementi della Fonte Arcana), #residuoTip (Residuo Arcano) e #specialManaTip (mana speciale in
+// mano). Reso dentro .tooltip (tooltip.component.html) via CDK overlay, non annidato sotto .board.
+.rich-tooltip__rule {
   border: 0;
   border-top: 1px solid var(--border-subtle);
   margin: var(--sp-1) 0;
 }
 
-.hand-spell-tooltip__flavor {
+.rich-tooltip__flavor {
   margin: var(--sp-1) 0 0;
   color: var(--text-muted);
+}
+
+// #residuoTip: le 2 formule (Fuoco+Acqua / Aria+Terra) come elenco puntato — qui il marker nativo
+// del <li> è voluto (non il bug involontario visto nelle dialog CDK), quindi nessun list-style: none.
+.rich-tooltip__list {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+// #specialManaTip: nome e icona sulla stessa riga, ai due estremi.
+.rich-tooltip__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+// Icona ricolorata via maschera CSS, stessa tecnica del badge su CardComponent (le SVG sorgente sono
+// monocromatiche) — duplicata qui invece di condivisa: due componenti diversi, nessun mixin nel progetto.
+.rich-tooltip__special-icon {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: currentColor;
+    -webkit-mask: var(--special-mana-icon) center / contain no-repeat;
+    mask: var(--special-mana-icon) center / contain no-repeat;
+  }
+
+  &--prismatic { color: #d4a847; }
+  &--vital     { color: #4caf50; }
+  &--chaotic   { color: #d02f2f; }
 }

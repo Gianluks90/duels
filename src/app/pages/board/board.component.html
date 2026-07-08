@@ -132,9 +132,18 @@
 
       <!-- Group 1: Residuo Arcano — a single pile, always face up -->
       <div class="board__fonte-group">
+        <ng-template #residuoTip>
+          <strong>{{ 'board.fonte.residuoName' | translate }}</strong>
+          <hr class="rich-tooltip__rule" />
+          <ul class="rich-tooltip__list">
+            <li>{{ i18n.elementLabel('fire') }} + {{ i18n.elementLabel('water') }}</li>
+            <li>{{ i18n.elementLabel('air') }} + {{ i18n.elementLabel('earth') }}</li>
+          </ul>
+          <p class="rich-tooltip__flavor"><em>{{ 'board.fonte.residuoExpiry' | translate }}</em></p>
+        </ng-template>
         <app-action-menu [items]="residuoMenuItems()" (mouseenter)="onResiduoHover()" (mouseleave)="onFonteHoverEnd()">
           <app-deck [size]="fonteCardWidth" [count]="residuoDeckCount()" [faceUp]="true" [topElement]="'residium'" [label]="'board.fonte.residuo' | translate"
-                    [appTooltip]="residuoTooltip()" tooltipPosition="top" />
+                    [appTooltip]="residuoTip" tooltipPosition="top" />
         </app-action-menu>
       </div>
 
@@ -160,9 +169,15 @@
           <div class="board__fonte-row" role="region" [attr.aria-label]="'board.fonteAria' | translate"
                [class.board__fonte-row--exploding]="fonteExploding()">
             @for (card of fonteCards(); track $index) {
+              <ng-template #recipeTip>
+                <strong>{{ i18n.elementLabel(card) }}</strong>
+                <hr class="rich-tooltip__rule" />
+                <p class="rich-tooltip__effect">{{ recipeFormula(card) }}</p>
+                <p class="rich-tooltip__flavor"><em>{{ 'board.fonte.recipeMana' | translate:{ value: ELEMENT_MANA[card] } }}</em></p>
+              </ng-template>
               <app-action-menu [items]="fonteMenuItems(card, $index)"
                                (mouseenter)="onFonteHover(card)" (mouseleave)="onFonteHoverEnd()">
-                <app-card [element]="card" [size]="handArcCardWidth" [appTooltip]="recipeTooltip(card)" tooltipPosition="top" />
+                <app-card [element]="card" [size]="handArcCardWidth" [appTooltip]="recipeTip" tooltipPosition="top" />
               </app-action-menu>
             }
           </div>
@@ -193,9 +208,24 @@
         <p class="board__collect-prompt">{{ 'board.fonte.collectPrompt' | translate }}</p>
         <div class="board__collect-cards">
           @for (card of pair; track card.id) {
+            <!-- Stesso tooltip ricco #specialManaTip usato in mano (vedi board.component.scss, .rich-tooltip__*). -->
+            <ng-template #specialManaTip>
+              <div class="rich-tooltip__header">
+                <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+                <span class="rich-tooltip__special-icon"
+                      [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
+                      [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                      [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                      [style.--special-mana-icon]="'url(' + specialManaIconPath(card.specialMana!) + ')'"
+                      aria-hidden="true"></span>
+              </div>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
+            </ng-template>
             <button type="button" class="board__collect-card" (click)="keepCard(card)">
               <app-card [element]="card.element" [manaBonus]="collectCardManaBonus(card)" [specialMana]="card.specialMana ?? null" [size]="handArcCardWidth"
-                        [class.board__collect-card__art--bonus]="collectCardRevealing(card)" />
+                        [class.board__collect-card__art--bonus]="collectCardRevealing(card)"
+                        [appTooltip]="card.specialMana ? specialManaTip : null" tooltipPosition="top" />
             </button>
           }
         </div>
@@ -244,18 +274,34 @@
                ref #spellTip resta visibile alla app-card sotto, nella stessa iterazione. -->
           <ng-template #spellTip>
             <strong>{{ spellName(card) }}</strong>
-            <hr class="hand-spell-tooltip__rule" />
-            <p class="hand-spell-tooltip__effect">{{ spellEffectSummary(card) }}</p>
+            <hr class="rich-tooltip__rule" />
+            <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
             @if (spellFlavor(card); as flavor) {
-              <p class="hand-spell-tooltip__flavor"><em>{{ flavor }}</em></p>
+              <p class="rich-tooltip__flavor"><em>{{ flavor }}</em></p>
             }
+          </ng-template>
+          <!-- Tooltip ricco per il mana speciale (3.2) — il solo badge/aria-label non ne spiega
+               l'effetto a chi non conosce già la regola. Mai insieme a #spellTip sopra: specialMana
+               esiste solo su carte tier 'base', mai su carte incantesimo. -->
+          <ng-template #specialManaTip>
+            <div class="rich-tooltip__header">
+              <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+              <span class="rich-tooltip__special-icon"
+                    [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
+                    [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                    [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                    [style.--special-mana-icon]="'url(' + specialManaIconPath(card.specialMana!) + ')'"
+                    aria-hidden="true"></span>
+            </div>
+            <hr class="rich-tooltip__rule" />
+            <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
           </ng-template>
           <app-action-menu [items]="handCardMenuItems(card)">
             <app-card class="board__hand-card" [element]="card.element" [spellId]="card.spellId ?? null" [manaBonus]="card.manaBonus ?? 0" [specialMana]="card.specialMana ?? null" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
-                      [class.board__hand-card--gold]="card.tier === 'base' && handCardHighlight(card.element) === 'gold'"
-                      [class.board__hand-card--blue]="card.tier === 'base' && handCardHighlight(card.element) === 'blue'"
+                      [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
+                      [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
                       [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
-                      [appTooltip]="card.tier === 'spell' ? spellTip : null" tooltipPosition="top"
+                      [appTooltip]="card.tier === 'spell' ? spellTip : (card.specialMana ? specialManaTip : null)" tooltipPosition="top"
                       [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
           </app-action-menu>
         }
