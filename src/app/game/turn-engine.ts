@@ -1,4 +1,4 @@
-import type { Card } from '../models/card.model';
+import type { Card, CardTier } from '../models/card.model';
 import type { BaseElement, Element } from '../models/element.model';
 import { SUPERIOR_FORMULA } from '../models/element.model';
 import type { ExplosionEvent, GameState } from '../models/game.model';
@@ -24,6 +24,28 @@ function updatePlayer(state: GameState, role: PlayerId, patch: Partial<PlayerSta
 function removeOneByElement(cards: readonly Card[], element: BaseElement): { removed: Card | null; rest: Card[] } {
   const rest = [...cards];
   const index = rest.findIndex(c => c.element === element && c.tier === 'base');
+  if (index === -1) return { removed: null, rest };
+  const [removed] = rest.splice(index, 1);
+  return { removed, rest };
+}
+
+/** Tier del pool a cui appartiene un elemento — usata da createSpell per capire in quale mazzo/tier cercare ciascun ingrediente della formula (2.1: base, avanzato, potente sono pool separati, mai intercambiabili tra loro). */
+function elementTier(element: Element): CardTier {
+  if (element === 'light' || element === 'dark') return 'superior';
+  if (element === 'thunder' || element === 'poison' || element === 'ice' || element === 'lava') return 'advanced';
+  return 'base';
+}
+
+/**
+ * Come removeOneByElement, ma per un elemento avanzato o potente — corrispondenza esatta su elemento
+ * E tier, senza il jolly Residuo Arcano: il Residuo "vale come un qualsiasi elemento base" (2.5),
+ * niente più di quello, quindi non sostituisce mai un ingrediente avanzato/potente di una formula.
+ * Usata solo da createSpell per gli ingredienti di formula che non sono elementi base — per quelli
+ * resta removeFromHandOrTip (jolly + punta della bacchetta inclusi).
+ */
+function removeOneByElementExact(cards: readonly Card[], element: Element, tier: CardTier): { removed: Card | null; rest: Card[] } {
+  const rest = [...cards];
+  const index = rest.findIndex(c => c.element === element && c.tier === tier);
   if (index === -1) return { removed: null, rest };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
@@ -99,25 +121,34 @@ export function combineNeedsChoice(hand: readonly Card[], element: BaseElement):
 }
 
 /**
- * true se la mano contiene tutti gli elementi richiesti: una base esatta per ciascuno o, in sua
- * assenza, un Residuo Arcano come jolly (2.5) — stesso ordine di preferenza (base esatta prima) di
- * removeOneByElementOrResidue, ma di sola verifica: non rimuove nulla dalla mano vera, lavora su una
- * copia locale. Usata sia per l'evidenziazione della mano su Fonte Arcana/elementi potenti
- * (board.component.ts, hasAllBaseCards) sia per l'etichetta "creabile" nel Grimorio (5.1,
- * GrimoireDialogComponent) — il chiamante include già l'eventuale carta nella punta della bacchetta
- * (1.4.1) nell'array passato qui, se rilevante.
+ * true se la mano contiene tutti gli elementi richiesti — per un elemento base, una base esatta o, in
+ * sua assenza, un Residuo Arcano come jolly (2.5, stesso ordine di preferenza di
+ * removeOneByElementOrResidue); per un elemento avanzato o potente, corrispondenza esatta su elemento
+ * e tier, senza jolly (stessa distinzione di createSpell/removeOneByElementExact). Di sola verifica:
+ * non rimuove nulla dalla mano vera, lavora su una copia locale. Usata sia per l'evidenziazione della
+ * mano su Fonte Arcana/elementi potenti (board.component.ts, hasAllBaseCards — lì sempre elementi
+ * base) sia per l'etichetta "creabile" nel Grimorio (5.1, GrimoireDialogComponent.creatable — lì
+ * anche avanzati/potenti, per le formule che li richiedono) — il chiamante include già l'eventuale
+ * carta nella punta della bacchetta (1.4.1) nell'array passato qui, se rilevante.
  */
-export function hasElements(hand: readonly Card[], elements: readonly BaseElement[]): boolean {
+export function hasElements(hand: readonly Card[], elements: readonly Element[]): boolean {
   const pool = [...hand];
   for (const el of elements) {
-    const exactIndex = pool.findIndex(c => c.element === el && c.tier === 'base');
-    if (exactIndex !== -1) {
-      pool.splice(exactIndex, 1);
+    const tier = elementTier(el);
+    if (tier === 'base') {
+      const exactIndex = pool.findIndex(c => c.element === el && c.tier === 'base');
+      if (exactIndex !== -1) {
+        pool.splice(exactIndex, 1);
+        continue;
+      }
+      const residueIndex = pool.findIndex(c => c.tier === 'residium');
+      if (residueIndex === -1) return false;
+      pool.splice(residueIndex, 1);
       continue;
     }
-    const residueIndex = pool.findIndex(c => c.tier === 'residium');
-    if (residueIndex === -1) return false;
-    pool.splice(residueIndex, 1);
+    const exactIndex = pool.findIndex(c => c.element === el && c.tier === tier);
+    if (exactIndex === -1) return false;
+    pool.splice(exactIndex, 1);
   }
   return true;
 }
@@ -190,12 +221,14 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
 
 /**
  * Fase Azione (5.1): produce un incantesimo dal Grimorio spendendo gli elementi della sua formula
- * dalla mano — una base esatta per ciascuno o, in sua assenza, un Residuo Arcano come jolly (2.5), o
- * la carta nella punta della bacchetta (1.4.1) — stessa removeFromHandOrTip già usata dalle
- * combinazioni, quindi con la stessa scelta automatica (nessuna disambiguazione: la prima base
- * valida trovata) quando la formula richiede più copie dello stesso elemento (es. Fuoco+Fuoco), dove
- * CombineDialogComponent non si applicherebbe comunque (la sua mappa di scelta è per elemento, non
- * per singola carta). A differenza delle combinazioni, gli elementi spesi qui si SCARTANO (vanno
+ * dalla mano. Ogni ingrediente cerca nel proprio pool di tier (elementTier) — un elemento base usa
+ * removeFromHandOrTip come le combinazioni (Residuo Arcano come jolly, 2.5, e carta nella punta della
+ * bacchetta incluse, 1.4.1, con la stessa scelta automatica di sempre — nessuna disambiguazione anche
+ * quando la formula richiede più copie dello stesso elemento, es. Fuoco+Fuoco, dove
+ * CombineDialogComponent non si applicherebbe comunque, la sua mappa di scelta è per elemento non per
+ * singola carta); un elemento avanzato o potente usa removeOneByElementExact, corrispondenza esatta
+ * su elemento e tier — niente jolly (il Residuo vale solo per i base) né punta (che accetta solo
+ * carte tier 'base'). A differenza delle combinazioni, gli elementi spesi qui si SCARTANO (vanno
  * negli scarti del giocatore, non in quelli comuni) — per ora sempre così, senza ancora la scelta
  * "consuma uno o scarta tutti" prevista dal regolamento (5.1), rimandata. Il Residuo Arcano usato
  * come jolly si consuma comunque per sempre (2.5, nessuna pila scarti propria), come nelle
@@ -217,28 +250,37 @@ export function createSpell(state: GameState, role: PlayerId, spellId: string): 
   let tipSlot = player.wand.tipSlot;
   const consumed: Card[] = [];
   for (const element of spell.formula) {
-    // Le formule esistenti nel catalogo usano solo elementi base (fire/water/air/earth) — il cast
-    // riflette che Spell.formula è tipizzato più largo (Element[]) solo per eventuali formule future
-    // con elementi avanzati/potenti, non ancora previste.
-    const { removed, hand: nextHand, tipSlot: nextTip } = removeFromHandOrTip(hand, tipSlot, element as BaseElement);
-    if (!removed) return state;
-    consumed.push(removed);
-    hand = nextHand;
-    tipSlot = nextTip;
+    const tier = elementTier(element);
+    if (tier === 'base') {
+      // Elemento base: stessa removeFromHandOrTip delle combinazioni — jolly Residuo Arcano (2.5) e
+      // carta nella punta della bacchetta (1.4.1) inclusi.
+      const { removed, hand: nextHand, tipSlot: nextTip } = removeFromHandOrTip(hand, tipSlot, element as BaseElement);
+      if (!removed) return state;
+      consumed.push(removed);
+      hand = nextHand;
+      tipSlot = nextTip;
+    } else {
+      // Elemento avanzato o potente: nessun jolly (il Residuo vale solo per i base) e mai nella
+      // punta (holdAtTip accetta solo carte tier 'base', quindi non può contenerne uno).
+      const { removed, rest } = removeOneByElementExact(hand, element, tier);
+      if (!removed) return state;
+      consumed.push(removed);
+      hand = rest;
+    }
   }
 
-  const discardedBases = consumed.filter(c => c.tier !== 'residium');
+  const discardedCards = consumed.filter(c => c.tier !== 'residium');
   const spellCard: Card = {
     id: `spell-${spellId}-${crypto.randomUUID()}`,
     tier: 'spell',
-    element: spell.element ?? (spell.formula[0] as BaseElement),
+    element: spell.element ?? spell.formula[0],
     spellId,
   };
 
   return updatePlayer(state, role, {
     hand,
     wand: { ...player.wand, tipSlot },
-    discards: [...player.discards, ...discardedBases, spellCard],
+    discards: [...player.discards, ...discardedCards, spellCard],
   });
 }
 
@@ -607,7 +649,7 @@ function applyBodyResistance(amount: number, spellElement: BaseElement | undefin
   return amount;
 }
 
-/** Applica un singolo effetto di un incantesimo lanciato — solo 'damage'/'heal' per ora (v1 minima); gli altri ~16 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte. `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sul solo effetto 'damage' — 'heal' non è mai elementale. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'heal'/'poison_add' per ora; gli altri ~14 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte — 'poison_add' non ne beneficia (il danno vero arriva più avanti, in fase Preparazione, non qui). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sul solo effetto 'damage' — 'heal'/'poison_add' non sono mai elementali (asta e Veleno restano meccaniche indipendenti). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
 function applySpellEffect(
   state: GameState,
   casterRole: PlayerId,
@@ -626,6 +668,8 @@ function applySpellEffect(
       const caster = state.players[casterRole];
       return updatePlayer(state, casterRole, { hp: caster.hp + (effect.amount ?? 0) + bonus.vitalBonus });
     }
+    case 'poison_add':
+      return applyPoison(state, opponentRole, effect.amount ?? 0);
     default:
       return state;
   }
@@ -726,10 +770,10 @@ export function resolveElementalExplosions(state: GameState): GameState {
 const MAX_POISON = 3;
 
 /**
- * Avvelenamento (2.3.4): incrementa il livello di veleno del bersaglio, cap a 3. Pensata per essere
- * chiamata dagli incantesimi che lo applicano — non ancora implementati, quindi al momento nessun
- * chiamante reale: il decadimento (endTurn) e la risoluzione (resolvePreparation) sopra sono già
- * testabili a prescindere, dato che agiscono sul livello accumulato in `PlayerTokens.poison`.
+ * Avvelenamento (2.3.4): incrementa il livello di veleno del bersaglio, cap a 3. Chiamata da
+ * applySpellEffect per il tipo 'poison_add' — il decadimento (endTurn) e la risoluzione
+ * (resolvePreparation) sopra restano indipendenti, agiscono comunque sul livello accumulato in
+ * `PlayerTokens.poison`.
  */
 export function applyPoison(state: GameState, target: PlayerId, amount: number): GameState {
   const player = state.players[target];

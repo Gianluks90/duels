@@ -382,6 +382,15 @@
     &:disabled {
       cursor: not-allowed;
     }
+
+    // Pile sempre cliccabili (dialog "pila degli scarti": mazzo/scarti propri e dell'avversario,
+    // scarti comuni/avanzati) — a differenza del mazzo comune sopra, non c'è una fase in cui
+    // diventano disponibili: sono utilizzabili sempre, niente stato "non ancora attivo" da
+    // rappresentare, quindi niente opacità ridotta né glow pulsante.
+    &--pile {
+      cursor: pointer;
+      opacity: 1;
+    }
   }
 
   // Raccolta: the 2 drawn cards, waiting for the player to pick one to keep.

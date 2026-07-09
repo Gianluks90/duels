@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
-import type { BaseElement, Element } from '../../models/element.model';
+import type { Element } from '../../models/element.model';
 import { elementIconPath } from '../../models/element.model';
 import type { Card } from '../../models/card.model';
 import type { PlayerId } from '../../models/player.model';
@@ -119,7 +119,7 @@ export class GrimoireDialogComponent {
 
   /** Regolamento 5.1: hai gli elementi per produrre questa magia — solo possesso, non tiene conto di turno/fase (vedi canCreateSpell per quello). Sempre false per le magie a formula vuota (starter_bolt/starter_balm), mai creabili: seminate direttamente nel mazzo iniziale. */
   protected creatable(spell: Spell): boolean {
-    return spell.formula.length > 0 && hasElements(this.data.hand, spell.formula as BaseElement[]);
+    return spell.formula.length > 0 && hasElements(this.data.hand, spell.formula);
   }
 
   /** Il bottone "Crea" richiede sia gli elementi (creatable) sia di essere di turno in fase Azione (data.canCreate) — a differenza dell'etichetta "creabile" nell'elenco, che mostra solo il primo. */

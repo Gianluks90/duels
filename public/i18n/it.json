@@ -76,6 +76,7 @@
     "fonte": {
       "residuo": "Residuo",
       "base": "Base",
+      "mazzo": "Mazzo",
       "scarti": "Scarti",
       "avanzato": "Avanzato",
       "description": "Combina e rimuovi due o più elementi base per ottenere un elemento avanzato",
@@ -230,6 +231,19 @@
     "navAria": "Sezioni regolamento"
   },
 
+  "pileDialog": {
+    "dialogAria": "Contenuto della pila",
+    "closeAria": "Chiudi",
+    "ownTitle": "Il tuo mazzo",
+    "opponentTitle": "Mazzo di {name}",
+    "commonDiscardTitle": "Scarti comuni",
+    "advancedDiscardTitle": "Scarti del mazzo avanzato",
+    "deckElements": "Mazzo: Elementi",
+    "deckSpells": "Mazzo: Incantesimi",
+    "discard": "Scarti",
+    "empty": "Nessuna carta."
+  },
+
   "castSpell": {
     "dialogAria": "Lancia incantesimo",
     "title": "Lancia {name}",
@@ -331,6 +345,18 @@
     "starter_balm": {
       "name": "Balsamo Iniziale",
       "flavorText": "Un rimedio antico, tramandato a ogni mago fin dal primo giorno di apprendistato."
+    },
+    "spore": {
+      "name": "Spore",
+      "flavorText": "Minuscole spore tossiche fluttuano nell'aria, silenziose e pazienti — bastano pochi respiri per fare effetto."
+    },
+    "toxin": {
+      "name": "Tossina",
+      "flavorText": "Una dose concentrata di veleno puro: il tipo di regalo che nessun avversario apprezza davvero."
+    },
+    "pestilence": {
+      "name": "Pestilenza",
+      "flavorText": "Quando il veleno incontra l'ombra, nasce qualcosa che nessun antidoto può fermare in tempo."
     }
   }
 }

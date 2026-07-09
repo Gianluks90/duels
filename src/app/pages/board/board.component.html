@@ -32,9 +32,11 @@
            gli scarti adiacenti alla bacchetta (destra); qui l'HUD è a destra e la bacchetta a sinistra,
            quindi l'ordine si inverte per mantenere le stesse adiacenze relative. -->
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [topManaBonus]="opponentDiscardTopManaBonus()" [topSpecialMana]="opponentDiscardTopSpecialMana()" [messy]="true" [showLabel]="false" [showCount]="false"
-                  [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
-                  [appTooltip]="'board.deckDiscarded' | translate:{ count: opponentDiscardCount() }" tooltipPosition="bottom" />
+        <button type="button" class="board__deck-trigger board__deck-trigger--pile" (click)="openOpponentPileDialog()">
+          <app-deck [size]="handCardWidth" [count]="opponentDiscardCount()" [faceUp]="true" [topElement]="opponentDiscardTop()" [topManaBonus]="opponentDiscardTopManaBonus()" [topSpecialMana]="opponentDiscardTopSpecialMana()" [messy]="true" [showLabel]="false" [showCount]="false"
+                    [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
+                    [appTooltip]="'board.deckDiscarded' | translate:{ count: opponentDiscardCount() }" tooltipPosition="bottom" />
+        </button>
       </div>
 
       <div class="board__hand-track" #opponentHandTrack
@@ -59,8 +61,11 @@
       </div>
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'board.deckRemaining' | translate:{ count: opponentDeckCount() }" tooltipPosition="bottom" />
+        <button type="button" class="board__deck-trigger board__deck-trigger--pile" (click)="openOpponentPileDialog()">
+          <app-deck [size]="handCardWidth" [count]="opponentDeckCount()" [showLabel]="false" [showCount]="false"
+                    [label]="'board.fonte.mazzo' | translate" [emptyPlaceholder]="'boxed-text'"
+                    [appTooltip]="'board.deckRemaining' | translate:{ count: opponentDeckCount() }" tooltipPosition="bottom" />
+        </button>
       </div>
 
     </div>
@@ -151,9 +156,11 @@
       <div class="board__fonte-group">
         <button type="button" class="board__deck-trigger" [class.board__deck-trigger--active]="canCollect()" [disabled]="!canCollect()"
                 (click)="drawTwo()" [appTooltip]="'board.fonte.collectTooltip' | translate" tooltipPosition="top">
-          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.base' | translate" [showBorder]="!canCollect()" />
+          <app-deck [size]="fonteCardWidth" [count]="commonDeckCount()" [label]="'board.fonte.base' | translate" [showBorder]="!canCollect()" [emptyPlaceholder]="'boxed'" />
         </button>
-        <app-deck [size]="fonteCardWidth" [count]="commonDiscardCount()" [faceUp]="true" [topElement]="commonDiscardTop()" [topManaBonus]="commonDiscardTopManaBonus()" [topSpecialMana]="commonDiscardTopSpecialMana()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
+        <button type="button" class="board__deck-trigger board__deck-trigger--pile" (click)="openCommonDiscardDialog()">
+          <app-deck [size]="fonteCardWidth" [count]="commonDiscardCount()" [faceUp]="true" [topElement]="commonDiscardTop()" [topManaBonus]="commonDiscardTopManaBonus()" [topSpecialMana]="commonDiscardTopSpecialMana()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
+        </button>
       </div>
 
       <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
@@ -164,7 +171,7 @@
         </div>
 
         <div class="board__fonte-group-content">
-          <app-deck [size]="fonteCardWidth" [count]="advancedDeckCount()" [label]="'board.fonte.avanzato' | translate" />
+          <app-deck [size]="fonteCardWidth" [count]="advancedDeckCount()" [label]="'board.fonte.avanzato' | translate" [emptyPlaceholder]="'boxed'" />
 
           <div class="board__fonte-row" role="region" [attr.aria-label]="'board.fonteAria' | translate"
                [class.board__fonte-row--exploding]="fonteExploding()">
@@ -182,7 +189,9 @@
             }
           </div>
 
-          <app-deck [size]="fonteCardWidth" [count]="advancedDiscardCount()" [faceUp]="true" [topElement]="advancedDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
+          <button type="button" class="board__deck-trigger board__deck-trigger--pile" (click)="openAdvancedDiscardDialog()">
+            <app-deck [size]="fonteCardWidth" [count]="advancedDiscardCount()" [faceUp]="true" [topElement]="advancedDiscardTop()" [messy]="true" [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed'" />
+          </button>
         </div>
 
         <div class="board__fonte-footer">
@@ -265,8 +274,11 @@
          [style.right.px]="handBoxWandInset">
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="playerDeckCount()" [showLabel]="false" [showCount]="false"
-                  [appTooltip]="'board.deckRemaining' | translate:{ count: playerDeckCount() }" tooltipPosition="top" />
+        <button type="button" class="board__deck-trigger board__deck-trigger--pile" (click)="openOwnPileDialog()">
+          <app-deck [size]="handCardWidth" [count]="playerDeckCount()" [showLabel]="false" [showCount]="false"
+                    [label]="'board.fonte.mazzo' | translate" [emptyPlaceholder]="'boxed-text'"
+                    [appTooltip]="'board.deckRemaining' | translate:{ count: playerDeckCount() }" tooltipPosition="top" />
+        </button>
       </div>
 
       <div class="board__hand-track" #playerHandTrack role="region" [attr.aria-label]="'board.handAriaPlayer' | translate">
@@ -329,9 +341,11 @@
       </div>
 
       <div class="board__hand-box-side">
-        <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [topManaBonus]="playerDiscardTopManaBonus()" [topSpecialMana]="playerDiscardTopSpecialMana()" [messy]="true" [showLabel]="false" [showCount]="false"
-                  [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
-                  [appTooltip]="'board.deckDiscarded' | translate:{ count: playerDiscardCount() }" tooltipPosition="top" />
+        <button type="button" class="board__deck-trigger board__deck-trigger--pile" (click)="openOwnPileDialog()">
+          <app-deck [size]="handCardWidth" [count]="playerDiscardCount()" [faceUp]="true" [topElement]="playerDiscardTop()" [topManaBonus]="playerDiscardTopManaBonus()" [topSpecialMana]="playerDiscardTopSpecialMana()" [messy]="true" [showLabel]="false" [showCount]="false"
+                    [label]="'board.fonte.scarti' | translate" [emptyPlaceholder]="'boxed-text'"
+                    [appTooltip]="'board.deckDiscarded' | translate:{ count: playerDiscardCount() }" tooltipPosition="top" />
+        </button>
       </div>
 
     </div>

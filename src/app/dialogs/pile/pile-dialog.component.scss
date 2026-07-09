@@ -1,0 +1,142 @@
+.pile-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(760px, 92vw);
+  max-height: 82vh;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+  }
+
+  &__body {
+    padding: var(--sp-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-5);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: 2px;
+    }
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  &__row-heading {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-2);
+  }
+
+  &__row-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-heading);
+  }
+
+  &__row-count {
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  &__row-empty {
+    font-size: 0.78rem;
+    font-style: italic;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  // Ventaglio sovrapposto (non la griglia a wrap di CombineDialog/Grimoire) — ogni riga visiva è un
+  // blocco indipendente (PileDialogComponent.visualRows), la sovrapposizione riparte da zero a ogni
+  // blocco invece di continuare sull'intera riga logica.
+  &__fan {
+    display: flex;
+  }
+
+  &__fan-card {
+    flex-shrink: 0;
+
+    // Stile carta base (badge d'angolo: mana in alto a sinistra, elemento in basso a destra) — non
+    // l'header usato per le carte incastonate/trattenute nel pannello bacchetta, pensato apposta per
+    // quel contesto. Il badge mana resta sempre leggibile su ogni carta (l'angolo sinistro non è mai
+    // coperto: le carte successive si spostano a sinistra coprendo solo il lato destro di quella
+    // precedente); il badge elemento invece si perde sotto la carta seguente per tutte tranne le
+    // ultime di ogni riga — stesso compromesso già accettato nel ventaglio della mano
+    // (card.component.scss, card__badge--element: "accessibility aid, not the primary read"),
+    // l'illustrazione stessa resta il modo principale per riconoscere l'elemento a colpo d'occhio.
+    &:not(:first-child) {
+      margin-left: -44px;
+    }
+  }
+}
+
+// Tooltip ricco (nome in grassetto, <hr>, corpo, nota finale in corsivo) — stessa struttura di
+// board.component.scss (#spellTip/#specialManaTip), duplicata qui: componenti diversi, nessun mixin
+// SCSS nel progetto.
+.rich-tooltip__rule {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--sp-1) 0;
+}
+
+.rich-tooltip__flavor {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-muted);
+}
+
+.rich-tooltip__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.rich-tooltip__special-icon {
+  display: inline-block;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: currentColor;
+    -webkit-mask: var(--special-mana-icon) center / contain no-repeat;
+    mask: var(--special-mana-icon) center / contain no-repeat;
+  }
+
+  &--prismatic { color: #d4a847; }
+  &--vital     { color: #4caf50; }
+  &--chaotic   { color: #d02f2f; }
+}

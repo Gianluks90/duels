@@ -44,4 +44,25 @@ export const SPELL_CATALOG: Spell[] = [
     manaCost: 3,
     effects: [{ type: 'heal', amount: 1 }],
   },
+  // Veleno (2.3.4): formule con l'elemento avanzato Veleno come ingrediente — element assente su
+  // tutte e 3 (Spell.element è tipizzato BaseElement, l'asta 1.4.2 non ha comunque un opposto
+  // definito per gli elementi avanzati/potenti, quindi non ci sarebbe nulla da agganciare lì).
+  {
+    id: 'spore',
+    formula: ['poison', 'earth'],
+    manaCost: 3,
+    effects: [{ type: 'poison_add', amount: 1 }],
+  },
+  {
+    id: 'toxin',
+    formula: ['poison', 'poison'],
+    manaCost: 4,
+    effects: [{ type: 'poison_add', amount: 2 }],
+  },
+  {
+    id: 'pestilence',
+    formula: ['poison', 'poison', 'dark'],
+    manaCost: 5,
+    effects: [{ type: 'poison_add', amount: 3 }],
+  },
 ];

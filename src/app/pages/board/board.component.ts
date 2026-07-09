@@ -32,6 +32,7 @@ import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.
 import { CastSpellDialogComponent, type CastSpellDialogData } from '../../dialogs/cast-spell/cast-spell-dialog.component';
 import { CombineDialogComponent, type CombineDialogData } from '../../dialogs/combine/combine-dialog.component';
 import { SocketDialogComponent, type SocketDialogData, type SocketTarget } from '../../dialogs/socket/socket-dialog.component';
+import { PileDialogComponent, type PileDialogData } from '../../dialogs/pile/pile-dialog.component';
 import type { BaseElement, Element, AdvancedElement, SuperiorElement } from '../../models/element.model';
 import { ADVANCED_RECIPES, ELEMENT_MANA, SUPERIOR_FORMULA } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
@@ -834,9 +835,32 @@ export class BoardComponent implements OnInit {
     return spell.effects.map(e => {
       const amount = e.amount ?? 1;
       switch (e.type) {
-        case 'damage': return this.i18n.t('grimoire.effects.damage', { amount });
-        case 'heal': return this.i18n.t('grimoire.effects.heal', { amount });
-        default: return e.type;
+        case 'damage':
+          return spell.element
+            ? this.i18n.t('grimoire.effects.damageElement', { amount, element: this.i18n.elementLabel(spell.element) })
+            : this.i18n.t('grimoire.effects.damage', { amount });
+        case 'damage_ignore_shields':
+          return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
+        case 'damage_self':
+          return this.i18n.t('grimoire.effects.damageSelf', { amount });
+        case 'heal':
+          return this.i18n.t('grimoire.effects.heal', { amount });
+        case 'shield_add':
+          return this.i18n.t('grimoire.effects.shieldAdd', { amount });
+        case 'shield_remove_opponent':
+          return this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount });
+        case 'poison_add':
+          return this.i18n.t('grimoire.effects.poisonAdd', { amount });
+        case 'ice_add':
+          return this.i18n.t('grimoire.effects.iceAdd', { amount });
+        case 'opponent_discard_random':
+          return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
+        case 'reveal_opponent_hand':
+          return this.i18n.t('grimoire.effects.revealOpponentHand');
+        case 'fonte_reset':
+          return this.i18n.t('grimoire.effects.fonteReset');
+        default:
+          return e.type;
       }
     }).join(' ');
   }
@@ -970,14 +994,32 @@ export class BoardComponent implements OnInit {
    * torna subito una mappa vuota, così la combinazione avviene senza alcuna interruzione come sempre
    * (la scelta automatica in `turn-engine.ts` resta l'unica candidata comunque). Torna `null` se
    * l'utente annulla la dialog (nessuna combinazione da fare).
+   *
+   * Bug corretto: un elemento SENZA copia esatta in mano dipende per forza dal Residuo Arcano, e
+   * `combineNeedsChoice` lo giudica "senza ambiguità" (non c'è scelta da fare, l'unica fonte è il
+   * Residuo) — quindi restava fuori da `ambiguous` e dal dialog. Se però il dialog si apriva comunque
+   * per un ALTRO elemento della stessa formula che aveva sia una copia esatta sia il Residuo
+   * disponibili (es. Terra esatta + Residuo, per una formula Fuoco+Terra senza Fuoco in mano),
+   * scegliere lì il Residuo per quell'altro elemento consumava la stessa copia che l'elemento senza
+   * copia esatta stava per prendere automaticamente — la combinazione falliva in silenzio (il
+   * Residuo, già speso nel primo passaggio della combinazione, non c'era più per il secondo). Ora
+   * ogni elemento "costretto" al Residuo entra comunque nel dialog (come riga con un'unica opzione,
+   * il Residuo stesso) ogni volta che il dialog si apre per qualunque motivo — così `isTaken` nel
+   * dialog vede ed esclude correttamente quella copia dalle altre righe, invece di lasciarla
+   * contendere due elementi alla cieca.
    */
   private async resolveCombineChoice(elements: readonly BaseElement[]): Promise<Partial<Record<BaseElement, string>> | null> {
     const tip = this.playerTip();
     // Include l'eventuale carta nella punta della bacchetta (1.4.1) — conta come se fosse ancora in
     // mano, sia per rilevare l'ambiguità sia come candidata scelta bile dentro CombineDialogComponent.
     const hand = tip ? [...this.playerHand(), tip] : this.playerHand();
-    const ambiguous = elements.filter(el => combineNeedsChoice(hand, el));
-    if (ambiguous.length === 0) return {};
+    const chosenAmbiguous = elements.filter(el => combineNeedsChoice(hand, el));
+    if (chosenAmbiguous.length === 0) return {};
+
+    const forcedResiduo = elements.filter(
+      el => !chosenAmbiguous.includes(el) && !hand.some(c => c.element === el && c.tier === 'base'),
+    );
+    const ambiguous = [...chosenAmbiguous, ...forcedResiduo];
 
     const ref = this.dialog.open<Partial<Record<BaseElement, string>> | undefined, CombineDialogData>(CombineDialogComponent, {
       data: { elements: ambiguous, hand },
@@ -1059,6 +1101,50 @@ export class BoardComponent implements OnInit {
 
   protected openRulebook(): void {
     this.dialog.open(RulebookDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+  }
+
+  /** Mazzo/scarti propri — sempre scoperti, 3 righe (Mazzo: Elementi, Mazzo: Incantesimi, Scarti). Stesso dialog sia dal click sul mazzo sia dagli scarti. */
+  protected openOwnPileDialog(): void {
+    const me = this.me();
+    if (!me) return;
+    this.openPileDialog({ titleKey: 'pileDialog.ownTitle', deckCards: me.deck, discardCards: me.discards, deckRevealed: true });
+  }
+
+  /** Mazzo/scarti dell'avversario — il mazzo si mostra coperto (CardComponent [revealed]="false"), gli scarti restano sempre pubblici. */
+  protected openOpponentPileDialog(): void {
+    const opponent = this.opponentState();
+    if (!opponent) return;
+    this.openPileDialog({
+      titleKey: 'pileDialog.opponentTitle',
+      titleParams: { name: this.opponentName() },
+      deckCards: opponent.deck,
+      discardCards: opponent.discards,
+      deckRevealed: false,
+    });
+  }
+
+  /** Scarti del mazzo comune — pila generica, una sola riga. Il mazzo comune coperto non è mai cliccabile: nascosto a entrambi i giocatori per definizione. */
+  protected openCommonDiscardDialog(): void {
+    const state = this.state();
+    if (!state) return;
+    this.openPileDialog({ titleKey: 'pileDialog.commonDiscardTitle', discardCards: state.commonDiscards });
+  }
+
+  /** Scarti del mazzo avanzato — pila generica, una sola riga. Stesso motivo di openCommonDiscardDialog per il mazzo avanzato coperto: mai cliccabile. */
+  protected openAdvancedDiscardDialog(): void {
+    const state = this.state();
+    if (!state) return;
+    this.openPileDialog({ titleKey: 'pileDialog.advancedDiscardTitle', discardCards: state.advancedDiscards });
+  }
+
+  private openPileDialog(data: PileDialogData): void {
+    this.dialog.open<void, PileDialogData>(PileDialogComponent, {
+      data,
       positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       hasBackdrop: true,
       backdropClass: 'dialog-backdrop',

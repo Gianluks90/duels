@@ -1,0 +1,58 @@
+<div class="pile-dialog" role="dialog" aria-modal="true" [attr.aria-label]="'pileDialog.dialogAria' | translate">
+  <header class="pile-dialog__header">
+    <h2 class="t-heading pile-dialog__title">{{ titleKey | translate:titleParams }}</h2>
+    <app-icon-button [icon]="closeIcon" [ariaLabel]="'pileDialog.closeAria' | translate" [size]="32" (iconClick)="close()" />
+  </header>
+
+  <div class="pile-dialog__body">
+    @for (row of rows(); track row.subtitleKey) {
+      <div class="pile-dialog__row">
+        @if (row.subtitleKey) {
+          <div class="pile-dialog__row-heading">
+            <span class="pile-dialog__row-subtitle">{{ row.subtitleKey | translate }}</span>
+            <span class="pile-dialog__row-count">{{ row.cards.length }}</span>
+          </div>
+        }
+
+        @if (row.cards.length === 0) {
+          <p class="pile-dialog__row-empty">{{ 'pileDialog.empty' | translate }}</p>
+        } @else {
+          @for (visualRow of visualRows(row); track $index) {
+            <div class="pile-dialog__fan">
+              @for (card of visualRow; track card.id; let cardIndex = $index) {
+                <!-- Tooltip ricco per le carte incantesimo — stesso schema di board.component.html (#spellTip). -->
+                <ng-template #spellTip>
+                  <strong>{{ spellName(card) }}</strong>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ spellEffectLabel(card) }}</p>
+                  @if (spellFlavor(card); as flavor) {
+                    <p class="rich-tooltip__flavor"><em>{{ flavor }}</em></p>
+                  }
+                </ng-template>
+                <!-- Tooltip ricco per il mana speciale (3.2) — stesso schema di board.component.html (#specialManaTip). -->
+                <ng-template #specialManaTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+                    <span class="rich-tooltip__special-icon"
+                          [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
+                          [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                          [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                          [style.--special-mana-icon]="'url(' + specialManaIconPath(card.specialMana!) + ')'"
+                          aria-hidden="true"></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
+                </ng-template>
+                <app-card class="pile-dialog__fan-card" [element]="card.element" [spellId]="card.spellId ?? null"
+                          [manaBonus]="card.manaBonus ?? 0" [specialMana]="card.specialMana ?? null"
+                          [revealed]="row.revealed" [size]="80" [style.z-index]="cardIndex"
+                          [appTooltip]="!row.revealed ? null : (card.tier === 'spell' ? spellTip : (card.specialMana ? specialManaTip : null))"
+                          tooltipPosition="top" />
+              }
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>

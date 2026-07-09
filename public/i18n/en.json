@@ -76,6 +76,7 @@
     "fonte": {
       "residuo": "Residuum",
       "base": "Base",
+      "mazzo": "Deck",
       "scarti": "Discards",
       "avanzato": "Advanced",
       "description": "Combine and remove two or more base elements to get an advanced element",
@@ -230,6 +231,19 @@
     "navAria": "Rulebook sections"
   },
 
+  "pileDialog": {
+    "dialogAria": "Pile contents",
+    "closeAria": "Close",
+    "ownTitle": "Your deck",
+    "opponentTitle": "{name}'s deck",
+    "commonDiscardTitle": "Common discard pile",
+    "advancedDiscardTitle": "Advanced deck discard pile",
+    "deckElements": "Deck: Elements",
+    "deckSpells": "Deck: Spells",
+    "discard": "Discard pile",
+    "empty": "No cards."
+  },
+
   "castSpell": {
     "dialogAria": "Cast a spell",
     "title": "Cast {name}",
@@ -331,6 +345,18 @@
     "starter_balm": {
       "name": "Starter Balm",
       "flavorText": "An ancient remedy, passed down to every mage since their first day of apprenticeship."
+    },
+    "spore": {
+      "name": "Spore",
+      "flavorText": "Tiny toxic spores drift on the air, silent and patient — it only takes a few breaths to take hold."
+    },
+    "toxin": {
+      "name": "Toxin",
+      "flavorText": "A concentrated dose of pure poison: the kind of gift no opponent ever really appreciates."
+    },
+    "pestilence": {
+      "name": "Pestilence",
+      "flavorText": "When poison meets shadow, something no antidote can stop in time is born."
     }
   }
 }
