@@ -236,7 +236,17 @@
   &-chaotic   { color: #d02f2f; }
 }
 
+// Stessa pillola scura dei gettoni mana/elemento (.card__header-token: sfondo scuro + ombra) invece
+// di stare a nudo sopra l'illustrazione — la leggibilità non dipende più da quanto è chiara l'arte
+// sotto (oggi Terra ce l'ha chiara lì, ma qualunque elemento potrebbe finirci con un'arte diversa in
+// futuro: risolto una volta per tutte invece di inseguire caso per caso).
 .card__header-label {
+  flex-shrink: 1;
+  min-width: 0;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #212121;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   font-family: var(--font-ui);
   font-size: 0.6rem;
   font-weight: 600;
@@ -246,6 +256,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
 :host(.card--header-bottom) .card__header {

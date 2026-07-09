@@ -27,7 +27,7 @@ import { IconButtonComponent } from '../../components/ui/icon-button/icon-button
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
 import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/action-menu/action-menu.component';
 import { GameSettingsDialogComponent } from '../../dialogs/game-settings/game-settings-dialog.component';
-import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
+import { GrimoireDialogComponent, type GrimoireDialogData } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
 import { CastSpellDialogComponent, type CastSpellDialogData } from '../../dialogs/cast-spell/cast-spell-dialog.component';
 import { CombineDialogComponent, type CombineDialogData } from '../../dialogs/combine/combine-dialog.component';
@@ -40,7 +40,7 @@ import type { Card, SpecialMana } from '../../models/card.model';
 import { specialManaIconPath } from '../../models/card.model';
 import type { PlayerId, PlayerState } from '../../models/player.model';
 import { computePlayerMana } from '../../models/player.model';
-import { combineNeedsChoice } from '../../game/turn-engine';
+import { combineNeedsChoice, hasElements } from '../../game/turn-engine';
 import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -872,19 +872,8 @@ export class BoardComponent implements OnInit {
   /** Un Residuo Arcano in mano vale come un elemento base mancante (2.5) — controllato qui invece che sui soli elementi, dato che serve la carta intera per distinguerlo da una base vera. Include anche l'eventuale carta trattenuta nella punta della bacchetta (1.4.1): conta come se fosse ancora in mano. */
   private hasAllBaseCards(elements: readonly BaseElement[]): boolean {
     const tip = this.playerTip();
-    const hand = tip ? [...this.playerHand(), tip] : [...this.playerHand()];
-    for (const el of elements) {
-      // tier === 'base' esclude una carta magia (Card.spellId) che riusa lo stesso elemento solo per la propria arte.
-      const exactIndex = hand.findIndex(card => card.element === el && card.tier === 'base');
-      if (exactIndex !== -1) {
-        hand.splice(exactIndex, 1);
-        continue;
-      }
-      const residueIndex = hand.findIndex(card => card.tier === 'residium');
-      if (residueIndex === -1) return false;
-      hand.splice(residueIndex, 1);
-    }
-    return true;
+    const hand = tip ? [...this.playerHand(), tip] : this.playerHand();
+    return hasElements(hand, elements);
   }
 
   private isSuperior(el: Element): el is SuperiorElement {
@@ -1051,8 +1040,16 @@ export class BoardComponent implements OnInit {
     });
   }
 
+  /** Regolamento 5: il Grimorio si può sfogliare "in qualsiasi momento" — passiamo comunque hand/canCreate così il bottone "Crea" (5.1) può auto-disabilitarsi quando non è la fase Azione del giocatore, senza dover riaprire la dialog per accorgersene. */
   protected openGrimoire(): void {
-    this.dialog.open(GrimoireDialogComponent, {
+    const role = this.myRole();
+    if (!role) return;
+
+    const tip = this.playerTip();
+    const hand = tip ? [...this.playerHand(), tip] : this.playerHand();
+
+    this.dialog.open<void, GrimoireDialogData>(GrimoireDialogComponent, {
+      data: { gameId: this.gameId(), role, hand, canCreate: this.canAdvancePhase() },
       positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       hasBackdrop: true,
       backdropClass: 'dialog-backdrop',

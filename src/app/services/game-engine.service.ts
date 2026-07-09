@@ -12,6 +12,7 @@ import {
   combineElements as combineElementsReducer,
   combineSuperior as combineSuperiorReducer,
   combineResidue as combineResidueReducer,
+  createSpell as createSpellReducer,
   holdAtTip as holdAtTipReducer,
   keepCard as keepCardReducer,
   resolveElementalExplosions,
@@ -91,6 +92,11 @@ export class GameEngineService {
   /** Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagando il costo con le carte indicate. L'effetto si risolve più avanti, al passaggio in fase Incantesimo (dentro advancePhase). */
   async castSpell(gameId: string, role: PlayerId, spellCardId: string, paidCardIds: readonly string[]): Promise<void> {
     await this.mutate(gameId, state => castSpellReducer(state, role, spellCardId, paidCardIds));
+  }
+
+  /** Fase Azione (5.1): produce un incantesimo dal Grimorio spendendo gli elementi della sua formula dalla mano — vanno negli scarti del giocatore, insieme alla carta appena creata. */
+  async createSpell(gameId: string, role: PlayerId, spellId: string): Promise<void> {
+    await this.mutate(gameId, state => createSpellReducer(state, role, spellId));
   }
 
   /** Fase Azione (1.4.1/4.4): trattiene una carta base dalla mano nella punta della bacchetta. */

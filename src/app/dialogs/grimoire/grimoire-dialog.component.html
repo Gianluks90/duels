@@ -8,24 +8,24 @@
     <!-- Left page: filters + spell list -->
     <div class="grimoire__page grimoire__page--left">
       <div class="grimoire__filters" role="group" [attr.aria-label]="'grimoire.filterGroupAria' | translate">
-        @for (el of filterElements; track el) {
-          <button
-            class="grimoire__filter-btn"
-            [class.grimoire__filter-btn--active]="activeFilters().has(el)"
-            [attr.aria-pressed]="activeFilters().has(el)"
-            [attr.aria-label]="i18n.elementLabel(el)"
-            (click)="toggleFilter(el)"
-          >
-            <img
-              class="grimoire__filter-icon"
-              [src]="elementIconPath(el)"
-              alt=""
-              aria-hidden="true"
-              width="18"
-              height="18"
-            />
-          </button>
-        }
+        <app-select
+          [options]="elementFilterOptions()"
+          [value]="elementFilter()"
+          [ariaLabel]="'grimoire.filterElementAria' | translate"
+          variant="light"
+          (valueChange)="setElementFilter($event)"
+        />
+        <app-select
+          [options]="sortOptions()"
+          [value]="sortOption()"
+          [ariaLabel]="'grimoire.sortAria' | translate"
+          variant="light"
+          (valueChange)="setSortOption($event)"
+        />
+        <label class="grimoire__creatable-filter">
+          <input type="checkbox" [checked]="onlyCreatable()" (change)="setOnlyCreatable($any($event.target).checked)" />
+          {{ 'grimoire.filterCreatableOnly' | translate }}
+        </label>
       </div>
 
       <ul class="grimoire__spell-list" role="listbox" [attr.aria-label]="'grimoire.spellListAria' | translate">
@@ -37,7 +37,10 @@
             [attr.aria-selected]="selectedSpellId() === spell.id"
             (click)="selectSpell(spell.id)"
           >
-            {{ spellName(spell) }}
+            <span class="grimoire__spell-item-name">{{ spellName(spell) }}</span>
+            @if (creatable(spell)) {
+              <span class="grimoire__creatable-tag">{{ 'grimoire.creatableLabel' | translate }}</span>
+            }
           </li>
         }
         @if (filteredSpells().length === 0) {
@@ -52,30 +55,51 @@
     <!-- Right page: spell detail -->
     <div class="grimoire__page grimoire__page--right">
       @if (selectedSpell(); as spell) {
-        <div class="grimoire__detail">
-          <div class="grimoire__spell-header">
-            <h3 class="grimoire__spell-name">{{ spellName(spell) }}</h3>
-            <span class="grimoire__mana-badge" [attr.aria-label]="'grimoire.manaAria' | translate:{ cost: spell.manaCost }">{{ spell.manaCost }}</span>
-          </div>
+        <div class="grimoire__detail-scroll">
+          <div class="grimoire__detail">
+            <div class="grimoire__spell-header">
+              <h3 class="grimoire__spell-name">{{ spellName(spell) }}</h3>
+              <span class="grimoire__mana-badge" [attr.aria-label]="'grimoire.manaAria' | translate:{ cost: spell.manaCost }">{{ spell.manaCost }}</span>
+            </div>
 
-          <div class="grimoire__rule" aria-hidden="true"></div>
+            <div class="grimoire__rule" aria-hidden="true"></div>
 
-          <div class="grimoire__formula-elements" [attr.aria-label]="'grimoire.formulaAria' | translate">
-            @for (el of spell.formula; track $index; let last = $last) {
-              <app-card [element]="el" [size]="40" [showMana]="false" />
-              @if (!last) {
-                <span class="grimoire__formula-op" aria-hidden="true">+</span>
-              }
+            @if (spell.formula.length > 0) {
+              <div class="grimoire__formula-elements" [attr.aria-label]="'grimoire.formulaAria' | translate">
+                @for (el of spell.formula; track $index; let last = $last) {
+                  <app-card [element]="el" [size]="40" [showMana]="false" />
+                  @if (!last) {
+                    <span class="grimoire__formula-op" aria-hidden="true">+</span>
+                  }
+                }
+              </div>
+            } @else {
+              <p class="grimoire__formula-none">{{ 'grimoire.baseSpellFormula' | translate }}</p>
+            }
+
+            <div class="grimoire__rule" aria-hidden="true"></div>
+
+            <p class="grimoire__effect">{{ effectLabel(spell) }}</p>
+
+            @if (spellFlavorText(spell); as flavor) {
+              <blockquote class="grimoire__flavor">{{ flavor }}</blockquote>
             }
           </div>
+        </div>
 
-          <div class="grimoire__rule" aria-hidden="true"></div>
-
-          <p class="grimoire__effect">{{ effectLabel(spell.effects) }}</p>
-
-          @if (spellFlavorText(spell); as flavor) {
-            <blockquote class="grimoire__flavor">{{ flavor }}</blockquote>
+        <div class="grimoire__detail-footer">
+          @if (spell.formula.length > 0) {
+            <button
+              class="btn btn--primary grimoire__create-btn"
+              [disabled]="!canCreateSpell(spell) || creating()"
+              (click)="createSpell(spell)"
+            >
+              {{ (creating() ? 'grimoire.creating' : 'grimoire.createAction') | translate }}
+            </button>
           }
+          <span class="grimoire__page-number" [attr.aria-label]="'grimoire.pageNumberAria' | translate:{ page: pageNumber(spell), total: totalSpellCount }">
+            {{ pageNumber(spell) }} / {{ totalSpellCount }}
+          </span>
         </div>
       }
     </div>

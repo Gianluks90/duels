@@ -1,4 +1,4 @@
-import type { Element } from './element.model';
+import type { BaseElement, Element } from './element.model';
 
 export type SpellEffectType =
   | 'damage'
@@ -31,4 +31,6 @@ export interface Spell {
   formula: Element[];
   manaCost: number;
   effects: SpellEffect[];
+  /** Elemento base di appartenenza della magia (regolamento 1.4.2) — determina se l'asta di chi la subisce dà resistenza/vulnerabilità sul danno inflitto. Assente per gli incantesimi "neutri" che non appartengono a nessun elemento (es. starter_bolt/starter_balm). */
+  element?: BaseElement;
 }

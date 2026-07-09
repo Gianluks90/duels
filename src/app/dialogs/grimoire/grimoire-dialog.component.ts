@@ -1,13 +1,27 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
-import { DialogRef } from '@angular/cdk/dialog';
-import type { Element } from '../../models/element.model';
+import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
+import type { BaseElement, Element } from '../../models/element.model';
 import { elementIconPath } from '../../models/element.model';
+import type { Card } from '../../models/card.model';
+import type { PlayerId } from '../../models/player.model';
 import { CardComponent } from '../../components/card/card.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { SelectComponent, type SelectOption } from '../../components/ui/select/select.component';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { GameEngineService } from '../../services/game-engine.service';
 import type { Spell } from '../../models/spell.model';
 import { SPELL_CATALOG } from '../../data/spells';
+import { hasElements } from '../../game/turn-engine';
+
+export interface GrimoireDialogData {
+  gameId: string;
+  role: PlayerId;
+  /** Mano del giocatore, comprensiva dell'eventuale carta nella punta della bacchetta (1.4.1) — istantanea presa all'apertura, come per gli altri dialog di azione (es. CastSpellDialogData.payableHand). */
+  hand: readonly Card[];
+  /** true se il giocatore è di turno ed è in fase Azione (5.1) — determina se il bottone "Crea" può essere premuto ora, a prescindere dall'etichetta "creabile" (che riflette solo il possesso degli elementi, vedi creatable()). */
+  canCreate: boolean;
+}
 
 // Residuo Arcano excluded on purpose — it's a wildcard, not an element, and no
 // spell formula involves it (for now).
@@ -17,45 +31,111 @@ const FILTER_ELEMENTS: readonly Element[] = [
   'light', 'dark',
 ];
 
+type SortOption = 'alpha-asc' | 'alpha-desc' | 'cost-asc' | 'cost-desc';
+
 @Component({
   selector: 'app-grimoire-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardComponent, IconButtonComponent, TranslatePipe],
+  imports: [CardComponent, IconButtonComponent, SelectComponent, TranslatePipe],
   templateUrl: './grimoire-dialog.component.html',
   styleUrl: './grimoire-dialog.component.scss',
 })
 export class GrimoireDialogComponent {
   private readonly dialogRef = inject(DialogRef);
+  private readonly data = inject<GrimoireDialogData>(DIALOG_DATA);
+  private readonly gameEngine = inject(GameEngineService);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
-  protected readonly elementIconPath = elementIconPath;
-  protected readonly filterElements = FILTER_ELEMENTS;
 
-  protected readonly activeFilters = signal<ReadonlySet<Element>>(new Set());
   protected readonly selectedSpellId = signal<string>(SPELL_CATALOG[0]?.id ?? '');
+  protected readonly creating = signal(false);
+
+  protected readonly elementFilter = signal<Element | null>(null);
+  protected readonly sortOption = signal<SortOption>('alpha-asc');
+  protected readonly onlyCreatable = signal(false);
+
+  /** Opzioni del select elemento (5.1 filtri) — "Tutti" in testa, poi FILTER_ELEMENTS con icona. Ricalcolato come computed (non una costante) così l'etichetta segue un eventuale cambio lingua a runtime. */
+  protected readonly elementFilterOptions = computed<SelectOption<Element | null>[]>(() => [
+    { value: null, label: this.i18n.t('grimoire.filterAllElements') },
+    ...FILTER_ELEMENTS.map(el => ({ value: el, label: this.i18n.elementLabel(el), icon: elementIconPath(el) })),
+  ]);
+
+  protected readonly sortOptions = computed<SelectOption<SortOption>[]>(() => [
+    { value: 'alpha-asc', label: this.i18n.t('grimoire.sortAlphaAsc') },
+    { value: 'alpha-desc', label: this.i18n.t('grimoire.sortAlphaDesc') },
+    { value: 'cost-asc', label: this.i18n.t('grimoire.sortCostAsc') },
+    { value: 'cost-desc', label: this.i18n.t('grimoire.sortCostDesc') },
+  ]);
+
+  /** Catalogo intero ordinato alfabeticamente, indipendente da filtri/ordinamento correnti — usato solo per la numerazione di pagina (5, "un libro"): la pagina di una magia non cambia mentre sfogli/filtri, cambierebbe solo con la lingua (il nome tradotto è il criterio d'ordine). */
+  private readonly bookOrder = computed<Spell[]>(() =>
+    [...SPELL_CATALOG].sort((a, b) => this.spellName(a).localeCompare(this.spellName(b))),
+  );
+
+  protected readonly totalSpellCount = SPELL_CATALOG.length;
 
   protected readonly filteredSpells = computed<Spell[]>(() => {
-    const active = this.activeFilters();
-    if (active.size === 0) return SPELL_CATALOG;
-    return SPELL_CATALOG.filter(s => s.formula.some(el => active.has(el)));
+    const el = this.elementFilter();
+    let list = el ? SPELL_CATALOG.filter(s => s.formula.includes(el)) : [...SPELL_CATALOG];
+
+    if (this.onlyCreatable()) list = list.filter(s => this.creatable(s));
+
+    const sort = this.sortOption();
+    list.sort((a, b) => {
+      if (sort === 'cost-asc') return a.manaCost - b.manaCost;
+      if (sort === 'cost-desc') return b.manaCost - a.manaCost;
+      const cmp = this.spellName(a).localeCompare(this.spellName(b));
+      return sort === 'alpha-desc' ? -cmp : cmp;
+    });
+
+    return list;
   });
 
   protected readonly selectedSpell = computed<Spell | null>(
     () => SPELL_CATALOG.find(s => s.id === this.selectedSpellId()) ?? null,
   );
 
-  protected toggleFilter(element: Element): void {
-    this.activeFilters.update(prev => {
-      const next = new Set(prev);
-      if (next.has(element)) next.delete(element);
-      else next.add(element);
-      return next;
-    });
+  protected setElementFilter(element: Element | null): void {
+    this.elementFilter.set(element);
+  }
+
+  protected setSortOption(option: SortOption): void {
+    this.sortOption.set(option);
+  }
+
+  protected setOnlyCreatable(checked: boolean): void {
+    this.onlyCreatable.set(checked);
   }
 
   protected selectSpell(id: string): void {
     this.selectedSpellId.set(id);
+  }
+
+  /** Posizione (1-based) della magia nel catalogo completo ordinato alfabeticamente — vedi bookOrder. */
+  protected pageNumber(spell: Spell): number {
+    return this.bookOrder().findIndex(s => s.id === spell.id) + 1;
+  }
+
+  /** Regolamento 5.1: hai gli elementi per produrre questa magia — solo possesso, non tiene conto di turno/fase (vedi canCreateSpell per quello). Sempre false per le magie a formula vuota (starter_bolt/starter_balm), mai creabili: seminate direttamente nel mazzo iniziale. */
+  protected creatable(spell: Spell): boolean {
+    return spell.formula.length > 0 && hasElements(this.data.hand, spell.formula as BaseElement[]);
+  }
+
+  /** Il bottone "Crea" richiede sia gli elementi (creatable) sia di essere di turno in fase Azione (data.canCreate) — a differenza dell'etichetta "creabile" nell'elenco, che mostra solo il primo. */
+  protected canCreateSpell(spell: Spell): boolean {
+    return this.data.canCreate && this.creatable(spell);
+  }
+
+  protected async createSpell(spell: Spell): Promise<void> {
+    if (!this.canCreateSpell(spell) || this.creating()) return;
+    this.creating.set(true);
+    try {
+      await this.gameEngine.createSpell(this.data.gameId, this.data.role, spell.id);
+      this.dialogRef.close();
+    } finally {
+      this.creating.set(false);
+    }
   }
 
   protected spellName(spell: Spell): string {
@@ -69,13 +149,16 @@ export class GrimoireDialogComponent {
     return text === key ? null : text;
   }
 
-  protected effectLabel(effects: Spell['effects']): string {
-    return effects
+  /** Regolamento 1.4.2: quando la magia appartiene a un elemento (Spell.element — assente per gli incantesimi "neutri"), il danno inflitto lo indica nel testo stesso ("Infligge 1 danno da Fuoco...") invece che con un badge separato — è quel testo a determinare se l'asta di chi lo subisce dà resistenza/vulnerabilità. */
+  protected effectLabel(spell: Spell): string {
+    return spell.effects
       .map(e => {
         const amount = e.amount ?? 1;
         switch (e.type) {
           case 'damage':
-            return this.i18n.t('grimoire.effects.damage', { amount });
+            return spell.element
+              ? this.i18n.t('grimoire.effects.damageElement', { amount, element: this.i18n.elementLabel(spell.element) })
+              : this.i18n.t('grimoire.effects.damage', { amount });
           case 'damage_ignore_shields':
             return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
           case 'damage_self':

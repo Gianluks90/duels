@@ -1,0 +1,23 @@
+<button type="button" class="select-trigger" [class.select-trigger--light]="variant() === 'light'"
+        [cdkMenuTriggerFor]="menu" [attr.aria-label]="ariaLabel()">
+  @if (selected()?.icon; as icon) {
+    <img class="select-trigger__icon" [src]="icon" alt="" aria-hidden="true" width="16" height="16" />
+  }
+  <span class="select-trigger__label">{{ selected()?.label ?? '' }}</span>
+  <span class="select-trigger__chevron" aria-hidden="true">&#9662;</span>
+</button>
+
+<ng-template #menu>
+  <div class="select-menu" [class.select-menu--light]="variant() === 'light'" cdkMenu>
+    @for (option of options(); track option.label) {
+      <button type="button" cdkMenuItem class="select-menu__item"
+              [class.select-menu__item--selected]="option.value === value()"
+              (cdkMenuItemTriggered)="choose(option)">
+        @if (option.icon; as icon) {
+          <img class="select-menu__icon" [src]="icon" alt="" aria-hidden="true" width="16" height="16" />
+        }
+        <span>{{ option.label }}</span>
+      </button>
+    }
+  </div>
+</ng-template>

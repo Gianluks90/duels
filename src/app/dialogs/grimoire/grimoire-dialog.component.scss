@@ -69,45 +69,22 @@
   &__filters {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--sp-1);
+    align-items: center;
+    gap: var(--sp-2);
     padding: var(--sp-3);
     border-bottom: 1px solid var(--ink-line);
     flex-shrink: 0;
   }
 
-  &__filter-btn {
+  &__creatable-filter {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    background: transparent;
-    border: 1px solid var(--ink-line);
-    border-radius: 3px;
+    gap: var(--sp-1);
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    color: var(--ink-muted);
     cursor: pointer;
-    transition: background 0.12s, border-color 0.12s;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.07);
-    }
-
-    &--active {
-      background: rgba(0, 0, 0, 0.13);
-      border-color: rgba(100, 60, 20, 0.55);
-    }
-
-  }
-
-  &__filter-icon {
-    display: block;
-    // SVGs are near-white; invert + warm sepia makes them dark ink on parchment
-    filter: invert(1) sepia(0.4);
-    transition: filter 0.12s;
-
-    .grimoire__filter-btn--active & {
-      filter: invert(1) sepia(0.6) saturate(1.2);
-    }
+    accent-color: #7a5f3a;
   }
 
   &__spell-list {
@@ -132,6 +109,10 @@
   }
 
   &__spell-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-2);
     padding: var(--sp-2) var(--sp-4);
     color: var(--ink-muted);
     font-family: var(--font-body);
@@ -154,6 +135,28 @@
     }
   }
 
+  &__spell-item-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__creatable-tag {
+    flex-shrink: 0;
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #2f7d32;
+    background: rgba(47, 125, 50, 0.15);
+    border: 1px solid rgba(47, 125, 50, 0.4);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
   &__spell-empty {
     padding: var(--sp-4);
     color: var(--ink-muted);
@@ -165,11 +168,12 @@
 
   // --- Right page ---
 
-  &__detail {
-    padding: var(--sp-5) var(--sp-6);
-    height: 100%;
+  // Area scrollabile della pagina destra — separata dal footer (Crea + numero pagina) sotto, che
+  // deve restare sempre raggiungibile anche con un flavor text lungo, non scorrere via col resto.
+  &__detail-scroll {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    box-sizing: border-box;
 
     &::-webkit-scrollbar {
       width: 4px;
@@ -183,6 +187,32 @@
       background: var(--ink-line);
       border-radius: 2px;
     }
+  }
+
+  &__detail {
+    padding: var(--sp-5) var(--sp-6);
+    box-sizing: border-box;
+  }
+
+  &__detail-footer {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 2.6rem;
+    padding: var(--sp-2) var(--sp-6);
+    flex-shrink: 0;
+    border-top: 1px solid var(--ink-line);
+  }
+
+  &__page-number {
+    position: absolute;
+    right: var(--sp-4);
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    color: var(--ink-muted);
   }
 
   &__spell-header {
@@ -242,6 +272,16 @@
     font-size: 1.1rem;
     font-weight: 700;
     color: var(--ink-muted);
+  }
+
+  // Magie a formula vuota (starter_bolt/starter_balm, seminate nel mazzo iniziale) — testo al posto
+  // della riga di carte, altrimenti le due &__rule sopra/sotto restano attorno al nulla.
+  &__formula-none {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--ink-muted);
+    margin: 0;
   }
 
   &__effect {

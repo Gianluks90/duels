@@ -5,6 +5,7 @@ import type { ExplosionEvent, GameState } from '../models/game.model';
 import type { PendingSpell, PlayerId, PlayerState } from '../models/player.model';
 import { computePlayerMana } from '../models/player.model';
 import type { SpellEffect } from '../models/spell.model';
+import { ELEMENT_OPPOSITES } from '../models/wand.model';
 import { TURN_PHASES, type ActiveTurnPhase } from '../models/turn-phase.model';
 import { SPELL_CATALOG } from '../data/spells';
 import { drawUpTo, HAND_SIZE } from './deck-builder';
@@ -97,6 +98,30 @@ export function combineNeedsChoice(hand: readonly Card[], element: BaseElement):
   return exact.length >= 1 && hand.some(c => c.tier === 'residium');
 }
 
+/**
+ * true se la mano contiene tutti gli elementi richiesti: una base esatta per ciascuno o, in sua
+ * assenza, un Residuo Arcano come jolly (2.5) — stesso ordine di preferenza (base esatta prima) di
+ * removeOneByElementOrResidue, ma di sola verifica: non rimuove nulla dalla mano vera, lavora su una
+ * copia locale. Usata sia per l'evidenziazione della mano su Fonte Arcana/elementi potenti
+ * (board.component.ts, hasAllBaseCards) sia per l'etichetta "creabile" nel Grimorio (5.1,
+ * GrimoireDialogComponent) — il chiamante include già l'eventuale carta nella punta della bacchetta
+ * (1.4.1) nell'array passato qui, se rilevante.
+ */
+export function hasElements(hand: readonly Card[], elements: readonly BaseElement[]): boolean {
+  const pool = [...hand];
+  for (const el of elements) {
+    const exactIndex = pool.findIndex(c => c.element === el && c.tier === 'base');
+    if (exactIndex !== -1) {
+      pool.splice(exactIndex, 1);
+      continue;
+    }
+    const residueIndex = pool.findIndex(c => c.tier === 'residium');
+    if (residueIndex === -1) return false;
+    pool.splice(residueIndex, 1);
+  }
+  return true;
+}
+
 /** Filtra dalla mano le carte "temporanee" (Card.expiresAt) che scadono alla fase indicata — sciolte o consumate, mai scartate (regolamento 2.3.1, 2.5). */
 function resolveExpiringCards(hand: readonly Card[], phase: ActiveTurnPhase): Card[] {
   return hand.filter(card => card.expiresAt !== phase);
@@ -160,6 +185,60 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
     discards: [...player.discards, kept],
     pendingCollect: null,
     hasCollectedThisTurn: true,
+  });
+}
+
+/**
+ * Fase Azione (5.1): produce un incantesimo dal Grimorio spendendo gli elementi della sua formula
+ * dalla mano — una base esatta per ciascuno o, in sua assenza, un Residuo Arcano come jolly (2.5), o
+ * la carta nella punta della bacchetta (1.4.1) — stessa removeFromHandOrTip già usata dalle
+ * combinazioni, quindi con la stessa scelta automatica (nessuna disambiguazione: la prima base
+ * valida trovata) quando la formula richiede più copie dello stesso elemento (es. Fuoco+Fuoco), dove
+ * CombineDialogComponent non si applicherebbe comunque (la sua mappa di scelta è per elemento, non
+ * per singola carta). A differenza delle combinazioni, gli elementi spesi qui si SCARTANO (vanno
+ * negli scarti del giocatore, non in quelli comuni) — per ora sempre così, senza ancora la scelta
+ * "consuma uno o scarta tutti" prevista dal regolamento (5.1), rimandata. Il Residuo Arcano usato
+ * come jolly si consuma comunque per sempre (2.5, nessuna pila scarti propria), come nelle
+ * combinazioni. La carta incantesimo creata va anch'essa negli scarti del giocatore (5.1: "si
+ * aggiunge alla pila degli scarti"), non in mano — verrà ripescata più avanti insieme a una mano
+ * fresca, come le 2 magie iniziali già seminate nel mazzo di partenza (STARTER_SPELLS,
+ * deck-builder.ts). No-op se non sei di turno, non sei in Azione, l'incantesimo non esiste, ha
+ * formula vuota (starter_bolt/starter_balm: seminati nel mazzo iniziale, mai creabili) o non hai
+ * tutti gli elementi richiesti.
+ */
+export function createSpell(state: GameState, role: PlayerId, spellId: string): GameState {
+  if (role !== state.currentTurn || state.phase !== 'azione') return state;
+
+  const spell = SPELL_CATALOG.find(s => s.id === spellId);
+  if (!spell || spell.formula.length === 0) return state;
+
+  const player = state.players[role];
+  let hand = player.hand;
+  let tipSlot = player.wand.tipSlot;
+  const consumed: Card[] = [];
+  for (const element of spell.formula) {
+    // Le formule esistenti nel catalogo usano solo elementi base (fire/water/air/earth) — il cast
+    // riflette che Spell.formula è tipizzato più largo (Element[]) solo per eventuali formule future
+    // con elementi avanzati/potenti, non ancora previste.
+    const { removed, hand: nextHand, tipSlot: nextTip } = removeFromHandOrTip(hand, tipSlot, element as BaseElement);
+    if (!removed) return state;
+    consumed.push(removed);
+    hand = nextHand;
+    tipSlot = nextTip;
+  }
+
+  const discardedBases = consumed.filter(c => c.tier !== 'residium');
+  const spellCard: Card = {
+    id: `spell-${spellId}-${crypto.randomUUID()}`,
+    tier: 'spell',
+    element: spell.element ?? (spell.formula[0] as BaseElement),
+    spellId,
+  };
+
+  return updatePlayer(state, role, {
+    hand,
+    wand: { ...player.wand, tipSlot },
+    discards: [...player.discards, ...discardedBases, spellCard],
   });
 }
 
@@ -511,13 +590,37 @@ function resolvePreparation(state: GameState, target: PlayerId): GameState {
   });
 }
 
-/** Applica un singolo effetto di un incantesimo lanciato — solo 'damage'/'heal' per ora (v1 minima); gli altri ~16 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
-function applySpellEffect(state: GameState, casterRole: PlayerId, effect: SpellEffect, bonus: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus'>): GameState {
+/**
+ * Asta della bacchetta (regolamento 1.4.2): modifica il danno subito in base all'elemento incastonato
+ * dal bersaglio — Resistenza (-1) se coincide con l'elemento della magia, Vulnerabilità (+1) se
+ * coincide con il suo opposto, invariato altrimenti (incluse le magie senza elemento, es.
+ * starter_bolt, e un'asta ancora vuota — 1.4.2: "non ha alcuna abilità finché non vi viene
+ * incastonato un elemento base"). Il danno non scende mai sotto 0 per via della sola Resistenza.
+ * Si applica solo all'ammontare base dell'effetto, non al bonus di mana caotico (3.2.3, calcolato
+ * separatamente in castSpell): quel bonus dipende dal tipo di carta usata per pagare, non
+ * dall'elemento della magia.
+ */
+function applyBodyResistance(amount: number, spellElement: BaseElement | undefined, targetBodySocket: BaseElement | null): number {
+  if (!spellElement || !targetBodySocket) return amount;
+  if (spellElement === targetBodySocket) return Math.max(0, amount - 1);
+  if (spellElement === ELEMENT_OPPOSITES[targetBodySocket]) return amount + 1;
+  return amount;
+}
+
+/** Applica un singolo effetto di un incantesimo lanciato — solo 'damage'/'heal' per ora (v1 minima); gli altri ~16 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte. `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sul solo effetto 'damage' — 'heal' non è mai elementale. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+function applySpellEffect(
+  state: GameState,
+  casterRole: PlayerId,
+  effect: SpellEffect,
+  bonus: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus'>,
+  spellElement: BaseElement | undefined,
+): GameState {
   const opponentRole: PlayerId = casterRole === 'host' ? 'guest' : 'host';
   switch (effect.type) {
     case 'damage': {
       const opponent = state.players[opponentRole];
-      return updatePlayer(state, opponentRole, { hp: opponent.hp - (effect.amount ?? 0) - bonus.chaoticBonus });
+      const amount = applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket);
+      return updatePlayer(state, opponentRole, { hp: opponent.hp - amount - bonus.chaoticBonus });
     }
     case 'heal': {
       const caster = state.players[casterRole];
@@ -542,7 +645,7 @@ function resolveSpells(state: GameState, role: PlayerId): GameState {
   for (const pending of player.pendingSpells) {
     const spell = SPELL_CATALOG.find(s => s.id === pending.card.spellId);
     if (!spell) continue;
-    for (const effect of spell.effects) next = applySpellEffect(next, role, effect, pending);
+    for (const effect of spell.effects) next = applySpellEffect(next, role, effect, pending, spell.element);
   }
 
   const caster = next.players[role];
