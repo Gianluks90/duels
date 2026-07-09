@@ -15,6 +15,7 @@ import {
   createSpell as createSpellReducer,
   holdAtTip as holdAtTipReducer,
   keepCard as keepCardReducer,
+  keepMana as keepManaReducer,
   resolveElementalExplosions,
   socketElement as socketElementReducer,
   startCollect as startCollectReducer,
@@ -67,6 +68,11 @@ export class GameEngineService {
   /** Fase Raccolta (4.3), secondo passo: tieni una delle 2 carte in sospeso, l'altra torna negli scarti comuni. */
   async keepCard(gameId: string, role: PlayerId, keptId: string): Promise<void> {
     await this.mutate(gameId, state => keepCardReducer(state, role, keptId));
+  }
+
+  /** Fase Raccolta (4.3), secondo passo — alternativa a keepCard: scarta entrambe le carte pescate e ottieni una carta "mana accumulato" in mano, spendibile solo questo turno. */
+  async keepMana(gameId: string, role: PlayerId): Promise<void> {
+    await this.mutate(gameId, state => keepManaReducer(state, role));
   }
 
   /** Fase Azione: combina 2 elementi base dalla mano per ottenere la carta rivelata in uno slot della Fonte Arcana. `chosenIds` forza quale copia usare per un elemento quando in mano ce n'era più di una valida (CombineDialogComponent, board.component.ts) — assente quando non c'era ambiguità, si procede con la scelta automatica di sempre. */

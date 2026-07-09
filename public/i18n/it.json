@@ -11,7 +11,8 @@
       "lava": "Lava",
       "light": "Luce",
       "dark": "Oscurità",
-      "residium": "Residuo"
+      "residium": "Residuo",
+      "mana": "Mana Accumulato"
     },
     "specialMana": {
       "prismatic": "Prismatico",
@@ -35,6 +36,10 @@
       "prismatic": "Vale sempre 1 mana in più rispetto al proprio valore, indipendentemente da altri modificatori attivi sulla carta.",
       "vital": "Se lo usi per pagare un incantesimo che bersaglia te stesso, recuperi 2 Punti Salute. Altrimenti vale come un mana comune.",
       "chaotic": "Se lo usi per pagare un incantesimo che bersaglia l'avversario, infligge 2 danni aggiuntivi. Altrimenti vale come un mana comune."
+    },
+    "manaToken": {
+      "title": "Mana accumulato",
+      "effect": "Un po' di potere magico da usare subito. Svanisce a fine turno."
     }
   },
 
@@ -86,7 +91,7 @@
       "residuoName": "Residuo Arcano",
       "residuoExpiry": "Si consuma a fine turno se non lo usi.",
       "collectTooltip": "Pesca 2 carte, tienine 1 (fase Raccolta)",
-      "collectPrompt": "Scegli quale carta tenere"
+      "collectPrompt": "Scegli quale carta tenere, o accumula mana"
     },
     "toolbar": {
       "grimoireAria": "Apri il Grimorio",

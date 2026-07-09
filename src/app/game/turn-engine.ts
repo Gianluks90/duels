@@ -220,6 +220,38 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
 }
 
 /**
+ * Fase Raccolta (4.3), secondo passo — alternativa a keepCard: invece di tenere una delle 2 carte
+ * pescate, le scarti ENTRAMBE negli scarti comuni (nessuna finisce nel tuo mazzo, a differenza di
+ * keepCard) e ottieni al loro posto una carta "mana accumulato" (tier 'mana') direttamente in mano,
+ * pronta da spendere questo stesso turno. Si consuma a fine turno se non usata (Card.expiresAt
+ * 'fine', vedi resolveExpiringCards in endTurn) — non si può conservare da un turno all'altro. A
+ * differenza di tenere una carta vera, questa scelta non fa crescere il proprio mazzo: né le 2 carte
+ * scartate né la carta mana (che comunque svanisce, non si scarta) restano nel tuo ciclo di pesca.
+ * No-op se non sei di turno o se non c'è una raccolta in sospeso.
+ */
+export function keepMana(state: GameState, role: PlayerId): GameState {
+  if (role !== state.currentTurn) return state;
+
+  const player = state.players[role];
+  const pending = player.pendingCollect;
+  if (!pending) return state;
+
+  const manaCard: Card = {
+    id: `mana-${crypto.randomUUID()}`,
+    tier: 'mana',
+    element: 'mana',
+    expiresAt: 'fine',
+  };
+
+  const withDiscards: GameState = { ...state, commonDiscards: [...state.commonDiscards, ...pending] };
+  return updatePlayer(withDiscards, role, {
+    hand: [...player.hand, manaCard],
+    pendingCollect: null,
+    hasCollectedThisTurn: true,
+  });
+}
+
+/**
  * Fase Azione (5.1): produce un incantesimo dal Grimorio spendendo gli elementi della sua formula
  * dalla mano. Ogni ingrediente cerca nel proprio pool di tier (elementTier) — un elemento base usa
  * removeFromHandOrTip come le combinazioni (Residuo Arcano come jolly, 2.5, e carta nella punta della

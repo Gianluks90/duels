@@ -238,6 +238,17 @@
                         [appTooltip]="card.specialMana ? specialManaTip : null" tooltipPosition="top" />
             </button>
           }
+          <!-- Terza opzione, alternativa a tenere una delle 2 carte: scartale entrambe e ottieni mana accumulato
+               subito in mano, valido solo questo turno (1.4.3, keepMana in turn-engine.ts). Stesso tooltip
+               ricco #manaTokenTip riusato anche in mano (vedi playerHand qui sotto). -->
+          <ng-template #collectManaTokenTip>
+            <strong>{{ 'card.manaToken.title' | translate }}</strong>
+            <hr class="rich-tooltip__rule" />
+            <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
+          </ng-template>
+          <button type="button" class="board__collect-card" (click)="keepMana()">
+            <app-card element="mana" [size]="handArcCardWidth" [appTooltip]="collectManaTokenTip" tooltipPosition="top" />
+          </button>
         </div>
       </div>
     }
@@ -309,12 +320,19 @@
             <hr class="rich-tooltip__rule" />
             <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
           </ng-template>
+          <!-- Stesso tooltip #manaTokenTip della dialog di raccolta (mana accumulato, 1.4.3) — mai insieme
+               a #spellTip/#specialManaTip: tier 'mana' non è mai né 'spell' né una base con mana speciale. -->
+          <ng-template #manaTokenTip>
+            <strong>{{ 'card.manaToken.title' | translate }}</strong>
+            <hr class="rich-tooltip__rule" />
+            <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
+          </ng-template>
           <app-action-menu [items]="handCardMenuItems(card, $index)">
             <app-card class="board__hand-card" [element]="card.element" [spellId]="card.spellId ?? null" [manaBonus]="card.manaBonus ?? 0" [specialMana]="card.specialMana ?? null" [showMana]="card.tier !== 'freeze'" [size]="handArcCardWidth" [priority]="$index === 0"
                       [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
                       [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
                       [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
-                      [appTooltip]="card.tier === 'spell' ? spellTip : (card.specialMana ? specialManaTip : null)" tooltipPosition="top"
+                      [appTooltip]="card.tier === 'spell' ? spellTip : (card.tier === 'mana' ? manaTokenTip : (card.specialMana ? specialManaTip : null))" tooltipPosition="top"
                       [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)" />
           </app-action-menu>
         }

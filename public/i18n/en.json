@@ -11,7 +11,8 @@
       "lava": "Lava",
       "light": "Light",
       "dark": "Darkness",
-      "residium": "Residuum"
+      "residium": "Residuum",
+      "mana": "Stored Mana"
     },
     "specialMana": {
       "prismatic": "Prismatic",
@@ -35,6 +36,10 @@
       "prismatic": "Always worth 1 mana more than its own value, regardless of any other modifier active on the card.",
       "vital": "If you use it to pay for a spell that targets yourself, you recover 2 Health Points. Otherwise it counts as common mana.",
       "chaotic": "If you use it to pay for a spell that targets your opponent, it deals 2 extra damage. Otherwise it counts as common mana."
+    },
+    "manaToken": {
+      "title": "Stored Mana",
+      "effect": "A bit of magical power to use right away. Fades at the end of the turn."
     }
   },
 
@@ -86,7 +91,7 @@
       "residuoName": "Arcane Residuum",
       "residuoExpiry": "Consumed at the end of the turn if not used.",
       "collectTooltip": "Draw 2 cards, keep 1 (Collection phase)",
-      "collectPrompt": "Choose which card to keep"
+      "collectPrompt": "Choose which card to keep, or stockpile mana"
     },
     "toolbar": {
       "grimoireAria": "Open the Grimoire",

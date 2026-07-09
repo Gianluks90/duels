@@ -1046,6 +1046,13 @@ export class BoardComponent implements OnInit {
     await this.gameEngine.keepCard(this.gameId(), role, kept.id);
   }
 
+  /** Fase Raccolta (4.3), secondo passo — alternativa a keepCard: scarta entrambe le carte pescate e ottieni mana accumulato subito in mano, valido solo questo turno. */
+  protected async keepMana(): Promise<void> {
+    const role = this.myRole();
+    if (!role) return;
+    await this.gameEngine.keepMana(this.gameId(), role);
+  }
+
   /** 0 finché il bonus manico di questa carta pescata non è ancora stato rivelato in UI, il valore reale dopo. */
   protected collectCardManaBonus(card: Card): number {
     return this.revealedBonusIds().has(card.id) ? (card.manaBonus ?? 0) : 0;

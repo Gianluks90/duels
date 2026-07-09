@@ -1,8 +1,8 @@
 import type { Element } from './element.model';
 import type { ActiveTurnPhase } from './turn-phase.model';
 
-/** 'freeze' è una non-carta (regolamento 2.3.1): generata a runtime dal Congelamento, occupa spazio in mazzo/scarti/mano ma non ha valore di mana né entra in nessuna combinazione — si scioglie (sparisce) in fase Preparazione. 'spell' rappresenta un incantesimo lanciabile (regolamento 5.1-5.3): il suo `element` serve solo per l'arte/icona (vedi CardComponent), non per il mana né per le combinazioni alla Fonte Arcana. */
-export type CardTier = 'base' | 'advanced' | 'superior' | 'residium' | 'freeze' | 'spell';
+/** 'freeze' è una non-carta (regolamento 2.3.1): generata a runtime dal Congelamento, occupa spazio in mazzo/scarti/mano ma non ha valore di mana né entra in nessuna combinazione — si scioglie (sparisce) in fase Preparazione. 'spell' rappresenta un incantesimo lanciabile (regolamento 5.1-5.3): il suo `element` serve solo per l'arte/icona (vedi CardComponent), non per il mana né per le combinazioni alla Fonte Arcana. 'mana' è un'altra non-carta, generata a runtime in fase Raccolta (in alternativa a tenere una delle 2 carte pescate, vedi keepMana in turn-engine.ts): vale 1 mana spendibile subito ma mai in una combinazione (nessun helper di combinazione riconosce questo tier), e svanisce a fine turno anche se non speso (Card.expiresAt 'fine', come il Residuo Arcano) — non si può conservare da un turno all'altro. */
+export type CardTier = 'base' | 'advanced' | 'superior' | 'residium' | 'freeze' | 'spell' | 'mana';
 
 /** Mana speciale (regolamento 3.2): un modificatore legato alla carta stessa (non al giocatore che la pesca o la tiene in mano) — agisce sull'incantesimo pagato con quella carta. */
 export type SpecialMana = 'prismatic' | 'vital' | 'chaotic';
