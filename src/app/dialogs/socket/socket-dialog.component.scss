@@ -1,0 +1,116 @@
+.socket-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  max-width: 90vw;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  &__title {
+    font-size: 0.85rem;
+  }
+
+  &__body {
+    padding: var(--sp-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    list-style: none;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    cursor: pointer;
+    border-radius: 8px;
+    padding: var(--sp-3);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color var(--transition), background var(--transition);
+
+    &:hover:not(&--locked) {
+      background: rgba(212, 168, 71, 0.1);
+    }
+
+    &--selected {
+      outline-color: var(--border-gold);
+      background: rgba(212, 168, 71, 0.18);
+    }
+
+    &--locked {
+      cursor: default;
+      opacity: 0.5;
+    }
+  }
+
+  &__row-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__row-title {
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-heading);
+  }
+
+  &__row-hr {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: var(--sp-2) 0;
+  }
+
+  &__row-effect {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+    opacity: 0.85;
+  }
+
+  &__row-locked {
+    display: inline-block;
+    margin-top: var(--sp-2);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+  }
+
+  &__warning {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--sp-2);
+  }
+}

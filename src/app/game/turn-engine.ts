@@ -212,14 +212,18 @@ export function castSpell(state: GameState, role: PlayerId, spellCardId: string,
  * Fase Azione (1.4.1/4.4): trattiene una carta base dalla mano nella punta della bacchetta —
  * disponibile come se fosse ancora in mano (vedi removeFromHandOrTip) durante il turno successivo
  * del giocatore, si consuma se non usata entro la fine di quello (vedi endTurn). No-op se non sei
- * di turno, non sei in Azione, la punta è già occupata, o la carta non è in mano con tier 'base'
- * (niente Residuo: 1.4.1 dice letteralmente "un elemento base").
+ * di turno, non sei in Azione, la punta è già occupata, la carta non è in mano con tier 'base'
+ * (niente Residuo: 1.4.1 dice letteralmente "un elemento base"), o la punta era già occupata
+ * all'inizio di questo turno (PlayerState.tipHeldAtPreparation) — anche se quella carta è già stata
+ * spesa in questa stessa fase Azione, il potere resta comunque non disponibile fino al prossimo
+ * turno: altrimenti si potrebbe usare la carta trattenuta e trattenerne subito un'altra, di fatto
+ * usando il potere ogni turno invece che a turni alterni.
  */
 export function holdAtTip(state: GameState, role: PlayerId, cardId: string): GameState {
   if (role !== state.currentTurn || state.phase !== 'azione') return state;
 
   const player = state.players[role];
-  if (player.wand.tipSlot) return state;
+  if (player.wand.tipSlot || player.tipHeldAtPreparation) return state;
 
   const card = player.hand.find(c => c.id === cardId && c.tier === 'base');
   if (!card) return state;
@@ -229,6 +233,34 @@ export function holdAtTip(state: GameState, role: PlayerId, cardId: string): Gam
     wand: { ...player.wand, tipSlot: card },
     tipCardPlacedTurn: state.turnNumber,
   });
+}
+
+/**
+ * Fase Azione (1.4.2/1.4.3/4.4): incastona una carta base dalla mano nell'asta o nel manico della
+ * bacchetta — permanente per il resto della partita, mai sovrascrivibile una volta fatto (ogni
+ * sezione ha un solo slot). La carta si consuma (va negli scarti del mazzo comune, non in quelli del
+ * giocatore — stessa semantica già usata per la punta scaduta e le basi consumate in combinazione),
+ * non è più utilizzabile per nient'altro. No-op se non sei di turno, non sei in Azione, la carta non
+ * è in mano con tier 'base', o lo slot richiesto è già occupato. Non considera la carta nella punta
+ * della bacchetta (1.4.1): il bottone "Incastona" compare solo sulle carte del ventaglio in mano.
+ */
+export function socketElement(state: GameState, role: PlayerId, cardId: string, target: 'body' | 'handle'): GameState {
+  if (role !== state.currentTurn || state.phase !== 'azione') return state;
+
+  const player = state.players[role];
+  const socketField = target === 'body' ? 'bodySocket' : 'handleSocket';
+  if (player.wand[socketField]) return state;
+
+  const card = player.hand.find(c => c.id === cardId && c.tier === 'base');
+  if (!card) return state;
+
+  return {
+    ...updatePlayer(state, role, {
+      hand: player.hand.filter(c => c.id !== cardId),
+      wand: { ...player.wand, [socketField]: card.element },
+    }),
+    commonDiscards: [...state.commonDiscards, card],
+  };
 }
 
 /**
@@ -461,16 +493,22 @@ function endTurn(state: GameState, role: PlayerId): GameState {
 }
 
 /**
- * Fase Preparazione (4.2): 1 danno per ogni livello di Avvelenamento accumulato, e scioglimento
+ * Fase Preparazione (4.2): 1 danno per ogni livello di Avvelenamento accumulato, scioglimento
  * (rimozione dal gioco, non scarto) delle carte Congelamento eventualmente in mano (Card.expiresAt
- * 'preparazione', vedi applyFreeze).
+ * 'preparazione', vedi applyFreeze), e istantanea dello stato della punta della bacchetta
+ * (PlayerState.tipHeldAtPreparation, 1.4.1) usata da holdAtTip per limitare il potere a turni
+ * alterni.
  */
 function resolvePreparation(state: GameState, target: PlayerId): GameState {
   const player = state.players[target];
   const poisonDamage = player.tokens.poison;
   const hand = resolveExpiringCards(player.hand, 'preparazione');
 
-  return updatePlayer(state, target, { hp: player.hp - poisonDamage, hand });
+  return updatePlayer(state, target, {
+    hp: player.hp - poisonDamage,
+    hand,
+    tipHeldAtPreparation: !!player.wand.tipSlot,
+  });
 }
 
 /** Applica un singolo effetto di un incantesimo lanciato — solo 'damage'/'heal' per ora (v1 minima); gli altri ~16 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */

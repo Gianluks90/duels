@@ -13,15 +13,12 @@ import { GameService, type GameDoc } from '../../services/game.service';
 import { GameEngineService } from '../../services/game-engine.service';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { ELEMENT_OPPOSITES } from '../../models/wand.model';
-import type { BaseElement } from '../../models/element.model';
-import { CardComponent } from '../../components/card/card.component';
 
 @Component({
   selector: 'app-setup',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [CardComponent, TranslatePipe],
+  imports: [TranslatePipe],
   templateUrl: './setup.component.html',
   styleUrl: './setup.component.scss',
 })
@@ -34,17 +31,11 @@ export class SetupComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   protected readonly i18n = inject(TranslationService);
 
-  protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
-  protected readonly baseElements: BaseElement[] = ['fire', 'water', 'air', 'earth'];
-
   protected readonly gameId = signal<string>('');
   protected readonly gameDoc = signal<GameDoc | null>(null);
   protected readonly saving = signal(false);
   /** Evita di richiedere tryStartGame ad ogni singolo tick di onSnapshot mentre l'avvio è già in corso. */
   private startRequested = false;
-
-  protected readonly handleSocket = signal<BaseElement | null>(null);
-  protected readonly bodySocket = signal<BaseElement | null>(null);
 
   protected readonly myRole = computed<'host' | 'guest' | null>(() => {
     const doc = this.gameDoc();
@@ -76,23 +67,6 @@ export class SetupComponent implements OnInit {
     return role === 'host' ? doc.guestReady : doc.hostReady;
   });
 
-  protected readonly handleEffectText = computed(() => {
-    const el = this.handleSocket();
-    return el
-      ? this.i18n.t('setup.handle.effectWith', { element: this.i18n.elementLabel(el) })
-      : this.i18n.t('setup.handle.effectWithout');
-  });
-
-  protected readonly bodyEffectText = computed(() => {
-    const el = this.bodySocket();
-    return el
-      ? this.i18n.t('setup.body.effectWith', {
-          element: this.i18n.elementLabel(el),
-          opposite: this.i18n.elementLabel(ELEMENT_OPPOSITES[el]),
-        })
-      : this.i18n.t('setup.body.effectWithout');
-  });
-
   protected readonly waitingText = computed(() => {
     const name = this.opponentName();
     return this.i18n.t('setup.ready.waitingFor', { name: name ?? this.i18n.t('setup.ready.opponentFallback') });
@@ -119,22 +93,15 @@ export class SetupComponent implements OnInit {
     this.destroyRef.onDestroy(() => unsub());
   }
 
-  protected setHandleSocket(el: BaseElement | null): void {
-    this.handleSocket.set(el);
-  }
-
-  protected setBodySocket(el: BaseElement | null): void {
-    this.bodySocket.set(el);
-  }
-
+  /** Asta e manico (1.4.2/1.4.3) partono sempre vuoti — si riempiono solo in partita con "Incastona" (socketElement in turn-engine.ts), mai qui: niente più scelta libera e gratuita a inizio partita. */
   protected async confirmWand(): Promise<void> {
     const role = this.myRole();
     if (!role) return;
     this.saving.set(true);
     try {
       await this.game.setReady(this.gameId(), role, {
-        handleSocket: this.handleSocket(),
-        bodySocket: this.bodySocket(),
+        handleSocket: null,
+        bodySocket: null,
         tipSlot: null,
       });
     } finally {

@@ -384,7 +384,7 @@
       <div class="board__wand-panel">
         @if (playerBody(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
-                    [style.margin-bottom.px]="-wandPeekOverlap" />
+                    [style.margin-bottom.px]="bodyEntering() ? 0 : -wandPeekOverlap" />
         }
         <div class="board__wand-card board__wand-card--player" [style.--el-color]="playerBody() ? elementColorVar(playerBody()!) : null">
           <span class="board__wand-card-label">{{ 'board.wand.body' | translate }}</span>
@@ -396,7 +396,7 @@
       <div class="board__wand-panel">
         @if (playerHandle(); as el) {
           <app-card class="board__wand-peek" [element]="el" [size]="wandCardWidth" [header]="true"
-                    [style.margin-bottom.px]="-wandPeekOverlap" />
+                    [style.margin-bottom.px]="handleEntering() ? 0 : -wandPeekOverlap" />
         }
         <div class="board__wand-card board__wand-card--player" [style.--el-color]="playerHandle() ? elementColorVar(playerHandle()!) : null">
           <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>

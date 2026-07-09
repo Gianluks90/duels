@@ -503,10 +503,12 @@
   &__wand-peek {
     position: relative;
     z-index: 1;
-    // Punta della bacchetta (1.4.1): quando una carta arriva, margin-bottom/-top parte da 0 (nascosta
-    // dietro il cartellino) e transiziona al valore finale (-wandPeekOverlap, inline) — pilotato da
-    // tipEntering() in board.component.ts. Asta/manico non animano mai (nessun tipEntering per loro),
-    // la transizione qui non li riguarda: si applica solo quando il margine cambia davvero.
+    // Bacchetta (1.4.1/1.4.2/1.4.3): quando una carta arriva in un qualunque slot, margin-bottom/-top
+    // parte da 0 (nascosta dietro il cartellino) e transiziona al valore finale (-wandPeekOverlap,
+    // inline) — pilotato da tipEntering()/bodyEntering()/handleEntering() in board.component.ts, uno
+    // per slot. Per la punta il margine può anche tornare a 0 quando la carta esce (tipVanishing);
+    // asta e manico non hanno mai un'uscita (una volta incastonato l'elemento resta per sempre), quindi
+    // qui la transizione si vede solo una volta, al primo ingresso.
     transition: margin-bottom 400ms ease, margin-top 400ms ease;
   }
 

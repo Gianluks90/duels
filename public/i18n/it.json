@@ -103,6 +103,16 @@
     }
   },
 
+  "socketDialog": {
+    "title": "Incastona",
+    "dialogAria": "Scegli dove incastonare l'elemento",
+    "closeAria": "Chiudi",
+    "lockedLabel": "Già incastonato",
+    "warning": "Scelta definitiva: una volta incastonato, questo slot della bacchetta non potrà più essere cambiato per il resto della partita.",
+    "cancel": "Annulla",
+    "confirm": "Conferma"
+  },
+
   "home": {
     "debug": "Debug",
     "grimoire": "Grimorio",
@@ -150,21 +160,16 @@
   "setup": {
     "handle": {
       "title": "Manico",
-      "desc": "10% di duplicare ogni elemento pescato. Incastona un elemento per portarlo al 20%, ma solo per quell'elemento.",
-      "noneAria": "Nessun incastonamento",
-      "effectWith": "20% di duplicare <strong>{element}</strong>",
-      "effectWithout": "10% universale · nessun elemento incastonato"
+      "desc": "10% di possibilità di duplicare ogni elemento base pescato. Si incastona un elemento durante la partita (\"Incastona\" su una carta base) per portarlo al 20%, ma solo per quell'elemento — su tutti gli altri l'effetto si azzera."
     },
     "body": {
-      "title": "Corpo",
-      "desc": "Incastona un elemento per ottenere protezione da esso (1 danno annullato) e vulnerabilità al suo opposto (+1 danno).",
-      "effectWith": "Protegge da <strong>{element}</strong> · Vulnerabile a <strong>{opposite}</strong>",
-      "effectWithout": "Nessuna protezione elementale"
+      "title": "Asta",
+      "desc": "Si incastona un elemento durante la partita (\"Incastona\" su una carta base) per ottenere protezione da esso (1 danno annullato) e vulnerabilità al suo opposto (+1 danno)."
     },
-    "confirm": "Conferma Bacchetta",
+    "confirm": "Pronto",
     "saving": "Salvataggio…",
     "ready": {
-      "title": "Bacchetta confermata!",
+      "title": "Pronto!",
       "bothReady": "Entrambi pronti. Avvio del duello…",
       "waitingFor": "In attesa di {name}…",
       "opponentFallback": "l'avversario"

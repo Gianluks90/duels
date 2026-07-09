@@ -9,64 +9,14 @@
     @if (!iAmReady()) {
       <div class="setup__sections">
 
-        <!-- Handle socket -->
         <section class="setup__section panel panel--raised">
           <h2 class="t-heading setup__section-title">{{ 'setup.handle.title' | translate }}</h2>
           <p class="t-muted setup__section-desc">{{ 'setup.handle.desc' | translate }}</p>
-
-          <div class="setup__socket-row">
-            @for (el of baseElements; track el) {
-              <button
-                class="setup__socket-btn"
-                [class.setup__socket-btn--selected]="handleSocket() === el"
-                [attr.aria-pressed]="handleSocket() === el"
-                [attr.aria-label]="i18n.elementLabel(el)"
-                (click)="setHandleSocket(el)"
-              >
-                <app-card [element]="el" [size]="56" />
-              </button>
-            }
-            <button
-              class="setup__socket-btn setup__socket-btn--none"
-              [class.setup__socket-btn--selected]="handleSocket() === null"
-              [attr.aria-label]="'setup.handle.noneAria' | translate"
-              (click)="setHandleSocket(null)"
-            >
-              —
-            </button>
-          </div>
-
-          <p class="setup__socket-effect t-muted" [innerHTML]="handleEffectText()"></p>
         </section>
 
-        <!-- Body socket -->
         <section class="setup__section panel panel--raised">
           <h2 class="t-heading setup__section-title">{{ 'setup.body.title' | translate }}</h2>
           <p class="t-muted setup__section-desc">{{ 'setup.body.desc' | translate }}</p>
-
-          <div class="setup__socket-row">
-            @for (el of baseElements; track el) {
-              <button
-                class="setup__socket-btn"
-                [class.setup__socket-btn--selected]="bodySocket() === el"
-                [attr.aria-pressed]="bodySocket() === el"
-                [attr.aria-label]="i18n.elementLabel(el)"
-                (click)="setBodySocket(el)"
-              >
-                <app-card [element]="el" [size]="56" />
-              </button>
-            }
-            <button
-              class="setup__socket-btn setup__socket-btn--none"
-              [class.setup__socket-btn--selected]="bodySocket() === null"
-              [attr.aria-label]="'setup.handle.noneAria' | translate"
-              (click)="setBodySocket(null)"
-            >
-              —
-            </button>
-          </div>
-
-          <p class="setup__socket-effect t-muted" [innerHTML]="bodyEffectText()"></p>
         </section>
 
       </div>

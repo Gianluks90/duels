@@ -20,11 +20,16 @@ Ogni giocatore possiede fin da subito una _bacchetta magica_, divisa in 3 sezion
 **1.4.1 - Punta**
 La _punta_ della bacchetta ha uno slot per conservare un elemento base tra un turno e l'altro: durante la fase Azione (4.4) il giocatore può trattenere lì una carta base dalla propria mano. Finché resta nella punta, la carta conta come se fosse ancora in mano ai fini di qualunque combinazione. Se non viene usata entro la fine del turno successivo del giocatore, si consuma (torna negli scarti del mazzo comune, non si scarta).
 
+Il giocatore può trattenere una nuova carta solo se la punta era già vuota all'inizio del proprio turno (fase Preparazione, 4.2): se all'inizio del turno la punta contiene ancora una carta trattenuta in precedenza, non è possibile sostituirla nemmeno se viene usata nel corso della stessa fase Azione. Il potere è quindi utilizzabile solo a turni alterni.
+
 **1.4.2 - Asta**
 L'_asta_ della bacchetta non ha alcuna abilità finché non vi viene incastonato un elemento base. A seconda dell'elemento incastonato, il giocatore ottiene _resistenza_ (danni subiti ridotti di 1) a quell'elemento e _vulnerabilità_ (danni subiti aumentati di 1) al suo opposto.
 
 **1.4.3 - Manico**
-Il _manico_ della bacchetta ha il 10% di possibilità di aumentare di 1 punto il valore di mana di un elemento base quando questo viene pescato dal mazzo comune. Durante la fase di Raccolta l'effetto si applica singolarmente a ciascuna delle 2 carte pescate, non solo a quella che il giocatore sceglie di tenere. Se nel manico viene incastonato un elemento base, l'effetto aumenta al 20% ma funziona solo con quell'elemento.
+Il _manico_ della bacchetta ha il 10% di possibilità di aumentare di 1 punto il valore di mana di un elemento base quando questo viene pescato dal mazzo comune. Durante la fase di Raccolta l'effetto si applica singolarmente a ciascuna delle 2 carte pescate, non solo a quella che il giocatore sceglie di tenere. Se nel manico viene incastonato un elemento base, l'effetto **cambia** invece di sommarsi: sale al 20% ma solo per quell'elemento — su tutti gli altri elementi scende a 0%, nessun bonus.
+
+**1.4.4 - Incastonare asta e manico**
+Asta e manico partono sempre vuoti: non si scelgono al setup della partita. L'unico modo di riempirli è l'azione _Incastona_, disponibile durante la fase Azione (4.4) su una carta elemento base in mano: il giocatore sceglie se incastonarla nell'asta o nel manico. La carta si consuma (torna negli scarti del mazzo comune, non si scarta) e la scelta è permanente per il resto della partita — una volta incastonato un elemento in una sezione, non può più essere sostituito.
 
 **1.5 - Giocatore iniziale**
 Il giocatore iniziale è scelto casualmente. Se, al termine della partita, i giocatori ne iniziano subito un'altra, il primo giocatore della nuova partita sarà quello che ha giocato per secondo nella precedente.

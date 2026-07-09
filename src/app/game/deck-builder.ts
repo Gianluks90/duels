@@ -152,6 +152,7 @@ function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactor
     hasCollectedThisTurn: false,
     spellsPlayedThisTurn: 0,
     tipCardPlacedTurn: null,
+    tipHeldAtPreparation: false,
     handRevealed: false,
     immuneToElement: null,
   };

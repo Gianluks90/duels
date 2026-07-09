@@ -15,6 +15,7 @@ import {
   holdAtTip as holdAtTipReducer,
   keepCard as keepCardReducer,
   resolveElementalExplosions,
+  socketElement as socketElementReducer,
   startCollect as startCollectReducer,
 } from '../game/turn-engine';
 
@@ -95,6 +96,11 @@ export class GameEngineService {
   /** Fase Azione (1.4.1/4.4): trattiene una carta base dalla mano nella punta della bacchetta. */
   async holdAtTip(gameId: string, role: PlayerId, cardId: string): Promise<void> {
     await this.mutate(gameId, state => holdAtTipReducer(state, role, cardId));
+  }
+
+  /** Fase Azione (1.4.2/1.4.3/4.4): incastona una carta base dalla mano nell'asta o nel manico della bacchetta — permanente, mai sovrascrivibile. */
+  async socketElement(gameId: string, role: PlayerId, cardId: string, target: 'body' | 'handle'): Promise<void> {
+    await this.mutate(gameId, state => socketElementReducer(state, role, cardId, target));
   }
 
   private async mutate(gameId: string, transform: (state: GameState) => GameState): Promise<void> {

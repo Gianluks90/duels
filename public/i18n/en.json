@@ -103,6 +103,16 @@
     }
   },
 
+  "socketDialog": {
+    "title": "Socket",
+    "dialogAria": "Choose where to socket the element",
+    "closeAria": "Close",
+    "lockedLabel": "Already socketed",
+    "warning": "This choice is final: once socketed, this wand slot can never be changed for the rest of the match.",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
+  },
+
   "home": {
     "debug": "Debug",
     "grimoire": "Grimoire",
@@ -150,21 +160,16 @@
   "setup": {
     "handle": {
       "title": "Handle",
-      "desc": "10% chance to duplicate any drawn element. Socket an element to raise it to 20%, but only for that element.",
-      "noneAria": "No element socketed",
-      "effectWith": "20% chance to duplicate <strong>{element}</strong>",
-      "effectWithout": "10% universal · no element socketed"
+      "desc": "10% chance to duplicate any drawn base element. Socket an element during the match (\"Socket\" on a base card) to raise it to 20%, but only for that element — every other element drops to no effect."
     },
     "body": {
       "title": "Body",
-      "desc": "Socket an element for protection from it (1 damage nullified) and vulnerability to its opposite (+1 damage).",
-      "effectWith": "Protects from <strong>{element}</strong> · Vulnerable to <strong>{opposite}</strong>",
-      "effectWithout": "No elemental protection"
+      "desc": "Socket an element during the match (\"Socket\" on a base card) for protection from it (1 damage nullified) and vulnerability to its opposite (+1 damage)."
     },
-    "confirm": "Confirm Wand",
+    "confirm": "Ready",
     "saving": "Saving…",
     "ready": {
-      "title": "Wand confirmed!",
+      "title": "Ready!",
       "bothReady": "Both ready. Starting the duel…",
       "waitingFor": "Waiting for {name}…",
       "opponentFallback": "the opponent"

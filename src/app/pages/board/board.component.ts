@@ -31,6 +31,7 @@ import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
 import { CastSpellDialogComponent, type CastSpellDialogData } from '../../dialogs/cast-spell/cast-spell-dialog.component';
 import { CombineDialogComponent, type CombineDialogData } from '../../dialogs/combine/combine-dialog.component';
+import { SocketDialogComponent, type SocketDialogData, type SocketTarget } from '../../dialogs/socket/socket-dialog.component';
 import type { BaseElement, Element, AdvancedElement, SuperiorElement } from '../../models/element.model';
 import { ADVANCED_RECIPES, ELEMENT_MANA, SUPERIOR_FORMULA } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
@@ -93,12 +94,12 @@ const EXPLOSION_GHOST_DURATION_MS = 700;
 /** Durata del lampo + scossa sull'intera riga della Fonte Arcana quando un'Esplosione elementale (2.4) avviene lì — deve combaciare con @keyframes fonte-explode in board.component.scss. */
 const FONTE_EXPLOSION_DURATION_MS = 500;
 
-/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione (lift + fade) non finisce — 'expiry' per Congelamento/Residuo (Card.expiresAt), 'toTip' per una carta appena trattenuta nella punta della bacchetta (1.4.1) — stessa animazione, azione deliberata del giocatore invece di una scadenza. L'Esplosione elementale (2.4) ha un proprio meccanismo dedicato, vedi handExplosions più sotto. */
+/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione (lift + fade) non finisce — 'expiry' per Congelamento/Residuo (Card.expiresAt), 'toTip' per una carta appena trattenuta nella punta della bacchetta (1.4.1), 'toSocket' per una carta appena incastonata nell'asta o nel manico (1.4.2/1.4.3) — stessa animazione in tutti e 3 i casi, solo azione deliberata del giocatore invece di una scadenza. L'Esplosione elementale (2.4) ha un proprio meccanismo dedicato, vedi handExplosions più sotto. */
 interface VanishingGhost {
   card: Card;
   index: number;
   total: number;
-  kind: 'expiry' | 'toTip';
+  kind: 'expiry' | 'toTip' | 'toSocket';
 }
 
 /** Esplosione elementale (2.4) risolta in mano — le 2 carte (1 Luce + 1 Tenebra) prese direttamente dall'evento, non dedotte confrontando la mano prima/dopo (impossibile: si consumano nella stessa transazione atomica in cui entrano in mano, il client non vede mai lo stato intermedio). */
@@ -302,9 +303,10 @@ export class BoardComponent implements OnInit {
   });
 
   // Letto da state.players[role].wand (GameState, live), non da GameDoc.hostWand/guestWand — quel
-  // campo è solo l'istantanea presa al setup (l'input di createInitialGameState), mai più
-  // aggiornata in partita. Per handle/body non faceva differenza (permanenti, mai mutati dopo il
-  // setup), ma tipSlot (1.4.1) sì: holdAtTip/combineElements ecc. mutano solo la copia in state.
+  // campo è solo l'istantanea presa al setup (sempre bacchetta vuota, l'input di
+  // createInitialGameState), mai più aggiornata in partita. socketElement/holdAtTip/combineElements
+  // ecc. mutano solo la copia in state, sia per bodySocket/handleSocket (1.4.2/1.4.3) sia per tipSlot
+  // (1.4.1).
   protected readonly playerWand = computed<Wand | null>(() => this.me()?.wand ?? null);
 
   protected readonly opponentWand = computed<Wand | null>(() => this.opponentState()?.wand ?? null);
@@ -371,6 +373,12 @@ export class BoardComponent implements OnInit {
   /** La carta appena uscita dalla punta (consumata a Finale, spesa in una combinazione, o come mana per un incantesimo) — resta qui come ghost per la durata dell'animazione di sparizione (stessa hand-card-vanish già usata per le carte in mano), invece di sparire di scatto dal pannello. */
   protected readonly tipVanishing = signal<Card | null>(null);
   private lastKnownPlayerTip: Card | null = null;
+
+  /** Come tipEntering, ma per asta e manico (1.4.2/1.4.3) — qui non serve un equivalente di tipVanishing: una volta incastonato un elemento non esce mai più dal proprio slot (socketElement rifiuta di sovrascrivere), quindi c'è sempre e solo un ingresso, mai un'uscita. */
+  protected readonly bodyEntering = signal(false);
+  protected readonly handleEntering = signal(false);
+  private lastKnownPlayerBody: BaseElement | null = null;
+  private lastKnownPlayerHandle: BaseElement | null = null;
 
   /** Esplosioni elementali (2.4) risolte in una mano nell'ultimo batch — una entry per ruolo colpito, con le carte vere prese dall'evento (vedi HandExplosion sopra). Popolata dall'effect dedicato sotto, non dal diff di playerHand(): le carte si consumano nella stessa transazione in cui entrano in mano, quindi non compaiono mai in un render precedente da cui poterle dedurre. */
   protected readonly handExplosions = signal<readonly HandExplosion[]>([]);
@@ -564,6 +572,33 @@ export class BoardComponent implements OnInit {
       }
     });
 
+    // Asta e manico (1.4.2/1.4.3): stesso schema dell'effect sopra per l'ingresso, ma senza il ramo
+    // di uscita — un elemento incastonato non lascia mai più il proprio slot (socketElement rifiuta
+    // di sovrascriverlo), quindi qui la transizione osservabile è sempre e solo null → elemento.
+    effect(() => {
+      const body = this.playerBody();
+      const previous = this.lastKnownPlayerBody;
+      this.lastKnownPlayerBody = body;
+
+      if (body && body !== previous) {
+        this.bodyEntering.set(true);
+        const enterTimer = setTimeout(() => this.bodyEntering.set(false), 20);
+        this.destroyRef.onDestroy(() => clearTimeout(enterTimer));
+      }
+    });
+
+    effect(() => {
+      const handle = this.playerHandle();
+      const previous = this.lastKnownPlayerHandle;
+      this.lastKnownPlayerHandle = handle;
+
+      if (handle && handle !== previous) {
+        this.handleEntering.set(true);
+        const enterTimer = setTimeout(() => this.handleEntering.set(false), 20);
+        this.destroyRef.onDestroy(() => clearTimeout(enterTimer));
+      }
+    });
+
     // Raccolta: il bonus manico (regolamento 1.4.3, +1 mana permanente) è già risolto nello stato
     // appena le 2 carte vengono pescate — qui lo teniamo solo nascosto in UI per un attimo, cosicché
     // la rivelazione (scale up/down + valore di mana aggiornato) si noti invece di apparire già fatta.
@@ -717,12 +752,12 @@ export class BoardComponent implements OnInit {
         {
           label: this.i18n.t('board.hand.holdAtTipAction'),
           action: () => this.holdAtTip(card, index),
-          disabled: !!this.playerWand()?.tipSlot,
+          disabled: !!this.playerWand()?.tipSlot || !!this.me()?.tipHeldAtPreparation,
         },
         {
           label: this.i18n.t('board.hand.socketAction'),
-          action: () => {},
-          disabled: true,
+          action: () => this.openSocketDialog(card, index),
+          disabled: !!this.playerBody() && !!this.playerHandle(),
         },
       ];
     }
@@ -759,6 +794,31 @@ export class BoardComponent implements OnInit {
     this.destroyRef.onDestroy(() => clearTimeout(timer));
 
     void this.gameEngine.holdAtTip(this.gameId(), role, card.id);
+  }
+
+  /** Regolamento 1.4.2/1.4.3/4.4: apre la dialog di scelta asta/manico per una carta base dalla mano — applica la scelta solo se il giocatore conferma (annullare chiude senza risultato, vedi SocketDialogComponent). Il cast a BaseElement è sicuro: questa azione compare solo per card.tier === 'base' (handCardMenuItems). L'animazione di uscita dalla mano riusa lo stesso meccanismo/aspetto della punta (VanishingGhost, kind 'toSocket'), quella d'ingresso nel pannello asta/manico è pilotata dagli effect su playerBody()/playerHandle() nel costruttore (bodyEntering/handleEntering). */
+  protected openSocketDialog(card: Card, index: number): void {
+    const role = this.myRole();
+    if (!role) return;
+
+    this.dialog.open<SocketTarget | undefined, SocketDialogData>(SocketDialogComponent, {
+      data: { element: card.element as BaseElement, bodySocket: this.playerBody(), handleSocket: this.playerHandle() },
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    }).closed.subscribe(target => {
+      if (!target) return;
+
+      const total = this.playerHand().length;
+      this.vanishingGhosts.update(list => [...list, { card, index, total, kind: 'toSocket' as const }]);
+      const timer = setTimeout(() => {
+        this.vanishingGhosts.update(list => list.filter(g => g.card.id !== card.id));
+      }, VANISH_DURATION_MS);
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
+
+      void this.gameEngine.socketElement(this.gameId(), role, card.id, target);
+    });
   }
 
   /** Nome tradotto dell'incantesimo rappresentato da questa carta — stringa vuota se non è (più) una carta incantesimo valida. */

@@ -1,0 +1,37 @@
+<div class="socket-dialog" role="dialog" aria-modal="true" [attr.aria-label]="'socketDialog.dialogAria' | translate">
+  <header class="socket-dialog__header">
+    <h2 class="t-heading socket-dialog__title">{{ 'socketDialog.title' | translate }}</h2>
+    <app-icon-button [icon]="closeIcon" [ariaLabel]="'socketDialog.closeAria' | translate" [size]="32" (iconClick)="cancel()" />
+  </header>
+
+  <div class="socket-dialog__body">
+    <ul class="socket-dialog__rows" role="radiogroup" [attr.aria-label]="'socketDialog.title' | translate">
+      @for (row of rows(); track row.target) {
+        <li class="socket-dialog__row"
+            [class.socket-dialog__row--selected]="selected() === row.target"
+            [class.socket-dialog__row--locked]="row.locked"
+            role="radio" [attr.aria-checked]="selected() === row.target" [attr.aria-disabled]="row.locked"
+            (click)="select(row)">
+          <app-card [element]="row.element" [size]="72" />
+          <div class="socket-dialog__row-info">
+            <div class="socket-dialog__row-title">{{ row.title }}</div>
+            <hr class="socket-dialog__row-hr" />
+            <p class="socket-dialog__row-effect">{{ row.effect }}</p>
+            @if (row.locked) {
+              <span class="socket-dialog__row-locked">{{ 'socketDialog.lockedLabel' | translate }}</span>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+
+    <p class="socket-dialog__warning">{{ 'socketDialog.warning' | translate }}</p>
+
+    <div class="socket-dialog__footer">
+      <div class="socket-dialog__actions">
+        <button class="btn btn--secondary" (click)="cancel()">{{ 'socketDialog.cancel' | translate }}</button>
+        <button class="btn btn--primary" [disabled]="!canConfirm()" (click)="confirm()">{{ 'socketDialog.confirm' | translate }}</button>
+      </div>
+    </div>
+  </div>
+</div>

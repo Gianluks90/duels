@@ -55,6 +55,8 @@ export interface PlayerState {
 
   /** Il turnNumber in cui la carta attualmente in wand.tipSlot è stata trattenuta (regolamento 1.4.1) — null se la punta è vuota. turnNumber incrementa una volta per turno di QUALSIASI giocatore, quindi i propri turni successivi sono sempre 2 numeri di distanza: se a fine turno questo valore non coincide più con GameState.turnNumber, la carta ha già passato un confine di turno e si consuma (vedi endTurn in turn-engine.ts). */
   tipCardPlacedTurn: number | null;
+  /** true se all'inizio di QUESTO turno (fase Preparazione, vedi resolvePreparation) la punta era già occupata da una carta trattenuta in un turno precedente. Blocca holdAtTip anche se quella carta viene spesa più avanti in questa stessa fase Azione — altrimenti si potrebbe usare la carta trattenuta e trattenerne subito un'altra, vanificando il limite "a turni alterni" del potere (1.4.1). */
+  tipHeldAtPreparation: boolean;
 
   // Effetti attivi
   handRevealed: boolean;               // Occhio del Sole
