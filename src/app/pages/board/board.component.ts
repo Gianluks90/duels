@@ -975,7 +975,7 @@ export class BoardComponent implements OnInit {
     return this.i18n.t(`spells.${card.spellId}.name`);
   }
 
-  /** Solo damage/heal — gli unici 2 SpellEffectType risolti oggi (vedi resolveSpells in turn-engine.ts). Riusa le stesse chiavi i18n del grimorio per restare coerente col testo mostrato lì. */
+  /** Copre tutti gli SpellEffectType risolti oggi in applySpellEffect (vedi resolveSpells in turn-engine.ts) — non necessariamente tutti quelli che questo switch sa comunque tradurre in testo. Riusa le stesse chiavi i18n del grimorio per restare coerente col testo mostrato lì. */
   protected spellEffectSummary(card: Card): string {
     const spell = SPELL_CATALOG.find((s) => s.id === card.spellId);
     if (!spell) return '';
@@ -1004,6 +1004,10 @@ export class BoardComponent implements OnInit {
             return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
             return this.i18n.t('grimoire.effects.iceAdd', { amount });
+          case 'poison_clear_self':
+            return this.i18n.t('grimoire.effects.poisonClearSelf');
+          case 'ice_clear_self':
+            return this.i18n.t('grimoire.effects.iceClearSelf');
           case 'opponent_discard_random':
             return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
           case 'reveal_opponent_hand':

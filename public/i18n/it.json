@@ -213,13 +213,13 @@
     "closeAria": "Chiudi il grimorio",
     "filterGroupAria": "Filtri e ordinamento",
     "filterElementAria": "Filtra per elemento",
-    "filterAllElements": "Tutti gli elementi",
     "sortAria": "Ordina per",
     "sortAlphaAsc": "Nome (A-Z)",
     "sortAlphaDesc": "Nome (Z-A)",
     "sortCostAsc": "Costo (crescente)",
     "sortCostDesc": "Costo (decrescente)",
     "filterCreatableOnly": "Solo creabili",
+    "filterFavoritesOnly": "Preferiti",
     "spellListAria": "Elenco incantesimi",
     "empty": "Nessun incantesimo.",
     "formulaAria": "Formula dell'incantesimo",
@@ -238,7 +238,9 @@
       "shieldAdd": "Aggiunge {amount} scudo.",
       "shieldRemoveOpponent": "Rimuove {amount} scudo all'avversario.",
       "poisonAdd": "Applica {amount} veleno all'avversario.",
-      "iceAdd": "Applica {amount} ghiaccio all'avversario.",
+      "iceAdd": "Applica congelamento {amount} volta/e all'avversario.",
+      "poisonClearSelf": "Rimuove tutto il veleno da te stesso.",
+      "iceClearSelf": "Rimuove tutte le carte Congelamento dalla tua pila degli scarti.",
       "opponentLoseMana": "L'avversario perde {amount} mana.",
       "opponentDiscardRandom": "L'avversario scarta {amount} carta dalla mano.",
       "revealOpponentHand": "Rivela la mano dell'avversario.",
@@ -358,6 +360,38 @@
       "name": "Proiettile terreno",
       "flavorText": "Un frammento di terra può sembrare innocuo, ma se lanciato con forza, può diventare un proiettile letale. La natura è potente e imprevedibile."
     },
+    "combustion": {
+      "name": "Combustione",
+      "flavorText": "Le fiamme si moltiplicano su loro stesse, in una spirale che si autoalimenta."
+    },
+    "inferno": {
+      "name": "Inferno",
+      "flavorText": "Non un semplice fuoco, ma un intero girone che si abbatte sul bersaglio."
+    },
+    "flood": {
+      "name": "Diluvio",
+      "flavorText": "Un'ondata che non lascia scampo, capace di travolgere qualunque difesa."
+    },
+    "drowning": {
+      "name": "Affogamento",
+      "flavorText": "L'acqua si stringe attorno al bersaglio come una morsa, senza lasciargli un solo respiro."
+    },
+    "whirlwind": {
+      "name": "Turbine",
+      "flavorText": "Una spirale d'aria che solleva tutto ciò che incontra, bersaglio compreso."
+    },
+    "tornado": {
+      "name": "Tornado",
+      "flavorText": "Una furia incontrollabile che spazza via ogni cosa sul proprio cammino."
+    },
+    "rockfall": {
+      "name": "Piccola frana",
+      "flavorText": "Una manciata di rocce cade dall'alto, quanto basta per far male."
+    },
+    "landslide": {
+      "name": "Frana",
+      "flavorText": "Un'intera parete di roccia si stacca e travolge tutto quello che trova."
+    },
     "starter_bolt": {
       "name": "Dardo incantato",
       "flavorText": "Il primo incantesimo che ogni mago impara — semplice, ma capace di lasciare il segno."
@@ -389,6 +423,34 @@
     "ice_age": {
       "name": "Zero assoluto",
       "flavorText": "Il tempo stesso sembra fermarsi: pochi istanti bastano per intrappolare il bersaglio in una morsa di ghiaccio eterno."
+    },
+    "protection": {
+      "name": "Protezione",
+      "flavorText": "Una scaglia di roccia infuocata si salda alla pelle, dura come una corazza."
+    },
+    "wall": {
+      "name": "Muro",
+      "flavorText": "Placche di roccia fusa si sollevano dal terreno, formando una barriera che nessun colpo comune riesce a scalfire."
+    },
+    "aegis": {
+      "name": "Egida",
+      "flavorText": "Una difesa leggendaria: la lava si fonde con la luce stessa, creando uno scudo che sembra impossibile da infrangere."
+    },
+    "lightning_bolt": {
+      "name": "Fulmine",
+      "flavorText": "Una scarica che non conosce ostacoli: nessuno scudo, per quanto solido, riesce a fermarla."
+    },
+    "black_flame": {
+      "name": "Fiamma nera",
+      "flavorText": "Una fiamma che arde di tenebra: brucia anche chi la evoca, ma il suo bersaglio la sente molto di più."
+    },
+    "heat": {
+      "name": "Calore",
+      "flavorText": "Un'ondata di calore pulito scioglie ogni traccia di ghiaccio ancora annidata tra i propri scarti."
+    },
+    "detox": {
+      "name": "Disintossicante",
+      "flavorText": "Un flusso di luce pura che spazza via ogni traccia di veleno dal corpo."
     }
   }
 }

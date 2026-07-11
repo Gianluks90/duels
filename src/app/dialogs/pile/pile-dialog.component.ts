@@ -55,9 +55,21 @@ export class PileDialogComponent {
 
     const deckRevealed = this.data.deckRevealed ?? true;
     return [
-      { subtitleKey: 'pileDialog.deckElements', cards: this.sortCards(deck.filter(c => c.tier !== 'spell')), revealed: deckRevealed },
-      { subtitleKey: 'pileDialog.deckSpells', cards: this.sortCards(deck.filter(c => c.tier === 'spell')), revealed: deckRevealed },
-      { subtitleKey: 'pileDialog.discard', cards: this.sortCards(this.data.discardCards), revealed: true },
+      {
+        subtitleKey: 'pileDialog.deckElements',
+        cards: this.sortCards(deck.filter((c) => c.tier !== 'spell')),
+        revealed: deckRevealed,
+      },
+      {
+        subtitleKey: 'pileDialog.deckSpells',
+        cards: this.sortCards(deck.filter((c) => c.tier === 'spell')),
+        revealed: deckRevealed,
+      },
+      {
+        subtitleKey: 'pileDialog.discard',
+        cards: this.sortCards(this.data.discardCards),
+        revealed: true,
+      },
     ];
   });
 
@@ -78,7 +90,7 @@ export class PileDialogComponent {
 
   private cardManaValue(card: Card): number {
     if (card.tier === 'spell') {
-      const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
+      const spell = SPELL_CATALOG.find((s) => s.id === card.spellId);
       return spell?.manaCost ?? 0;
     }
     return computePlayerMana([card]);
@@ -111,15 +123,18 @@ export class PileDialogComponent {
 
   /** Stessa formattazione completa di GrimoireDialogComponent.effectLabel (non la versione ridotta damage/heal di board.component.ts, spellEffectSummary) — include il testo elemento-consapevole del danno (1.4.2) e tutti gli SpellEffectType già coperti dal Grimorio. */
   protected spellEffectLabel(card: Card): string {
-    const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
+    const spell = SPELL_CATALOG.find((s) => s.id === card.spellId);
     if (!spell) return '';
     return spell.effects
-      .map(e => {
+      .map((e) => {
         const amount = e.amount ?? 1;
         switch (e.type) {
           case 'damage':
             return spell.element
-              ? this.i18n.t('grimoire.effects.damageElement', { amount, element: this.i18n.elementLabel(spell.element) })
+              ? this.i18n.t('grimoire.effects.damageElement', {
+                  amount,
+                  element: this.i18n.elementLabel(spell.element),
+                })
               : this.i18n.t('grimoire.effects.damage', { amount });
           case 'damage_ignore_shields':
             return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
@@ -135,6 +150,10 @@ export class PileDialogComponent {
             return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
             return this.i18n.t('grimoire.effects.iceAdd', { amount });
+          case 'poison_clear_self':
+            return this.i18n.t('grimoire.effects.poisonClearSelf');
+          case 'ice_clear_self':
+            return this.i18n.t('grimoire.effects.iceClearSelf');
           case 'opponent_discard_random':
             return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
           case 'reveal_opponent_hand':

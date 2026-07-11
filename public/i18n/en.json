@@ -207,13 +207,13 @@
     "closeAria": "Close the grimoire",
     "filterGroupAria": "Filters and sorting",
     "filterElementAria": "Filter by element",
-    "filterAllElements": "All elements",
     "sortAria": "Sort by",
     "sortAlphaAsc": "Name (A-Z)",
     "sortAlphaDesc": "Name (Z-A)",
     "sortCostAsc": "Cost (ascending)",
     "sortCostDesc": "Cost (descending)",
     "filterCreatableOnly": "Creatable only",
+    "filterFavoritesOnly": "Favorites only",
     "spellListAria": "Spell list",
     "empty": "No spells.",
     "formulaAria": "Spell formula",
@@ -233,6 +233,8 @@
       "shieldRemoveOpponent": "Removes {amount} shield from the opponent.",
       "poisonAdd": "Applies {amount} poison to the opponent.",
       "iceAdd": "Applies {amount} ice to the opponent.",
+      "poisonClearSelf": "Removes all poison from yourself.",
+      "iceClearSelf": "Removes all Freeze cards from your own discard pile.",
       "opponentLoseMana": "The opponent loses {amount} mana.",
       "opponentDiscardRandom": "The opponent discards {amount} card from their hand.",
       "revealOpponentHand": "Reveals the opponent's hand.",
@@ -352,6 +354,38 @@
       "name": "Earth Shard",
       "flavorText": "A shard of earth may seem harmless, but when thrown with force, it can become a deadly projectile. Nature is powerful and unpredictable."
     },
+    "combustion": {
+      "name": "Combustion",
+      "flavorText": "Flames multiply upon themselves, in a spiral that feeds on its own heat."
+    },
+    "inferno": {
+      "name": "Inferno",
+      "flavorText": "Not a simple fire, but an entire circle of hell crashing down on the target."
+    },
+    "flood": {
+      "name": "Flood",
+      "flavorText": "A wave that leaves no escape, capable of overwhelming any defense."
+    },
+    "drowning": {
+      "name": "Drowning",
+      "flavorText": "Water tightens around the target like a vice, without leaving a single breath."
+    },
+    "whirlwind": {
+      "name": "Whirlwind",
+      "flavorText": "A spiral of air that lifts everything in its path, target included."
+    },
+    "tornado": {
+      "name": "Tornado",
+      "flavorText": "An uncontrollable fury that sweeps away everything in its way."
+    },
+    "rockfall": {
+      "name": "Rockfall",
+      "flavorText": "A handful of rocks falls from above, just enough to hurt."
+    },
+    "landslide": {
+      "name": "Landslide",
+      "flavorText": "An entire rock face breaks away and crushes everything in its path."
+    },
     "starter_bolt": {
       "name": "Enchanted Bolt",
       "flavorText": "The first spell every mage learns — simple, yet capable of leaving a mark."
@@ -383,6 +417,34 @@
     "ice_age": {
       "name": "Ice Age",
       "flavorText": "Time itself seems to stop: it only takes a moment to trap the target in an eternal grip of ice."
+    },
+    "protection": {
+      "name": "Protection",
+      "flavorText": "A scale of fiery rock fuses to the skin, hard as armor."
+    },
+    "wall": {
+      "name": "Wall",
+      "flavorText": "Plates of molten rock rise from the ground, forming a barrier no ordinary blow can scratch."
+    },
+    "aegis": {
+      "name": "Aegis",
+      "flavorText": "A legendary defense: lava merges with light itself, forming a shield that seems impossible to break."
+    },
+    "lightning_bolt": {
+      "name": "Lightning Bolt",
+      "flavorText": "A bolt that knows no obstacle: no shield, however solid, can stop it."
+    },
+    "black_flame": {
+      "name": "Black Flame",
+      "flavorText": "A flame that burns with darkness: it scorches even the one who casts it, but its target feels it far more."
+    },
+    "heat": {
+      "name": "Heat",
+      "flavorText": "A wave of clean warmth melts away every last trace of ice still lurking among one's own discards."
+    },
+    "detox": {
+      "name": "Detox",
+      "flavorText": "A flow of pure light that sweeps away every trace of poison from the body."
     }
   }
 }

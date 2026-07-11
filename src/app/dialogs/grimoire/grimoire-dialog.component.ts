@@ -26,9 +26,16 @@ export interface GrimoireDialogData {
 // Residuo Arcano excluded on purpose — it's a wildcard, not an element, and no
 // spell formula involves it (for now).
 const FILTER_ELEMENTS: readonly Element[] = [
-  'fire', 'water', 'air', 'earth',
-  'thunder', 'ice', 'poison', 'lava',
-  'light', 'dark',
+  'fire',
+  'water',
+  'air',
+  'earth',
+  'thunder',
+  'ice',
+  'poison',
+  'lava',
+  'light',
+  'dark',
 ];
 
 type SortOption = 'alpha-asc' | 'alpha-desc' | 'cost-asc' | 'cost-desc';
@@ -47,19 +54,16 @@ export class GrimoireDialogComponent {
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly elementIconPath = elementIconPath;
+  protected readonly filterElements = FILTER_ELEMENTS;
 
   protected readonly selectedSpellId = signal<string>(SPELL_CATALOG[0]?.id ?? '');
   protected readonly creating = signal(false);
 
-  protected readonly elementFilter = signal<Element | null>(null);
+  /** Filtro elemento (5.1) — inclusivo/OR: una magia compare se la sua formula contiene ALMENO UNO degli elementi attivi (vedi filteredSpells sotto), non tutti. Set vuoto = nessun filtro, mostra tutto. */
+  protected readonly activeFilters = signal<ReadonlySet<Element>>(new Set());
   protected readonly sortOption = signal<SortOption>('alpha-asc');
   protected readonly onlyCreatable = signal(false);
-
-  /** Opzioni del select elemento (5.1 filtri) — "Tutti" in testa, poi FILTER_ELEMENTS con icona. Ricalcolato come computed (non una costante) così l'etichetta segue un eventuale cambio lingua a runtime. */
-  protected readonly elementFilterOptions = computed<SelectOption<Element | null>[]>(() => [
-    { value: null, label: this.i18n.t('grimoire.filterAllElements') },
-    ...FILTER_ELEMENTS.map(el => ({ value: el, label: this.i18n.elementLabel(el), icon: elementIconPath(el) })),
-  ]);
 
   protected readonly sortOptions = computed<SelectOption<SortOption>[]>(() => [
     { value: 'alpha-asc', label: this.i18n.t('grimoire.sortAlphaAsc') },
@@ -76,10 +80,13 @@ export class GrimoireDialogComponent {
   protected readonly totalSpellCount = SPELL_CATALOG.length;
 
   protected readonly filteredSpells = computed<Spell[]>(() => {
-    const el = this.elementFilter();
-    let list = el ? SPELL_CATALOG.filter(s => s.formula.includes(el)) : [...SPELL_CATALOG];
+    const active = this.activeFilters();
+    let list =
+      active.size === 0
+        ? [...SPELL_CATALOG]
+        : SPELL_CATALOG.filter((s) => s.formula.some((el) => active.has(el)));
 
-    if (this.onlyCreatable()) list = list.filter(s => this.creatable(s));
+    if (this.onlyCreatable()) list = list.filter((s) => this.creatable(s));
 
     const sort = this.sortOption();
     list.sort((a, b) => {
@@ -93,11 +100,16 @@ export class GrimoireDialogComponent {
   });
 
   protected readonly selectedSpell = computed<Spell | null>(
-    () => SPELL_CATALOG.find(s => s.id === this.selectedSpellId()) ?? null,
+    () => SPELL_CATALOG.find((s) => s.id === this.selectedSpellId()) ?? null,
   );
 
-  protected setElementFilter(element: Element | null): void {
-    this.elementFilter.set(element);
+  protected toggleFilter(element: Element): void {
+    this.activeFilters.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(element)) next.delete(element);
+      else next.add(element);
+      return next;
+    });
   }
 
   protected setSortOption(option: SortOption): void {
@@ -114,7 +126,7 @@ export class GrimoireDialogComponent {
 
   /** Posizione (1-based) della magia nel catalogo completo ordinato alfabeticamente — vedi bookOrder. */
   protected pageNumber(spell: Spell): number {
-    return this.bookOrder().findIndex(s => s.id === spell.id) + 1;
+    return this.bookOrder().findIndex((s) => s.id === spell.id) + 1;
   }
 
   /** Regolamento 5.1: hai gli elementi per produrre questa magia — solo possesso, non tiene conto di turno/fase (vedi canCreateSpell per quello). Sempre false per le magie a formula vuota (starter_bolt/starter_balm), mai creabili: seminate direttamente nel mazzo iniziale. */
@@ -152,12 +164,15 @@ export class GrimoireDialogComponent {
   /** Regolamento 1.4.2: quando la magia appartiene a un elemento (Spell.element — assente per gli incantesimi "neutri"), il danno inflitto lo indica nel testo stesso ("Infligge 1 danno da Fuoco...") invece che con un badge separato — è quel testo a determinare se l'asta di chi lo subisce dà resistenza/vulnerabilità. */
   protected effectLabel(spell: Spell): string {
     return spell.effects
-      .map(e => {
+      .map((e) => {
         const amount = e.amount ?? 1;
         switch (e.type) {
           case 'damage':
             return spell.element
-              ? this.i18n.t('grimoire.effects.damageElement', { amount, element: this.i18n.elementLabel(spell.element) })
+              ? this.i18n.t('grimoire.effects.damageElement', {
+                  amount,
+                  element: this.i18n.elementLabel(spell.element),
+                })
               : this.i18n.t('grimoire.effects.damage', { amount });
           case 'damage_ignore_shields':
             return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
@@ -173,6 +188,10 @@ export class GrimoireDialogComponent {
             return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
             return this.i18n.t('grimoire.effects.iceAdd', { amount });
+          case 'poison_clear_self':
+            return this.i18n.t('grimoire.effects.poisonClearSelf');
+          case 'ice_clear_self':
+            return this.i18n.t('grimoire.effects.iceClearSelf');
           case 'opponent_discard_random':
             return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
           case 'reveal_opponent_hand':

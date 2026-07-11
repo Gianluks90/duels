@@ -765,7 +765,13 @@ function applyBodyResistance(
   return amount;
 }
 
-/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'heal'/'poison_add'/'ice_add' per ora; gli altri ~13 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte — 'poison_add'/'ice_add' non ne beneficiano (i loro effetti veri arrivano più avanti, in fase Preparazione, non qui). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sul solo effetto 'damage' — 'heal'/'poison_add'/'ice_add' non sono mai elementali (asta, Veleno e Congelamento restano meccaniche indipendenti). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+/** Scudo (2.3.3): assorbe danno prima dei PS — l'eccedenza rispetto allo scudo disponibile passa a hp, lo scudo assorbito si consuma (mai sotto 0, mai oltre `amount`). Usata solo dal case 'damage' sotto — 'damage_ignore_shields' bypassa questa funzione apposta, va dritto a hp. */
+function absorbWithShield(shield: number, amount: number): { hpLoss: number; shieldLeft: number } {
+  const absorbed = Math.min(shield, Math.max(0, amount));
+  return { hpLoss: amount - absorbed, shieldLeft: shield - absorbed };
+}
+
+/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'heal'/'shield_add'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self' per ora; gli altri ~9 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage/damage_ignore_shields), altrimenti resta inerte — 'damage_self' non ne beneficia di proposito (vitale/caotico sono definiti solo per magie che curano/colpiscono l'avversario, non per il danno auto-inflitto), 'shield_add'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self' nemmeno (poison_add/ice_add: i loro effetti veri arrivano più avanti, in fase Preparazione, non qui). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno, ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — gli altri non sono mai elementali (asta, Veleno e Congelamento restano meccaniche indipendenti). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
 function applySpellEffect(
   state: GameState,
   casterRole: PlayerId,
@@ -777,12 +783,30 @@ function applySpellEffect(
   switch (effect.type) {
     case 'damage': {
       const opponent = state.players[opponentRole];
-      const amount = applyBodyResistance(
-        effect.amount ?? 0,
-        spellElement,
-        opponent.wand.bodySocket,
-      );
-      return updatePlayer(state, opponentRole, { hp: opponent.hp - amount - bonus.chaoticBonus });
+      const amount =
+        applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
+        bonus.chaoticBonus;
+      const { hpLoss, shieldLeft } = absorbWithShield(opponent.tokens.shield, amount);
+      return updatePlayer(state, opponentRole, {
+        hp: opponent.hp - hpLoss,
+        tokens: { ...opponent.tokens, shield: shieldLeft },
+      });
+    }
+    case 'damage_ignore_shields': {
+      const opponent = state.players[opponentRole];
+      const amount =
+        applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
+        bonus.chaoticBonus;
+      return updatePlayer(state, opponentRole, { hp: opponent.hp - amount });
+    }
+    case 'damage_self': {
+      const caster = state.players[casterRole];
+      const amount = applyBodyResistance(effect.amount ?? 0, spellElement, caster.wand.bodySocket);
+      const { hpLoss, shieldLeft } = absorbWithShield(caster.tokens.shield, amount);
+      return updatePlayer(state, casterRole, {
+        hp: caster.hp - hpLoss,
+        tokens: { ...caster.tokens, shield: shieldLeft },
+      });
     }
     case 'heal': {
       const caster = state.players[casterRole];
@@ -790,10 +814,16 @@ function applySpellEffect(
         hp: caster.hp + (effect.amount ?? 0) + bonus.vitalBonus,
       });
     }
+    case 'shield_add':
+      return applyShield(state, casterRole, effect.amount ?? 0);
     case 'poison_add':
       return applyPoison(state, opponentRole, effect.amount ?? 0);
+    case 'poison_clear_self':
+      return applyPoisonClear(state, casterRole);
     case 'ice_add':
       return applyFreeze(state, opponentRole, effect.amount ?? 0);
+    case 'ice_clear_self':
+      return applyIceClear(state, casterRole);
     default:
       return state;
   }
@@ -922,6 +952,30 @@ export function applyPoison(state: GameState, target: PlayerId, amount: number):
 }
 
 /**
+ * Disintossicazione (2.3.4): azzera il livello di Avvelenamento del bersaglio, qualunque esso sia —
+ * l'inverso di applyPoison. Chiamata da applySpellEffect per il tipo 'poison_clear_self', sempre col
+ * lanciatore stesso come target (una "cura di sé", mai sull'avversario).
+ */
+export function applyPoisonClear(state: GameState, target: PlayerId): GameState {
+  const player = state.players[target];
+  return updatePlayer(state, target, { tokens: { ...player.tokens, poison: 0 } });
+}
+
+/**
+ * Scudo (2.3.3): aumenta lo scudo del bersaglio, senza cap (a differenza del Veleno, il regolamento
+ * non fissa un tetto — Egida in SPELL_CATALOG ne dà già 5 in un colpo solo). Chiamata da
+ * applySpellEffect per il tipo 'shield_add' con target sempre il lanciatore stesso (protezione su di
+ * sé, mai sull'avversario) — il consumo (assorbimento del danno in arrivo) resta indipendente, vedi
+ * absorbWithShield sopra.
+ */
+export function applyShield(state: GameState, target: PlayerId, amount: number): GameState {
+  const player = state.players[target];
+  return updatePlayer(state, target, {
+    tokens: { ...player.tokens, shield: player.tokens.shield + amount },
+  });
+}
+
+/**
  * Congelamento (2.3.1): aggiunge `count` carte Congelamento (non-carte, tier 'freeze') agli scarti
  * del bersaglio — finiscono quindi nel suo mazzo alla prossima rimescolata. Chiamata da
  * applySpellEffect per il tipo 'ice_add' (frost/blizzard/ice_age in SPELL_CATALOG) — lo
@@ -938,4 +992,17 @@ export function applyFreeze(state: GameState, target: PlayerId, count: number): 
     expiresAt: 'preparazione',
   }));
   return updatePlayer(state, target, { discards: [...player.discards, ...freezeCards] });
+}
+
+/**
+ * Calore (2.3.1): rimuove tutte le carte Congelamento dalla pila degli scarti del bersaglio — solo
+ * da lì, non da mano/mazzo (una carta 'freeze' già in mano o già rimescolata nel mazzo si scioglie
+ * comunque al proprio turno in fase Preparazione, resolveExpiringCards; questo effetto previene
+ * solo le PROSSIME pescate dagli scarti attuali). Chiamata da applySpellEffect per il tipo
+ * 'ice_clear_self', sempre col lanciatore stesso come target (una "cura di sé", mai sull'avversario).
+ */
+export function applyIceClear(state: GameState, target: PlayerId): GameState {
+  const player = state.players[target];
+  const discards = player.discards.filter((c) => c.tier !== 'freeze');
+  return updatePlayer(state, target, { discards });
 }

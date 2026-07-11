@@ -14,12 +14,12 @@ export interface PendingSpell {
 }
 
 export interface PlayerTokens {
-  shield: number;  // 0–3
-  poison: number;  // 0–3
-  ice: number;     // 0–3
+  shield: number; // 0+, no cap (2.3.3 — unlike poison, the rulebook fixes no ceiling; applyShield in turn-engine.ts)
+  poison: number; // 0–3
+  ice: number; // 0–3
 }
 
-/** The vita bar's shape: current/max hp plus bonus effective hp from shield tokens (PlayerTokens.shield, 0–3). */
+/** The vita bar's shape: current/max hp plus bonus effective hp from shield tokens (PlayerTokens.shield, no cap — see the field's own comment). */
 export interface Health {
   max: number;
   current: number;
@@ -32,10 +32,10 @@ export interface PlayerState {
   wand: Wand;
 
   // Vita
-  hp: number;           // Punti Salute correnti, parte da 20 (regolamento v2, 1.3)
+  hp: number; // Punti Salute correnti, parte da 20 (regolamento v2, 1.3)
 
   // Carte
-  hand: Card[];         // max 5
+  hand: Card[]; // max 5
   deck: Card[];
   discards: Card[];
   /** Le 2 carte pescate in fase Raccolta, in attesa che il giocatore scelga quale tenere (regolamento 4.3). Persistito — non un semplice stato locale — così la scelta sopravvive a un mazzo appena rimescolato. */
@@ -51,7 +51,7 @@ export interface PlayerState {
 
   // Flag di turno (si azzerano a ogni turno)
   hasCollectedThisTurn: boolean;
-  spellsPlayedThisTurn: number;    // per Corpo Metallico
+  spellsPlayedThisTurn: number; // per Corpo Metallico
 
   /** Il turnNumber in cui la carta attualmente in wand.tipSlot è stata trattenuta (regolamento 1.4.1) — null se la punta è vuota. turnNumber incrementa una volta per turno di QUALSIASI giocatore, quindi i propri turni successivi sono sempre 2 numeri di distanza: se a fine turno questo valore non coincide più con GameState.turnNumber, la carta ha già passato un confine di turno e si consuma (vedi endTurn in turn-engine.ts). */
   tipCardPlacedTurn: number | null;
@@ -59,7 +59,7 @@ export interface PlayerState {
   tipHeldAtPreparation: boolean;
 
   // Effetti attivi
-  handRevealed: boolean;               // Occhio del Sole
+  handRevealed: boolean; // Occhio del Sole
   immuneToElement: BaseElement | null; // Abbraccio Radiante
 }
 
