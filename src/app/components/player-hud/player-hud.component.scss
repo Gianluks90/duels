@@ -55,7 +55,9 @@
   // Congelamento (2.3.1): texture di ghiaccio (quasi bianca di suo, da qui il velo azzurro) su
   // tutto il box — un ::after-like overlay ma come elemento reale (serve un proprio z-index sotto
   // __content, cosa che uno pseudo-elemento condividerebbe con quello già usato altrove per i bordi
-  // delle carte, non applicabile qui perché .hud non ne ha uno suo).
+  // delle carte, non applicabile qui perché .hud non ne ha uno suo). Mascherato con un gradiente
+  // radiale che sfuma al trasparente verso il centro — resta ghiaccio concentrato sui bordi del
+  // pannello invece di un velo azzurro piatto su tutto il box, meno invadente.
   &__frozen-overlay {
     position: absolute;
     inset: 0;
@@ -64,6 +66,8 @@
     background:
       linear-gradient(rgba(140, 190, 255, 0.3), rgba(140, 190, 255, 0.3)),
       url('/images/freeze.png') center / cover no-repeat;
+    -webkit-mask-image: radial-gradient(ellipse at center, transparent 20%, black 90%);
+    mask-image: radial-gradient(ellipse at center, transparent 20%, black 90%);
   }
 
   // Visually hidden but announced — per lo stato di Congelamento, comunicato altrimenti solo
@@ -109,8 +113,10 @@
     width: 14px;
     height: 14px;
     background-color: var(--text-heading);
-    mask: url('/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain no-repeat;
-    -webkit-mask: url('/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain no-repeat;
+    mask: url('/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    -webkit-mask: url('/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
   }
 
   &__identity {
@@ -286,13 +292,15 @@
 // Esplosione elementale (2.4) — durata di entrambe: 1000ms, in sync con DAMAGE_FLASH_DURATION_MS
 // (player-hud.component.ts). Top-level: le @keyframes non possono stare dentro un blocco &.
 @keyframes hp-damage-flash {
-  0%, 100% {
+  0%,
+  100% {
     filter: brightness(1);
     box-shadow:
       inset 0 2px 2px rgba(255, 255, 255, 0.4),
       inset 0 -3px 5px rgba(0, 0, 0, 0.55);
   }
-  15%, 45% {
+  15%,
+  45% {
     filter: brightness(1.9);
     box-shadow:
       inset 0 0 12px rgba(255, 255, 255, 0.9),

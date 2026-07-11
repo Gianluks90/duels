@@ -20,12 +20,24 @@
       "chaotic": "Caotico"
     },
     "turnPhases": {
-      "attesa": { "label": "Attesa", "description": "Attendi che l'avversario concluda il suo turno" },
-      "preparazione": { "label": "Preparazione", "description": "Vengono risolti alcuni effetti di inizio turno" },
+      "attesa": {
+        "label": "Attesa",
+        "description": "Attendi che l'avversario concluda il suo turno"
+      },
+      "preparazione": {
+        "label": "Preparazione",
+        "description": "Vengono risolti alcuni effetti di inizio turno"
+      },
       "raccolta": { "label": "Raccolta", "description": "Raccogli le risorse" },
       "azione": { "label": "Azione", "description": "Effettua delle azioni" },
-      "incantesimo": { "label": "Incantesimo", "description": "Vengono lanciati gli incantesimi selezionati" },
-      "fine": { "label": "Fine", "description": "Vengono risolti alcuni effetti di fine turno prima di concluderlo" }
+      "incantesimo": {
+        "label": "Incantesimo",
+        "description": "Vengono lanciati gli incantesimi selezionati"
+      },
+      "fine": {
+        "label": "Fine",
+        "description": "Vengono risolti alcuni effetti di fine turno prima di concluderlo"
+      }
     }
   },
 
@@ -40,6 +52,10 @@
     "manaToken": {
       "title": "Mana accumulato",
       "effect": "Un po' di potere magico da usare subito. Svanisce a fine turno."
+    },
+    "freeze": {
+      "title": "Congelamento",
+      "effect": "Questa carta non ha alcuna funzione se non quella di impedirti di pescare invece carte utili. Se pescata, si <em>scioglie</em> all'inizio del turno."
     }
   },
 
@@ -325,10 +341,9 @@
       "reauthRequired": "Per sicurezza, esci e accedi nuovamente prima di eliminare l'account."
     }
   },
-
   "spells": {
     "fire_bolt": {
-      "name": "Dardo di Fuoco",
+      "name": "Ustione leggera",
       "flavorText": "Evocare un Dardo di fuoco ti fa sentire proprio bene, senti il potere che fluisce dalle mani ed esplode ad una certa distanza. Emozionante!."
     },
     "water_lance": {
@@ -340,16 +355,16 @@
       "flavorText": "Non la sentirai nemmeno arrivare e quando ti colpirà, ti farà girare la testa e ti farà sentire come se fossi in un tornado."
     },
     "earth_shard": {
-      "name": "Frammento di Terra",
+      "name": "Proiettile terreno",
       "flavorText": "Un frammento di terra può sembrare innocuo, ma se lanciato con forza, può diventare un proiettile letale. La natura è potente e imprevedibile."
     },
     "starter_bolt": {
-      "name": "Scintilla Iniziale",
+      "name": "Dardo incantato",
       "flavorText": "Il primo incantesimo che ogni mago impara — semplice, ma capace di lasciare il segno."
     },
     "starter_balm": {
-      "name": "Balsamo Iniziale",
-      "flavorText": "Un rimedio antico, tramandato a ogni mago fin dal primo giorno di apprendistato."
+      "name": "Guarigione leggera",
+      "flavorText": "Un flusso di magia talmente pura da rinvigorire e chiudere blande ferite."
     },
     "spore": {
       "name": "Spore",
@@ -361,7 +376,19 @@
     },
     "pestilence": {
       "name": "Pestilenza",
-      "flavorText": "Quando il veleno incontra l'ombra, nasce qualcosa che nessun antidoto può fermare in tempo."
+      "flavorText": "Alcuni incantesimi sono talmente malvagi che lanciarli è quasi un crimine."
+    },
+    "frost": {
+      "name": "Freddo",
+      "flavorText": "Una sottile patina di ghiaccio si posa sulla pelle del bersaglio: basta un contatto per rallentarlo."
+    },
+    "blizzard": {
+      "name": "Brina",
+      "flavorText": "Un vento gelido che toglie il fiato — chi lo respira sente le membra irrigidirsi all'istante."
+    },
+    "ice_age": {
+      "name": "Zero assoluto",
+      "flavorText": "Il tempo stesso sembra fermarsi: pochi istanti bastano per intrappolare il bersaglio in una morsa di ghiaccio eterno."
     }
   }
 }

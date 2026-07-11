@@ -37,7 +37,8 @@
 }
 
 @keyframes card-flip {
-  0%, 100% {
+  0%,
+  100% {
     scale: 1 1;
   }
   50% {
@@ -75,6 +76,30 @@
 }
 
 .card__spell-icon {
+  width: 74%;
+  height: 74%;
+}
+
+// Congelamento (2.3.1): a differenza del placeholder incantesimo sopra, qui l'arte sotto è quella vera
+// dell'elemento (Ghiaccio) — il gettone si sovrappone soltanto, non la sostituisce. Stesso linguaggio
+// visivo di .card__spell-token (cerchio scuro centrato) così le due "carte senza mana" si leggono
+// come imparentate a colpo d'occhio.
+.card__freeze-token {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #212121;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card__freeze-icon {
   width: 74%;
   height: 74%;
 }
@@ -144,9 +169,15 @@
     mask: var(--special-mana-icon) center / contain no-repeat;
   }
 
-  &-prismatic { color: #d4a847; }
-  &-vital     { color: #4caf50; }
-  &-chaotic   { color: #d02f2f; }
+  &-prismatic {
+    color: #d4a847;
+  }
+  &-vital {
+    color: #4caf50;
+  }
+  &-chaotic {
+    color: #d02f2f;
+  }
 }
 
 .card__badge--element {
@@ -231,9 +262,15 @@
     mask: var(--special-mana-icon) center / contain no-repeat;
   }
 
-  &-prismatic { color: #d4a847; }
-  &-vital     { color: #4caf50; }
-  &-chaotic   { color: #d02f2f; }
+  &-prismatic {
+    color: #d4a847;
+  }
+  &-vital {
+    color: #4caf50;
+  }
+  &-chaotic {
+    color: #d02f2f;
+  }
 }
 
 // Stessa pillola scura dei gettoni mana/elemento (.card__header-token: sfondo scuro + ombra) invece

@@ -21,9 +21,12 @@ function updatePlayer(state: GameState, role: PlayerId, patch: Partial<PlayerSta
 }
 
 /** Il controllo sul tier evita che una carta non-base che riusa un elemento base solo per la propria arte (es. una carta incantesimo, vedi Card.spellId) venga scambiata per la base vera in una combinazione. */
-function removeOneByElement(cards: readonly Card[], element: BaseElement): { removed: Card | null; rest: Card[] } {
+function removeOneByElement(
+  cards: readonly Card[],
+  element: BaseElement,
+): { removed: Card | null; rest: Card[] } {
   const rest = [...cards];
-  const index = rest.findIndex(c => c.element === element && c.tier === 'base');
+  const index = rest.findIndex((c) => c.element === element && c.tier === 'base');
   if (index === -1) return { removed: null, rest };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
@@ -32,7 +35,8 @@ function removeOneByElement(cards: readonly Card[], element: BaseElement): { rem
 /** Tier del pool a cui appartiene un elemento — usata da createSpell per capire in quale mazzo/tier cercare ciascun ingrediente della formula (2.1: base, avanzato, potente sono pool separati, mai intercambiabili tra loro). */
 function elementTier(element: Element): CardTier {
   if (element === 'light' || element === 'dark') return 'superior';
-  if (element === 'thunder' || element === 'poison' || element === 'ice' || element === 'lava') return 'advanced';
+  if (element === 'thunder' || element === 'poison' || element === 'ice' || element === 'lava')
+    return 'advanced';
   return 'base';
 }
 
@@ -43,9 +47,13 @@ function elementTier(element: Element): CardTier {
  * Usata solo da createSpell per gli ingredienti di formula che non sono elementi base — per quelli
  * resta removeFromHandOrTip (jolly + punta della bacchetta inclusi).
  */
-function removeOneByElementExact(cards: readonly Card[], element: Element, tier: CardTier): { removed: Card | null; rest: Card[] } {
+function removeOneByElementExact(
+  cards: readonly Card[],
+  element: Element,
+  tier: CardTier,
+): { removed: Card | null; rest: Card[] } {
   const rest = [...cards];
-  const index = rest.findIndex(c => c.element === element && c.tier === tier);
+  const index = rest.findIndex((c) => c.element === element && c.tier === tier);
   if (index === -1) return { removed: null, rest };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
@@ -61,10 +69,18 @@ function removeOneByElementExact(cards: readonly Card[], element: Element, tier:
  * invece della preferenza automatica di sempre (base esatta prima, Residuo solo come ripiego). Se non
  * corrisponde a nessuna delle due, niente rimozione (nessun fallback silenzioso su un'altra carta).
  */
-function removeOneByElementOrResidue(cards: readonly Card[], element: BaseElement, chosenId?: string): { removed: Card | null; rest: Card[] } {
+function removeOneByElementOrResidue(
+  cards: readonly Card[],
+  element: BaseElement,
+  chosenId?: string,
+): { removed: Card | null; rest: Card[] } {
   if (chosenId !== undefined) {
     const rest = [...cards];
-    const index = rest.findIndex(c => c.id === chosenId && ((c.element === element && c.tier === 'base') || c.tier === 'residium'));
+    const index = rest.findIndex(
+      (c) =>
+        c.id === chosenId &&
+        ((c.element === element && c.tier === 'base') || c.tier === 'residium'),
+    );
     if (index === -1) return { removed: null, rest: [...cards] };
     const [removed] = rest.splice(index, 1);
     return { removed, rest };
@@ -74,7 +90,7 @@ function removeOneByElementOrResidue(cards: readonly Card[], element: BaseElemen
   if (exact.removed) return exact;
 
   const rest = [...cards];
-  const index = rest.findIndex(c => c.tier === 'residium');
+  const index = rest.findIndex((c) => c.tier === 'residium');
   if (index === -1) return { removed: null, rest: [...cards] };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
@@ -100,7 +116,7 @@ function removeFromHandOrTip(
   // `rest` di removeOneByElementOrResidue è calcolato sul pool combinato (hand+tip) — se a essere
   // rimossa è una carta di hand, `rest` conterrebbe ancora la carta della punta in coda, duplicandola
   // nella mano finale. Si filtra da `hand` direttamente, non da quel `rest`.
-  return { removed, hand: hand.filter(c => c.id !== removed.id), tipSlot };
+  return { removed, hand: hand.filter((c) => c.id !== removed.id), tipSlot };
 }
 
 /**
@@ -115,9 +131,9 @@ function removeFromHandOrTip(
  * serve aprire CombineDialogComponent prima di combinare.
  */
 export function combineNeedsChoice(hand: readonly Card[], element: BaseElement): boolean {
-  const exact = hand.filter(c => c.element === element && c.tier === 'base');
-  if (exact.length > 1 && exact.some(c => (c.manaBonus ?? 0) > 0 || !!c.specialMana)) return true;
-  return exact.length >= 1 && hand.some(c => c.tier === 'residium');
+  const exact = hand.filter((c) => c.element === element && c.tier === 'base');
+  if (exact.length > 1 && exact.some((c) => (c.manaBonus ?? 0) > 0 || !!c.specialMana)) return true;
+  return exact.length >= 1 && hand.some((c) => c.tier === 'residium');
 }
 
 /**
@@ -136,17 +152,17 @@ export function hasElements(hand: readonly Card[], elements: readonly Element[])
   for (const el of elements) {
     const tier = elementTier(el);
     if (tier === 'base') {
-      const exactIndex = pool.findIndex(c => c.element === el && c.tier === 'base');
+      const exactIndex = pool.findIndex((c) => c.element === el && c.tier === 'base');
       if (exactIndex !== -1) {
         pool.splice(exactIndex, 1);
         continue;
       }
-      const residueIndex = pool.findIndex(c => c.tier === 'residium');
+      const residueIndex = pool.findIndex((c) => c.tier === 'residium');
       if (residueIndex === -1) return false;
       pool.splice(residueIndex, 1);
       continue;
     }
-    const exactIndex = pool.findIndex(c => c.element === el && c.tier === tier);
+    const exactIndex = pool.findIndex((c) => c.element === el && c.tier === tier);
     if (exactIndex === -1) return false;
     pool.splice(exactIndex, 1);
   }
@@ -155,7 +171,7 @@ export function hasElements(hand: readonly Card[], elements: readonly Element[])
 
 /** Filtra dalla mano le carte "temporanee" (Card.expiresAt) che scadono alla fase indicata — sciolte o consumate, mai scartate (regolamento 2.3.1, 2.5). */
 function resolveExpiringCards(hand: readonly Card[], phase: ActiveTurnPhase): Card[] {
-  return hand.filter(card => card.expiresAt !== phase);
+  return hand.filter((card) => card.expiresAt !== phase);
 }
 
 /**
@@ -243,7 +259,10 @@ export function keepMana(state: GameState, role: PlayerId): GameState {
     expiresAt: 'fine',
   };
 
-  const withDiscards: GameState = { ...state, commonDiscards: [...state.commonDiscards, ...pending] };
+  const withDiscards: GameState = {
+    ...state,
+    commonDiscards: [...state.commonDiscards, ...pending],
+  };
   return updatePlayer(withDiscards, role, {
     hand: [...player.hand, manaCard],
     pendingCollect: null,
@@ -274,7 +293,7 @@ export function keepMana(state: GameState, role: PlayerId): GameState {
 export function createSpell(state: GameState, role: PlayerId, spellId: string): GameState {
   if (role !== state.currentTurn || state.phase !== 'azione') return state;
 
-  const spell = SPELL_CATALOG.find(s => s.id === spellId);
+  const spell = SPELL_CATALOG.find((s) => s.id === spellId);
   if (!spell || spell.formula.length === 0) return state;
 
   const player = state.players[role];
@@ -286,7 +305,11 @@ export function createSpell(state: GameState, role: PlayerId, spellId: string): 
     if (tier === 'base') {
       // Elemento base: stessa removeFromHandOrTip delle combinazioni — jolly Residuo Arcano (2.5) e
       // carta nella punta della bacchetta (1.4.1) inclusi.
-      const { removed, hand: nextHand, tipSlot: nextTip } = removeFromHandOrTip(hand, tipSlot, element as BaseElement);
+      const {
+        removed,
+        hand: nextHand,
+        tipSlot: nextTip,
+      } = removeFromHandOrTip(hand, tipSlot, element as BaseElement);
       if (!removed) return state;
       consumed.push(removed);
       hand = nextHand;
@@ -301,7 +324,7 @@ export function createSpell(state: GameState, role: PlayerId, spellId: string): 
     }
   }
 
-  const discardedCards = consumed.filter(c => c.tier !== 'residium');
+  const discardedCards = consumed.filter((c) => c.tier !== 'residium');
   const spellCard: Card = {
     id: `spell-${spellId}-${crypto.randomUUID()}`,
     tier: 'spell',
@@ -327,33 +350,46 @@ const SPECIAL_MANA_EFFECT_AMOUNT = 2;
  * valido, o le carte di pagamento indicate non coprono il costo (tier 'spell'/'freeze' esclusi dal
  * pagamento: non sono elementi, 3.1).
  */
-export function castSpell(state: GameState, role: PlayerId, spellCardId: string, paidCardIds: readonly string[]): GameState {
+export function castSpell(
+  state: GameState,
+  role: PlayerId,
+  spellCardId: string,
+  paidCardIds: readonly string[],
+): GameState {
   if (role !== state.currentTurn || state.phase !== 'azione') return state;
 
   const player = state.players[role];
-  const spellCard = player.hand.find(c => c.id === spellCardId && c.tier === 'spell');
+  const spellCard = player.hand.find((c) => c.id === spellCardId && c.tier === 'spell');
   if (!spellCard?.spellId) return state;
 
-  const spell = SPELL_CATALOG.find(s => s.id === spellCard.spellId);
+  const spell = SPELL_CATALOG.find((s) => s.id === spellCard.spellId);
   if (!spell) return state;
 
   // La carta trattenuta nella punta della bacchetta (1.4.1) conta come se fosse ancora in mano —
   // anche come mana pagabile qui.
   const tipCard = player.wand.tipSlot;
   const payablePool = tipCard ? [...player.hand, tipCard] : player.hand;
-  const paidCards = paidCardIds.map(id => payablePool.find(c => c.id === id)).filter((c): c is Card => !!c);
+  const paidCards = paidCardIds
+    .map((id) => payablePool.find((c) => c.id === id))
+    .filter((c): c is Card => !!c);
   if (paidCards.length !== paidCardIds.length) return state;
-  if (paidCards.some(c => c.tier === 'spell' || c.tier === 'freeze')) return state;
+  if (paidCards.some((c) => c.tier === 'spell' || c.tier === 'freeze')) return state;
   if (computePlayerMana(paidCards) < spell.manaCost) return state;
 
-  const vitalBonus = paidCards.filter(c => c.specialMana === 'vital').length * SPECIAL_MANA_EFFECT_AMOUNT;
-  const chaoticBonus = paidCards.filter(c => c.specialMana === 'chaotic').length * SPECIAL_MANA_EFFECT_AMOUNT;
+  const vitalBonus =
+    paidCards.filter((c) => c.specialMana === 'vital').length * SPECIAL_MANA_EFFECT_AMOUNT;
+  const chaoticBonus =
+    paidCards.filter((c) => c.specialMana === 'chaotic').length * SPECIAL_MANA_EFFECT_AMOUNT;
 
   const spentIds = new Set([spellCardId, ...paidCardIds]);
   const tipWasSpent = !!tipCard && spentIds.has(tipCard.id);
+  // Mana accumulato (1.4.3, tier 'mana'): svanisce sempre, usata o no (Card.expiresAt 'fine', vedi
+  // keepMana) — non finisce mai negli scarti, altrimenti sarebbe ripescabile in futuro, cosa che
+  // "svanire" non è. Stesso trattamento del Residuo Arcano in createSpell (discardedCards).
+  const discardedPaidCards = paidCards.filter((c) => c.tier !== 'mana');
   return updatePlayer(state, role, {
-    hand: player.hand.filter(c => !spentIds.has(c.id)),
-    discards: [...player.discards, ...paidCards],
+    hand: player.hand.filter((c) => !spentIds.has(c.id)),
+    discards: [...player.discards, ...discardedPaidCards],
     pendingSpells: [...player.pendingSpells, { card: spellCard, vitalBonus, chaoticBonus }],
     spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
     wand: tipWasSpent ? { ...player.wand, tipSlot: null } : player.wand,
@@ -378,11 +414,11 @@ export function holdAtTip(state: GameState, role: PlayerId, cardId: string): Gam
   const player = state.players[role];
   if (player.wand.tipSlot || player.tipHeldAtPreparation) return state;
 
-  const card = player.hand.find(c => c.id === cardId && c.tier === 'base');
+  const card = player.hand.find((c) => c.id === cardId && c.tier === 'base');
   if (!card) return state;
 
   return updatePlayer(state, role, {
-    hand: player.hand.filter(c => c.id !== cardId),
+    hand: player.hand.filter((c) => c.id !== cardId),
     wand: { ...player.wand, tipSlot: card },
     tipCardPlacedTurn: state.turnNumber,
   });
@@ -397,19 +433,24 @@ export function holdAtTip(state: GameState, role: PlayerId, cardId: string): Gam
  * è in mano con tier 'base', o lo slot richiesto è già occupato. Non considera la carta nella punta
  * della bacchetta (1.4.1): il bottone "Incastona" compare solo sulle carte del ventaglio in mano.
  */
-export function socketElement(state: GameState, role: PlayerId, cardId: string, target: 'body' | 'handle'): GameState {
+export function socketElement(
+  state: GameState,
+  role: PlayerId,
+  cardId: string,
+  target: 'body' | 'handle',
+): GameState {
   if (role !== state.currentTurn || state.phase !== 'azione') return state;
 
   const player = state.players[role];
   const socketField = target === 'body' ? 'bodySocket' : 'handleSocket';
   if (player.wand[socketField]) return state;
 
-  const card = player.hand.find(c => c.id === cardId && c.tier === 'base');
+  const card = player.hand.find((c) => c.id === cardId && c.tier === 'base');
   if (!card) return state;
 
   return {
     ...updatePlayer(state, role, {
-      hand: player.hand.filter(c => c.id !== cardId),
+      hand: player.hand.filter((c) => c.id !== cardId),
       wand: { ...player.wand, [socketField]: card.element },
     }),
     commonDiscards: [...state.commonDiscards, card],
@@ -423,11 +464,18 @@ export function socketElement(state: GameState, role: PlayerId, cardId: string, 
  * qualcosa non torna negli scarti). Condivisa da combineElements e combineSuperior, che differiscono
  * solo su quali/quante basi consumano dalla mano.
  */
-function takeFromFonte(state: GameState, fonteSlotIndex: number): { state: GameState; obtained: Card } | null {
+function takeFromFonte(
+  state: GameState,
+  fonteSlotIndex: number,
+): { state: GameState; obtained: Card } | null {
   const obtained = state.fonteElementale[fonteSlotIndex];
   if (!obtained) return null;
 
-  const { drawn, deck: advancedDeck, discards: advancedDiscards } = drawUpTo(state.advancedDeck, state.advancedDiscards, 1);
+  const {
+    drawn,
+    deck: advancedDeck,
+    discards: advancedDiscards,
+  } = drawUpTo(state.advancedDeck, state.advancedDiscards, 1);
   const replacement = drawn[0] ?? null;
 
   const fonteElementale = [...state.fonteElementale];
@@ -461,16 +509,27 @@ export function combineElements(
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
-  const { removed: cardA, hand: handAfterA, tipSlot: tipAfterA } = removeFromHandOrTip(player.hand, player.wand.tipSlot, a, chosenIds?.[a]);
+  const {
+    removed: cardA,
+    hand: handAfterA,
+    tipSlot: tipAfterA,
+  } = removeFromHandOrTip(player.hand, player.wand.tipSlot, a, chosenIds?.[a]);
   if (!cardA) return state;
-  const { removed: cardB, hand: handAfterB, tipSlot: tipAfterB } = removeFromHandOrTip(handAfterA, tipAfterA, b, chosenIds?.[b]);
+  const {
+    removed: cardB,
+    hand: handAfterB,
+    tipSlot: tipAfterB,
+  } = removeFromHandOrTip(handAfterA, tipAfterA, b, chosenIds?.[b]);
   if (!cardB) return state;
 
   const taken = takeFromFonte(state, fonteSlotIndex);
   if (!taken) return state;
 
-  const consumedBases = [cardA, cardB].filter(c => c.tier !== 'residium');
-  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
+  const consumedBases = [cardA, cardB].filter((c) => c.tier !== 'residium');
+  const withTable: GameState = {
+    ...taken.state,
+    commonDiscards: [...taken.state.commonDiscards, ...consumedBases],
+  };
   const withHand = updatePlayer(withTable, role, {
     hand: handAfterB,
     discards: [...player.discards, taken.obtained],
@@ -502,7 +561,11 @@ export function combineSuperior(
   let tipSlot = player.wand.tipSlot;
   const consumed: Card[] = [];
   for (const element of SUPERIOR_FORMULA) {
-    const { removed, hand: nextHand, tipSlot: nextTip } = removeFromHandOrTip(hand, tipSlot, element, chosenIds?.[element]);
+    const {
+      removed,
+      hand: nextHand,
+      tipSlot: nextTip,
+    } = removeFromHandOrTip(hand, tipSlot, element, chosenIds?.[element]);
     if (!removed) return state;
     consumed.push(removed);
     hand = nextHand;
@@ -512,8 +575,11 @@ export function combineSuperior(
   const taken = takeFromFonte(state, fonteSlotIndex);
   if (!taken) return state;
 
-  const consumedBases = consumed.filter(c => c.tier !== 'residium');
-  const withTable: GameState = { ...taken.state, commonDiscards: [...taken.state.commonDiscards, ...consumedBases] };
+  const consumedBases = consumed.filter((c) => c.tier !== 'residium');
+  const withTable: GameState = {
+    ...taken.state,
+    commonDiscards: [...taken.state.commonDiscards, ...consumedBases],
+  };
   const withHand = updatePlayer(withTable, role, {
     hand,
     discards: [...player.discards, taken.obtained],
@@ -547,15 +613,23 @@ export function combineResidue(
   if (role !== state.currentTurn) return state;
 
   const player = state.players[role];
-  const { removed: cardA, hand: handAfterA, tipSlot: tipAfterA } = removeFromHandOrTip(player.hand, player.wand.tipSlot, a, chosenIds?.[a]);
+  const {
+    removed: cardA,
+    hand: handAfterA,
+    tipSlot: tipAfterA,
+  } = removeFromHandOrTip(player.hand, player.wand.tipSlot, a, chosenIds?.[a]);
   if (!cardA) return state;
-  const { removed: cardB, hand: handAfterB, tipSlot: tipAfterB } = removeFromHandOrTip(handAfterA, tipAfterA, b, chosenIds?.[b]);
+  const {
+    removed: cardB,
+    hand: handAfterB,
+    tipSlot: tipAfterB,
+  } = removeFromHandOrTip(handAfterA, tipAfterA, b, chosenIds?.[b]);
   if (!cardB) return state;
 
   const [obtained, ...residiumDeck] = state.residiumDeck;
   if (!obtained) return state;
 
-  const consumedBases = [cardA, cardB].filter(c => c.tier !== 'residium');
+  const consumedBases = [cardA, cardB].filter((c) => c.tier !== 'residium');
   const withDeck: GameState = {
     ...state,
     residiumDeck,
@@ -577,7 +651,7 @@ export function combineResidue(
 export function advanceTurnPhase(state: GameState, role: PlayerId): GameState {
   if (role !== state.currentTurn) return state;
 
-  const playablePhases = TURN_PHASES.filter(p => p !== 'attesa');
+  const playablePhases = TURN_PHASES.filter((p) => p !== 'attesa');
   const currentIndex = playablePhases.indexOf(state.phase);
   const isLastPhase = currentIndex === playablePhases.length - 1;
 
@@ -603,7 +677,9 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   const tipExpired = !!player.wand.tipSlot && player.tipCardPlacedTurn !== state.turnNumber;
   const wand = tipExpired ? { ...player.wand, tipSlot: null } : player.wand;
   const tipCardPlacedTurn = tipExpired ? null : player.tipCardPlacedTurn;
-  const commonDiscardsAfterTip = tipExpired ? [...state.commonDiscards, player.wand.tipSlot!] : state.commonDiscards;
+  const commonDiscardsAfterTip = tipExpired
+    ? [...state.commonDiscards, player.wand.tipSlot!]
+    : state.commonDiscards;
 
   // Fase Finale (4.6): un Residuo Arcano ancora in mano a questo punto si consuma per sempre (2.5,
   // Card.expiresAt 'fine') — va escluso PRIMA dello scarto della mano, altrimenti finirebbe negli
@@ -613,7 +689,11 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   // Tutte le carte non utilizzate in mano si scartano (vanno negli scarti del proprio mazzo)
   // prima di pescare la mano fresca — se il mazzo si esaurisce, drawUpTo rimescola questi stessi
   // scarti nel mazzo (regolamento 1.7), il che riduce di 1 il livello di avvelenamento (2.3.4/1.7).
-  const { drawn, deck, discards, reshuffled } = drawUpTo(player.deck, [...player.discards, ...handAfterExpiry], HAND_SIZE);
+  const { drawn, deck, discards, reshuffled } = drawUpTo(
+    player.deck,
+    [...player.discards, ...handAfterExpiry],
+    HAND_SIZE,
+  );
   const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
 
   const stateWithCommonDiscards: GameState = { ...state, commonDiscards: commonDiscardsAfterTip };
@@ -674,14 +754,18 @@ function resolvePreparation(state: GameState, target: PlayerId): GameState {
  * separatamente in castSpell): quel bonus dipende dal tipo di carta usata per pagare, non
  * dall'elemento della magia.
  */
-function applyBodyResistance(amount: number, spellElement: BaseElement | undefined, targetBodySocket: BaseElement | null): number {
+function applyBodyResistance(
+  amount: number,
+  spellElement: BaseElement | undefined,
+  targetBodySocket: BaseElement | null,
+): number {
   if (!spellElement || !targetBodySocket) return amount;
   if (spellElement === targetBodySocket) return Math.max(0, amount - 1);
   if (spellElement === ELEMENT_OPPOSITES[targetBodySocket]) return amount + 1;
   return amount;
 }
 
-/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'heal'/'poison_add' per ora; gli altri ~14 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte — 'poison_add' non ne beneficia (il danno vero arriva più avanti, in fase Preparazione, non qui). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sul solo effetto 'damage' — 'heal'/'poison_add' non sono mai elementali (asta e Veleno restano meccaniche indipendenti). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'heal'/'poison_add'/'ice_add' per ora; gli altri ~13 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage), altrimenti resta inerte — 'poison_add'/'ice_add' non ne beneficiano (i loro effetti veri arrivano più avanti, in fase Preparazione, non qui). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sul solo effetto 'damage' — 'heal'/'poison_add'/'ice_add' non sono mai elementali (asta, Veleno e Congelamento restano meccaniche indipendenti). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
 function applySpellEffect(
   state: GameState,
   casterRole: PlayerId,
@@ -693,15 +777,23 @@ function applySpellEffect(
   switch (effect.type) {
     case 'damage': {
       const opponent = state.players[opponentRole];
-      const amount = applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket);
+      const amount = applyBodyResistance(
+        effect.amount ?? 0,
+        spellElement,
+        opponent.wand.bodySocket,
+      );
       return updatePlayer(state, opponentRole, { hp: opponent.hp - amount - bonus.chaoticBonus });
     }
     case 'heal': {
       const caster = state.players[casterRole];
-      return updatePlayer(state, casterRole, { hp: caster.hp + (effect.amount ?? 0) + bonus.vitalBonus });
+      return updatePlayer(state, casterRole, {
+        hp: caster.hp + (effect.amount ?? 0) + bonus.vitalBonus,
+      });
     }
     case 'poison_add':
       return applyPoison(state, opponentRole, effect.amount ?? 0);
+    case 'ice_add':
+      return applyFreeze(state, opponentRole, effect.amount ?? 0);
     default:
       return state;
   }
@@ -719,21 +811,25 @@ function resolveSpells(state: GameState, role: PlayerId): GameState {
 
   let next = state;
   for (const pending of player.pendingSpells) {
-    const spell = SPELL_CATALOG.find(s => s.id === pending.card.spellId);
+    const spell = SPELL_CATALOG.find((s) => s.id === pending.card.spellId);
     if (!spell) continue;
-    for (const effect of spell.effects) next = applySpellEffect(next, role, effect, pending, spell.element);
+    for (const effect of spell.effects)
+      next = applySpellEffect(next, role, effect, pending, spell.element);
   }
 
   const caster = next.players[role];
   return updatePlayer(next, role, {
-    discards: [...caster.discards, ...player.pendingSpells.map(p => p.card)],
+    discards: [...caster.discards, ...player.pendingSpells.map((p) => p.card)],
     pendingSpells: [],
   });
 }
 
-function extractOneByExactElement(cards: readonly Card[], element: Element): { removed: Card | null; rest: Card[] } {
+function extractOneByExactElement(
+  cards: readonly Card[],
+  element: Element,
+): { removed: Card | null; rest: Card[] } {
   const rest = [...cards];
-  const index = rest.findIndex(c => c.element === element);
+  const index = rest.findIndex((c) => c.element === element);
   if (index === -1) return { removed: null, rest };
   const [removed] = rest.splice(index, 1);
   return { removed, rest };
@@ -761,7 +857,10 @@ export function resolveElementalExplosions(state: GameState): GameState {
 
   for (const role of ['host', 'guest'] as const) {
     let player = next.players[role];
-    while (player.hand.some(c => c.element === 'light') && player.hand.some(c => c.element === 'dark')) {
+    while (
+      player.hand.some((c) => c.element === 'light') &&
+      player.hand.some((c) => c.element === 'dark')
+    ) {
       const { removed: light, rest: afterLight } = extractOneByExactElement(player.hand, 'light');
       const { removed: dark, rest: hand } = extractOneByExactElement(afterLight, 'dark');
       next = updatePlayer(next, role, { hand, hp: player.hp - 1 });
@@ -771,15 +870,24 @@ export function resolveElementalExplosions(state: GameState): GameState {
     }
   }
 
-  while (next.fonteElementale.some(c => c.element === 'light') && next.fonteElementale.some(c => c.element === 'dark')) {
-    const { removed: light, rest: afterLight } = extractOneByExactElement(next.fonteElementale, 'light');
+  while (
+    next.fonteElementale.some((c) => c.element === 'light') &&
+    next.fonteElementale.some((c) => c.element === 'dark')
+  ) {
+    const { removed: light, rest: afterLight } = extractOneByExactElement(
+      next.fonteElementale,
+      'light',
+    );
     const { removed: dark, rest: afterDark } = extractOneByExactElement(afterLight, 'dark');
 
     // 2.6: i 2 slot appena esplosi si rimpiazzano subito con 2 nuove carte pescate dal mazzo
     // avanzato (stessa pescata di takeFromFonte) — restano vuoti solo nel caso limite in cui anche
     // gli scarti del mazzo avanzato (già aggiornati con light/dark appena consumate) siano esauriti.
-    const { drawn: replacements, deck: advancedDeck, discards: advancedDiscards } =
-      drawUpTo(next.advancedDeck, [...next.advancedDiscards, light!, dark!], 2);
+    const {
+      drawn: replacements,
+      deck: advancedDeck,
+      discards: advancedDiscards,
+    } = drawUpTo(next.advancedDeck, [...next.advancedDiscards, light!, dark!], 2);
     const fonteElementale = [...afterDark, ...replacements];
 
     next = {
@@ -815,8 +923,10 @@ export function applyPoison(state: GameState, target: PlayerId, amount: number):
 
 /**
  * Congelamento (2.3.1): aggiunge `count` carte Congelamento (non-carte, tier 'freeze') agli scarti
- * del bersaglio — finiscono quindi nel suo mazzo alla prossima rimescolata. Pensata per essere
- * chiamata dagli incantesimi che lo applicano — non ancora implementati (vedi nota su applyPoison).
+ * del bersaglio — finiscono quindi nel suo mazzo alla prossima rimescolata. Chiamata da
+ * applySpellEffect per il tipo 'ice_add' (frost/blizzard/ice_age in SPELL_CATALOG) — lo
+ * scioglimento (fase Preparazione, Card.expiresAt 'preparazione') resta indipendente, agisce su
+ * qualunque carta 'freeze' pescata in mano a prescindere da come sia stata generata.
  */
 export function applyFreeze(state: GameState, target: PlayerId, count: number): GameState {
   if (count <= 0) return state;

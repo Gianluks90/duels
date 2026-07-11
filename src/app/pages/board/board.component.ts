@@ -21,19 +21,43 @@ import { GameEngineService } from '../../services/game-engine.service';
 import { AuthService } from '../../services/auth.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
-import { PlayerHudComponent, type DamageEvent } from '../../components/player-hud/player-hud.component';
+import {
+  PlayerHudComponent,
+  type DamageEvent,
+} from '../../components/player-hud/player-hud.component';
 import { PhaseTrackerComponent } from '../../components/phase-tracker/phase-tracker.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
-import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/action-menu/action-menu.component';
+import {
+  ActionMenuComponent,
+  type ActionMenuItem,
+} from '../../components/ui/action-menu/action-menu.component';
 import { GameSettingsDialogComponent } from '../../dialogs/game-settings/game-settings-dialog.component';
-import { GrimoireDialogComponent, type GrimoireDialogData } from '../../dialogs/grimoire/grimoire-dialog.component';
+import {
+  GrimoireDialogComponent,
+  type GrimoireDialogData,
+} from '../../dialogs/grimoire/grimoire-dialog.component';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
-import { CastSpellDialogComponent, type CastSpellDialogData } from '../../dialogs/cast-spell/cast-spell-dialog.component';
-import { CombineDialogComponent, type CombineDialogData } from '../../dialogs/combine/combine-dialog.component';
-import { SocketDialogComponent, type SocketDialogData, type SocketTarget } from '../../dialogs/socket/socket-dialog.component';
+import {
+  CastSpellDialogComponent,
+  type CastSpellDialogData,
+} from '../../dialogs/cast-spell/cast-spell-dialog.component';
+import {
+  CombineDialogComponent,
+  type CombineDialogData,
+} from '../../dialogs/combine/combine-dialog.component';
+import {
+  SocketDialogComponent,
+  type SocketDialogData,
+  type SocketTarget,
+} from '../../dialogs/socket/socket-dialog.component';
 import { PileDialogComponent, type PileDialogData } from '../../dialogs/pile/pile-dialog.component';
-import type { BaseElement, Element, AdvancedElement, SuperiorElement } from '../../models/element.model';
+import type {
+  BaseElement,
+  Element,
+  AdvancedElement,
+  SuperiorElement,
+} from '../../models/element.model';
 import { ADVANCED_RECIPES, ELEMENT_MANA, SUPERIOR_FORMULA } from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
@@ -113,7 +137,16 @@ interface HandExplosion {
   selector: 'app-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [CardComponent, DeckComponent, PlayerHudComponent, PhaseTrackerComponent, IconButtonComponent, TooltipDirective, ActionMenuComponent, TranslatePipe],
+  imports: [
+    CardComponent,
+    DeckComponent,
+    PlayerHudComponent,
+    PhaseTrackerComponent,
+    IconButtonComponent,
+    TooltipDirective,
+    ActionMenuComponent,
+    TranslatePipe,
+  ],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
 })
@@ -154,7 +187,8 @@ export class BoardComponent implements OnInit {
   protected readonly fonteGroupGap = FONTE_GROUP_GAP;
 
   protected readonly grimoireIcon = '/icons/book_2_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
-  protected readonly rulebookIcon = '/icons/question_mark_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly rulebookIcon =
+    '/icons/question_mark_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
   private readonly playerHandTrackRef = viewChild<ElementRef<HTMLElement>>('playerHandTrack');
   private readonly opponentHandTrackRef = viewChild<ElementRef<HTMLElement>>('opponentHandTrack');
@@ -195,7 +229,7 @@ export class BoardComponent implements OnInit {
   private damageEventFor(role: PlayerId | null): DamageEvent | null {
     const s = this.state();
     if (!s || !role) return null;
-    const amount = s.lastExplosions.filter(e => e.affectedRoles.includes(role)).length;
+    const amount = s.lastExplosions.filter((e) => e.affectedRoles.includes(role)).length;
     return amount > 0 ? { id: s.explosionBatchId, amount } : null;
   }
 
@@ -222,9 +256,13 @@ export class BoardComponent implements OnInit {
 
   protected readonly isPlayerTurn = computed(() => this.state()?.currentTurn === this.myRole());
   /** Nome di chi ha il turno in corso — mostrato dal tracker di fase centrale (unico, non duplicato per pannello). */
-  protected readonly turnPlayerName = computed(() => (this.isPlayerTurn() ? this.playerName() : this.opponentName()));
+  protected readonly turnPlayerName = computed(() =>
+    this.isPlayerTurn() ? this.playerName() : this.opponentName(),
+  );
   /** Azione è l'unica fase che non si auto-avanza mai da sola (l'effect nel costruttore gestisce le altre 4) — richiede sempre un input reale del giocatore. */
-  protected readonly canAdvancePhase = computed(() => this.isPlayerTurn() && this.state()?.phase === 'azione');
+  protected readonly canAdvancePhase = computed(
+    () => this.isPlayerTurn() && this.state()?.phase === 'azione',
+  );
 
   /** Incantesimi in coda del giocatore di turno (5.2) — pilota i puntini dorati sotto la fase Incantesimo nel tracker. Solo chi ha il turno può averne (si lanciano in Azione, si risolvono in modo sincrono al passaggio in Incantesimo — resolveSpells in turn-engine.ts — quindi non sopravvivono mai oltre la propria Azione). */
   protected readonly currentTurnPendingSpellsCount = computed(() => {
@@ -233,7 +271,9 @@ export class BoardComponent implements OnInit {
   });
 
   protected readonly opponentHandCount = computed(() => this.opponentState()?.hand.length ?? 0);
-  protected readonly fonteCards = computed<Element[]>(() => this.state()?.fonteElementale.map(c => c.element) ?? []);
+  protected readonly fonteCards = computed<Element[]>(
+    () => this.state()?.fonteElementale.map((c) => c.element) ?? [],
+  );
   /** Full Card objects (not just Element) so a card carrying a permanent bonus manico (regolamento 1.4.3) still shows its boosted mana value once drawn into hand. */
   protected readonly playerHand = computed<Card[]>(() => this.me()?.hand ?? []);
 
@@ -243,38 +283,75 @@ export class BoardComponent implements OnInit {
   protected readonly residuoDeckCount = computed(() => this.state()?.residiumDeck.length ?? 0);
 
   protected readonly advancedDeckCount = computed(() => this.state()?.advancedDeck.length ?? 0);
-  protected readonly advancedDiscardCount = computed(() => this.state()?.advancedDiscards.length ?? 0);
+  protected readonly advancedDiscardCount = computed(
+    () => this.state()?.advancedDiscards.length ?? 0,
+  );
   // Elementi avanzati/potenti non ricevono mai il bonus manico (solo le basi pescate dal mazzo comune, 1.4.3) — nessun topManaBonus qui.
-  protected readonly advancedDiscardTop = computed(() => this.topOf(this.state()?.advancedDiscards)?.element ?? null);
+  protected readonly advancedDiscardTop = computed(
+    () => this.topOf(this.state()?.advancedDiscards)?.element ?? null,
+  );
 
   protected readonly commonDeckCount = computed(() => this.state()?.commonDeck.length ?? 0);
   protected readonly commonDiscardCount = computed(() => this.state()?.commonDiscards.length ?? 0);
   private readonly commonDiscardTopCard = computed(() => this.topOf(this.state()?.commonDiscards));
-  protected readonly commonDiscardTop = computed(() => this.commonDiscardTopCard()?.element ?? null);
-  protected readonly commonDiscardTopManaBonus = computed(() => this.commonDiscardTopCard()?.manaBonus ?? 0);
+  protected readonly commonDiscardTop = computed(
+    () => this.commonDiscardTopCard()?.element ?? null,
+  );
+  protected readonly commonDiscardTopManaBonus = computed(
+    () => this.commonDiscardTopCard()?.manaBonus ?? 0,
+  );
   /** Mana speciale (3.2): come commonDiscardTopManaBonus, senza questo una carta speciale perde il badge non appena finisce in cima a una pila (stesso bug già visto col bonus manico). */
-  protected readonly commonDiscardTopSpecialMana = computed(() => this.commonDiscardTopCard()?.specialMana ?? null);
+  protected readonly commonDiscardTopSpecialMana = computed(
+    () => this.commonDiscardTopCard()?.specialMana ?? null,
+  );
 
   protected readonly playerDeckCount = computed(() => this.me()?.deck.length ?? 0);
   protected readonly playerDiscardCount = computed(() => this.me()?.discards.length ?? 0);
   private readonly playerDiscardTopCard = computed(() => this.topOf(this.me()?.discards));
-  protected readonly playerDiscardTop = computed(() => this.playerDiscardTopCard()?.element ?? null);
-  protected readonly playerDiscardTopManaBonus = computed(() => this.playerDiscardTopCard()?.manaBonus ?? 0);
-  protected readonly playerDiscardTopSpecialMana = computed(() => this.playerDiscardTopCard()?.specialMana ?? null);
+  protected readonly playerDiscardTop = computed(
+    () => this.playerDiscardTopCard()?.element ?? null,
+  );
+  protected readonly playerDiscardTopManaBonus = computed(
+    () => this.playerDiscardTopCard()?.manaBonus ?? 0,
+  );
+  protected readonly playerDiscardTopSpecialMana = computed(
+    () => this.playerDiscardTopCard()?.specialMana ?? null,
+  );
+  /** Congelamento (2.3.1): solo gli scarti personali possono averne in cima (applyFreeze in turn-engine.ts scrive solo lì, mai in commonDiscards/advancedDiscards) — senza questo il mazzo mostrerebbe l'arte 'ice' come un normale elemento avanzato, perdendo il tier 'freeze'. */
+  protected readonly playerDiscardTopFreeze = computed(
+    () => this.playerDiscardTopCard()?.tier === 'freeze',
+  );
 
   protected readonly opponentDeckCount = computed(() => this.opponentState()?.deck.length ?? 0);
-  protected readonly opponentDiscardCount = computed(() => this.opponentState()?.discards.length ?? 0);
-  private readonly opponentDiscardTopCard = computed(() => this.topOf(this.opponentState()?.discards));
-  protected readonly opponentDiscardTop = computed(() => this.opponentDiscardTopCard()?.element ?? null);
-  protected readonly opponentDiscardTopManaBonus = computed(() => this.opponentDiscardTopCard()?.manaBonus ?? 0);
-  protected readonly opponentDiscardTopSpecialMana = computed(() => this.opponentDiscardTopCard()?.specialMana ?? null);
+  protected readonly opponentDiscardCount = computed(
+    () => this.opponentState()?.discards.length ?? 0,
+  );
+  private readonly opponentDiscardTopCard = computed(() =>
+    this.topOf(this.opponentState()?.discards),
+  );
+  protected readonly opponentDiscardTop = computed(
+    () => this.opponentDiscardTopCard()?.element ?? null,
+  );
+  protected readonly opponentDiscardTopManaBonus = computed(
+    () => this.opponentDiscardTopCard()?.manaBonus ?? 0,
+  );
+  protected readonly opponentDiscardTopSpecialMana = computed(
+    () => this.opponentDiscardTopCard()?.specialMana ?? null,
+  );
+  protected readonly opponentDiscardTopFreeze = computed(
+    () => this.opponentDiscardTopCard()?.tier === 'freeze',
+  );
 
   /** Le 2 carte pescate dal mazzo comune in attesa di scelta — solo locale, nessuna scrittura su Firestore finché non si sceglie quale tenere (regolamento 4.3). */
   protected readonly pendingCollect = computed(() => this.me()?.pendingCollect ?? null);
   /** Id delle carte pescate il cui bonus manico (regolamento 1.4.3) è già stato rivelato in UI — il bonus è già risolto lato stato, ma resta nascosto un attimo per farlo notare (vedi l'effect nel costruttore). */
   protected readonly revealedBonusIds = signal<ReadonlySet<string>>(new Set());
-  protected readonly canCollect = computed(() =>
-    this.isPlayerTurn() && this.state()?.phase === 'raccolta' && !this.me()?.hasCollectedThisTurn && !this.pendingCollect(),
+  protected readonly canCollect = computed(
+    () =>
+      this.isPlayerTurn() &&
+      this.state()?.phase === 'raccolta' &&
+      !this.me()?.hasCollectedThisTurn &&
+      !this.pendingCollect(),
   );
 
   protected readonly playerName = computed(() => {
@@ -312,16 +389,16 @@ export class BoardComponent implements OnInit {
 
   protected readonly opponentWand = computed<Wand | null>(() => this.opponentState()?.wand ?? null);
 
-  protected readonly playerTip    = computed(() => this.playerWand()?.tipSlot ?? null);
-  protected readonly playerBody   = computed(() => this.playerWand()?.bodySocket ?? null);
+  protected readonly playerTip = computed(() => this.playerWand()?.tipSlot ?? null);
+  protected readonly playerBody = computed(() => this.playerWand()?.bodySocket ?? null);
   protected readonly playerHandle = computed(() => this.playerWand()?.handleSocket ?? null);
 
-  protected readonly opponentTip    = computed(() => this.opponentWand()?.tipSlot ?? null);
-  protected readonly opponentBody   = computed(() => this.opponentWand()?.bodySocket ?? null);
+  protected readonly opponentTip = computed(() => this.opponentWand()?.tipSlot ?? null);
+  protected readonly opponentBody = computed(() => this.opponentWand()?.bodySocket ?? null);
   protected readonly opponentHandle = computed(() => this.opponentWand()?.handleSocket ?? null);
 
   protected readonly opponentHandRange = computed(() =>
-    Array.from({ length: this.opponentHandCount() }, (_, i) => i)
+    Array.from({ length: this.opponentHandCount() }, (_, i) => i),
   );
 
   /** Evita di pianificare più volte lo stesso avanzamento automatico (l'effect sotto può rieseguire per motivi non correlati). */
@@ -342,11 +419,16 @@ export class BoardComponent implements OnInit {
   private readonly autoAdvanceReady = computed(() => {
     if (!this.isPlayerTurn()) return false;
     switch (this.state()?.phase) {
-      case 'preparazione': return true;
-      case 'raccolta': return !!this.me()?.hasCollectedThisTurn;
-      case 'incantesimo': return true;
-      case 'fine': return true;
-      default: return false;
+      case 'preparazione':
+        return true;
+      case 'raccolta':
+        return !!this.me()?.hasCollectedThisTurn;
+      case 'incantesimo':
+        return true;
+      case 'fine':
+        return true;
+      default:
+        return false;
     }
   });
 
@@ -359,7 +441,8 @@ export class BoardComponent implements OnInit {
   private readonly autoAdvanceDelayMs = computed(() => {
     const phase = this.state()?.phase;
     if (phase === 'preparazione') return 2000;
-    if (phase === 'fine' && (this.me()?.hand ?? []).some(card => card.expiresAt === 'fine')) return VANISH_DURATION_MS;
+    if (phase === 'fine' && (this.me()?.hand ?? []).some((card) => card.expiresAt === 'fine'))
+      return VANISH_DURATION_MS;
     return 500;
   });
 
@@ -388,8 +471,12 @@ export class BoardComponent implements OnInit {
   /** Evita di riprocessare due volte lo stesso batch nell'effect dedicato sotto. */
   private lastProcessedHandExplosionBatchId: number | null = null;
 
-  protected readonly playerHandExplosion = computed(() => this.handExplosions().find(e => e.role === this.myRole()) ?? null);
-  protected readonly opponentHandExplosion = computed(() => this.handExplosions().find(e => e.role === this.opponentRole()) ?? null);
+  protected readonly playerHandExplosion = computed(
+    () => this.handExplosions().find((e) => e.role === this.myRole()) ?? null,
+  );
+  protected readonly opponentHandExplosion = computed(
+    () => this.handExplosions().find((e) => e.role === this.opponentRole()) ?? null,
+  );
 
   /** true per la durata del lampo + scossa quando un'Esplosione elementale (2.4) avviene in Fonte Arcana (danneggia entrambi i giocatori, quindi non è legata a un ruolo). */
   protected readonly fonteExploding = signal(false);
@@ -448,14 +535,19 @@ export class BoardComponent implements OnInit {
       // del timer) arrivasse, facendo scambiare l'effect sotto la sparizione per una "sorpresa" e
       // ri-animarla da capo come ghost (il bug della doppia animazione appena osservato in gioco).
       if (s.phase === 'fine') {
-        const expiringIds = (this.me()?.hand ?? []).filter(card => card.expiresAt === 'fine').map(card => card.id);
+        const expiringIds = (this.me()?.hand ?? [])
+          .filter((card) => card.expiresAt === 'fine')
+          .map((card) => card.id);
         if (expiringIds.length > 0) {
-          this.vanishingCardIds.update(set => new Set([...set, ...expiringIds]));
+          this.vanishingCardIds.update((set) => new Set([...set, ...expiringIds]));
         }
       }
 
       const gameId = this.gameId();
-      const timer = setTimeout(() => void this.gameEngine.advancePhase(gameId, role), this.autoAdvanceDelayMs());
+      const timer = setTimeout(
+        () => void this.gameEngine.advancePhase(gameId, role),
+        this.autoAdvanceDelayMs(),
+      );
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
 
@@ -472,7 +564,7 @@ export class BoardComponent implements OnInit {
       this.lastKnownHand = current;
       if (previous.length === 0) return;
 
-      const currentIds = new Set(current.map(card => card.id));
+      const currentIds = new Set(current.map((card) => card.id));
       const goneWithIndex = previous
         .map((card, index) => ({ card, index }))
         .filter(({ card }) => !currentIds.has(card.id));
@@ -480,25 +572,34 @@ export class BoardComponent implements OnInit {
 
       const alreadyShown = this.vanishingCardIds();
 
-      const stillMarkedIds = goneWithIndex.filter(({ card }) => alreadyShown.has(card.id)).map(({ card }) => card.id);
+      const stillMarkedIds = goneWithIndex
+        .filter(({ card }) => alreadyShown.has(card.id))
+        .map(({ card }) => card.id);
       if (stillMarkedIds.length > 0) {
-        this.vanishingCardIds.update(set => {
+        this.vanishingCardIds.update((set) => {
           const next = new Set(set);
-          stillMarkedIds.forEach(id => next.delete(id));
+          stillMarkedIds.forEach((id) => next.delete(id));
           return next;
         });
       }
 
-      const surprises = goneWithIndex.filter(({ card }) => card.expiresAt && !alreadyShown.has(card.id));
+      const surprises = goneWithIndex.filter(
+        ({ card }) => card.expiresAt && !alreadyShown.has(card.id),
+      );
       if (surprises.length === 0) return;
 
       const total = previous.length;
-      const ghosts: VanishingGhost[] = surprises.map(({ card, index }) => ({ card, index, total, kind: 'expiry' as const }));
-      this.vanishingGhosts.update(list => [...list, ...ghosts]);
+      const ghosts: VanishingGhost[] = surprises.map(({ card, index }) => ({
+        card,
+        index,
+        total,
+        kind: 'expiry' as const,
+      }));
+      this.vanishingGhosts.update((list) => [...list, ...ghosts]);
 
       const ids = surprises.map(({ card }) => card.id);
       const timer = setTimeout(() => {
-        this.vanishingGhosts.update(list => list.filter(g => !ids.includes(g.card.id)));
+        this.vanishingGhosts.update((list) => list.filter((g) => !ids.includes(g.card.id)));
       }, VANISH_DURATION_MS);
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
@@ -514,10 +615,10 @@ export class BoardComponent implements OnInit {
       if (!s || s.explosionBatchId === this.lastProcessedHandExplosionBatchId) return;
       this.lastProcessedHandExplosionBatchId = s.explosionBatchId;
 
-      const events = s.lastExplosions.filter(e => e.location === 'hand');
+      const events = s.lastExplosions.filter((e) => e.location === 'hand');
       if (events.length === 0) return;
 
-      this.handExplosions.set(events.map(e => ({ role: e.affectedRoles[0], cards: e.cards })));
+      this.handExplosions.set(events.map((e) => ({ role: e.affectedRoles[0], cards: e.cards })));
       this.handExplosionRevealed.set(false);
 
       const revealTimer = setTimeout(() => this.handExplosionRevealed.set(true), 100);
@@ -537,7 +638,7 @@ export class BoardComponent implements OnInit {
       const s = this.state();
       if (!s || s.explosionBatchId === this.lastProcessedFonteExplosionBatchId) return;
       this.lastProcessedFonteExplosionBatchId = s.explosionBatchId;
-      if (!s.lastExplosions.some(e => e.location === 'fonte')) return;
+      if (!s.lastExplosions.some((e) => e.location === 'fonte')) return;
 
       this.fonteExploding.set(true);
       const timer = setTimeout(() => this.fonteExploding.set(false), FONTE_EXPLOSION_DURATION_MS);
@@ -616,7 +717,7 @@ export class BoardComponent implements OnInit {
       this.revealedBonusKey = key;
       this.revealedBonusIds.set(new Set());
 
-      const boosted = pair.filter(card => (card.manaBonus ?? 0) > 0).map(card => card.id);
+      const boosted = pair.filter((card) => (card.manaBonus ?? 0) > 0).map((card) => card.id);
       if (boosted.length === 0) return;
 
       const timer = setTimeout(() => this.revealedBonusIds.set(new Set(boosted)), 900);
@@ -624,7 +725,10 @@ export class BoardComponent implements OnInit {
     });
   }
 
-  private observeWidth(ref: ElementRef<HTMLElement> | undefined, target: WritableSignal<number>): void {
+  private observeWidth(
+    ref: ElementRef<HTMLElement> | undefined,
+    target: WritableSignal<number>,
+  ): void {
     const el = ref?.nativeElement;
     if (!el) return;
     target.set(el.clientWidth);
@@ -635,7 +739,12 @@ export class BoardComponent implements OnInit {
 
   /** Fans hand cards in a light arc: center card highest, outer cards dip lower and rotate outward.
    *  Overlap and arc width are computed from the live container width so any hand size fits without cards disappearing off-screen. */
-  protected handCardStyle(index: number, count: number, containerWidth: number, mirrored: boolean): Record<string, string> {
+  protected handCardStyle(
+    index: number,
+    count: number,
+    containerWidth: number,
+    mirrored: boolean,
+  ): Record<string, string> {
     const spacing = this.handSpacing(count, containerWidth);
     const fanWidth = HAND_ARC_CARD_WIDTH + (count - 1) * spacing;
     const startX = Math.max((containerWidth - fanWidth) / 2, 0);
@@ -669,7 +778,7 @@ export class BoardComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('gameId') ?? '';
     this.gameId.set(id);
 
-    const unsub = this.game.listenToGame(id, doc => {
+    const unsub = this.game.listenToGame(id, (doc) => {
       this.gameDoc.set(doc);
       if (doc?.status === 'finished') {
         unsub();
@@ -687,7 +796,8 @@ export class BoardComponent implements OnInit {
   /** Solo la formula ("Fuoco + Aria" per un avanzato, la formula fissa per un potente) — il nome e il valore in mana si mostrano a parte nel tooltip ricco della Fonte Arcana (board.component.html, ng-template #recipeTip). Stringa vuota per base/residium (mai il caso qui: fonteCards() contiene solo avanzati/potenti). */
   protected recipeFormula(el: Element): string {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
-    if (recipe) return `${this.i18n.elementLabel(recipe[0])} + ${this.i18n.elementLabel(recipe[1])}`;
+    if (recipe)
+      return `${this.i18n.elementLabel(recipe[0])} + ${this.i18n.elementLabel(recipe[1])}`;
     if (this.isSuperior(el)) return this.superiorFormulaLabel();
     return '';
   }
@@ -699,19 +809,28 @@ export class BoardComponent implements OnInit {
     const recipe = ADVANCED_RECIPES[el as AdvancedElement];
     if (recipe) {
       const [a, b] = recipe;
-      return [{
-        label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
-        action: () => this.combineAdvanced(slotIndex, a, b),
-        disabled: !this.hasAllBaseCards(recipe),
-      }];
+      return [
+        {
+          label: this.i18n.t('board.fonte.combineAction', {
+            a: this.i18n.elementLabel(a),
+            b: this.i18n.elementLabel(b),
+          }),
+          action: () => this.combineAdvanced(slotIndex, a, b),
+          disabled: !this.hasAllBaseCards(recipe),
+        },
+      ];
     }
 
     if (this.isSuperior(el)) {
-      return [{
-        label: this.i18n.t('board.fonte.combineActionSuperior', { formula: this.superiorFormulaLabel() }),
-        action: () => this.combineSuperior(slotIndex),
-        disabled: !this.hasAllBaseCards(SUPERIOR_FORMULA),
-      }];
+      return [
+        {
+          label: this.i18n.t('board.fonte.combineActionSuperior', {
+            formula: this.superiorFormulaLabel(),
+          }),
+          action: () => this.combineSuperior(slotIndex),
+          disabled: !this.hasAllBaseCards(SUPERIOR_FORMULA),
+        },
+      ];
     }
 
     return [];
@@ -719,11 +838,18 @@ export class BoardComponent implements OnInit {
 
   /** Regolamento 2.5: combina 2 elementi base opposti (o un Residuo al loro posto) per ottenerne uno nuovo dal pool condiviso. Niente voci fuori da Azione, o se il pool è già esaurito per il resto della partita. */
   protected residuoMenuItems(): ActionMenuItem[] {
-    if (!this.isPlayerTurn() || this.state()?.phase !== 'azione' || this.residuoDeckCount() === 0) return [];
+    if (!this.isPlayerTurn() || this.state()?.phase !== 'azione' || this.residuoDeckCount() === 0)
+      return [];
 
-    const pairs: ReadonlyArray<readonly [BaseElement, BaseElement]> = [['fire', 'water'], ['air', 'earth']];
+    const pairs: ReadonlyArray<readonly [BaseElement, BaseElement]> = [
+      ['fire', 'water'],
+      ['air', 'earth'],
+    ];
     return pairs.map(([a, b]) => ({
-      label: this.i18n.t('board.fonte.combineAction', { a: this.i18n.elementLabel(a), b: this.i18n.elementLabel(b) }),
+      label: this.i18n.t('board.fonte.combineAction', {
+        a: this.i18n.elementLabel(a),
+        b: this.i18n.elementLabel(b),
+      }),
       action: () => this.combineResidue(a, b),
       disabled: !this.hasAllBaseCards([a, b]),
     }));
@@ -734,18 +860,24 @@ export class BoardComponent implements OnInit {
     if (!this.isPlayerTurn() || this.state()?.phase !== 'azione') return [];
 
     if (card.tier === 'spell') {
-      const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
+      const spell = SPELL_CATALOG.find((s) => s.id === card.spellId);
       if (!spell) return [];
 
       // Include l'eventuale carta trattenuta nella punta della bacchetta (1.4.1) — conta come se
       // fosse ancora in mano, quindi anche come mana pagabile per un incantesimo.
       const tip = this.playerTip();
-      const payableHand = [...this.playerHand(), ...(tip ? [tip] : [])].filter(c => c.id !== card.id && c.tier !== 'spell' && c.tier !== 'freeze');
-      return [{
-        label: this.i18n.t('board.hand.castAction', { name: this.i18n.t(`spells.${spell.id}.name`) }),
-        action: () => this.openCastSpellDialog(card, payableHand),
-        disabled: computePlayerMana(payableHand) < spell.manaCost,
-      }];
+      const payableHand = [...this.playerHand(), ...(tip ? [tip] : [])].filter(
+        (c) => c.id !== card.id && c.tier !== 'spell' && c.tier !== 'freeze',
+      );
+      return [
+        {
+          label: this.i18n.t('board.hand.castAction', {
+            name: this.i18n.t(`spells.${spell.id}.name`),
+          }),
+          action: () => this.openCastSpellDialog(card, payableHand),
+          disabled: computePlayerMana(payableHand) < spell.manaCost,
+        },
+      ];
     }
 
     if (card.tier === 'base') {
@@ -771,15 +903,18 @@ export class BoardComponent implements OnInit {
     const role = this.myRole();
     if (!role) return;
 
-    this.dialog.open<string[] | undefined, CastSpellDialogData>(CastSpellDialogComponent, {
-      data: { spellCard: card, payableHand },
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    }).closed.subscribe(paidCardIds => {
-      if (paidCardIds?.length) void this.gameEngine.castSpell(this.gameId(), role, card.id, paidCardIds);
-    });
+    this.dialog
+      .open<string[] | undefined, CastSpellDialogData>(CastSpellDialogComponent, {
+        data: { spellCard: card, payableHand },
+        positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+        hasBackdrop: true,
+        backdropClass: 'dialog-backdrop',
+        panelClass: 'dialog-panel',
+      })
+      .closed.subscribe((paidCardIds) => {
+        if (paidCardIds?.length)
+          void this.gameEngine.castSpell(this.gameId(), role, card.id, paidCardIds);
+      });
   }
 
   /** Regolamento 1.4.1/4.4: trattiene una carta base dalla mano nella punta della bacchetta — l'animazione di uscita dalla mano riusa lo stesso meccanismo/aspetto del Residuo in scadenza (vedi VanishingGhost, kind 'toTip'), quella d'ingresso nel pannello punta è pilotata dall'effect su playerTip() nel costruttore (tipEntering). */
@@ -788,9 +923,12 @@ export class BoardComponent implements OnInit {
     if (!role) return;
 
     const total = this.playerHand().length;
-    this.vanishingGhosts.update(list => [...list, { card, index, total, kind: 'toTip' as const }]);
+    this.vanishingGhosts.update((list) => [
+      ...list,
+      { card, index, total, kind: 'toTip' as const },
+    ]);
     const timer = setTimeout(() => {
-      this.vanishingGhosts.update(list => list.filter(g => g.card.id !== card.id));
+      this.vanishingGhosts.update((list) => list.filter((g) => g.card.id !== card.id));
     }, VANISH_DURATION_MS);
     this.destroyRef.onDestroy(() => clearTimeout(timer));
 
@@ -802,24 +940,33 @@ export class BoardComponent implements OnInit {
     const role = this.myRole();
     if (!role) return;
 
-    this.dialog.open<SocketTarget | undefined, SocketDialogData>(SocketDialogComponent, {
-      data: { element: card.element as BaseElement, bodySocket: this.playerBody(), handleSocket: this.playerHandle() },
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    }).closed.subscribe(target => {
-      if (!target) return;
+    this.dialog
+      .open<SocketTarget | undefined, SocketDialogData>(SocketDialogComponent, {
+        data: {
+          element: card.element as BaseElement,
+          bodySocket: this.playerBody(),
+          handleSocket: this.playerHandle(),
+        },
+        positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+        hasBackdrop: true,
+        backdropClass: 'dialog-backdrop',
+        panelClass: 'dialog-panel',
+      })
+      .closed.subscribe((target) => {
+        if (!target) return;
 
-      const total = this.playerHand().length;
-      this.vanishingGhosts.update(list => [...list, { card, index, total, kind: 'toSocket' as const }]);
-      const timer = setTimeout(() => {
-        this.vanishingGhosts.update(list => list.filter(g => g.card.id !== card.id));
-      }, VANISH_DURATION_MS);
-      this.destroyRef.onDestroy(() => clearTimeout(timer));
+        const total = this.playerHand().length;
+        this.vanishingGhosts.update((list) => [
+          ...list,
+          { card, index, total, kind: 'toSocket' as const },
+        ]);
+        const timer = setTimeout(() => {
+          this.vanishingGhosts.update((list) => list.filter((g) => g.card.id !== card.id));
+        }, VANISH_DURATION_MS);
+        this.destroyRef.onDestroy(() => clearTimeout(timer));
 
-      void this.gameEngine.socketElement(this.gameId(), role, card.id, target);
-    });
+        void this.gameEngine.socketElement(this.gameId(), role, card.id, target);
+      });
   }
 
   /** Nome tradotto dell'incantesimo rappresentato da questa carta — stringa vuota se non è (più) una carta incantesimo valida. */
@@ -830,39 +977,44 @@ export class BoardComponent implements OnInit {
 
   /** Solo damage/heal — gli unici 2 SpellEffectType risolti oggi (vedi resolveSpells in turn-engine.ts). Riusa le stesse chiavi i18n del grimorio per restare coerente col testo mostrato lì. */
   protected spellEffectSummary(card: Card): string {
-    const spell = SPELL_CATALOG.find(s => s.id === card.spellId);
+    const spell = SPELL_CATALOG.find((s) => s.id === card.spellId);
     if (!spell) return '';
-    return spell.effects.map(e => {
-      const amount = e.amount ?? 1;
-      switch (e.type) {
-        case 'damage':
-          return spell.element
-            ? this.i18n.t('grimoire.effects.damageElement', { amount, element: this.i18n.elementLabel(spell.element) })
-            : this.i18n.t('grimoire.effects.damage', { amount });
-        case 'damage_ignore_shields':
-          return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
-        case 'damage_self':
-          return this.i18n.t('grimoire.effects.damageSelf', { amount });
-        case 'heal':
-          return this.i18n.t('grimoire.effects.heal', { amount });
-        case 'shield_add':
-          return this.i18n.t('grimoire.effects.shieldAdd', { amount });
-        case 'shield_remove_opponent':
-          return this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount });
-        case 'poison_add':
-          return this.i18n.t('grimoire.effects.poisonAdd', { amount });
-        case 'ice_add':
-          return this.i18n.t('grimoire.effects.iceAdd', { amount });
-        case 'opponent_discard_random':
-          return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
-        case 'reveal_opponent_hand':
-          return this.i18n.t('grimoire.effects.revealOpponentHand');
-        case 'fonte_reset':
-          return this.i18n.t('grimoire.effects.fonteReset');
-        default:
-          return e.type;
-      }
-    }).join(' ');
+    return spell.effects
+      .map((e) => {
+        const amount = e.amount ?? 1;
+        switch (e.type) {
+          case 'damage':
+            return spell.element
+              ? this.i18n.t('grimoire.effects.damageElement', {
+                  amount,
+                  element: this.i18n.elementLabel(spell.element),
+                })
+              : this.i18n.t('grimoire.effects.damage', { amount });
+          case 'damage_ignore_shields':
+            return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
+          case 'damage_self':
+            return this.i18n.t('grimoire.effects.damageSelf', { amount });
+          case 'heal':
+            return this.i18n.t('grimoire.effects.heal', { amount });
+          case 'shield_add':
+            return this.i18n.t('grimoire.effects.shieldAdd', { amount });
+          case 'shield_remove_opponent':
+            return this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount });
+          case 'poison_add':
+            return this.i18n.t('grimoire.effects.poisonAdd', { amount });
+          case 'ice_add':
+            return this.i18n.t('grimoire.effects.iceAdd', { amount });
+          case 'opponent_discard_random':
+            return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
+          case 'reveal_opponent_hand':
+            return this.i18n.t('grimoire.effects.revealOpponentHand');
+          case 'fonte_reset':
+            return this.i18n.t('grimoire.effects.fonteReset');
+          default:
+            return e.type;
+        }
+      })
+      .join(' ');
   }
 
   /** null se il dizionario non ha una voce flavorText per questo incantesimo (t() ricade sulla chiave grezza). */
@@ -905,7 +1057,7 @@ export class BoardComponent implements OnInit {
   }
 
   private superiorFormulaLabel(): string {
-    return SUPERIOR_FORMULA.map(el => this.i18n.elementLabel(el)).join(' + ');
+    return SUPERIOR_FORMULA.map((el) => this.i18n.elementLabel(el)).join(' + ');
   }
 
   protected onFonteHover(el: Element): void {
@@ -941,20 +1093,29 @@ export class BoardComponent implements OnInit {
     const tip = this.playerTip();
     // Esclude le carte magia (tier 'spell'): riusano un elemento base solo per la propria arte, non sono una base vera.
     // Include l'eventuale carta trattenuta nella punta della bacchetta (1.4.1): conta come se fosse ancora in mano.
-    const baseElements = hand.filter(c => c.tier === 'base').map(c => c.element).concat(tip ? [tip.element] : []);
-    const residuoCount = hand.filter(c => c.tier === 'residium').length;
+    const baseElements = hand
+      .filter((c) => c.tier === 'base')
+      .map((c) => c.element)
+      .concat(tip ? [tip.element] : []);
+    const residuoCount = hand.filter((c) => c.tier === 'residium').length;
 
     const requiredSets: ReadonlyArray<readonly BaseElement[]> =
-      recipe.kind === 'fixed' ? [recipe.pair] :
-      recipe.kind === 'superior' ? [SUPERIOR_FORMULA] :
-      [['fire', 'water'], ['air', 'earth']]; // 'opposite' (hover sul Residuo): le 2 coppie che possono produrne uno nuovo
+      recipe.kind === 'fixed'
+        ? [recipe.pair]
+        : recipe.kind === 'superior'
+          ? [SUPERIOR_FORMULA]
+          : [
+              ['fire', 'water'],
+              ['air', 'earth'],
+            ]; // 'opposite' (hover sul Residuo): le 2 coppie che possono produrne uno nuovo
 
     let best: 'gold' | 'blue' | null = null;
     for (const required of requiredSets) {
-      const missing = required.filter(e => !baseElements.includes(e)).length;
+      const missing = required.filter((e) => !baseElements.includes(e)).length;
       // Una base esatta è rilevante solo se fa parte di QUESTA formula; un Residuo lo è solo se serve
       // davvero a colmare un buco (altrimenti la formula si completa già senza toccarlo).
-      const relevant = card.tier === 'residium' ? missing > 0 : required.includes(card.element as BaseElement);
+      const relevant =
+        card.tier === 'residium' ? missing > 0 : required.includes(card.element as BaseElement);
       if (!relevant) continue;
 
       if (missing <= residuoCount) return 'gold'; // il massimo possibile, nessun bisogno di continuare
@@ -1008,20 +1169,26 @@ export class BoardComponent implements OnInit {
    * dialog vede ed esclude correttamente quella copia dalle altre righe, invece di lasciarla
    * contendere due elementi alla cieca.
    */
-  private async resolveCombineChoice(elements: readonly BaseElement[]): Promise<Partial<Record<BaseElement, string>> | null> {
+  private async resolveCombineChoice(
+    elements: readonly BaseElement[],
+  ): Promise<Partial<Record<BaseElement, string>> | null> {
     const tip = this.playerTip();
     // Include l'eventuale carta nella punta della bacchetta (1.4.1) — conta come se fosse ancora in
     // mano, sia per rilevare l'ambiguità sia come candidata scelta bile dentro CombineDialogComponent.
     const hand = tip ? [...this.playerHand(), tip] : this.playerHand();
-    const chosenAmbiguous = elements.filter(el => combineNeedsChoice(hand, el));
+    const chosenAmbiguous = elements.filter((el) => combineNeedsChoice(hand, el));
     if (chosenAmbiguous.length === 0) return {};
 
     const forcedResiduo = elements.filter(
-      el => !chosenAmbiguous.includes(el) && !hand.some(c => c.element === el && c.tier === 'base'),
+      (el) =>
+        !chosenAmbiguous.includes(el) && !hand.some((c) => c.element === el && c.tier === 'base'),
     );
     const ambiguous = [...chosenAmbiguous, ...forcedResiduo];
 
-    const ref = this.dialog.open<Partial<Record<BaseElement, string>> | undefined, CombineDialogData>(CombineDialogComponent, {
+    const ref = this.dialog.open<
+      Partial<Record<BaseElement, string>> | undefined,
+      CombineDialogData
+    >(CombineDialogComponent, {
       data: { elements: ambiguous, hand },
       positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       hasBackdrop: true,
@@ -1076,7 +1243,9 @@ export class BoardComponent implements OnInit {
 
   private hasFreezeCards(player: PlayerState | null | undefined): boolean {
     if (!player) return false;
-    return [...player.hand, ...player.deck, ...player.discards].some(card => card.tier === 'freeze');
+    return [...player.hand, ...player.deck, ...player.discards].some(
+      (card) => card.tier === 'freeze',
+    );
   }
 
   protected openGameSettings(): void {
@@ -1119,7 +1288,12 @@ export class BoardComponent implements OnInit {
   protected openOwnPileDialog(): void {
     const me = this.me();
     if (!me) return;
-    this.openPileDialog({ titleKey: 'pileDialog.ownTitle', deckCards: me.deck, discardCards: me.discards, deckRevealed: true });
+    this.openPileDialog({
+      titleKey: 'pileDialog.ownTitle',
+      deckCards: me.deck,
+      discardCards: me.discards,
+      deckRevealed: true,
+    });
   }
 
   /** Mazzo/scarti dell'avversario — il mazzo si mostra coperto (CardComponent [revealed]="false"), gli scarti restano sempre pubblici. */
@@ -1139,14 +1313,20 @@ export class BoardComponent implements OnInit {
   protected openCommonDiscardDialog(): void {
     const state = this.state();
     if (!state) return;
-    this.openPileDialog({ titleKey: 'pileDialog.commonDiscardTitle', discardCards: state.commonDiscards });
+    this.openPileDialog({
+      titleKey: 'pileDialog.commonDiscardTitle',
+      discardCards: state.commonDiscards,
+    });
   }
 
   /** Scarti del mazzo avanzato — pila generica, una sola riga. Stesso motivo di openCommonDiscardDialog per il mazzo avanzato coperto: mai cliccabile. */
   protected openAdvancedDiscardDialog(): void {
     const state = this.state();
     if (!state) return;
-    this.openPileDialog({ titleKey: 'pileDialog.advancedDiscardTitle', discardCards: state.advancedDiscards });
+    this.openPileDialog({
+      titleKey: 'pileDialog.advancedDiscardTitle',
+      discardCards: state.advancedDiscards,
+    });
   }
 
   private openPileDialog(data: PileDialogData): void {

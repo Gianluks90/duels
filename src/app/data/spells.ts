@@ -65,4 +65,25 @@ export const SPELL_CATALOG: Spell[] = [
     manaCost: 5,
     effects: [{ type: 'poison_add', amount: 3 }],
   },
+  // Congelamento (2.3.1): formule con l'elemento avanzato Ghiaccio come ingrediente — stessa
+  // assenza di Spell.element delle formule a Veleno sopra (BaseElement non copre gli elementi
+  // avanzati, e l'asta 1.4.2 non ha comunque un opposto definito per loro).
+  {
+    id: 'frost',
+    formula: ['ice', 'water'],
+    manaCost: 3,
+    effects: [{ type: 'ice_add', amount: 1 }],
+  },
+  {
+    id: 'blizzard',
+    formula: ['ice', 'ice'],
+    manaCost: 4,
+    effects: [{ type: 'ice_add', amount: 2 }],
+  },
+  {
+    id: 'ice_age',
+    formula: ['ice', 'ice', 'dark'],
+    manaCost: 5,
+    effects: [{ type: 'ice_add', amount: 3 }],
+  },
 ];

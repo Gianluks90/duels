@@ -1,4 +1,12 @@
-import { Component, ChangeDetectionStrategy, input, computed, inject, signal, effect } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  input,
+  computed,
+  inject,
+  signal,
+  effect,
+} from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import type { Element } from '../../models/element.model';
 import { elementImagePath, elementIconPath, ELEMENT_MANA } from '../../models/element.model';
@@ -24,43 +32,73 @@ const CARD_FLIP_HALF_MS = 150;
         </div>
       } @else {
         <img class="card__art" [ngSrc]="artSrc()" [alt]="label()" [priority]="priority()" fill />
-      }
-      @if (header()) {
-        <div class="card__header">
-          <div class="card__header-icons">
-            @if (showMana() && manaValue() > 0) {
-              <span class="card__header-token card__header-token--mana" [class.card__header-token--mana-cost]="!!spell()" [attr.aria-label]="manaAria()">{{ manaValue() }}</span>
-            }
-            @if (showMana() && specialMana(); as type) {
-              <span class="card__header-token card__header-token--special"
-                    [class.card__header-token--special-prismatic]="type === 'prismatic'"
-                    [class.card__header-token--special-vital]="type === 'vital'"
-                    [class.card__header-token--special-chaotic]="type === 'chaotic'"
-                    [style.--special-mana-icon]="specialManaIconUrl()"
-                    role="img" [attr.aria-label]="specialManaAria()"></span>
-            }
-            <span class="card__header-token card__header-token--element">
-              <img [src]="iconSrc()" alt="" aria-hidden="true" />
-            </span>
+        @if (freeze()) {
+          <!-- Congelamento (2.3.1): non-carta, nessun angolo/header — solo l'arte Ghiaccio (element='ice',
+               vedi applyFreeze in turn-engine.ts) con un gettone grosso centrato al posto del badge piccolo. -->
+          <div class="card__freeze-token" aria-hidden="true">
+            <img class="card__freeze-icon" [src]="iconSrc()" alt="" />
           </div>
-          <span class="card__header-label">{{ label() }}</span>
-        </div>
-      } @else {
-        @if (showMana() && manaValue() > 0) {
-          <span class="card__badge card__badge--mana" [class.card__badge--mana-cost]="!!spell()" [attr.aria-label]="manaAria()">{{ manaValue() }}</span>
         }
-        @if (showMana() && specialMana(); as type) {
-          <!-- Icona come maschera CSS (non un <img> a colore fisso): le SVG sorgente sono monocromatiche,
-               la maschera le ricolora con currentColor in base al tipo (vedi le classi -prismatic/-vital/-chaotic). -->
-          <span class="card__badge card__badge--special-mana"
-                [class.card__badge--special-mana-prismatic]="type === 'prismatic'"
-                [class.card__badge--special-mana-vital]="type === 'vital'"
-                [class.card__badge--special-mana-chaotic]="type === 'chaotic'"
-                [style.--special-mana-icon]="specialManaIconUrl()"
-                role="img" [attr.aria-label]="specialManaAria()"></span>
-        }
-        @if (!spell()) {
-          <img class="card__badge card__badge--element" [src]="iconSrc()" alt="" aria-hidden="true" />
+      }
+      @if (!freeze()) {
+        @if (header()) {
+          <div class="card__header">
+            <div class="card__header-icons">
+              @if (showMana() && manaValue() > 0) {
+                <span
+                  class="card__header-token card__header-token--mana"
+                  [class.card__header-token--mana-cost]="!!spell()"
+                  [attr.aria-label]="manaAria()"
+                  >{{ manaValue() }}</span
+                >
+              }
+              @if (showMana() && specialMana(); as type) {
+                <span
+                  class="card__header-token card__header-token--special"
+                  [class.card__header-token--special-prismatic]="type === 'prismatic'"
+                  [class.card__header-token--special-vital]="type === 'vital'"
+                  [class.card__header-token--special-chaotic]="type === 'chaotic'"
+                  [style.--special-mana-icon]="specialManaIconUrl()"
+                  role="img"
+                  [attr.aria-label]="specialManaAria()"
+                ></span>
+              }
+              <span class="card__header-token card__header-token--element">
+                <img [src]="iconSrc()" alt="" aria-hidden="true" />
+              </span>
+            </div>
+            <span class="card__header-label">{{ label() }}</span>
+          </div>
+        } @else {
+          @if (showMana() && manaValue() > 0) {
+            <span
+              class="card__badge card__badge--mana"
+              [class.card__badge--mana-cost]="!!spell()"
+              [attr.aria-label]="manaAria()"
+              >{{ manaValue() }}</span
+            >
+          }
+          @if (showMana() && specialMana(); as type) {
+            <!-- Icona come maschera CSS (non un <img> a colore fisso): le SVG sorgente sono monocromatiche,
+                 la maschera le ricolora con currentColor in base al tipo (vedi le classi -prismatic/-vital/-chaotic). -->
+            <span
+              class="card__badge card__badge--special-mana"
+              [class.card__badge--special-mana-prismatic]="type === 'prismatic'"
+              [class.card__badge--special-mana-vital]="type === 'vital'"
+              [class.card__badge--special-mana-chaotic]="type === 'chaotic'"
+              [style.--special-mana-icon]="specialManaIconUrl()"
+              role="img"
+              [attr.aria-label]="specialManaAria()"
+            ></span>
+          }
+          @if (!spell()) {
+            <img
+              class="card__badge card__badge--element"
+              [src]="iconSrc()"
+              alt=""
+              aria-hidden="true"
+            />
+          }
         }
       }
     } @else {
@@ -99,6 +137,8 @@ export class CardComponent {
   readonly spellId = input<string | null>(null);
   /** Mana speciale (regolamento 3.2) portato da questa carta — null per la stragrande maggioranza delle carte base. */
   readonly specialMana = input<SpecialMana | null>(null);
+  /** Carta Congelamento (Card.tier 'freeze', regolamento 2.3.1) — mostra un gettone grosso centrato con l'icona elemento al posto del badge d'angolo/header, sull'arte dell'elemento passato in element() (sempre 'ice', vedi applyFreeze). */
+  readonly freeze = input<boolean>(false);
 
   /** Placeholder temporaneo per tutte le carte incantesimo — nessuna arte dedicata per singola Spell ancora. */
   protected readonly spellIcon = '/icons/wand_stars_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
@@ -115,7 +155,7 @@ export class CardComponent {
   protected readonly iconSrc = computed(() => elementIconPath(this.element()));
   protected readonly spell = computed(() => {
     const id = this.spellId();
-    return id ? (SPELL_CATALOG.find(s => s.id === id) ?? null) : null;
+    return id ? (SPELL_CATALOG.find((s) => s.id === id) ?? null) : null;
   });
   protected readonly label = computed(() => {
     const spell = this.spell();
@@ -125,7 +165,9 @@ export class CardComponent {
     const spell = this.spell();
     return spell ? spell.manaCost : ELEMENT_MANA[this.element()] + this.manaBonus();
   });
-  protected readonly manaAria = computed(() => this.i18n.t('card.manaAria', { value: this.manaValue() }));
+  protected readonly manaAria = computed(() =>
+    this.i18n.t('card.manaAria', { value: this.manaValue() }),
+  );
   protected readonly specialManaIcon = computed(() => {
     const type = this.specialMana();
     return type ? specialManaIconPath(type) : null;
@@ -137,11 +179,13 @@ export class CardComponent {
   });
   protected readonly specialManaAria = computed(() => {
     const type = this.specialMana();
-    return type ? this.i18n.t('card.specialManaAria', { name: this.i18n.specialManaLabel(type) }) : '';
+    return type
+      ? this.i18n.t('card.specialManaAria', { name: this.i18n.specialManaLabel(type) })
+      : '';
   });
 
   constructor() {
-    effect(onCleanup => {
+    effect((onCleanup) => {
       const next = this.revealed();
       if (!this.hasRunOnce) {
         this.hasRunOnce = true;

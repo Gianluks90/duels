@@ -21,20 +21,49 @@ const MESSY_STACK_SIZE = 3;
     @if (count() > 0) {
       @if (!messy()) {
         @if (faceUp() && topElement(); as el) {
-          <app-card [element]="el" [manaBonus]="topManaBonus()" [specialMana]="topSpecialMana()" [size]="size()" />
+          <app-card
+            [element]="el"
+            [manaBonus]="topManaBonus()"
+            [specialMana]="topSpecialMana()"
+            [showMana]="!topFreeze()"
+            [freeze]="topFreeze()"
+            [size]="size()"
+          />
         } @else {
-          <div class="deck__back deck__back--stacked" [class.deck__back--no-border]="!showBorder()"
-               [style.width.px]="size()" [style.height.px]="height()" aria-hidden="true"></div>
+          <div
+            class="deck__back deck__back--stacked"
+            [class.deck__back--no-border]="!showBorder()"
+            [style.width.px]="size()"
+            [style.height.px]="height()"
+            aria-hidden="true"
+          ></div>
         }
       } @else {
         <div class="deck__stack" [style.width.px]="size()" [style.height.px]="height()">
           @for (i of backSlots(); track i) {
-            <div class="deck__back deck__back--layer" [style.transform]="rotation(i)" aria-hidden="true"></div>
+            <div
+              class="deck__back deck__back--layer"
+              [style.transform]="rotation(i)"
+              aria-hidden="true"
+            ></div>
           }
           @if (faceUp() && topElement(); as el) {
-            <app-card class="deck__top" [element]="el" [manaBonus]="topManaBonus()" [specialMana]="topSpecialMana()" [size]="size()" [style.transform]="rotation(backSlots().length)" />
+            <app-card
+              class="deck__top"
+              [element]="el"
+              [manaBonus]="topManaBonus()"
+              [specialMana]="topSpecialMana()"
+              [showMana]="!topFreeze()"
+              [freeze]="topFreeze()"
+              [size]="size()"
+              [style.transform]="rotation(backSlots().length)"
+            />
           } @else {
-            <div class="deck__back deck__back--layer" [style.transform]="rotation(backSlots().length)" aria-hidden="true"></div>
+            <div
+              class="deck__back deck__back--layer"
+              [style.transform]="rotation(backSlots().length)"
+              aria-hidden="true"
+            ></div>
           }
         </div>
       }
@@ -42,12 +71,20 @@ const MESSY_STACK_SIZE = 3;
       <!-- Spazio "fisico" per la pila vuota, invece del vuoto anonimo di prima — un riquadro vuoto
            delle stesse dimensioni di una carta; label/conteggio restano nel .deck__info sotto,
            come per "Base"/"Avanzato", così tutto si allinea sulla stessa riga. -->
-      <div class="deck__empty deck__empty--boxed" [style.width.px]="size()" [style.height.px]="height()"></div>
+      <div
+        class="deck__empty deck__empty--boxed"
+        [style.width.px]="size()"
+        [style.height.px]="height()"
+      ></div>
     } @else if (emptyPlaceholder() === 'boxed-text') {
       <!-- Come 'boxed', ma senza un .deck__info a parte a cui appoggiarsi (showLabel/showCount qui
            sono false) — testo centrato dentro il riquadro stesso, anche se il riquadro finisce per
            "uscire" dal contenitore della mano come già fa il mazzo personale. -->
-      <div class="deck__empty deck__empty--boxed" [style.width.px]="size()" [style.height.px]="height()">
+      <div
+        class="deck__empty deck__empty--boxed"
+        [style.width.px]="size()"
+        [style.height.px]="height()"
+      >
         @if (label(); as l) {
           <span class="deck__label">{{ l }}</span>
         }
@@ -64,7 +101,11 @@ const MESSY_STACK_SIZE = 3;
       </div>
     }
 
-    @if ((showLabel() || showCount()) && emptyPlaceholder() !== 'text' && emptyPlaceholder() !== 'boxed-text') {
+    @if (
+      (showLabel() || showCount()) &&
+      emptyPlaceholder() !== 'text' &&
+      emptyPlaceholder() !== 'boxed-text'
+    ) {
       <div class="deck__info">
         @if (showLabel() && label(); as l) {
           <span class="deck__label">{{ l }}</span>
@@ -89,6 +130,8 @@ export class DeckComponent {
   readonly topManaBonus = input<number>(0);
   /** Mana speciale (3.2) carried by that same top card, if any — same reasoning as topManaBonus: without it, a special-mana card silently loses its badge the moment it lands on top of a pile. */
   readonly topSpecialMana = input<SpecialMana | null>(null);
+  /** True when that same top card is a Congelamento non-carta (Card.tier 'freeze', regolamento 2.3.1) — without this it would show as a plain 'ice' element card (topElement is just the Element, tier is lost) instead of the freeze token look. */
+  readonly topFreeze = input<boolean>(false);
   /** Renders as a small, slightly scattered heap (a few rotated layers) instead of one neat stacked card — for discard piles. */
   readonly messy = input<boolean>(false);
   readonly label = input<string | null>(null);

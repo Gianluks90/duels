@@ -21,11 +21,17 @@
     },
     "turnPhases": {
       "attesa": { "label": "Waiting", "description": "Wait for your opponent to end their turn" },
-      "preparazione": { "label": "Preparation", "description": "Some start-of-turn effects are resolved" },
+      "preparazione": {
+        "label": "Preparation",
+        "description": "Some start-of-turn effects are resolved"
+      },
       "raccolta": { "label": "Collection", "description": "Collect your resources" },
       "azione": { "label": "Action", "description": "Take your actions" },
       "incantesimo": { "label": "Spell", "description": "The selected spells are cast" },
-      "fine": { "label": "End", "description": "Some end-of-turn effects are resolved before ending it" }
+      "fine": {
+        "label": "End",
+        "description": "Some end-of-turn effects are resolved before ending it"
+      }
     }
   },
 
@@ -40,6 +46,10 @@
     "manaToken": {
       "title": "Stored Mana",
       "effect": "A bit of magical power to use right away. Fades at the end of the turn."
+    },
+    "freeze": {
+      "title": "Freeze",
+      "effect": "This card has no purpose other than to keep you from drawing useful cards instead. If drawn, it <em>melts</em> at the start of the turn."
     }
   },
 
@@ -325,43 +335,54 @@
       "reauthRequired": "For security, sign out and sign in again before deleting your account."
     }
   },
-
   "spells": {
     "fire_bolt": {
-      "name": "Fire Bolt",
-      "flavorText": "Summoning a Fire Bolt feels really good — you can feel the power flowing from your hands as it bursts out at a distance. Exciting!"
+      "name": "Light Burn",
+      "flavorText": "Conjuring a fire bolt feels amazing: you can feel the power flowing from your hands and exploding at a distance. Exciting!"
     },
     "water_lance": {
-      "name": "Water Lance",
-      "flavorText": "Ever tried shooting a jet of water at great speed? You get the same effect as a saber strike, just a lot wetter."
+      "name": "Water Blade",
+      "flavorText": "Have you ever tried launching a jet of water at high speed? You get the same effect as a sword slash, but wetter."
     },
     "air_slash": {
       "name": "Air Slash",
-      "flavorText": "You won't even hear it coming, and when it hits you, it'll make your head spin like you're caught in a tornado."
+      "flavorText": "You won't even feel it coming, and when it hits, it will make your head spin like you're in a tornado."
     },
     "earth_shard": {
       "name": "Earth Shard",
-      "flavorText": "A shard of earth may look harmless, but thrown with enough force, it becomes a lethal projectile. Nature is powerful and unpredictable."
+      "flavorText": "A shard of earth may seem harmless, but when thrown with force, it can become a deadly projectile. Nature is powerful and unpredictable."
     },
     "starter_bolt": {
-      "name": "Starter Spark",
-      "flavorText": "The first spell every mage learns — simple, but still leaves a mark."
+      "name": "Enchanted Bolt",
+      "flavorText": "The first spell every mage learns — simple, yet capable of leaving a mark."
     },
     "starter_balm": {
-      "name": "Starter Balm",
-      "flavorText": "An ancient remedy, passed down to every mage since their first day of apprenticeship."
+      "name": "Light Healing",
+      "flavorText": "A flow of magic so pure it restores vigor and closes minor wounds."
     },
     "spore": {
       "name": "Spore",
-      "flavorText": "Tiny toxic spores drift on the air, silent and patient — it only takes a few breaths to take hold."
+      "flavorText": "Tiny toxic spores float in the air, silent and patient — just a few breaths are enough for them to take effect."
     },
     "toxin": {
       "name": "Toxin",
-      "flavorText": "A concentrated dose of pure poison: the kind of gift no opponent ever really appreciates."
+      "flavorText": "A concentrated dose of pure poison: the kind of gift no opponent truly appreciates."
     },
     "pestilence": {
       "name": "Pestilence",
-      "flavorText": "When poison meets shadow, something no antidote can stop in time is born."
+      "flavorText": "Some spells are so wicked that casting them is almost a crime."
+    },
+    "frost": {
+      "name": "Frost",
+      "flavorText": "A thin layer of ice settles on the target's skin — just a touch is enough to slow them down."
+    },
+    "blizzard": {
+      "name": "Bora",
+      "flavorText": "An icy wind that steals your breath — anyone caught in it feels their limbs stiffen instantly."
+    },
+    "ice_age": {
+      "name": "Ice Age",
+      "flavorText": "Time itself seems to stop: it only takes a moment to trap the target in an eternal grip of ice."
     }
   }
 }
