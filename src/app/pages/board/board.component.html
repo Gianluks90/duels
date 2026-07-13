@@ -48,6 +48,7 @@
             [topManaBonus]="opponentDiscardTopManaBonus()"
             [topSpecialMana]="opponentDiscardTopSpecialMana()"
             [topFreeze]="opponentDiscardTopFreeze()"
+            [topRevealedToOpponent]="opponentDiscardTopRevealed()"
             [messy]="true"
             [showLabel]="false"
             [showCount]="false"
@@ -64,12 +65,113 @@
         #opponentHandTrack
         [attr.aria-label]="'board.handAriaOpponent' | translate: { count: opponentHandCount() }"
       >
-        @for (i of opponentHandRange(); track i) {
-          <div
-            class="board__hand-card board__hand-card--back board__hand-card--mirrored"
-            [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
-            aria-hidden="true"
-          ></div>
+        @for (card of opponentHand(); track card.id; let i = $index) {
+          @if (card.revealedToOpponent) {
+            <!-- Occhio (5.x, Card.revealedToOpponent) — questa carta specifica è stata rivelata
+                 permanentemente: mostra la carta vera al posto del dorso generico, stessa posizione
+                 nel ventaglio di prima (handCardStyle non distingue dorso/carta vera, solo indice).
+                 Stessi 5 tooltip ricchi della propria mano (vedi playerHand più sotto) — qui
+                 revealedToOpponent è SEMPRE true (il ramo @else sotto copre il resto), quindi
+                 #cardTip include sempre #revealedTip, più uno tra spell/freeze/mana-token/
+                 specialMana se la carta è anche una di quelle. -->
+            <ng-template #spellTip>
+              <strong>{{ spellName(card) }}</strong>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
+              @if (spellFlavor(card); as flavor) {
+                <p class="rich-tooltip__flavor">
+                  <em>{{ flavor }}</em>
+                </p>
+              }
+            </ng-template>
+            <ng-template #specialManaTip>
+              <div class="rich-tooltip__header">
+                <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+                <span
+                  class="rich-tooltip__special-icon"
+                  [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
+                  [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                  [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                  [style.--special-mana-icon]="
+                    'url(' + specialManaIconPath(card.specialMana!) + ')'
+                  "
+                  aria-hidden="true"
+                ></span>
+              </div>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
+            </ng-template>
+            <ng-template #manaTokenTip>
+              <strong>{{ 'card.manaToken.title' | translate }}</strong>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
+            </ng-template>
+            <ng-template #freezeTip>
+              <strong>{{ 'card.freeze.title' | translate }}</strong>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect" [innerHTML]="'card.freeze.effect' | translate"></p>
+            </ng-template>
+            <ng-template #revealedTip>
+              <div class="rich-tooltip__header">
+                <strong>{{ 'card.revealed.title' | translate }}</strong>
+                <span
+                  class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                  [style.--special-mana-icon]="revealedIconUrl"
+                  aria-hidden="true"
+                ></span>
+              </div>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+            </ng-template>
+            <ng-template #cardTip>
+              @if (isMultiCardTooltip(card)) {
+                <div class="rich-tooltip__multi">
+                  @if (card.tier === 'spell') {
+                    <div class="rich-tooltip__multi-item">
+                      <ng-container [ngTemplateOutlet]="spellTip" />
+                    </div>
+                  } @else if (card.tier === 'mana') {
+                    <div class="rich-tooltip__multi-item">
+                      <ng-container [ngTemplateOutlet]="manaTokenTip" />
+                    </div>
+                  } @else if (card.tier === 'freeze') {
+                    <div class="rich-tooltip__multi-item">
+                      <ng-container [ngTemplateOutlet]="freezeTip" />
+                    </div>
+                  } @else if (card.specialMana) {
+                    <div class="rich-tooltip__multi-item">
+                      <ng-container [ngTemplateOutlet]="specialManaTip" />
+                    </div>
+                  }
+                  <div class="rich-tooltip__multi-item">
+                    <ng-container [ngTemplateOutlet]="revealedTip" />
+                  </div>
+                </div>
+              } @else {
+                <ng-container [ngTemplateOutlet]="revealedTip" />
+              }
+            </ng-template>
+            <app-card
+              class="board__hand-card board__hand-card--mirrored"
+              [element]="card.element"
+              [spellId]="card.spellId ?? null"
+              [manaBonus]="card.manaBonus ?? 0"
+              [specialMana]="card.specialMana ?? null"
+              [revealedToOpponent]="true"
+              [showMana]="card.tier !== 'freeze'"
+              [freeze]="card.tier === 'freeze'"
+              [size]="handArcCardWidth"
+              [appTooltip]="cardTip"
+              tooltipPosition="top"
+              [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
+            />
+          } @else {
+            <div
+              class="board__hand-card board__hand-card--back board__hand-card--mirrored"
+              [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
+              aria-hidden="true"
+            ></div>
+          }
         }
 
         <!-- Esplosione elementale (2.4) nella mano dell'avversario — le sue carte, altrimenti mai
@@ -386,14 +488,45 @@
               <hr class="rich-tooltip__rule" />
               <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
             </ng-template>
+            <!-- Occhio (5.x) — le carte pescate in Raccolta sono sempre tier 'base' (mai spell/freeze/
+                 mana), quindi l'unica combinazione possibile qui è con #specialManaTip sopra. -->
+            <ng-template #revealedTip>
+              <div class="rich-tooltip__header">
+                <strong>{{ 'card.revealed.title' | translate }}</strong>
+                <span
+                  class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                  [style.--special-mana-icon]="revealedIconUrl"
+                  aria-hidden="true"
+                ></span>
+              </div>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+            </ng-template>
+            <ng-template #collectCardTip>
+              @if (card.specialMana && card.revealedToOpponent) {
+                <div class="rich-tooltip__multi">
+                  <div class="rich-tooltip__multi-item">
+                    <ng-container [ngTemplateOutlet]="specialManaTip" />
+                  </div>
+                  <div class="rich-tooltip__multi-item">
+                    <ng-container [ngTemplateOutlet]="revealedTip" />
+                  </div>
+                </div>
+              } @else if (card.specialMana) {
+                <ng-container [ngTemplateOutlet]="specialManaTip" />
+              } @else if (card.revealedToOpponent) {
+                <ng-container [ngTemplateOutlet]="revealedTip" />
+              }
+            </ng-template>
             <button type="button" class="board__collect-card" (click)="keepCard(card)">
               <app-card
                 [element]="card.element"
                 [manaBonus]="collectCardManaBonus(card)"
                 [specialMana]="card.specialMana ?? null"
+                [revealedToOpponent]="card.revealedToOpponent ?? false"
                 [size]="handArcCardWidth"
                 [class.board__collect-card__art--bonus]="collectCardRevealing(card)"
-                [appTooltip]="card.specialMana ? specialManaTip : null"
+                [appTooltip]="card.specialMana || card.revealedToOpponent ? collectCardTip : null"
                 tooltipPosition="top"
               />
             </button>
@@ -523,6 +656,63 @@
             <hr class="rich-tooltip__rule" />
             <p class="rich-tooltip__effect" [innerHTML]="'card.freeze.effect' | translate"></p>
           </ng-template>
+          <!-- Occhio (5.x, Card.revealedToOpponent) — unico tra i tooltip qui sopra che può comparire
+               INSIEME a uno degli altri (una carta 'base' con mana speciale può anche essere stata
+               rivelata) invece che in alternativa: da qui in poi la scelta tra "uno solo" e "affiancati
+               in #cardTip sotto (isMultiCardTooltip). -->
+          <ng-template #revealedTip>
+            <div class="rich-tooltip__header">
+              <strong>{{ 'card.revealed.title' | translate }}</strong>
+              <span
+                class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                [style.--special-mana-icon]="revealedIconUrl"
+                aria-hidden="true"
+              ></span>
+            </div>
+            <hr class="rich-tooltip__rule" />
+            <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+          </ng-template>
+          <!-- Compone i tooltip sopra secondo cardTooltipFlags/isMultiCardTooltip (board.component.ts):
+               uno solo di spell/freeze/mana-token/specialMana può valere per una data carta (il tier è
+               uno solo, specialMana esiste solo su 'base'), revealedToOpponent può aggiungersi a
+               qualunque di essi — in quel caso i blocchi si affiancano in #rich-tooltip__multi invece
+               che sceglierne uno solo. -->
+          <ng-template #cardTip>
+            @if (isMultiCardTooltip(card)) {
+              <div class="rich-tooltip__multi">
+                @if (card.tier === 'spell') {
+                  <div class="rich-tooltip__multi-item">
+                    <ng-container [ngTemplateOutlet]="spellTip" />
+                  </div>
+                } @else if (card.tier === 'mana') {
+                  <div class="rich-tooltip__multi-item">
+                    <ng-container [ngTemplateOutlet]="manaTokenTip" />
+                  </div>
+                } @else if (card.tier === 'freeze') {
+                  <div class="rich-tooltip__multi-item">
+                    <ng-container [ngTemplateOutlet]="freezeTip" />
+                  </div>
+                } @else if (card.specialMana) {
+                  <div class="rich-tooltip__multi-item">
+                    <ng-container [ngTemplateOutlet]="specialManaTip" />
+                  </div>
+                }
+                <div class="rich-tooltip__multi-item">
+                  <ng-container [ngTemplateOutlet]="revealedTip" />
+                </div>
+              </div>
+            } @else if (card.tier === 'spell') {
+              <ng-container [ngTemplateOutlet]="spellTip" />
+            } @else if (card.tier === 'mana') {
+              <ng-container [ngTemplateOutlet]="manaTokenTip" />
+            } @else if (card.tier === 'freeze') {
+              <ng-container [ngTemplateOutlet]="freezeTip" />
+            } @else if (card.specialMana) {
+              <ng-container [ngTemplateOutlet]="specialManaTip" />
+            } @else if (card.revealedToOpponent) {
+              <ng-container [ngTemplateOutlet]="revealedTip" />
+            }
+          </ng-template>
           <app-action-menu [items]="handCardMenuItems(card, $index)">
             <app-card
               class="board__hand-card"
@@ -530,6 +720,7 @@
               [spellId]="card.spellId ?? null"
               [manaBonus]="card.manaBonus ?? 0"
               [specialMana]="card.specialMana ?? null"
+              [revealedToOpponent]="card.revealedToOpponent ?? false"
               [showMana]="card.tier !== 'freeze'"
               [freeze]="card.tier === 'freeze'"
               [size]="handArcCardWidth"
@@ -537,17 +728,7 @@
               [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
               [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
               [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
-              [appTooltip]="
-                card.tier === 'spell'
-                  ? spellTip
-                  : card.tier === 'mana'
-                    ? manaTokenTip
-                    : card.tier === 'freeze'
-                      ? freezeTip
-                      : card.specialMana
-                        ? specialManaTip
-                        : null
-              "
+              [appTooltip]="hasCardTooltip(card) ? cardTip : null"
               tooltipPosition="top"
               [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)"
             />
@@ -602,6 +783,7 @@
             [topManaBonus]="playerDiscardTopManaBonus()"
             [topSpecialMana]="playerDiscardTopSpecialMana()"
             [topFreeze]="playerDiscardTopFreeze()"
+            [topRevealedToOpponent]="playerDiscardTopRevealed()"
             [messy]="true"
             [showLabel]="false"
             [showCount]="false"

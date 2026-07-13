@@ -70,28 +70,63 @@
                     [innerHTML]="'card.freeze.effect' | translate"
                   ></p>
                 </ng-template>
+                <!-- Occhio (5.x) — stesso schema di board.component.html (#revealedTip), unico che può
+                     comparire insieme a uno degli altri invece che in alternativa (#cardTip sotto). -->
+                <ng-template #revealedTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ 'card.revealed.title' | translate }}</strong>
+                    <span
+                      class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                      [style.--special-mana-icon]="revealedIconUrl"
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+                </ng-template>
+                <ng-template #cardTip>
+                  @if (isMultiCardTooltip(card)) {
+                    <div class="rich-tooltip__multi">
+                      @if (card.tier === 'spell') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="spellTip" />
+                        </div>
+                      } @else if (card.tier === 'freeze') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="freezeTip" />
+                        </div>
+                      } @else if (card.specialMana) {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="specialManaTip" />
+                        </div>
+                      }
+                      <div class="rich-tooltip__multi-item">
+                        <ng-container [ngTemplateOutlet]="revealedTip" />
+                      </div>
+                    </div>
+                  } @else if (card.tier === 'spell') {
+                    <ng-container [ngTemplateOutlet]="spellTip" />
+                  } @else if (card.tier === 'freeze') {
+                    <ng-container [ngTemplateOutlet]="freezeTip" />
+                  } @else if (card.specialMana) {
+                    <ng-container [ngTemplateOutlet]="specialManaTip" />
+                  } @else if (card.revealedToOpponent) {
+                    <ng-container [ngTemplateOutlet]="revealedTip" />
+                  }
+                </ng-template>
                 <app-card
                   class="pile-dialog__fan-card"
                   [element]="card.element"
                   [spellId]="card.spellId ?? null"
                   [manaBonus]="card.manaBonus ?? 0"
                   [specialMana]="card.specialMana ?? null"
+                  [revealedToOpponent]="card.revealedToOpponent ?? false"
                   [showMana]="card.tier !== 'freeze'"
                   [freeze]="card.tier === 'freeze'"
                   [revealed]="row.revealed"
                   [size]="80"
                   [style.z-index]="cardIndex"
-                  [appTooltip]="
-                    !row.revealed
-                      ? null
-                      : card.tier === 'spell'
-                        ? spellTip
-                        : card.tier === 'freeze'
-                          ? freezeTip
-                          : card.specialMana
-                            ? specialManaTip
-                            : null
-                  "
+                  [appTooltip]="row.revealed && hasCardTooltip(card) ? cardTip : null"
                   tooltipPosition="top"
                 />
               }

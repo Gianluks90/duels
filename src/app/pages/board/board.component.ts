@@ -12,6 +12,7 @@ import {
   afterNextRender,
   type WritableSignal,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
@@ -41,6 +42,7 @@ import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.
 import {
   CastSpellDialogComponent,
   type CastSpellDialogData,
+  type CastSpellDialogResult,
 } from '../../dialogs/cast-spell/cast-spell-dialog.component';
 import {
   CombineDialogComponent,
@@ -62,7 +64,7 @@ import { ADVANCED_RECIPES, ELEMENT_MANA, SUPERIOR_FORMULA } from '../../models/e
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { Card, SpecialMana } from '../../models/card.model';
-import { specialManaIconPath } from '../../models/card.model';
+import { specialManaIconPath, REVEALED_ICON } from '../../models/card.model';
 import type { PlayerId, PlayerState } from '../../models/player.model';
 import { computePlayerMana } from '../../models/player.model';
 import { combineNeedsChoice, hasElements } from '../../game/turn-engine';
@@ -146,6 +148,7 @@ interface HandExplosion {
     TooltipDirective,
     ActionMenuComponent,
     TranslatePipe,
+    NgTemplateOutlet,
   ],
   templateUrl: './board.component.html',
   styleUrl: './board.component.scss',
@@ -164,6 +167,8 @@ export class BoardComponent implements OnInit {
   protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
   protected readonly ELEMENT_MANA = ELEMENT_MANA;
   protected readonly specialManaIconPath = specialManaIconPath;
+  /** CSS mask-image richiede il valore completo `url(...)`, stessa ragione di CardComponent.revealedIconUrl. */
+  protected readonly revealedIconUrl = `url(${REVEALED_ICON})`;
 
   protected readonly wandCardWidth = WAND_CARD_WIDTH;
   private readonly wandPeekCardHeight = Math.round(WAND_CARD_WIDTH * 1.5);
@@ -321,6 +326,9 @@ export class BoardComponent implements OnInit {
   protected readonly playerDiscardTopFreeze = computed(
     () => this.playerDiscardTopCard()?.tier === 'freeze',
   );
+  protected readonly playerDiscardTopRevealed = computed(
+    () => this.playerDiscardTopCard()?.revealedToOpponent ?? false,
+  );
 
   protected readonly opponentDeckCount = computed(() => this.opponentState()?.deck.length ?? 0);
   protected readonly opponentDiscardCount = computed(
@@ -340,6 +348,9 @@ export class BoardComponent implements OnInit {
   );
   protected readonly opponentDiscardTopFreeze = computed(
     () => this.opponentDiscardTopCard()?.tier === 'freeze',
+  );
+  protected readonly opponentDiscardTopRevealed = computed(
+    () => this.opponentDiscardTopCard()?.revealedToOpponent ?? false,
   );
 
   /** Le 2 carte pescate dal mazzo comune in attesa di scelta — solo locale, nessuna scrittura su Firestore finché non si sceglie quale tenere (regolamento 4.3). */
@@ -397,9 +408,8 @@ export class BoardComponent implements OnInit {
   protected readonly opponentBody = computed(() => this.opponentWand()?.bodySocket ?? null);
   protected readonly opponentHandle = computed(() => this.opponentWand()?.handleSocket ?? null);
 
-  protected readonly opponentHandRange = computed(() =>
-    Array.from({ length: this.opponentHandCount() }, (_, i) => i),
-  );
+  /** Dati reali della mano avversaria — il client li ha comunque (l'intero documento Firestore non è protetto per ruolo), erano semplicemente non ancora consultati qui: fino a Terzo occhio/Occhio supremo (Card.revealedToOpponent) non serviva mai sapere quale carta fosse quale, solo quante. */
+  protected readonly opponentHand = computed(() => this.opponentState()?.hand ?? []);
 
   /** Evita di pianificare più volte lo stesso avanzamento automatico (l'effect sotto può rieseguire per motivi non correlati). */
   private autoAdvanceKey: string | null = null;
@@ -898,22 +908,32 @@ export class BoardComponent implements OnInit {
     return [];
   }
 
-  /** Apre il dialog di pagamento e lancia davvero l'incantesimo solo se il giocatore conferma una selezione (annullare chiude senza risultato, vedi CastSpellDialogComponent). */
+  /** Apre il dialog di pagamento (ed eventuale scelta del bersaglio, es. Migliora mana) e lancia davvero l'incantesimo solo se il giocatore conferma (annullare chiude senza risultato, vedi CastSpellDialogComponent). */
   protected openCastSpellDialog(card: Card, payableHand: Card[]): void {
     const role = this.myRole();
     if (!role) return;
 
     this.dialog
-      .open<string[] | undefined, CastSpellDialogData>(CastSpellDialogComponent, {
-        data: { spellCard: card, payableHand },
+      .open<CastSpellDialogResult | undefined, CastSpellDialogData>(CastSpellDialogComponent, {
+        data: {
+          spellCard: card,
+          payableHand,
+          hand: this.playerHand().filter((c) => c.id !== card.id),
+        },
         positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
         hasBackdrop: true,
         backdropClass: 'dialog-backdrop',
         panelClass: 'dialog-panel',
       })
-      .closed.subscribe((paidCardIds) => {
-        if (paidCardIds?.length)
-          void this.gameEngine.castSpell(this.gameId(), role, card.id, paidCardIds);
+      .closed.subscribe((result) => {
+        if (result)
+          void this.gameEngine.castSpell(
+            this.gameId(),
+            role,
+            card.id,
+            result.paidCardIds,
+            result.targetCardId,
+          );
       });
   }
 
@@ -994,12 +1014,18 @@ export class BoardComponent implements OnInit {
             return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
           case 'damage_self':
             return this.i18n.t('grimoire.effects.damageSelf', { amount });
+          case 'damage_halve_opponent':
+            return this.i18n.t('grimoire.effects.damageHalveOpponent');
+          case 'damage_from_fonte':
+            return this.i18n.t('grimoire.effects.damageFromFonte');
           case 'heal':
             return this.i18n.t('grimoire.effects.heal', { amount });
           case 'shield_add':
             return this.i18n.t('grimoire.effects.shieldAdd', { amount });
           case 'shield_remove_opponent':
-            return this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount });
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.shieldRemoveOpponentAll');
           case 'poison_add':
             return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
@@ -1010,10 +1036,16 @@ export class BoardComponent implements OnInit {
             return this.i18n.t('grimoire.effects.iceClearSelf');
           case 'opponent_discard_random':
             return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
+          case 'opponent_discard_hand':
+            return this.i18n.t('grimoire.effects.opponentDiscardHand');
           case 'reveal_opponent_hand':
-            return this.i18n.t('grimoire.effects.revealOpponentHand');
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.revealOpponentHandRandom', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.revealOpponentHand');
           case 'fonte_reset':
             return this.i18n.t('grimoire.effects.fonteReset');
+          case 'boost_card_mana':
+            return this.i18n.t('grimoire.effects.boostCardMana', { amount });
           default:
             return e.type;
         }
@@ -1032,6 +1064,25 @@ export class BoardComponent implements OnInit {
   /** Spiegazione testuale dell'effetto del mana speciale (3.2) — tooltip su una carta che lo porta, dato che il solo badge/aria-label non lo spiega a chi non conosce già la regola. */
   protected specialManaEffectText(type: SpecialMana): string {
     return this.i18n.t(`card.specialManaEffect.${type}`);
+  }
+
+  /** Quali dei tooltip ricchi (spell/freeze/mana accumulato/mana speciale/Occhio) si applicano a questa carta — al massimo 2 nella pratica (un tier è sempre uno solo, specialMana esiste solo su tier 'base'; revealedToOpponent (5.x) è l'unico che può combinarsi con qualunque altro). Usata sia per decidere se mostrare #cardTip sia per capire se serve il layout "multiplo" (vedi isMultiCardTooltip). */
+  protected cardTooltipFlags(card: Card): boolean[] {
+    return [
+      card.tier === 'spell',
+      card.tier === 'freeze',
+      card.tier === 'mana',
+      !!card.specialMana,
+      !!card.revealedToOpponent,
+    ];
+  }
+
+  protected hasCardTooltip(card: Card): boolean {
+    return this.cardTooltipFlags(card).some(Boolean);
+  }
+
+  protected isMultiCardTooltip(card: Card): boolean {
+    return this.cardTooltipFlags(card).filter(Boolean).length > 1;
   }
 
   /** "Resistenza ai danni da Fuoco, vulnerabilità ai danni da Acqua" — or the empty-socket fallback. */

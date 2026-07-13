@@ -2,6 +2,10 @@
   @if (templateContent(); as tpl) {
     <ng-container [ngTemplateOutlet]="tpl" />
   } @else {
-    {{ textContent() }}
+    <!-- innerHTML non interpolazione: alcuni testi tradotti portano tag inline (<b>/<em>, es.
+         common.turnPhases.*.description) per enfatizzare termini di regolamento — stesso principio
+         già in uso altrove (es. gameSettings.confirmText) per contenuto sempre statico/da sviluppo,
+         mai da input utente. -->
+    <span [innerHTML]="textContent()"></span>
   }
 </div>

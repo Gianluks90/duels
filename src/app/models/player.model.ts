@@ -11,6 +11,8 @@ export interface PendingSpell {
   card: Card;
   vitalBonus: number;
   chaoticBonus: number;
+  /** Id della carta scelta come bersaglio al momento del lancio (castSpell), per gli SpellEffectType che lo richiedono (TARGET_CARD_EFFECT_TYPES in spell.model.ts, es. 'boost_card_mana') — assente per tutte le altre magie, il cui target è cablato nell'effetto stesso (avversario/sé stesso/casuale) invece che scelto dal giocatore. */
+  targetCardId?: string;
 }
 
 export interface PlayerTokens {

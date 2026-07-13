@@ -25,6 +25,7 @@ const MESSY_STACK_SIZE = 3;
             [element]="el"
             [manaBonus]="topManaBonus()"
             [specialMana]="topSpecialMana()"
+            [revealedToOpponent]="topRevealedToOpponent()"
             [showMana]="!topFreeze()"
             [freeze]="topFreeze()"
             [size]="size()"
@@ -53,6 +54,7 @@ const MESSY_STACK_SIZE = 3;
               [element]="el"
               [manaBonus]="topManaBonus()"
               [specialMana]="topSpecialMana()"
+              [revealedToOpponent]="topRevealedToOpponent()"
               [showMana]="!topFreeze()"
               [freeze]="topFreeze()"
               [size]="size()"
@@ -132,6 +134,8 @@ export class DeckComponent {
   readonly topSpecialMana = input<SpecialMana | null>(null);
   /** True when that same top card is a Congelamento non-carta (Card.tier 'freeze', regolamento 2.3.1) — without this it would show as a plain 'ice' element card (topElement is just the Element, tier is lost) instead of the freeze token look. */
   readonly topFreeze = input<boolean>(false);
+  /** Card.revealedToOpponent (5.x) carried by that same top card, if any — same reasoning as topSpecialMana: without it, a revealed card silently loses its badge the moment it lands on top of a pile. */
+  readonly topRevealedToOpponent = input<boolean>(false);
   /** Renders as a small, slightly scattered heap (a few rotated layers) instead of one neat stacked card — for discard piles. */
   readonly messy = input<boolean>(false);
   readonly label = input<string | null>(null);

@@ -52,72 +52,109 @@ export class GameEngineService {
     // Esplosione elementale (2.4): la mano iniziale (pescata dal proprio mazzo, con 1 Luce + 1
     // Tenebra ciascuno, 1.2) o la Fonte Arcana appena rivelata potrebbero già contenere entrambi
     // gli elementi potenti fin dal primo istante.
-    const state = resolveElementalExplosions(createInitialGameState(
-      { name: data.hostName, wand: data.hostWand },
-      { name: data.guestName ?? data.hostName, wand: data.guestWand },
-    ));
+    const state = resolveElementalExplosions(
+      createInitialGameState(
+        { name: data.hostName, wand: data.hostWand },
+        { name: data.guestName ?? data.hostName, wand: data.guestWand },
+      ),
+    );
 
     await updateDoc(ref, { status: 'playing', state });
   }
 
   /** Fase Raccolta (4.3), primo passo: pesca 2 carte dal mazzo comune (rimescolando se serve) e le mette in sospeso. */
   async startCollect(gameId: string, role: PlayerId): Promise<void> {
-    await this.mutate(gameId, state => startCollectReducer(state, role));
+    await this.mutate(gameId, (state) => startCollectReducer(state, role));
   }
 
   /** Fase Raccolta (4.3), secondo passo: tieni una delle 2 carte in sospeso, l'altra torna negli scarti comuni. */
   async keepCard(gameId: string, role: PlayerId, keptId: string): Promise<void> {
-    await this.mutate(gameId, state => keepCardReducer(state, role, keptId));
+    await this.mutate(gameId, (state) => keepCardReducer(state, role, keptId));
   }
 
   /** Fase Raccolta (4.3), secondo passo — alternativa a keepCard: scarta entrambe le carte pescate e ottieni una carta "mana accumulato" in mano, spendibile solo questo turno. */
   async keepMana(gameId: string, role: PlayerId): Promise<void> {
-    await this.mutate(gameId, state => keepManaReducer(state, role));
+    await this.mutate(gameId, (state) => keepManaReducer(state, role));
   }
 
   /** Fase Azione: combina 2 elementi base dalla mano per ottenere la carta rivelata in uno slot della Fonte Arcana. `chosenIds` forza quale copia usare per un elemento quando in mano ce n'era più di una valida (CombineDialogComponent, board.component.ts) — assente quando non c'era ambiguità, si procede con la scelta automatica di sempre. */
-  async combineElements(gameId: string, role: PlayerId, fonteSlotIndex: number, a: BaseElement, b: BaseElement, chosenIds?: Partial<Record<BaseElement, string>>): Promise<void> {
-    await this.mutate(gameId, state => combineElementsReducer(state, role, fonteSlotIndex, a, b, chosenIds));
+  async combineElements(
+    gameId: string,
+    role: PlayerId,
+    fonteSlotIndex: number,
+    a: BaseElement,
+    b: BaseElement,
+    chosenIds?: Partial<Record<BaseElement, string>>,
+  ): Promise<void> {
+    await this.mutate(gameId, (state) =>
+      combineElementsReducer(state, role, fonteSlotIndex, a, b, chosenIds),
+    );
   }
 
   /** Fase Azione: combina i 4 elementi base (Fuoco+Acqua+Aria+Terra) per ottenere l'elemento potente rivelato in uno slot della Fonte Arcana. `chosenIds`: vedi combineElements. */
-  async combineSuperior(gameId: string, role: PlayerId, fonteSlotIndex: number, chosenIds?: Partial<Record<BaseElement, string>>): Promise<void> {
-    await this.mutate(gameId, state => combineSuperiorReducer(state, role, fonteSlotIndex, chosenIds));
+  async combineSuperior(
+    gameId: string,
+    role: PlayerId,
+    fonteSlotIndex: number,
+    chosenIds?: Partial<Record<BaseElement, string>>,
+  ): Promise<void> {
+    await this.mutate(gameId, (state) =>
+      combineSuperiorReducer(state, role, fonteSlotIndex, chosenIds),
+    );
   }
 
   /** Fase Azione: combina 2 elementi base opposti per ottenere un Residuo Arcano dal pool condiviso. `chosenIds`: vedi combineElements. */
-  async combineResidue(gameId: string, role: PlayerId, a: BaseElement, b: BaseElement, chosenIds?: Partial<Record<BaseElement, string>>): Promise<void> {
-    await this.mutate(gameId, state => combineResidueReducer(state, role, a, b, chosenIds));
+  async combineResidue(
+    gameId: string,
+    role: PlayerId,
+    a: BaseElement,
+    b: BaseElement,
+    chosenIds?: Partial<Record<BaseElement, string>>,
+  ): Promise<void> {
+    await this.mutate(gameId, (state) => combineResidueReducer(state, role, a, b, chosenIds));
   }
 
   /** Avanza la fase del giocatore di turno lungo il ciclo delle 6 fasi; da 'fine' passa davvero il turno. */
   async advancePhase(gameId: string, role: PlayerId): Promise<void> {
-    await this.mutate(gameId, state => advanceTurnPhase(state, role));
+    await this.mutate(gameId, (state) => advanceTurnPhase(state, role));
   }
 
-  /** Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagando il costo con le carte indicate. L'effetto si risolve più avanti, al passaggio in fase Incantesimo (dentro advancePhase). */
-  async castSpell(gameId: string, role: PlayerId, spellCardId: string, paidCardIds: readonly string[]): Promise<void> {
-    await this.mutate(gameId, state => castSpellReducer(state, role, spellCardId, paidCardIds));
+  /** Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagando il costo con le carte indicate. L'effetto si risolve più avanti, al passaggio in fase Incantesimo (dentro advancePhase). `targetCardId` solo per le magie con un effetto in TARGET_CARD_EFFECT_TYPES (es. 'boost_card_mana'). */
+  async castSpell(
+    gameId: string,
+    role: PlayerId,
+    spellCardId: string,
+    paidCardIds: readonly string[],
+    targetCardId?: string,
+  ): Promise<void> {
+    await this.mutate(gameId, (state) =>
+      castSpellReducer(state, role, spellCardId, paidCardIds, targetCardId),
+    );
   }
 
   /** Fase Azione (5.1): produce un incantesimo dal Grimorio spendendo gli elementi della sua formula dalla mano — vanno negli scarti del giocatore, insieme alla carta appena creata. */
   async createSpell(gameId: string, role: PlayerId, spellId: string): Promise<void> {
-    await this.mutate(gameId, state => createSpellReducer(state, role, spellId));
+    await this.mutate(gameId, (state) => createSpellReducer(state, role, spellId));
   }
 
   /** Fase Azione (1.4.1/4.4): trattiene una carta base dalla mano nella punta della bacchetta. */
   async holdAtTip(gameId: string, role: PlayerId, cardId: string): Promise<void> {
-    await this.mutate(gameId, state => holdAtTipReducer(state, role, cardId));
+    await this.mutate(gameId, (state) => holdAtTipReducer(state, role, cardId));
   }
 
   /** Fase Azione (1.4.2/1.4.3/4.4): incastona una carta base dalla mano nell'asta o nel manico della bacchetta — permanente, mai sovrascrivibile. */
-  async socketElement(gameId: string, role: PlayerId, cardId: string, target: 'body' | 'handle'): Promise<void> {
-    await this.mutate(gameId, state => socketElementReducer(state, role, cardId, target));
+  async socketElement(
+    gameId: string,
+    role: PlayerId,
+    cardId: string,
+    target: 'body' | 'handle',
+  ): Promise<void> {
+    await this.mutate(gameId, (state) => socketElementReducer(state, role, cardId, target));
   }
 
   private async mutate(gameId: string, transform: (state: GameState) => GameState): Promise<void> {
     const ref = doc(this.db, 'games', gameId);
-    await runTransaction(this.db, async tx => {
+    await runTransaction(this.db, async (tx) => {
       const snapshot = await tx.get(ref);
       if (!snapshot.exists()) return;
 

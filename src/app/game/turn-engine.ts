@@ -5,6 +5,7 @@ import type { ExplosionEvent, GameState } from '../models/game.model';
 import type { PendingSpell, PlayerId, PlayerState } from '../models/player.model';
 import { computePlayerMana } from '../models/player.model';
 import type { SpellEffect } from '../models/spell.model';
+import { TARGET_CARD_EFFECT_TYPES } from '../models/spell.model';
 import { ELEMENT_OPPOSITES } from '../models/wand.model';
 import { TURN_PHASES, type ActiveTurnPhase } from '../models/turn-phase.model';
 import { SPELL_CATALOG } from '../data/spells';
@@ -347,14 +348,18 @@ const SPECIAL_MANA_EFFECT_AMOUNT = 2;
  * scartando le carte indicate. L'effetto NON si applica qui — resta in sospeso in pendingSpells fino
  * al passaggio in fase Incantesimo (vedi resolveSpells, agganciata in advanceTurnPhase), come da
  * regolamento 4.4/4.5. No-op se: non sei di turno, non sei in Azione, la carta non è un incantesimo
- * valido, o le carte di pagamento indicate non coprono il costo (tier 'spell'/'freeze' esclusi dal
- * pagamento: non sono elementi, 3.1).
+ * valido, le carte di pagamento indicate non coprono il costo (tier 'spell'/'freeze' esclusi dal
+ * pagamento: non sono elementi, 3.1), o — per le magie con un effetto in TARGET_CARD_EFFECT_TYPES
+ * (es. 'boost_card_mana') — `targetCardId` è assente o non punta a un elemento reale (base/avanzato/
+ * potente) ancora in mano dopo il pagamento: niente Residuo/mana accumulato/carte "temporanee" come
+ * bersaglio, e mai una delle stesse carte appena scelte per pagare (lascerebbero comunque la mano).
  */
 export function castSpell(
   state: GameState,
   role: PlayerId,
   spellCardId: string,
   paidCardIds: readonly string[],
+  targetCardId?: string,
 ): GameState {
   if (role !== state.currentTurn || state.phase !== 'azione') return state;
 
@@ -376,6 +381,17 @@ export function castSpell(
   if (paidCards.some((c) => c.tier === 'spell' || c.tier === 'freeze')) return state;
   if (computePlayerMana(paidCards) < spell.manaCost) return state;
 
+  const needsTargetCard = spell.effects.some((e) => TARGET_CARD_EFFECT_TYPES.includes(e.type));
+  if (needsTargetCard) {
+    const targetCard = player.hand.find(
+      (c) =>
+        c.id === targetCardId &&
+        !paidCardIds.includes(c.id) &&
+        (c.tier === 'base' || c.tier === 'advanced' || c.tier === 'superior'),
+    );
+    if (!targetCard) return state;
+  }
+
   const vitalBonus =
     paidCards.filter((c) => c.specialMana === 'vital').length * SPECIAL_MANA_EFFECT_AMOUNT;
   const chaoticBonus =
@@ -390,7 +406,15 @@ export function castSpell(
   return updatePlayer(state, role, {
     hand: player.hand.filter((c) => !spentIds.has(c.id)),
     discards: [...player.discards, ...discardedPaidCards],
-    pendingSpells: [...player.pendingSpells, { card: spellCard, vitalBonus, chaoticBonus }],
+    pendingSpells: [
+      ...player.pendingSpells,
+      {
+        card: spellCard,
+        vitalBonus,
+        chaoticBonus,
+        targetCardId: needsTargetCard ? targetCardId : undefined,
+      },
+    ],
     spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
     wand: tipWasSpent ? { ...player.wand, tipSlot: null } : player.wand,
     tipCardPlacedTurn: tipWasSpent ? null : player.tipCardPlacedTurn,
@@ -771,12 +795,33 @@ function absorbWithShield(shield: number, amount: number): { hpLoss: number; shi
   return { hpLoss: amount - absorbed, shieldLeft: shield - absorbed };
 }
 
-/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'heal'/'shield_add'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self' per ora; gli altri ~9 SpellEffectType non hanno ancora una risoluzione (no-op). `bonus` è il mana speciale (3.2.2/3.2.3) calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente (vitale→heal, caotico→damage/damage_ignore_shields), altrimenti resta inerte — 'damage_self' non ne beneficia di proposito (vitale/caotico sono definiti solo per magie che curano/colpiscono l'avversario, non per il danno auto-inflitto), 'shield_add'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self' nemmeno (poison_add/ice_add: i loro effetti veri arrivano più avanti, in fase Preparazione, non qui). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno, ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — gli altri non sono mai elementali (asta, Veleno e Congelamento restano meccaniche indipendenti). Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+/**
+ * Rischio: conta le coppie di elementi AVANZATI (Tuono/Veleno/Ghiaccio/Lava — non Luce/Tenebra, quelli
+ * esploderebbero all'istante se compresenti in Fonte Arcana, 2.4, quindi non ci restano mai abbastanza
+ * a lungo da formare una "coppia" osservabile) tra le carte attualmente rivelate in Fonte Arcana. Una
+ * coppia è per singolo elemento: 4 copie dello stesso avanzato contano 2 coppie, non 1 — con soli 4
+ * slot visibili il massimo raggiungibile è comunque 2 (richiede tutti e 4 gli slot sullo stesso
+ * elemento, o due coppie di elementi diversi). Usata da applySpellEffect per 'damage_from_fonte'.
+ */
+function countAdvancedPairsInFonte(fonteElementale: readonly Card[]): number {
+  const counts = new Map<Element, number>();
+  for (const card of fonteElementale) {
+    if (elementTier(card.element) !== 'advanced') continue;
+    counts.set(card.element, (counts.get(card.element) ?? 0) + 1);
+  }
+  let pairs = 0;
+  for (const count of counts.values()) pairs += Math.floor(count / 2);
+  return pairs;
+}
+
+const FONTE_PAIR_DAMAGE = 3;
+
+/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'damage_halve_opponent'/'damage_from_fonte'/'heal'/'shield_add'/'shield_remove_opponent'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self'/'opponent_discard_random'/'opponent_discard_hand'/'reveal_opponent_hand'/'fonte_reset'/'boost_card_mana' per ora; 'element_immunity' resta l'unico SpellEffectType senza risoluzione (no-op, rimandato — vedi spell.model.ts). `pending` porta sia il mana speciale (3.2.2/3.2.3, calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente — vitale→heal, caotico→damage/damage_ignore_shields/damage_from_fonte, tutti e 3 danno all'avversario "nel modo standard", altrimenti resta inerte, gli altri non ne beneficiano di proposito) sia l'eventuale carta bersaglio scelta dal giocatore (`targetCardId`, solo per 'boost_card_mana' oggi — TARGET_CARD_EFFECT_TYPES in spell.model.ts). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno "normali" (non 'damage_from_fonte': `element` è sempre assente sulla sua formula, 4 basi miste senza un elemento portante, vedi risk in SPELL_CATALOG), ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — 'damage_halve_opponent' ne resta fuori apposta (dimezza l'hp corrente, un valore già post-asta/scudo di colpi precedenti, non un nuovo danno da filtrare) e gli altri non sono mai elementali. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
 function applySpellEffect(
   state: GameState,
   casterRole: PlayerId,
   effect: SpellEffect,
-  bonus: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus'>,
+  pending: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus' | 'targetCardId'>,
   spellElement: BaseElement | undefined,
 ): GameState {
   const opponentRole: PlayerId = casterRole === 'host' ? 'guest' : 'host';
@@ -785,7 +830,7 @@ function applySpellEffect(
       const opponent = state.players[opponentRole];
       const amount =
         applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
-        bonus.chaoticBonus;
+        pending.chaoticBonus;
       const { hpLoss, shieldLeft } = absorbWithShield(opponent.tokens.shield, amount);
       return updatePlayer(state, opponentRole, {
         hp: opponent.hp - hpLoss,
@@ -796,7 +841,7 @@ function applySpellEffect(
       const opponent = state.players[opponentRole];
       const amount =
         applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
-        bonus.chaoticBonus;
+        pending.chaoticBonus;
       return updatePlayer(state, opponentRole, { hp: opponent.hp - amount });
     }
     case 'damage_self': {
@@ -808,14 +853,32 @@ function applySpellEffect(
         tokens: { ...caster.tokens, shield: shieldLeft },
       });
     }
+    case 'damage_halve_opponent': {
+      const opponent = state.players[opponentRole];
+      return updatePlayer(state, opponentRole, { hp: Math.floor(opponent.hp / 2) });
+    }
+    case 'damage_from_fonte': {
+      const opponent = state.players[opponentRole];
+      const pairs = countAdvancedPairsInFonte(state.fonteElementale);
+      const amount = pairs * FONTE_PAIR_DAMAGE + pending.chaoticBonus;
+      const { hpLoss, shieldLeft } = absorbWithShield(opponent.tokens.shield, amount);
+      return updatePlayer(state, opponentRole, {
+        hp: opponent.hp - hpLoss,
+        tokens: { ...opponent.tokens, shield: shieldLeft },
+      });
+    }
     case 'heal': {
       const caster = state.players[casterRole];
       return updatePlayer(state, casterRole, {
-        hp: caster.hp + (effect.amount ?? 0) + bonus.vitalBonus,
+        hp: caster.hp + (effect.amount ?? 0) + pending.vitalBonus,
       });
     }
+    case 'boost_card_mana':
+      return applyBoostCardMana(state, casterRole, pending.targetCardId, effect.amount ?? 1);
     case 'shield_add':
       return applyShield(state, casterRole, effect.amount ?? 0);
+    case 'shield_remove_opponent':
+      return applyShieldRemove(state, opponentRole, effect.amount);
     case 'poison_add':
       return applyPoison(state, opponentRole, effect.amount ?? 0);
     case 'poison_clear_self':
@@ -824,6 +887,14 @@ function applySpellEffect(
       return applyFreeze(state, opponentRole, effect.amount ?? 0);
     case 'ice_clear_self':
       return applyIceClear(state, casterRole);
+    case 'opponent_discard_random':
+      return applyDiscardRandom(state, opponentRole, effect.amount ?? 1);
+    case 'opponent_discard_hand':
+      return applyDiscardHand(state, opponentRole);
+    case 'reveal_opponent_hand':
+      return applyRevealHand(state, opponentRole, effect.amount);
+    case 'fonte_reset':
+      return applyFonteReset(state);
     default:
       return state;
   }
@@ -833,7 +904,10 @@ function applySpellEffect(
  * Fase Incantesimo (4.5/5.3): risolve le magie lanciate in Azione (pendingSpells) — applica gli
  * effetti di ciascuna (più l'eventuale bonus di mana speciale calcolato al pagamento, 3.2.2/3.2.3),
  * poi le sposta tutte negli scarti del lanciatore e svuota pendingSpells. Agganciata dentro
- * advanceTurnPhase, non da un endpoint separato.
+ * advanceTurnPhase, non da un endpoint separato. Chiude con resolveElementalExplosions (2.4): alcuni
+ * effetti (es. opponent_discard_hand, fonte_reset) pescano carte fresche in una mano o rivelano nuovi
+ * slot in Fonte Arcana, che potrebbero introdurre Luce+Tenebra insieme — stesso motivo per cui
+ * endTurn/combineElements/combineSuperior la richiamano già, mancava solo qui.
  */
 function resolveSpells(state: GameState, role: PlayerId): GameState {
   const player = state.players[role];
@@ -848,10 +922,11 @@ function resolveSpells(state: GameState, role: PlayerId): GameState {
   }
 
   const caster = next.players[role];
-  return updatePlayer(next, role, {
+  const withDiscards = updatePlayer(next, role, {
     discards: [...caster.discards, ...player.pendingSpells.map((p) => p.card)],
     pendingSpells: [],
   });
+  return resolveElementalExplosions(withDiscards);
 }
 
 function extractOneByExactElement(
@@ -976,6 +1051,20 @@ export function applyShield(state: GameState, target: PlayerId, amount: number):
 }
 
 /**
+ * Frattura/Breccia (2.3.3): rimuove scudo dal bersaglio — l'inverso di applyShield. `amount`
+ * assente (Breccia, "annulla lo scudo dell'avversario" senza numero) azzera tutto lo scudo in un
+ * colpo, indipendentemente da quanto ne aveva, invece di sottrarre una quantità fissa (Frattura,
+ * `amount: 2`) — stesso schema "amount assente = tutto" di applyPoisonClear/applyIceClear. Chiamata
+ * da applySpellEffect per il tipo 'shield_remove_opponent', sempre col bersaglio l'avversario del
+ * lanciatore (un incantesimo offensivo/anti-difesa, mai su di sé).
+ */
+export function applyShieldRemove(state: GameState, target: PlayerId, amount?: number): GameState {
+  const player = state.players[target];
+  const shield = amount === undefined ? 0 : Math.max(0, player.tokens.shield - amount);
+  return updatePlayer(state, target, { tokens: { ...player.tokens, shield } });
+}
+
+/**
  * Congelamento (2.3.1): aggiunge `count` carte Congelamento (non-carte, tier 'freeze') agli scarti
  * del bersaglio — finiscono quindi nel suo mazzo alla prossima rimescolata. Chiamata da
  * applySpellEffect per il tipo 'ice_add' (frost/blizzard/ice_age in SPELL_CATALOG) — lo
@@ -1005,4 +1094,122 @@ export function applyIceClear(state: GameState, target: PlayerId): GameState {
   const player = state.players[target];
   const discards = player.discards.filter((c) => c.tier !== 'freeze');
   return updatePlayer(state, target, { discards });
+}
+
+/**
+ * Raffica violenta: scarta `count` carte scelte a caso dalla mano del bersaglio (finiscono nei suoi
+ * scarti). Residuo Arcano e mana accumulato fanno eccezione: se pescati a caso non finiscono negli
+ * scarti come farebbe una carta qualunque — si consumano/svaniscono, stesso trattamento che
+ * ricevono ovunque nel motore quando lasciano la mano (createSpell/castSpell escludono tier
+ * 'residium'/'mana' dagli scarti allo stesso modo). Chiamata da applySpellEffect per il tipo
+ * 'opponent_discard_random', sempre col bersaglio l'avversario del lanciatore.
+ */
+export function applyDiscardRandom(state: GameState, target: PlayerId, count: number): GameState {
+  const player = state.players[target];
+  const hand = [...player.hand];
+  const discarded: Card[] = [];
+  for (let i = 0; i < count && hand.length > 0; i++) {
+    const index = Math.floor(Math.random() * hand.length);
+    const [card] = hand.splice(index, 1);
+    if (card.tier !== 'residium' && card.tier !== 'mana') discarded.push(card);
+  }
+  return updatePlayer(state, target, { hand, discards: [...player.discards, ...discarded] });
+}
+
+/**
+ * Colpo basso: scarta l'intera mano del bersaglio e ne pesca subito 5 fresche — stessa identica
+ * meccanica del ciclo mano di endTurn (resolveExpiringCards 'fine' PRIMA dello scarto, altrimenti un
+ * Residuo Arcano/mana accumulato ancora in mano finirebbe negli scarti come una carta qualunque
+ * invece di consumarsi; poi drawUpTo, che rimescola gli scarti nel mazzo se necessario), applicata
+ * però solo alla mano — non tocca token/wand/flag di turno del bersaglio, a differenza di endTurn.
+ * Chiamata da applySpellEffect per il tipo 'opponent_discard_hand', sempre col bersaglio l'avversario
+ * del lanciatore.
+ */
+export function applyDiscardHand(state: GameState, target: PlayerId): GameState {
+  const player = state.players[target];
+  const handAfterExpiry = resolveExpiringCards(player.hand, 'fine');
+  const { drawn, deck, discards } = drawUpTo(
+    player.deck,
+    [...player.discards, ...handAfterExpiry],
+    HAND_SIZE,
+  );
+  return updatePlayer(state, target, { hand: drawn, deck, discards });
+}
+
+/**
+ * Terzo occhio/Occhio supremo: marca `count` carte scelte a caso nella mano del bersaglio come
+ * rivelate all'avversario (Card.revealedToOpponent) — `count` assente marca l'INTERA mano invece di
+ * un numero fisso, stesso schema "amount assente = tutto" di applyShieldRemove/applyPoisonClear/
+ * applyIceClear. A differenza di applyDiscardRandom/applyDiscardHand le carte non si spostano: la
+ * marcatura è permanente sulla carta stessa (nessuna "guarigione" implementata oggi), quindi resta
+ * anche se la carta lascia la mano e ci torna più avanti (scarti, rimescolata, ripescata) — non un
+ * effetto temporaneo legato al turno. Chiamata da applySpellEffect per il tipo
+ * 'reveal_opponent_hand', sempre col bersaglio l'avversario del lanciatore.
+ */
+export function applyRevealHand(state: GameState, target: PlayerId, count?: number): GameState {
+  const player = state.players[target];
+  if (count === undefined) {
+    const hand = player.hand.map((c) => ({ ...c, revealedToOpponent: true }));
+    return updatePlayer(state, target, { hand });
+  }
+
+  const revealCount = Math.min(count, player.hand.length);
+  const indices = new Set<number>();
+  while (indices.size < revealCount) {
+    indices.add(Math.floor(Math.random() * player.hand.length));
+  }
+  const hand = player.hand.map((c, i) => (indices.has(i) ? { ...c, revealedToOpponent: true } : c));
+  return updatePlayer(state, target, { hand });
+}
+
+// Stesso valore di FONTE_VISIBLE_COUNT in deck-builder.ts (non esportata, duplicata qui — solo
+// applyFonteReset se ne serve, non vale la pena esportarla per un singolo chiamante).
+const FONTE_RESET_COUNT = 4;
+
+/**
+ * Reset (5.x): scarta le 4 carte attualmente rivelate in Fonte Arcana negli scarti del mazzo
+ * avanzato e ne rivela 4 nuove al loro posto, in un colpo solo — stesso drawUpTo() di
+ * takeFromFonte, ma su tutti gli slot insieme invece che uno alla volta quando viene consumato in
+ * una combinazione. Se il mazzo avanzato + i suoi scarti (comprese le 4 carte appena scartate) non
+ * bastano a fornire 4 carte, la Fonte Arcana torna con meno di 4 slot visibili — stesso caso limite
+ * di takeFromFonte. Chiamata da applySpellEffect per il tipo 'fonte_reset', unico effetto che non
+ * tocca lo stato di un giocatore ma solo lo stato condiviso del tavolo.
+ */
+export function applyFonteReset(state: GameState): GameState {
+  const {
+    drawn: fonteElementale,
+    deck: advancedDeck,
+    discards: advancedDiscards,
+  } = drawUpTo(
+    state.advancedDeck,
+    [...state.advancedDiscards, ...state.fonteElementale],
+    FONTE_RESET_COUNT,
+  );
+  return { ...state, fonteElementale, advancedDeck, advancedDiscards };
+}
+
+/**
+ * Migliora mana: aumenta permanentemente il valore di mana di UNA carta scelta in mano
+ * (Card.manaBonus, lo stesso campo del bonus manico 1.4.3 — le due fonti si sommano,
+ * computePlayerMana le somma già entrambe senza bisogno di modifiche). `targetCardId` è scelto dal
+ * giocatore al momento del lancio, non un target cablato come per gli altri effetti — validato in
+ * castSpell (deve essere un elemento reale — base/avanzato/potente — già in mano, non la carta
+ * incantesimo né una delle carte di pagamento) e portato fin qui dentro PendingSpell. No-op se
+ * assente o se la carta non è (più) in mano a risoluzione: guard difensivo, non dovrebbe succedere
+ * nello stesso turno in cui è stata scelta.
+ */
+function applyBoostCardMana(
+  state: GameState,
+  target: PlayerId,
+  targetCardId: string | undefined,
+  amount: number,
+): GameState {
+  if (!targetCardId) return state;
+  const player = state.players[target];
+  const index = player.hand.findIndex((c) => c.id === targetCardId);
+  if (index === -1) return state;
+  const hand = [...player.hand];
+  const card = hand[index];
+  hand[index] = { ...card, manaBonus: (card.manaBonus ?? 0) + amount };
+  return updatePlayer(state, target, { hand });
 }

@@ -180,6 +180,31 @@
   }
 }
 
+// Occhio (5.x, Card.revealedToOpponent) — stessa colonna/tecnica maschera di .card__badge--special-mana
+// sopra (stesso left/width, stesso `inset` sull'icona), ma un solo colore grigio invece di 3 varianti
+// per tipo: qui c'è un solo stato, non serve una palette. Di default occupa lo stesso slot del mana
+// speciale (top: 26%) — se il mana speciale è ANCHE presente sulla stessa carta, il modificatore
+// -after-special lo sposta più in basso, "in coda" alla colonna invece di sovrapporsi.
+.card__badge--revealed {
+  width: 24%;
+  top: 26%;
+  left: 3%;
+  color: #9aa0a6;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 20%;
+    background-color: currentColor;
+    -webkit-mask: var(--revealed-icon) center / contain no-repeat;
+    mask: var(--revealed-icon) center / contain no-repeat;
+  }
+
+  &-after-special {
+    top: 50%;
+  }
+}
+
 .card__badge--element {
   // Bigger than the shared 30% — the element icon is the one we want to read
   // clearly at a glance, badge circle grows with it.

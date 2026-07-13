@@ -19,6 +19,8 @@ export interface Card {
   spellId?: string;
   /** Mana speciale (regolamento 3.2): assente per la stragrande maggioranza delle carte base — solo 6 su 60 lo portano (2 copie ciascuno), assegnato una volta per tutte alla creazione del mazzo comune (vedi deck-builder.ts). */
   specialMana?: SpecialMana;
+  /** Occhio (5.x, Terzo occhio/Occhio supremo): true se questa carta specifica è stata rivelata all'avversario del suo proprietario — permanente finché non "guarita" (nessun incantesimo lo fa ancora oggi), segue la carta ovunque vada (mano/mazzo/scarti/ripescata), non un effetto temporaneo legato al turno o alla posizione. Assente/false per la stragrande maggioranza delle carte. */
+  revealedToOpponent?: boolean;
 }
 
 const SPECIAL_MANA_ICONS: Record<SpecialMana, string> = {
@@ -30,3 +32,6 @@ const SPECIAL_MANA_ICONS: Record<SpecialMana, string> = {
 export function specialManaIconPath(type: SpecialMana): string {
   return SPECIAL_MANA_ICONS[type];
 }
+
+/** Icona del gettone "rivelata" (Card.revealedToOpponent) — un solo variante, a differenza di SPECIAL_MANA_ICONS non serve una mappa per tipo. */
+export const REVEALED_ICON = '/icons/visibility_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';

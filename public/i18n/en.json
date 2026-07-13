@@ -23,14 +23,23 @@
       "attesa": { "label": "Waiting", "description": "Wait for your opponent to end their turn" },
       "preparazione": {
         "label": "Preparation",
-        "description": "Some start-of-turn effects are resolved"
+        "description": "During this phase some effects are resolved, such as the <em>melting</em> of <b>Freeze</b> cards."
       },
-      "raccolta": { "label": "Collection", "description": "Collect your resources" },
-      "azione": { "label": "Action", "description": "Take your actions" },
-      "incantesimo": { "label": "Spell", "description": "The selected spells are cast" },
+      "raccolta": {
+        "label": "Collection",
+        "description": "Choose whether to draw a new <b>Base Element</b> or <b>Stored Mana</b> to use during this turn."
+      },
+      "azione": {
+        "label": "Action",
+        "description": "Combine elements or cast spells. Plan your strategy carefully."
+      },
+      "incantesimo": {
+        "label": "Spell",
+        "description": "The prepared spells are resolved in order during this phase."
+      },
       "fine": {
         "label": "End",
-        "description": "Some end-of-turn effects are resolved before ending it"
+        "description": "<b>Arcane Residuum</b> and <b>Stored Mana</b> are removed during this phase — remember to use them."
       }
     }
   },
@@ -38,6 +47,10 @@
   "card": {
     "manaAria": "{value} mana",
     "specialManaAria": "{name} mana",
+    "revealed": {
+      "title": "Visible",
+      "effect": "This card is visible to the opponent."
+    },
     "specialManaEffect": {
       "prismatic": "Always worth 1 mana more than its own value, regardless of any other modifier active on the card.",
       "vital": "If you use it to pay for a spell that targets yourself, you recover 2 Health Points. Otherwise it counts as common mana.",
@@ -228,17 +241,23 @@
       "damageElement": "Deals {amount} {element} damage to the opponent.",
       "damageIgnoreShields": "Deals {amount} damage, ignoring shields.",
       "damageSelf": "Deals {amount} damage to yourself.",
+      "damageHalveOpponent": "Halves the opponent's current hit points.",
+      "damageFromFonte": "Deals 3 damage to the opponent for each pair of matching advanced elements in the Arcane Source (0-6).",
       "heal": "Recovers {amount} hit point.",
       "shieldAdd": "Adds {amount} shield.",
       "shieldRemoveOpponent": "Removes {amount} shield from the opponent.",
+      "shieldRemoveOpponentAll": "Removes all of the opponent's shield.",
       "poisonAdd": "Applies {amount} poison to the opponent.",
       "iceAdd": "Applies {amount} ice to the opponent.",
       "poisonClearSelf": "Removes all poison from yourself.",
       "iceClearSelf": "Removes all Freeze cards from your own discard pile.",
       "opponentLoseMana": "The opponent loses {amount} mana.",
       "opponentDiscardRandom": "The opponent discards {amount} card from their hand.",
-      "revealOpponentHand": "Reveals the opponent's hand.",
-      "fonteReset": "Resets the Arcane Source."
+      "opponentDiscardHand": "The opponent discards their whole hand and draws 5 new cards.",
+      "revealOpponentHand": "Reveals the opponent's whole hand.",
+      "revealOpponentHandRandom": "Reveals {amount} random card from the opponent's hand.",
+      "fonteReset": "Resets the Arcane Source.",
+      "boostCardMana": "Permanently increases the mana value of a chosen card in hand by {amount}."
     }
   },
 
@@ -266,6 +285,9 @@
     "title": "Cast {name}",
     "closeAria": "Cancel",
     "handListAria": "Cards available as payment",
+    "targetSectionTitle": "Choose the target card",
+    "targetListAria": "Cards available as target",
+    "targetEmpty": "No card available as target.",
     "manaCounter": "{paid} / {cost} mana",
     "cancel": "Cancel",
     "confirm": "Confirm cast"
@@ -445,6 +467,46 @@
     "detox": {
       "name": "Detox",
       "flavorText": "A flow of pure light that sweeps away every trace of poison from the body."
+    },
+    "fracture": {
+      "name": "Fracture",
+      "flavorText": "A sudden crack runs through the shield, weakening it from within."
+    },
+    "breach": {
+      "name": "Breach",
+      "flavorText": "A blow so violent it sweeps away any defense in a single instant."
+    },
+    "black_hole": {
+      "name": "Black Hole",
+      "flavorText": "A void that swallows half the target's life force, leaving no escape."
+    },
+    "violent_gust": {
+      "name": "Violent Gust",
+      "flavorText": "A cutting wind rips a card straight out of the target's hands, carrying it away."
+    },
+    "reset": {
+      "name": "Reset",
+      "flavorText": "The Arcane Source resets in an instant: the old cards vanish, four new ones take their place."
+    },
+    "low_blow": {
+      "name": "Low Blow",
+      "flavorText": "A dirty trick that forces the opponent to get rid of everything in their hand, in a single instant."
+    },
+    "third_eye": {
+      "name": "Third Eye",
+      "flavorText": "A furtive glance slips between the opponent's fingers, revealing one of their cards."
+    },
+    "supreme_eye": {
+      "name": "Supreme Eye",
+      "flavorText": "No secret survives this gaze: the opponent's entire hand lays open like a book."
+    },
+    "risk": {
+      "name": "Risk",
+      "flavorText": "Whoever casts it never knows what to expect: sometimes nothing happens, sometimes the Arcane Source turns against the unlucky one."
+    },
+    "improve_mana": {
+      "name": "Improve Mana",
+      "flavorText": "A touch of arcane energy that settles permanently on a card, raising its value."
     }
   }
 }

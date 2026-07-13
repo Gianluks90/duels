@@ -136,7 +136,34 @@
     mask: var(--special-mana-icon) center / contain no-repeat;
   }
 
-  &--prismatic { color: #d4a847; }
-  &--vital     { color: #4caf50; }
-  &--chaotic   { color: #d02f2f; }
+  &--prismatic {
+    color: #d4a847;
+  }
+  &--vital {
+    color: #4caf50;
+  }
+  &--chaotic {
+    color: #d02f2f;
+  }
+  &--revealed {
+    color: #9aa0a6;
+  }
+}
+
+// Stessa idea di board.component.scss: più tooltip ricchi sulla stessa carta (mana speciale + Occhio)
+// affiancati in colonna invece di sceglierne uno solo.
+.rich-tooltip__multi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.rich-tooltip__multi-item {
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border-subtle);
+
+  &:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
 }

@@ -14,13 +14,14 @@ import type { Spell } from '../../models/spell.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { hasElements } from '../../game/turn-engine';
 
+/** Tutti i campi opzionali: il Grimorio si apre anche fuori da una partita (Home, "solo per sfogliare le magie", vedi home.component.ts) — in quel caso non c'è né una mano né un gameId/role a cui agganciare "Crea", e la dialog deve degradare a semplice consultazione invece di lanciare un errore su `undefined`. */
 export interface GrimoireDialogData {
-  gameId: string;
-  role: PlayerId;
-  /** Mano del giocatore, comprensiva dell'eventuale carta nella punta della bacchetta (1.4.1) — istantanea presa all'apertura, come per gli altri dialog di azione (es. CastSpellDialogData.payableHand). */
-  hand: readonly Card[];
-  /** true se il giocatore è di turno ed è in fase Azione (5.1) — determina se il bottone "Crea" può essere premuto ora, a prescindere dall'etichetta "creabile" (che riflette solo il possesso degli elementi, vedi creatable()). */
-  canCreate: boolean;
+  gameId?: string;
+  role?: PlayerId;
+  /** Mano del giocatore, comprensiva dell'eventuale carta nella punta della bacchetta (1.4.1) — istantanea presa all'apertura, come per gli altri dialog di azione (es. CastSpellDialogData.payableHand). Assente fuori da una partita: creatable() tratta "nessuna mano" come "nessun elemento", quindi nessuna magia risulta creabile. */
+  hand?: readonly Card[];
+  /** true se il giocatore è di turno ed è in fase Azione (5.1) — determina se il bottone "Crea" può essere premuto ora, a prescindere dall'etichetta "creabile" (che riflette solo il possesso degli elementi, vedi creatable()). Assente (quindi mai vero) fuori da una partita. */
+  canCreate?: boolean;
 }
 
 // Residuo Arcano excluded on purpose — it's a wildcard, not an element, and no
@@ -49,7 +50,11 @@ type SortOption = 'alpha-asc' | 'alpha-desc' | 'cost-asc' | 'cost-desc';
 })
 export class GrimoireDialogComponent {
   private readonly dialogRef = inject(DialogRef);
-  private readonly data = inject<GrimoireDialogData>(DIALOG_DATA);
+  // config.data è undefined quando la dialog si apre senza passare `data` (Home, vedi
+  // GrimoireDialogData) — CDK Dialog inietta comunque DIALOG_DATA con quel valore letterale, non lo
+  // rifiuta né lo sostituisce con un default proprio. `?? {}` qui è l'unico punto che deve saperlo:
+  // il resto del componente lavora su un GrimoireDialogData sempre presente, dai campi opzionali.
+  private readonly data = inject<GrimoireDialogData | undefined>(DIALOG_DATA) ?? {};
   private readonly gameEngine = inject(GameEngineService);
   protected readonly i18n = inject(TranslationService);
 
@@ -57,7 +62,12 @@ export class GrimoireDialogComponent {
   protected readonly elementIconPath = elementIconPath;
   protected readonly filterElements = FILTER_ELEMENTS;
 
-  protected readonly selectedSpellId = signal<string>(SPELL_CATALOG[0]?.id ?? '');
+  // 'starter_bolt' (una delle 2 magie base sempre note, 5.1 — formula vuota, mai creata) come default
+  // invece di SPELL_CATALOG[0]: quello era semplicemente il primo elemento nell'ordine di
+  // DICHIARAZIONE del catalogo (fire_bolt), che non ha alcuna relazione con l'ordine ALFABETICO
+  // mostrato di default nell'elenco (filteredSpells, sortOption 'alpha-asc') — il cursore finiva
+  // quindi quasi sempre su una magia a metà/fine lista invece che in cima, a ogni apertura.
+  protected readonly selectedSpellId = signal<string>('starter_bolt');
   protected readonly creating = signal(false);
 
   /** Filtro elemento (5.1) — inclusivo/OR: una magia compare se la sua formula contiene ALMENO UNO degli elementi attivi (vedi filteredSpells sotto), non tutti. Set vuoto = nessun filtro, mostra tutto. */
@@ -129,18 +139,22 @@ export class GrimoireDialogComponent {
     return this.bookOrder().findIndex((s) => s.id === spell.id) + 1;
   }
 
-  /** Regolamento 5.1: hai gli elementi per produrre questa magia — solo possesso, non tiene conto di turno/fase (vedi canCreateSpell per quello). Sempre false per le magie a formula vuota (starter_bolt/starter_balm), mai creabili: seminate direttamente nel mazzo iniziale. */
+  /** Regolamento 5.1: hai gli elementi per produrre questa magia — solo possesso, non tiene conto di turno/fase (vedi canCreateSpell per quello). Sempre false per le magie a formula vuota (starter_bolt/starter_balm), mai creabili: seminate direttamente nel mazzo iniziale. Sempre false anche fuori da una partita (data.hand assente, vedi GrimoireDialogData) — nessuna mano da cui possedere elementi. */
   protected creatable(spell: Spell): boolean {
-    return spell.formula.length > 0 && hasElements(this.data.hand, spell.formula);
+    return spell.formula.length > 0 && hasElements(this.data.hand ?? [], spell.formula);
   }
 
-  /** Il bottone "Crea" richiede sia gli elementi (creatable) sia di essere di turno in fase Azione (data.canCreate) — a differenza dell'etichetta "creabile" nell'elenco, che mostra solo il primo. */
+  /** Il bottone "Crea" richiede sia gli elementi (creatable) sia di essere di turno in fase Azione (data.canCreate) — a differenza dell'etichetta "creabile" nell'elenco, che mostra solo il primo. Sempre false fuori da una partita (data.canCreate assente). */
   protected canCreateSpell(spell: Spell): boolean {
-    return this.data.canCreate && this.creatable(spell);
+    return !!this.data.canCreate && this.creatable(spell);
   }
 
   protected async createSpell(spell: Spell): Promise<void> {
-    if (!this.canCreateSpell(spell) || this.creating()) return;
+    // gameId/role sono garantiti presenti qui: canCreateSpell() richiede data.canCreate, mai vero
+    // fuori da una partita (vedi sopra) — quindi il bottone "Crea" che chiama questo metodo non è
+    // mai raggiungibile senza di essi.
+    if (!this.canCreateSpell(spell) || this.creating() || !this.data.gameId || !this.data.role)
+      return;
     this.creating.set(true);
     try {
       await this.gameEngine.createSpell(this.data.gameId, this.data.role, spell.id);
@@ -178,12 +192,18 @@ export class GrimoireDialogComponent {
             return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
           case 'damage_self':
             return this.i18n.t('grimoire.effects.damageSelf', { amount });
+          case 'damage_halve_opponent':
+            return this.i18n.t('grimoire.effects.damageHalveOpponent');
+          case 'damage_from_fonte':
+            return this.i18n.t('grimoire.effects.damageFromFonte');
           case 'heal':
             return this.i18n.t('grimoire.effects.heal', { amount });
           case 'shield_add':
             return this.i18n.t('grimoire.effects.shieldAdd', { amount });
           case 'shield_remove_opponent':
-            return this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount });
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.shieldRemoveOpponentAll');
           case 'poison_add':
             return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
@@ -194,10 +214,16 @@ export class GrimoireDialogComponent {
             return this.i18n.t('grimoire.effects.iceClearSelf');
           case 'opponent_discard_random':
             return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
+          case 'opponent_discard_hand':
+            return this.i18n.t('grimoire.effects.opponentDiscardHand');
           case 'reveal_opponent_hand':
-            return this.i18n.t('grimoire.effects.revealOpponentHand');
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.revealOpponentHandRandom', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.revealOpponentHand');
           case 'fonte_reset':
             return this.i18n.t('grimoire.effects.fonteReset');
+          case 'boost_card_mana':
+            return this.i18n.t('grimoire.effects.boostCardMana', { amount });
           default:
             return e.type;
         }

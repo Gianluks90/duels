@@ -43,7 +43,9 @@
     padding: 3px;
     outline: 2px solid transparent;
     outline-offset: 2px;
-    transition: outline-color var(--transition), background var(--transition);
+    transition:
+      outline-color var(--transition),
+      background var(--transition);
 
     &:hover {
       background: rgba(212, 168, 71, 0.1);
@@ -53,6 +55,36 @@
       outline-color: var(--border-gold);
       background: rgba(212, 168, 71, 0.18);
     }
+
+    // Sezione bersaglio (es. Migliora mana): stesso linguaggio della selezione pagamento sopra, ma
+    // blu invece di oro — carte pagamento e carta bersaglio sono scelte concettualmente diverse
+    // (una lascia la mano, l'altra ci resta), il colore le distingue a colpo d'occhio.
+    &--selected.cast-spell-dialog__hand-item--target {
+      outline-color: #2f7fd0;
+      background: rgba(47, 127, 208, 0.18);
+    }
+  }
+
+  &__target-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  &__section-label {
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  &__target-empty {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin: 0;
   }
 
   &__footer {

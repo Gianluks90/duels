@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import type { Card, SpecialMana } from '../../models/card.model';
-import { specialManaIconPath } from '../../models/card.model';
+import { specialManaIconPath, REVEALED_ICON } from '../../models/card.model';
 import { computePlayerMana } from '../../models/player.model';
 import { CardComponent } from '../../components/card/card.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
@@ -32,7 +33,7 @@ const CARDS_PER_VISUAL_ROW = 15;
 @Component({
   selector: 'app-pile-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardComponent, IconButtonComponent, TooltipDirective, TranslatePipe],
+  imports: [CardComponent, IconButtonComponent, TooltipDirective, TranslatePipe, NgTemplateOutlet],
   templateUrl: './pile-dialog.component.html',
   styleUrl: './pile-dialog.component.scss',
 })
@@ -45,6 +46,8 @@ export class PileDialogComponent {
   protected readonly titleKey = this.data.titleKey;
   protected readonly titleParams = this.data.titleParams;
   protected readonly specialManaIconPath = specialManaIconPath;
+  /** CSS mask-image richiede il valore completo `url(...)`, stessa ragione di CardComponent.revealedIconUrl. */
+  protected readonly revealedIconUrl = `url(${REVEALED_ICON})`;
 
   /** 3 righe (Mazzo: Elementi, Mazzo: Incantesimi, Scarti) se deckCards è presente, altrimenti 1 sola riga (discardCards, senza sottotitolo). */
   protected readonly rows = computed<PileRow[]>(() => {
@@ -140,12 +143,18 @@ export class PileDialogComponent {
             return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
           case 'damage_self':
             return this.i18n.t('grimoire.effects.damageSelf', { amount });
+          case 'damage_halve_opponent':
+            return this.i18n.t('grimoire.effects.damageHalveOpponent');
+          case 'damage_from_fonte':
+            return this.i18n.t('grimoire.effects.damageFromFonte');
           case 'heal':
             return this.i18n.t('grimoire.effects.heal', { amount });
           case 'shield_add':
             return this.i18n.t('grimoire.effects.shieldAdd', { amount });
           case 'shield_remove_opponent':
-            return this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount });
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.shieldRemoveOpponentAll');
           case 'poison_add':
             return this.i18n.t('grimoire.effects.poisonAdd', { amount });
           case 'ice_add':
@@ -156,10 +165,16 @@ export class PileDialogComponent {
             return this.i18n.t('grimoire.effects.iceClearSelf');
           case 'opponent_discard_random':
             return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
+          case 'opponent_discard_hand':
+            return this.i18n.t('grimoire.effects.opponentDiscardHand');
           case 'reveal_opponent_hand':
-            return this.i18n.t('grimoire.effects.revealOpponentHand');
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.revealOpponentHandRandom', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.revealOpponentHand');
           case 'fonte_reset':
             return this.i18n.t('grimoire.effects.fonteReset');
+          case 'boost_card_mana':
+            return this.i18n.t('grimoire.effects.boostCardMana', { amount });
           default:
             return e.type;
         }
@@ -170,6 +185,24 @@ export class PileDialogComponent {
   /** Spiegazione testuale dell'effetto del mana speciale (3.2) — stesso lookup di board.component.ts/CardComponent. */
   protected specialManaEffectText(type: SpecialMana): string {
     return this.i18n.t(`card.specialManaEffect.${type}`);
+  }
+
+  /** Quali dei tooltip ricchi si applicano a questa carta — stessa logica di board.component.ts (niente 'mana' qui: un token accumulato non finisce mai in mazzo/scarti, si consuma sempre). */
+  protected cardTooltipFlags(card: Card): boolean[] {
+    return [
+      card.tier === 'spell',
+      card.tier === 'freeze',
+      !!card.specialMana,
+      !!card.revealedToOpponent,
+    ];
+  }
+
+  protected hasCardTooltip(card: Card): boolean {
+    return this.cardTooltipFlags(card).some(Boolean);
+  }
+
+  protected isMultiCardTooltip(card: Card): boolean {
+    return this.cardTooltipFlags(card).filter(Boolean).length > 1;
   }
 
   protected close(): void {

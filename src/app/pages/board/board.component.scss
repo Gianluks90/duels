@@ -71,7 +71,6 @@
     gap: 8px;
   }
 
-
   // ── Player meta (name + mana dots) ──────────────────────────────────────────
   &__meta {
     display: flex;
@@ -226,7 +225,10 @@
     width: var(--hand-card-width, 84px);
     height: calc(var(--hand-card-width, 84px) * 1.5);
     transform-origin: bottom center; // pivots from a shared base point, like cards held in hand
-    transition: left 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+    transition:
+      left 150ms ease,
+      transform 150ms ease,
+      box-shadow 150ms ease;
 
     &--mirrored {
       transform-origin: top center;
@@ -243,11 +245,15 @@
     // Hovering a Fonte Arcana card (or Residuo) highlights the hand cards it needs —
     // gold if the combo is completable right now, blue if only part of it is in hand.
     &--gold {
-      box-shadow: 0 0 0 3px #d4a847, 0 0 18px 4px rgba(212, 168, 71, 0.7);
+      box-shadow:
+        0 0 0 3px #d4a847,
+        0 0 18px 4px rgba(212, 168, 71, 0.7);
     }
 
     &--blue {
-      box-shadow: 0 0 0 3px #2f7fd0, 0 0 18px 4px rgba(47, 127, 208, 0.6);
+      box-shadow:
+        0 0 0 3px #2f7fd0,
+        0 0 18px 4px rgba(47, 127, 208, 0.6);
     }
 
     // Carte "temporanee" (Congelamento/Residuo) che stanno per sparire — si alzano e svaniscono,
@@ -518,7 +524,9 @@
     // per slot. Per la punta il margine può anche tornare a 0 quando la carta esce (tipVanishing);
     // asta e manico non hanno mai un'uscita (una volta incastonato l'elemento resta per sempre), quindi
     // qui la transizione si vede solo una volta, al primo ingresso.
-    transition: margin-bottom 400ms ease, margin-top 400ms ease;
+    transition:
+      margin-bottom 400ms ease,
+      margin-top 400ms ease;
   }
 
   &__wand-card {
@@ -573,7 +581,8 @@
 }
 
 @keyframes collect-mana-bonus {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   40% {
@@ -582,7 +591,8 @@
 }
 
 @keyframes deck-trigger-pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 8px 2px rgba(212, 168, 71, 0.3);
   }
   50% {
@@ -604,18 +614,45 @@
 // Esplosione elementale (2.4) — "lampo + scossa": lampi bianco/dorati (via filter) + shake
 // orizzontale, poi svanisce. Durata in sync con EXPLOSION_GHOST_DURATION_MS (board.component.ts).
 @keyframes hand-card-explode {
-  0% { filter: brightness(1); translate: 0 0; }
-  15%, 45% { filter: brightness(2.2); translate: -6px 0; }
-  30%, 60% { filter: brightness(2.2); translate: 6px 0; }
-  100% { filter: brightness(1); translate: 0 0; opacity: 0; }
+  0% {
+    filter: brightness(1);
+    translate: 0 0;
+  }
+  15%,
+  45% {
+    filter: brightness(2.2);
+    translate: -6px 0;
+  }
+  30%,
+  60% {
+    filter: brightness(2.2);
+    translate: 6px 0;
+  }
+  100% {
+    filter: brightness(1);
+    translate: 0 0;
+    opacity: 0;
+  }
 }
 
 // Stessa idea semplificata per l'intera riga della Fonte Arcana (non singole carte, vedi nota su
 // .board__fonte-row--exploding). Durata in sync con FONTE_EXPLOSION_DURATION_MS (board.component.ts).
 @keyframes fonte-explode {
-  0%, 100% { filter: brightness(1); translate: 0 0; }
-  15%, 45% { filter: brightness(1.9); translate: -5px 0; }
-  30%, 60% { filter: brightness(1.9); translate: 5px 0; }
+  0%,
+  100% {
+    filter: brightness(1);
+    translate: 0 0;
+  }
+  15%,
+  45% {
+    filter: brightness(1.9);
+    translate: -5px 0;
+  }
+  30%,
+  60% {
+    filter: brightness(1.9);
+    translate: 5px 0;
+  }
 }
 
 // Tooltip ricco (nome in grassetto, <hr>, corpo, nota finale in corsivo) — condiviso da quattro
@@ -665,7 +702,36 @@
     mask: var(--special-mana-icon) center / contain no-repeat;
   }
 
-  &--prismatic { color: #d4a847; }
-  &--vital     { color: #4caf50; }
-  &--chaotic   { color: #d02f2f; }
+  &--prismatic {
+    color: #d4a847;
+  }
+  &--vital {
+    color: #4caf50;
+  }
+  &--chaotic {
+    color: #d02f2f;
+  }
+  &--revealed {
+    color: #9aa0a6;
+  }
+}
+
+// Più di un tooltip ricco si applica alla stessa carta (es. mana speciale + Occhio, 5.x/3.2) — invece
+// di sceglierne uno solo (comportamento di prima), li affianca in colonna, ciascuno il proprio
+// blocco header/hr/corpo di sempre, separati da un filo verticale invece che dal solito <hr>
+// orizzontale (qui la separazione è tra blocchi interi, non dentro lo stesso blocco).
+.rich-tooltip__multi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.rich-tooltip__multi-item {
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--border-subtle);
+
+  &:first-child {
+    padding-top: 0;
+    border-top: none;
+  }
 }

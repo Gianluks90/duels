@@ -11,7 +11,7 @@ import { NgOptimizedImage } from '@angular/common';
 import type { Element } from '../../models/element.model';
 import { elementImagePath, elementIconPath, ELEMENT_MANA } from '../../models/element.model';
 import type { SpecialMana } from '../../models/card.model';
-import { specialManaIconPath } from '../../models/card.model';
+import { specialManaIconPath, REVEALED_ICON } from '../../models/card.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
 
@@ -91,6 +91,23 @@ const CARD_FLIP_HALF_MS = 150;
               [attr.aria-label]="specialManaAria()"
             ></span>
           }
+          @if (showMana() && revealedToOpponent()) {
+            <!-- Occhio (5.x, Card.revealedToOpponent) — stesso gettone/tecnica maschera di
+                 card__badge--special-mana sopra, ma grigio e senza varianti (un solo stato, non 3
+                 tipi da colorare). "In coda" alla colonna: sotto il mana speciale se presente, sennò
+                 nello stesso slot che occuperebbe il mana speciale. Solo visivo + aria-label, come il
+                 badge del mana speciale sopra — il tooltip ricco (titolo/icona, hr, descrizione) è
+                 responsabilità del chiamante (#revealedTip in board.component.html/pile-dialog), non
+                 di questo componente: deve poter convivere/combinarsi con lo spellTip/specialManaTip
+                 ecc. già gestiti lì, cosa che un tooltip proprio qui dentro non potrebbe fare. -->
+            <span
+              class="card__badge card__badge--revealed"
+              [class.card__badge--revealed-after-special]="!!specialMana()"
+              [style.--revealed-icon]="revealedIconUrl"
+              role="img"
+              [attr.aria-label]="revealedAria()"
+            ></span>
+          }
           @if (!spell()) {
             <img
               class="card__badge card__badge--element"
@@ -139,9 +156,12 @@ export class CardComponent {
   readonly specialMana = input<SpecialMana | null>(null);
   /** Carta Congelamento (Card.tier 'freeze', regolamento 2.3.1) — mostra un gettone grosso centrato con l'icona elemento al posto del badge d'angolo/header, sull'arte dell'elemento passato in element() (sempre 'ice', vedi applyFreeze). */
   readonly freeze = input<boolean>(false);
+  /** Card.revealedToOpponent (5.x, Terzo occhio/Occhio supremo) — questa carta è stata rivelata permanentemente all'avversario del suo proprietario. Chi la vede così è appunto l'avversario: sul proprio pannello del giocatore questo input non viene mai passato true (non ha senso rivelarsi da soli qualcosa che già si vede). */
+  readonly revealedToOpponent = input<boolean>(false);
 
   /** Placeholder temporaneo per tutte le carte incantesimo — nessuna arte dedicata per singola Spell ancora. */
   protected readonly spellIcon = '/icons/wand_stars_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly revealedIconUrl = `url(${REVEALED_ICON})`;
 
   /** Cosa mostra davvero il template in questo istante — resta indietro rispetto a revealed() finché il flip non raggiunge il suo punto invisibile (larghezza zero), cosicché lo scambio di volto non si veda. */
   protected readonly displayedRevealed = signal(this.revealed());
@@ -183,6 +203,7 @@ export class CardComponent {
       ? this.i18n.t('card.specialManaAria', { name: this.i18n.specialManaLabel(type) })
       : '';
   });
+  protected readonly revealedAria = computed(() => this.i18n.t('card.revealed.title'));
 
   constructor() {
     effect((onCleanup) => {

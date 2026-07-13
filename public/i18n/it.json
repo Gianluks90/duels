@@ -26,17 +26,23 @@
       },
       "preparazione": {
         "label": "Preparazione",
-        "description": "Vengono risolti alcuni effetti di inizio turno"
+        "description": "Durante questa fase vengono risolti alcuni effetti come ad esempio lo <em>scioglimento</em> delle carte <b>congelamento</b>."
       },
-      "raccolta": { "label": "Raccolta", "description": "Raccogli le risorse" },
-      "azione": { "label": "Azione", "description": "Effettua delle azioni" },
+      "raccolta": {
+        "label": "Raccolta",
+        "description": "Scegli se pescare un nuovo <b>Elemento base</b> o un <b>Mana accumulato</b> da usare durante questo turno."
+      },
+      "azione": {
+        "label": "Azione",
+        "description": "Combina elementi o lancia incantesimi. Studia bene la tua strategia."
+      },
       "incantesimo": {
         "label": "Incantesimo",
-        "description": "Vengono lanciati gli incantesimi selezionati"
+        "description": "Gli incantesimi preparati verranno risolti in ordine durante questa fase."
       },
       "fine": {
         "label": "Fine",
-        "description": "Vengono risolti alcuni effetti di fine turno prima di concluderlo"
+        "description": "<b>Residui arcani</b> e <b>Mana accumulati</b> vengono rimossi durante questa fase, ricordati di usarli."
       }
     }
   },
@@ -44,6 +50,10 @@
   "card": {
     "manaAria": "{value} mana",
     "specialManaAria": "Mana {name}",
+    "revealed": {
+      "title": "Visibile",
+      "effect": "Questa carta è visibile all'avversario."
+    },
     "specialManaEffect": {
       "prismatic": "Vale sempre 1 mana in più rispetto al proprio valore, indipendentemente da altri modificatori attivi sulla carta.",
       "vital": "Se lo usi per pagare un incantesimo che bersaglia te stesso, recuperi 2 Punti Salute. Altrimenti vale come un mana comune.",
@@ -234,17 +244,23 @@
       "damageElement": "Infligge {amount} danno da {element} all'avversario.",
       "damageIgnoreShields": "Infligge {amount} danno, ignora gli scudi.",
       "damageSelf": "Infligge {amount} danno a sé stessi.",
+      "damageHalveOpponent": "Dimezza i punti ferita correnti dell'avversario.",
+      "damageFromFonte": "Infligge 3 danni all'avversario per ogni coppia di elementi avanzati uguali presenti nella Fonte Arcana (0-6).",
       "heal": "Recupera {amount} punto ferita.",
       "shieldAdd": "Aggiunge {amount} scudo.",
       "shieldRemoveOpponent": "Rimuove {amount} scudo all'avversario.",
+      "shieldRemoveOpponentAll": "Rimuove tutto lo scudo dell'avversario.",
       "poisonAdd": "Applica {amount} veleno all'avversario.",
       "iceAdd": "Applica congelamento {amount} volta/e all'avversario.",
       "poisonClearSelf": "Rimuove tutto il veleno da te stesso.",
       "iceClearSelf": "Rimuove tutte le carte Congelamento dalla tua pila degli scarti.",
       "opponentLoseMana": "L'avversario perde {amount} mana.",
       "opponentDiscardRandom": "L'avversario scarta {amount} carta dalla mano.",
-      "revealOpponentHand": "Rivela la mano dell'avversario.",
-      "fonteReset": "Resetta la Fonte Arcana."
+      "opponentDiscardHand": "L'avversario scarta l'intera mano e ne pesca 5 nuove.",
+      "revealOpponentHand": "Rivela l'intera mano dell'avversario.",
+      "revealOpponentHandRandom": "Rivela {amount} carta casuale dalla mano dell'avversario.",
+      "fonteReset": "Resetta la Fonte Arcana.",
+      "boostCardMana": "Aumenta permanentemente di {amount} il valore di mana di una carta scelta in mano."
     }
   },
 
@@ -272,6 +288,9 @@
     "title": "Lancia {name}",
     "closeAria": "Annulla",
     "handListAria": "Carte disponibili per il pagamento",
+    "targetSectionTitle": "Scegli la carta bersaglio",
+    "targetListAria": "Carte disponibili come bersaglio",
+    "targetEmpty": "Nessuna carta disponibile come bersaglio.",
     "manaCounter": "{paid} / {cost} mana",
     "cancel": "Annulla",
     "confirm": "Conferma lancio"
@@ -451,6 +470,46 @@
     "detox": {
       "name": "Disintossicante",
       "flavorText": "Un flusso di luce pura che spazza via ogni traccia di veleno dal corpo."
+    },
+    "fracture": {
+      "name": "Frattura",
+      "flavorText": "Una crepa improvvisa attraversa lo scudo, indebolendolo dall'interno."
+    },
+    "breach": {
+      "name": "Breccia",
+      "flavorText": "Un colpo così violento da spazzare via qualunque difesa in un solo istante."
+    },
+    "black_hole": {
+      "name": "Buco nero",
+      "flavorText": "Una voragine che risucchia metà della forza vitale del bersaglio, senza lasciare scampo."
+    },
+    "violent_gust": {
+      "name": "Raffica violenta",
+      "flavorText": "Un vento tagliente che strappa una carta dalle mani del bersaglio, portandola via con sé."
+    },
+    "reset": {
+      "name": "Reset",
+      "flavorText": "La Fonte Arcana si riazzera in un istante: le vecchie carte svaniscono, quattro nuove prendono il loro posto."
+    },
+    "low_blow": {
+      "name": "Colpo basso",
+      "flavorText": "Un colpo sleale che costringe l'avversario a liberarsi di tutto ciò che ha in mano, in un solo istante."
+    },
+    "third_eye": {
+      "name": "Terzo occhio",
+      "flavorText": "Uno sguardo furtivo scivola tra le dita dell'avversario, svelando una delle sue carte."
+    },
+    "supreme_eye": {
+      "name": "Occhio supremo",
+      "flavorText": "Nessun segreto resiste a questo sguardo: l'intera mano dell'avversario si apre come un libro."
+    },
+    "risk": {
+      "name": "Rischio",
+      "flavorText": "Chi la lancia non sa mai cosa aspettarsi: a volte non succede nulla, a volte la Fonte Arcana si ritorce contro il malcapitato."
+    },
+    "improve_mana": {
+      "name": "Migliora mana",
+      "flavorText": "Un tocco di energia arcana che si fissa per sempre su una carta, aumentandone il valore."
     }
   }
 }

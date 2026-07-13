@@ -15,15 +15,21 @@ export type SpellEffectType =
   | 'poison_clear_self'
   | 'opponent_discard_random'
   | 'opponent_discard_hand'
-  | 'opponent_skip_collect'
   | 'reveal_opponent_hand'
+  // Rimandato a una futura espansione "Status e magie continue" (12/07/2026): richiede un vero
+  // sistema di stati a scadenza sul giocatore, non ancora esistente — tenuto nell'unione come
+  // promemoria di design, ma nessuno SpellEffect lo usa oggi (vedi README, punto 1).
   | 'element_immunity'
-  | 'fonte_reset';
+  | 'fonte_reset'
+  | 'boost_card_mana';
 
 export interface SpellEffect {
   type: SpellEffectType;
   amount?: number;
 }
+
+/** SpellEffectType che richiedono una carta bersaglio scelta dal giocatore al momento del lancio (castSpell), non un target cablato come per gli altri effetti (avversario/sé stesso/casuale) — usata sia da CastSpellDialogComponent (per sapere se mostrare il selettore) sia da castSpell in turn-engine.ts (per validare che sia stato scelto). */
+export const TARGET_CARD_EFFECT_TYPES: readonly SpellEffectType[] = ['boost_card_mana'];
 
 /** name/flavorText live in the i18n dictionaries under spells.<id>.name / spells.<id>.flavorText, not here. */
 export interface Spell {
