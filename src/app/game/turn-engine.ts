@@ -405,18 +405,18 @@ export function castSpell(
   // keepMana) — non finisce mai negli scarti, altrimenti sarebbe ripescabile in futuro, cosa che
   // "svanire" non è. Stesso trattamento del Residuo Arcano in createSpell (discardedCards).
   const discardedPaidCards = paidCards.filter((c) => c.tier !== 'mana');
+  // targetCardId va OMESSO (non impostato a `undefined`) quando assente: Firestore rifiuta
+  // qualunque campo con valore `undefined` in un documento, ovunque sia annidato — un
+  // `Transaction.update()`/`updateDoc()` con un `undefined` nascosto dentro un array fallisce
+  // sempre con "Unsupported field value: undefined", a differenza di `null` che è permesso.
+  const pendingSpell: PendingSpell =
+    needsTargetCard && resolvedTargetCardId !== undefined
+      ? { card: spellCard, vitalBonus, chaoticBonus, targetCardId: resolvedTargetCardId }
+      : { card: spellCard, vitalBonus, chaoticBonus };
   return updatePlayer(state, role, {
     hand: player.hand.filter((c) => !spentIds.has(c.id)),
     discards: [...player.discards, ...discardedPaidCards],
-    pendingSpells: [
-      ...player.pendingSpells,
-      {
-        card: spellCard,
-        vitalBonus,
-        chaoticBonus,
-        targetCardId: needsTargetCard ? resolvedTargetCardId : undefined,
-      },
-    ],
+    pendingSpells: [...player.pendingSpells, pendingSpell],
     spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
     wand: tipWasSpent ? { ...player.wand, tipSlot: null } : player.wand,
     tipCardPlacedTurn: tipWasSpent ? null : player.tipCardPlacedTurn,

@@ -26,6 +26,24 @@
     overflow: hidden;
   }
 
+  // Sotto i 1024px: colonna singola (select sopra, contenuto sotto a scorrimento) invece della nav
+  // a due colonne — vedi RulebookDialogComponent.compact.
+  &--compact &__body {
+    flex-direction: column;
+  }
+
+  &__select-wrap {
+    flex-shrink: 0;
+    padding: var(--sp-3) var(--sp-5) 0;
+
+    // Il pannello del menu (SelectComponent) viene portato fuori dall'albero DOM di questo
+    // componente in un overlay CDK — non serve piercing lì, solo sul trigger che resta invece qui.
+    ::ng-deep .select-trigger {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+
   &__nav {
     display: flex;
     flex-direction: column;

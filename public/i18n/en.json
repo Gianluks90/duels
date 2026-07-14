@@ -44,6 +44,11 @@
     }
   },
 
+  "unsupportedViewport": {
+    "title": "Screen too small",
+    "body": "This resolution isn't supported yet. Rotate your device or switch to a larger screen to keep playing."
+  },
+
   "card": {
     "manaAria": "{value} mana",
     "specialManaAria": "{name} mana",
@@ -123,7 +128,7 @@
       "rulebookTooltip": "Rulebook"
     },
     "turn": {
-      "advance": "Next phase"
+      "advance": "Continue"
     },
     "hand": {
       "castAction": "Cast {name}",

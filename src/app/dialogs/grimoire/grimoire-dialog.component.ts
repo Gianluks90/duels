@@ -10,6 +10,7 @@ import { SelectComponent, type SelectOption } from '../../components/ui/select/s
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { GameEngineService } from '../../services/game-engine.service';
+import { BoardLayoutService } from '../../services/board-layout.service';
 import type { Spell } from '../../models/spell.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { hasElements } from '../../game/turn-engine';
@@ -56,11 +57,18 @@ export class GrimoireDialogComponent {
   // il resto del componente lavora su un GrimoireDialogData sempre presente, dai campi opzionali.
   private readonly data = inject<GrimoireDialogData | undefined>(DIALOG_DATA) ?? {};
   private readonly gameEngine = inject(GameEngineService);
+  private readonly boardLayout = inject(BoardLayoutService);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly elementIconPath = elementIconPath;
   protected readonly filterElements = FILTER_ELEMENTS;
+
+  /** Sotto i 1024px (stessa soglia di BoardLayoutService) le due pagine affiancate non hanno più
+   * spazio per stare fianco a fianco — sotto quella soglia il libro si impila in verticale, pagina
+   * sinistra (filtri + elenco, altezza ridotta a un paio di righe) sopra la pagina destra (dettaglio),
+   * niente più salto tra "elenco" e "dettaglio" come farebbe un side-nav che sostituisce la pagina. */
+  protected readonly compact = computed(() => this.boardLayout.tier() !== 'desktop');
 
   // 'starter_bolt' (una delle 2 magie base sempre note, 5.1 — formula vuota, mai creata) come default
   // invece di SPELL_CATALOG[0]: quello era semplicemente il primo elemento nell'ordine di

@@ -2,6 +2,17 @@
   display: flex;
   flex-direction: column;
   height: 100dvh;
+  // Stesso tetto della board, su entrambi gli assi (--content-max-width/height, _design-system.scss)
+  // — l'unica altra pagina full-viewport senza un proprio pannello a max-width già centrato (a
+  // differenza di home/login/result). position: fixed + inset: 0 + margin: auto invece di
+  // margin-inline: auto: quest'ultimo centra solo in orizzontale nel normal flow (un margin-block
+  // auto su un box normale si risolve sempre a 0, non centra verticalmente) — vedi lo stesso
+  // commento più esteso in board.component.scss.
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  max-width: var(--content-max-width);
+  max-height: var(--content-max-height);
 
   &__header {
     display: flex;

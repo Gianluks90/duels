@@ -60,7 +60,12 @@ import type {
   AdvancedElement,
   SuperiorElement,
 } from '../../models/element.model';
-import { ADVANCED_RECIPES, ELEMENT_MANA, SUPERIOR_FORMULA } from '../../models/element.model';
+import {
+  ADVANCED_RECIPES,
+  ELEMENT_MANA,
+  SUPERIOR_FORMULA,
+  elementIconPath,
+} from '../../models/element.model';
 import type { Wand } from '../../models/wand.model';
 import { ELEMENT_OPPOSITES } from '../../models/wand.model';
 import type { Card, SpecialMana } from '../../models/card.model';
@@ -71,6 +76,7 @@ import { combineNeedsChoice, hasElements } from '../../game/turn-engine';
 import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { BoardLayoutService } from '../../services/board-layout.service';
 
 /** Width of a wand-section card; its paired peeking element card shares the same width. */
 const WAND_CARD_WIDTH = 168;
@@ -151,7 +157,7 @@ interface HandExplosion {
     NgTemplateOutlet,
   ],
   templateUrl: './board.component.html',
-  styleUrl: './board.component.scss',
+  styleUrls: ['./board.component.scss', './board-compact.component.scss'],
 })
 export class BoardComponent implements OnInit {
   private readonly auth = inject(AuthService);
@@ -163,6 +169,8 @@ export class BoardComponent implements OnInit {
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);
   protected readonly i18n = inject(TranslationService);
+  private readonly boardLayout = inject(BoardLayoutService);
+  protected readonly layoutTier = this.boardLayout.tier;
 
   protected readonly ELEMENT_OPPOSITES = ELEMENT_OPPOSITES;
   protected readonly ELEMENT_MANA = ELEMENT_MANA;
@@ -177,9 +185,35 @@ export class BoardComponent implements OnInit {
   /** Total width of the wand panels — used to keep the hand box clear of them horizontally. */
   protected readonly wandRowWidth = 3 * WAND_CARD_WIDTH + 2 * ROW_GAP;
 
+  /** Gap tra le 3 etichette punta/asta/manico nella striscia bacchetta compatta — deve combaciare
+   * col gap reale in board-compact.component.scss, usato qui solo per calcolare compactWandSlotWidth. */
+  private readonly COMPACT_WAND_GAP = 4;
+  /** Larghezza di fallback prima che compactPlayerWandTrackWidth/compactOpponentWandTrackWidth
+   * abbiano una misura reale (primo render) — arbitraria ma ragionevole, sparisce non appena
+   * l'effect di osservazione gira la prima volta. */
+  private readonly COMPACT_WAND_FALLBACK_WIDTH = 100;
+  /** fonteCardWidth (76px, sotto) è tarato sulla larghezza della board desktop — nella zona centrale
+   * compatta, molto più stretta, la stessa riga di carte (Residuo/mazzo/griglia/scarti, o mazzo
+   * comune+scarti in Raccolta) rischia di non starci e restare ancorata a sinistra invece di
+   * centrarsi. Ridotta ma non troppo: .board-compact__fonte ha comunque uno scroll orizzontale di
+   * riserva per gli schermi più stretti (vedi board-compact.component.scss). */
+  protected readonly compactFonteCardWidth = 64;
+  /** Mazzo avanzato e i suoi scarti, incolonnati invece che affiancati (risparmia larghezza — prima
+   * la riga arrivava a coprire i pulsanti Grimorio/Regolamento sui telefoni più larghi). Più piccoli
+   * di compactFonteCardWidth apposta: incolonnati raddoppierebbero comunque l'altezza della riga,
+   * meglio contenerla piuttosto che sommare due card intere una sopra l'altra. */
+  protected readonly compactFonteStackedCardWidth = 44;
+
   protected readonly handCardWidth = HAND_CARD_WIDTH;
   protected readonly handArcCardWidth = HAND_ARC_CARD_WIDTH;
   protected readonly visibleContentHeight = PANEL_CONTENT_HEIGHT;
+
+  /** Mano/mazzo/scarti dell'avversario nel layout compatto, più piccoli di quelli del giocatore
+   * (handCardWidth/handArcCardWidth sopra, condivisi col desktop) — le sue carte sono comunque
+   * sempre coperte (vedi il fix privacy in board.component.html), non serve leggerle, solo vederle:
+   * risparmiare qui altezza verticale aiuta a far stare la Fonte Arcana, molto più ingombrante. */
+  protected readonly compactOpponentHandCardWidth = 56;
+  protected readonly compactOpponentHandArcCardWidth = 60;
 
   protected readonly hudWidth = HUD_WIDTH;
   /** Horizontal bounds for the (absolutely positioned) hand box, clear of vita on one side and bacchetta on the other.
@@ -194,11 +228,38 @@ export class BoardComponent implements OnInit {
   protected readonly grimoireIcon = '/icons/book_2_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly rulebookIcon =
     '/icons/question_mark_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly settingsIcon = '/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  /** Stessa icona teschio usata da player-hud.component per il livello di Avvelenamento (2.3.4) — riusata nel layout compatto, che non passa per PlayerHudComponent. */
+  protected readonly poisonIcon = elementIconPath('poison');
 
   private readonly playerHandTrackRef = viewChild<ElementRef<HTMLElement>>('playerHandTrack');
   private readonly opponentHandTrackRef = viewChild<ElementRef<HTMLElement>>('opponentHandTrack');
   protected readonly playerHandTrackWidth = signal(0);
   protected readonly opponentHandTrackWidth = signal(0);
+
+  /** Stessa idea di playerHandTrackRef/opponentHandTrackRef sopra, ma per la mano sovrapposta del
+   * layout compatto (board-compact.component.scss) — elemento diverso, quindi tracciato a parte.
+   * Osservato con un effect dedicato (non afterNextRender come sopra): a differenza del layout
+   * desktop, questi elementi esistono solo quando layoutTier() !== 'desktop', quindi potrebbero non
+   * essere ancora nel DOM al primo render. */
+  private readonly compactPlayerHandTrackRef =
+    viewChild<ElementRef<HTMLElement>>('compactPlayerHandTrack');
+  private readonly compactOpponentHandTrackRef = viewChild<ElementRef<HTMLElement>>(
+    'compactOpponentHandTrack',
+  );
+  protected readonly compactPlayerHandTrackWidth = signal(0);
+  protected readonly compactOpponentHandTrackWidth = signal(0);
+
+  /** Stessa idea di compactPlayerHandTrackRef/compactOpponentHandTrackRef sopra, ma per la striscia
+   * bacchetta compatta — serve la sua larghezza reale per far corrispondere la carta infilata alla
+   * larghezza della sezione a cui appartiene (compactWandSlotWidth sotto), invece di una stima fissa. */
+  private readonly compactPlayerWandTrackRef =
+    viewChild<ElementRef<HTMLElement>>('compactPlayerWandTrack');
+  private readonly compactOpponentWandTrackRef = viewChild<ElementRef<HTMLElement>>(
+    'compactOpponentWandTrack',
+  );
+  protected readonly compactPlayerWandTrackWidth = signal(0);
+  protected readonly compactOpponentWandTrackWidth = signal(0);
 
   protected readonly gameId = signal<string>('');
   protected readonly gameDoc = signal<GameDoc | null>(null);
@@ -268,6 +329,15 @@ export class BoardComponent implements OnInit {
   protected readonly canAdvancePhase = computed(
     () => this.isPlayerTurn() && this.state()?.phase === 'azione',
   );
+
+  /** Layout compatto (mobile/tablet, board-compact.scss): la zona centrale mostra un solo elemento
+   * alla volta invece di tutto insieme — Raccolta durante Preparazione/Raccolta (l'unica fase in cui
+   * c'è qualcosa da fare lì), la Fonte Arcana nelle restanti fasi (Azione/Incantesimo/Fine, dove le
+   * combinazioni sono l'azione principale). Non dipende da chi ha il turno: la fase è condivisa. */
+  protected readonly showRaccolta = computed(() => {
+    const phase = this.state()?.phase;
+    return phase === 'preparazione' || phase === 'raccolta';
+  });
 
   /** Incantesimi in coda del giocatore di turno (5.2) — pilota i puntini dorati sotto la fase Incantesimo nel tracker. Solo chi ha il turno può averne (si lanciano in Azione, si risolvono in modo sincrono al passaggio in Incantesimo — resolveSpells in turn-engine.ts — quindi non sopravvivono mai oltre la propria Azione). */
   protected readonly currentTurnPendingSpellsCount = computed(() => {
@@ -497,6 +567,53 @@ export class BoardComponent implements OnInit {
     afterNextRender(() => {
       this.observeWidth(this.playerHandTrackRef(), this.playerHandTrackWidth);
       this.observeWidth(this.opponentHandTrackRef(), this.opponentHandTrackWidth);
+    });
+
+    // Come sopra, ma con un effect invece di afterNextRender: questi due elementi esistono solo
+    // nel layout compatto (@else in board.component.html), quindi potrebbero non essere ancora nel
+    // DOM al primo render — l'effect si ri-attiva da solo non appena viewChild() smette di essere
+    // undefined (query a segnali, reattiva agli @if/@else). onCleanup scollega l'observer precedente
+    // a ogni ri-esecuzione (es. cambio di layoutTier avanti e indietro), evitando di accumularne più
+    // d'uno sullo stesso elemento.
+    effect((onCleanup) => {
+      const el = this.compactPlayerHandTrackRef()?.nativeElement;
+      if (!el) return;
+      this.compactPlayerHandTrackWidth.set(el.clientWidth);
+      const observer = new ResizeObserver(([entry]) =>
+        this.compactPlayerHandTrackWidth.set(entry.contentRect.width),
+      );
+      observer.observe(el);
+      onCleanup(() => observer.disconnect());
+    });
+    effect((onCleanup) => {
+      const el = this.compactOpponentHandTrackRef()?.nativeElement;
+      if (!el) return;
+      this.compactOpponentHandTrackWidth.set(el.clientWidth);
+      const observer = new ResizeObserver(([entry]) =>
+        this.compactOpponentHandTrackWidth.set(entry.contentRect.width),
+      );
+      observer.observe(el);
+      onCleanup(() => observer.disconnect());
+    });
+    effect((onCleanup) => {
+      const el = this.compactPlayerWandTrackRef()?.nativeElement;
+      if (!el) return;
+      this.compactPlayerWandTrackWidth.set(el.clientWidth);
+      const observer = new ResizeObserver(([entry]) =>
+        this.compactPlayerWandTrackWidth.set(entry.contentRect.width),
+      );
+      observer.observe(el);
+      onCleanup(() => observer.disconnect());
+    });
+    effect((onCleanup) => {
+      const el = this.compactOpponentWandTrackRef()?.nativeElement;
+      if (!el) return;
+      this.compactOpponentWandTrackWidth.set(el.clientWidth);
+      const observer = new ResizeObserver(([entry]) =>
+        this.compactOpponentWandTrackWidth.set(entry.contentRect.width),
+      );
+      observer.observe(el);
+      onCleanup(() => observer.disconnect());
     });
 
     // Aiuto di test finché non c'è un vero secondo giocatore: nella partita di debug
@@ -782,6 +899,59 @@ export class BoardComponent implements OnInit {
     const fitSpacing = (containerWidth - HAND_ARC_CARD_WIDTH) / (count - 1);
     const minSpacing = HAND_ARC_CARD_WIDTH * (1 - HAND_MAX_OVERLAP_FRACTION);
     return Math.max(fitSpacing, minSpacing);
+  }
+
+  /** Stessa idea di handCardStyle/handSpacing sopra (l'overlap si stringe quanto serve perché
+   * l'intera mano stia in containerWidth, mai una fila che scappa fuori schermo), ma per la mano
+   * SOVRAPPOSTA del layout compatto — niente rotazione/caduta ad arco (board-compact vuole carte
+   * vere in riga dritta, non un ventaglio), e position: absolute con uno z-index esplicito per
+   * ciascuna, invece di affidarsi all'ordine naturale del DOM (che con app-action-menu di mezzo
+   * non garantiva uno stacking corretto dei badge sulle carte sovrapposte). cardWidth è un parametro
+   * (a differenza di handSpacing sopra, che usa sempre HAND_ARC_CARD_WIDTH) perché qui la mano
+   * dell'avversario usa una dimensione più piccola di quella del giocatore. */
+  protected compactHandCardStyle(
+    index: number,
+    count: number,
+    containerWidth: number,
+    cardWidth: number,
+  ): Record<string, string> {
+    const spacing = this.compactHandSpacing(count, containerWidth, cardWidth);
+    // Stesso centraggio di handCardStyle sopra (startX): senza, la mano restava sempre ancorata al
+    // bordo sinistro del proprio spazio invece di stare centrata quando non lo riempie per intero
+    // (poche carte, o spacing "a riposo" già sotto la larghezza disponibile).
+    const fanWidth = cardWidth + (count - 1) * spacing;
+    const startX = Math.max((containerWidth - fanWidth) / 2, 0);
+    return {
+      position: 'absolute',
+      left: `${Math.round(startX + index * spacing)}px`,
+      top: '0',
+      'z-index': `${index}`,
+    };
+  }
+
+  /** Stessa idea di handSpacing sopra, parametrizzata su cardWidth invece di HAND_ARC_CARD_WIDTH
+   * fisso — serve a compactHandCardStyle, che deve gestire sia la mano del giocatore (100px) sia
+   * quella, più piccola, dell'avversario (60px). */
+  private compactHandSpacing(count: number, containerWidth: number, cardWidth: number): number {
+    if (count <= 1 || containerWidth <= 0) return cardWidth;
+
+    const naturalSpacing = cardWidth * (1 - HAND_MIN_OVERLAP_FRACTION);
+    const naturalTotal = cardWidth + (count - 1) * naturalSpacing;
+    if (naturalTotal <= containerWidth) return naturalSpacing;
+
+    const fitSpacing = (containerWidth - cardWidth) / (count - 1);
+    const minSpacing = cardWidth * (1 - HAND_MAX_OVERLAP_FRACTION);
+    return Math.max(fitSpacing, minSpacing);
+  }
+
+
+  /** Larghezza della carta infilata dietro punta/asta/manico nel layout compatto — deve corrispondere
+   * a quella reale della sua sezione (un terzo della striscia, al netto dei 2 gap tra le 3 etichette),
+   * non una stima fissa. trackWidth 0 (primo render, prima che l'effect di osservazione giri) ricade
+   * su COMPACT_WAND_FALLBACK_WIDTH invece di un risultato negativo/assurdo. */
+  protected compactWandSlotWidth(trackWidth: number): number {
+    if (trackWidth <= 0) return this.COMPACT_WAND_FALLBACK_WIDTH;
+    return Math.max(1, Math.floor((trackWidth - 2 * this.COMPACT_WAND_GAP) / 3));
   }
 
   ngOnInit(): void {

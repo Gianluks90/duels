@@ -1,21 +1,32 @@
-<div class="rulebook-dialog">
+<div class="rulebook-dialog" [class.rulebook-dialog--compact]="compact()">
   <header class="rulebook-dialog__header">
     <h2 class="t-heading rulebook-dialog__title">{{ 'rulebook.title' | translate }}</h2>
     <app-icon-button [icon]="closeIcon" [ariaLabel]="'rulebook.closeAria' | translate" [size]="32" (iconClick)="close()" />
   </header>
 
   <div class="rulebook-dialog__body">
-    <nav class="rulebook-dialog__nav" [attr.aria-label]="'rulebook.navAria' | translate">
-      @for (section of sections(); track section.id) {
-        <button
-          class="rulebook-dialog__nav-item"
-          [class.rulebook-dialog__nav-item--active]="activeId() === section.id"
-          (click)="selectSection(section.id)"
-        >
-          {{ section.title }}
-        </button>
-      }
-    </nav>
+    @if (compact()) {
+      <div class="rulebook-dialog__select-wrap">
+        <app-select
+          [options]="sectionOptions()"
+          [value]="activeId()"
+          [ariaLabel]="'rulebook.navAria' | translate"
+          (valueChange)="selectSection($event)"
+        />
+      </div>
+    } @else {
+      <nav class="rulebook-dialog__nav" [attr.aria-label]="'rulebook.navAria' | translate">
+        @for (section of sections(); track section.id) {
+          <button
+            class="rulebook-dialog__nav-item"
+            [class.rulebook-dialog__nav-item--active]="activeId() === section.id"
+            (click)="selectSection(section.id)"
+          >
+            {{ section.title }}
+          </button>
+        }
+      </nav>
+    }
 
     <div class="rulebook-dialog__content">
       @if (loading()) {

@@ -47,6 +47,11 @@
     }
   },
 
+  "unsupportedViewport": {
+    "title": "Schermo troppo piccolo",
+    "body": "Questa risoluzione non è ancora supportata. Ruota il dispositivo o passa a uno schermo più grande per continuare a giocare."
+  },
+
   "card": {
     "manaAria": "{value} mana",
     "specialManaAria": "Mana {name}",
@@ -126,7 +131,7 @@
       "rulebookTooltip": "Regolamento"
     },
     "turn": {
-      "advance": "Prossima fase"
+      "advance": "Prosegui"
     },
     "hand": {
       "castAction": "Lancia {name}",

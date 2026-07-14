@@ -1,0 +1,35 @@
+// Sopra qualunque altro strato dell'app, dialog CDK compresi (che usano z-index 1000) — deve
+// restare visibile e bloccante indipendentemente da cosa c'è aperto sotto quando il viewport
+// scende sotto la soglia minima.
+.unsupported {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  text-align: center;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+}
+
+.unsupported__icon {
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--text-heading);
+}
+
+.unsupported__title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--text-heading);
+}
+
+.unsupported__body {
+  max-width: 360px;
+  font-family: var(--font-body);
+  color: var(--text-muted);
+}

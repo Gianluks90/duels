@@ -170,10 +170,10 @@ export class CardComponent {
   protected readonly spellIcon = '/icons/wand_stars_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly revealedIconUrl = `url(${REVEALED_ICON})`;
 
-  /** Cosa mostra davvero il template in questo istante — resta indietro rispetto a revealed() finché il flip non raggiunge il suo punto invisibile (larghezza zero), cosicché lo scambio di volto non si veda. */
+  /** Cosa mostra davvero il template in questo istante — resta indietro rispetto a revealed() finché il flip non raggiunge il suo punto invisibile (larghezza zero), cosicché lo scambio di volto non si veda. Inizializzato al default dell'input (true): i field initializer girano nel costruttore, PRIMA che Angular applichi il binding reale di revealed() (che arriva solo nel primo giro di change detection successivo) — se il chiamante monta la carta già con revealed=false, questo valore iniziale è quindi sbagliato finché il primo effect() sotto non lo corregge. */
   protected readonly displayedRevealed = signal(this.revealed());
   protected readonly flipping = signal(false);
-  /** Evita che il primo effect (sempre eseguito subito alla creazione) scambi il flip per un vero cambiamento. */
+  /** Il primo giro dell'effect sotto non è un vero cambiamento (nessun volto precedente da cui animare il flip) ma DEVE comunque sincronizzare displayedRevealed con l'input reale — saltarlo del tutto (come faceva prima) lascia la carta bloccata sul default `true` del field initializer quando monta già coperta (revealed=false sin dall'inizio), mostrando per errore il volto vero di una carta che non dovrebbe mai essere visibile (es. mazzo coperto dell'avversario in pile-dialog). */
   private hasRunOnce = false;
 
   protected readonly height = computed(() => Math.round(this.size() * 1.5));
@@ -217,8 +217,10 @@ export class CardComponent {
       const next = this.revealed();
       if (!this.hasRunOnce) {
         this.hasRunOnce = true;
+        this.displayedRevealed.set(next);
         return;
       }
+      if (next === this.displayedRevealed()) return;
       this.flipping.set(true);
       const timer = setTimeout(() => this.displayedRevealed.set(next), CARD_FLIP_HALF_MS);
       onCleanup(() => clearTimeout(timer));

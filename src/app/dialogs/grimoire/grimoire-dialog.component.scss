@@ -64,6 +64,33 @@
     z-index: 1;
   }
 
+  // Sotto i 1024px le due pagine non hanno più spazio per stare fianco a fianco (vedi
+  // GrimoireDialogComponent.compact) — si impilano in verticale: pagina sinistra (filtri + elenco)
+  // sopra, altezza ridotta a una manciata di magie visibili con scroll proprio, pagina destra
+  // (dettaglio) sotto con lo spazio restante, sempre scrollabile per conto suo. Nessun salto tra
+  // "elenco" e "dettaglio" (a differenza di un side-nav che sostituirebbe la pagina): selezionare una
+  // magia in alto la mostra subito sotto, entrambe restano visibili insieme. La cucitura (&__spine)
+  // diventa orizzontale invece che verticale, stessa idea di piega del libro.
+  &--compact &__book {
+    flex-direction: column;
+  }
+
+  &--compact &__page--left {
+    flex: 0 0 auto;
+    max-height: 44%;
+  }
+
+  &--compact &__page--right {
+    flex: 1;
+    min-height: 0;
+  }
+
+  &--compact &__spine {
+    width: 100%;
+    height: 0.5px;
+    flex-shrink: 0;
+  }
+
   // --- Left page ---
 
   &__filters {

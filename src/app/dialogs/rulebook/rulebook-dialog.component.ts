@@ -3,12 +3,15 @@ import {
   ChangeDetectionStrategy,
   inject,
   signal,
+  computed,
   OnInit,
 } from '@angular/core';
 import { DialogRef } from '@angular/cdk/dialog';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { SelectComponent, type SelectOption } from '../../components/ui/select/select.component';
+import { BoardLayoutService } from '../../services/board-layout.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface RulebookSection {
@@ -20,20 +23,31 @@ interface RulebookSection {
 @Component({
   selector: 'app-rulebook-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconButtonComponent, TranslatePipe],
+  imports: [IconButtonComponent, SelectComponent, TranslatePipe],
   templateUrl: './rulebook-dialog.component.html',
   styleUrl: './rulebook-dialog.component.scss',
 })
 export class RulebookDialogComponent implements OnInit {
   private readonly dialogRef = inject(DialogRef);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly boardLayout = inject(BoardLayoutService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+
+  /** Sotto i 1024px (stessa soglia usata da BoardLayoutService per il layout compatto della board) la
+   * navigazione a due colonne (nav a sinistra + contenuto a destra) non ha più spazio per stare
+   * fianco a fianco — sotto quella soglia la nav diventa una select a tutta larghezza sopra il
+   * contenuto, che scorre sotto invece che affiancato. */
+  protected readonly compact = computed(() => this.boardLayout.tier() !== 'desktop');
 
   protected readonly sections = signal<RulebookSection[]>([]);
   protected readonly activeId = signal<string>('');
   protected readonly renderedContent = signal<SafeHtml>('');
   protected readonly loading = signal(true);
+
+  protected readonly sectionOptions = computed<SelectOption<string>[]>(() =>
+    this.sections().map((s) => ({ value: s.id, label: s.title })),
+  );
 
   private readonly cache = new Map<string, string>();
 

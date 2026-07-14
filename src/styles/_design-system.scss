@@ -56,6 +56,21 @@
 
   --transition: 150ms ease;
   --card-ratio: 2 / 3;
+
+  // Layout — tetto di larghezza per le pagine full-viewport (board, setup) su schermi ultrawide:
+  // oltre questa soglia il contenuto smette di allargarsi e resta centrato, lo sfondo (body,
+  // background-image sotto) riempie lo spazio residuo ai lati invece di lasciare i pannelli
+  // ancorati ai bordi fisici dello schermo. 1536px = breakpoint "2xl" condiviso da Tailwind/MUI/
+  // Chakra, il valore più ricorrente tra i design system moderni per il tetto di un layout denso
+  // (non un blocco di testo, che tipicamente resta più stretto per leggibilità).
+  --content-max-width: 1536px;
+  // Stesso principio in verticale (schermi molto alti — monitor stretti e alti, finestre
+  // ridimensionate a mano): senza un tetto le zone giocatore/avversario (minmax(150px, 1fr) nel
+  // grid di .board) si allargano per riempire tutta l'altezza, lasciando grossi vuoti attorno alla
+  // Fonte Arcana invece di restare compatte. 864px = 1536 in rapporto 16:9, il formato monitor più
+  // diffuso — resta comunque ben sopra il minimo strutturale del grid (150+150px di zone + la riga
+  // Fonte Arcana/tracker).
+  --content-max-height: 864px;
 }
 
 // ── Reset ──────────────────────────────────────────────────────────────────────

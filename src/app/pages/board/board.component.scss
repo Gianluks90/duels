@@ -7,7 +7,31 @@
   grid-template-rows: minmax(150px, 1fr) auto minmax(150px, 1fr);
   // grid-template-rows: minmax(300px, 5fr) 8fr minmax(300px, 5fr);
   height: 100dvh;
+  // Tetto di larghezza E altezza (schermi ultrawide o molto alti, --content-max-width/height in
+  // _design-system.scss) — oltre la soglia il tavolo resta centrato invece di allargarsi (HUD/
+  // bacchette comprese, posizionate in assoluto rispetto a .board__zone, che eredita queste
+  // dimensioni). position: fixed + inset: 0 + margin: auto invece del solo margin-inline: auto
+  // usato prima: un margin: auto SOLO orizzontale funziona già in normal flow (un block-level box
+  // si centra così da sempre), ma quello VERTICALE no — per spec CSS un margin-block: auto su un
+  // box normale in-flow si risolve sempre a 0, non a "centra". position: fixed + inset: 0 rende
+  // .board il riferimento diretto del viewport: qui margin: auto centra su ENTRAMBI gli assi non
+  // appena max-width/max-height tagliano la dimensione — lo sfondo del body (l'unico strato dietro
+  // .board, che è trasparente) riempie le fasce vuote, laterali o superiori/inferiori.
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  max-width: var(--content-max-width);
+  max-height: var(--content-max-height);
   overflow: hidden;
+
+  // Il tetto sopra è pensato per schermi grandi (ultrawide/molto alti) — nel layout compatto va
+  // disattivato: uno smartphone più alto di --content-max-height (864px, es. molti telefoni recenti
+  // superano i 900px) altrimenti veniva comunque centrato, lasciando due fasce vuote sopra e sotto
+  // (lo sfondo del body a vista) invece di riempire tutto il viewport reale.
+  &.board--compact {
+    max-width: none;
+    max-height: none;
+  }
 
   // ── Zones ───────────────────────────────────────────────────────────────────
   &__zone {

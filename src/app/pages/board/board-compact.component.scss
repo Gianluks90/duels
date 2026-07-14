@@ -1,0 +1,608 @@
+// Layout compatto (mobile/tablet, BoardLayoutService) — sostituisce il grid a 3 righe con uno
+// stack verticale a scorrimento: identità → mano+bacchetta → centro contestuale → mano+bacchetta →
+// identità, mai posizionamento assoluto (a differenza del layout desktop in board.component.scss,
+// pensato per pannelli che "sporgono" oltre il bordo). .board--tablet aggiunge solo la reflow
+// orizzontale di .board-compact__cluster (mano e bacchetta affiancate invece che impilate) — il
+// resto è identico tra le due fasce. File separato da board.component.scss (non solo per
+// organizzazione): il budget anyComponentStyle di angular.json è per singolo file, e sommati
+// superavano la soglia di errore.
+//
+// Regola di arrotondamento condivisa da ogni pannello (identità/mano/bacchetta): solo il lato
+// rivolto verso il centro dello schermo è arrotondato, l'altro resta squadrato — dà l'idea di
+// pannelli impilati a contatto (bordo leggero, niente gap) che scendono verso il centro, invece di
+// riquadri isolati fluttuanti. Stesso padding orizzontale (--sp-3) su ogni pannello, applicato
+// direttamente su ciascuno invece che su un wrapper — altrimenti un wrapper con padding proprio +
+// il padding del pannello dentro sommano due volte, disallineando i bordi tra pannelli diversi.
+@mixin panel-toward-center($edge) {
+  @if $edge == top {
+    border-radius: 10px 10px 0 0;
+  } @else {
+    border-radius: 0 0 10px 10px;
+  }
+}
+
+.board--compact {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+// ── Identità (header avversario / footer giocatore) ─────────────────────────────
+// Due righe: 1) barra vita a piena larghezza, 2) due gruppi separati da spazio elastico — PS+veleno
+// a sinistra, nome+avatar (+ settings per il giocatore) tenuti insieme a destra — così il nome resta
+// visivamente attaccato all'avatar invece che ai PS, qualunque sia lo spazio disponibile.
+.board-compact__identity {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.board-compact__identity--opponent {
+  @include panel-toward-center(bottom);
+}
+
+.board-compact__identity--player {
+  @include panel-toward-center(top);
+}
+
+.board-compact__hp-bar {
+  width: 100%;
+  height: 12px;
+}
+
+.board-compact__hp-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--border-gold);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow:
+    inset 0 3px 6px rgba(0, 0, 0, 0.75),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.05);
+}
+
+.board-compact__hp-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, #ff5a4a 0%, #d8281c 32%, #8b1010 68%, #5c0808 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.55);
+  transition: width var(--transition);
+
+  // Avvelenamento (2.3.4): stesso rosso → verde malato di .hud__hp-fill--poisoned.
+  &--poisoned {
+    background: linear-gradient(180deg, #b6d94f 0%, #7a9a2e 32%, #4a5c18 68%, #2e3a10 100%);
+  }
+}
+
+.board-compact__identity-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+// Spazio riservato lato PS (vedi .board-compact__hp-value sotto, assoluto e ancorato allo stesso
+// lato) perché il resto della riga non ci finisca sotto — l'unica sovrapposizione voluta è con la
+// barra vita, non con nome/veleno.
+.board-compact__identity--player .board-compact__identity-meta {
+  padding-left: 3rem;
+  // flex-end esplicito invece di affidarsi allo space-between condiviso sopra: con un solo figlio
+  // presente (niente veleno), space-between allineerebbe quell'unico figlio a sinistra invece che a
+  // destra — qui il nome deve restare sempre allineato a destra, veleno presente o no.
+  justify-content: flex-end;
+}
+
+.board-compact__identity--opponent .board-compact__identity-meta {
+  padding-right: 3rem;
+}
+
+.board-compact__identity-name-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+// PS grandi quanto le due righe insieme (barra vita + riga meta), in overlay assoluto — può
+// coprire la barra vita di proposito (voluto), ancorato al lato "vita" di ciascuna zona: sinistra
+// per il giocatore, destra per l'avversario (specchiato, vedi .board-compact__identity-meta sopra).
+.board-compact__hp-value {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
+  -webkit-text-stroke: 1px #b4bac2;
+  text-shadow:
+    0 0 6px rgba(0, 0, 0, 0.9),
+    0 2px 3px rgba(0, 0, 0, 0.85);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.board-compact__identity--player .board-compact__hp-value {
+  left: var(--sp-3);
+}
+
+.board-compact__identity--opponent .board-compact__hp-value {
+  right: var(--sp-3);
+}
+
+.board-compact__poison {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text-primary);
+
+  img {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.board-compact__name {
+  min-width: 0;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+// Stesso stile di .hud__avatar (quadrato smussato, non un cerchio) — coerenza con l'HUD desktop.
+.board-compact__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border-gold);
+  background: var(--accent);
+  overflow: hidden;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  object-fit: cover;
+}
+
+.board-compact__avatar--fallback {
+  text-transform: uppercase;
+}
+
+// ── Cluster (mano + bacchetta) ───────────────────────────────────────────────────
+// Gap quasi a zero apposta: hand-row e wand-strip devono toccarsi (ciascuno col proprio bordo
+// leggero, che insieme formano la linea di giuntura), non fluttuare separati.
+.board-compact__cluster {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.board--tablet .board-compact__cluster {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+// hand-row prende l'arrotondamento verso il centro (vedi il mixin in cima al file) in base alla sua
+// posizione nel cluster, come gli altri pannelli grandi. Le singole etichette punta/asta/manico
+// invece no — vedi .board-compact__wand-slot sotto, hanno una regola fissa (sempre top per il
+// giocatore/bottom per l'avversario) indipendente dall'ordine nel DOM, dato che ora sono tante
+// etichette separate invece di un unico pannello.
+.board-compact__cluster--opponent .board-compact__hand-row {
+  @include panel-toward-center(bottom);
+}
+
+.board-compact__cluster--player .board-compact__hand-row {
+  @include panel-toward-center(top);
+}
+
+.board-compact__hand-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+.board--tablet .board-compact__hand-row {
+  flex: 1;
+}
+
+// Carte vere sovrapposte in riga (non a ventaglio): posizionamento assoluto con z-index esplicito
+// per carta (compactHandCardStyle in board.component.ts, stessa idea di handCardStyle/handSpacing
+// del fan desktop, centratura inclusa, ma senza rotazione/caduta ad arco) — l'overlap si stringe
+// quanto serve perché l'intera mano stia nella larghezza disponibile, mai una carta che scappa fuori
+// dal contenitore. position: relative + altezza esplicita (inline dal componente, height.px) fanno
+// da containing block per i figli assoluti.
+.board-compact__hand-overlap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+// Dorso di una carta NON rivelata nella mano dell'avversario — .board__hand-card--back (già in
+// board.component.scss) porta solo lo sfondo/bordo/raggio, qui aggiungiamo solo le dimensioni (lì
+// venivano dalla classe base .board__hand-card, pensata per il posizionamento assoluto del fan
+// desktop, che non vogliamo riusare — il posizionamento qui è già gestito dal wrapper esterno via
+// compactHandCardStyle).
+// 100px/150px = HAND_ARC_CARD_WIDTH in board.component.ts (handArcCardWidth), hardcoded qui come
+// altri valori derivati in questo file — non c'è una CSS custom property che lo porti fin qui.
+.board-compact__hand-card-back {
+  display: block;
+  width: 100px;
+  height: 150px;
+}
+
+// ── Carte incastonate/trattenute, sopra ciascuna sezione della striscia bacchetta ────
+// Stessa idea del desktop (board__wand-peek: header true, così la finestra visibile mostra
+// icona+nome invece di un frammento a caso della carta) adattata a una striscia molto più bassa dei
+// 252px del pannello desktop: lì un pannello alto quanto la carta la copre quasi per intero e solo
+// l'header sporge; qui non c'è spazio per un pannello così alto, quindi la finestra visibile è
+// ritagliata (overflow: hidden) invece che coperta — stesso risultato (si vede solo l'header), altro
+// meccanismo. Riserva la sua altezza reale (non zero) così la riga bacchetta sotto ha aria sopra per
+// ospitare la carta, come richiesto.
+// Stesso gap/proporzioni di .board-compact__wand-strip sopra, apposta: ogni carta deve sporgere
+// esattamente sopra/sotto la SUA etichetta, non una a caso.
+.board-compact__wand-peek {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-1);
+  height: 40px;
+  overflow: hidden;
+}
+
+.board-compact__wand-peek-slot {
+  position: relative;
+  flex: 1;
+  height: 100%;
+}
+
+.board-compact__wand-peek-card {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+// Giocatore: header di default in alto (headerAlign non specificato = 'top' su CardComponent) —
+// ancorata al bordo superiore della finestra ritagliata, verso il centro (peek precede la striscia,
+// il centro sta sopra tutto il cluster).
+.board-compact__cluster--player .board-compact__wand-peek-card {
+  top: 0;
+}
+
+// Avversario: headerAlign="bottom" nel template — ancorata al bordo inferiore della finestra, verso
+// il centro (qui peek viene DOPO la striscia — hand-row → striscia → peek — quindi è lei ad essere
+// adiacente al centro, non la striscia).
+.board-compact__cluster--opponent .board-compact__wand-peek-card {
+  bottom: 0;
+}
+
+// Bacchetta (1.4.1/1.4.2/1.4.3): quando una carta arriva in un qualunque slot, appare con un lieve
+// scale-in invece che di scatto — pilotato da tipEntering()/bodyEntering()/handleEntering() in
+// board.component.ts, uno per slot (solo lato giocatore, l'avversario non ce l'ha nemmeno su
+// desktop).
+.board-compact__wand-peek-card--entering {
+  animation: board-compact-wand-peek-enter 400ms ease;
+}
+
+@keyframes board-compact-wand-peek-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+// Carta appena uscita dalla punta (consumata, spesa in una combinazione, o come mana per un
+// incantesimo) — sparisce con una dissolvenza invece di un salto secco, stessa idea dell'analoga
+// animazione desktop.
+.board-compact__wand-peek-card--vanishing {
+  pointer-events: none;
+  animation: board-compact-wand-peek-vanish 600ms ease-in forwards;
+}
+
+@keyframes board-compact-wand-peek-vanish {
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+// ── Bacchetta (striscia compatta) ────────────────────────────────────────────────
+// Contenitore puramente di layout — niente sfondo/bordo/arrotondamento propri, ora che ogni sezione
+// (.board-compact__wand-slot) è la sua etichetta a sé, con un piccolo gap a separarle.
+.board-compact__wand-strip {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: var(--sp-1);
+}
+
+.board--tablet .board-compact__wand-strip {
+  flex: 1;
+  flex-direction: column;
+}
+
+// Ogni sezione è una vera etichetta: sfondo/bordo propri, arrotondata solo sul lato verso il centro
+// — fisso per zona (sempre top per il giocatore, sempre bottom per l'avversario), non condizionato
+// all'ordine nel DOM come .board-compact__hand-row, dato che qui non c'è più un unico pannello
+// "vicino al centro" da distinguere dagli altri: sono 3 etichette equivalenti.
+.board-compact__wand-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-width: 0;
+  flex: 1;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+.board-compact__cluster--player .board-compact__wand-slot {
+  border-radius: 10px 10px 0 0;
+}
+
+.board-compact__cluster--opponent .board-compact__wand-slot {
+  border-radius: 0 0 10px 10px;
+}
+
+.board--tablet .board-compact__wand-slot {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.board-compact__wand-label {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+// ── Zona centrale contestuale ─────────────────────────────────────────────────────
+// A contatto pieno in orizzontale (niente margine laterale) come tutto il resto — bordo leggero,
+// nessun arrotondamento: non ha un "lato verso il centro" proprio, è lei stessa il centro. flex: 1,
+// NIENT'altro (niente max-height): deve riempire tutto lo spazio residuo, altrimenti header/footer
+// smettono di stare ai bordi veri dello schermo (il flex non ha nessun altro elemento a cui
+// ridistribuire lo spazio in eccesso, quindi finirebbe accumulato in fondo invece che qui). L'aspetto
+// "meno enorme" si ottiene lasciando il contenuto impacchettato in alto (justify-content:
+// flex-start) invece di centrarlo/allungarlo in tutto lo spazio disponibile. Grimorio/Regolamento e
+// la fase in corso NON stanno più qui dentro (erano rispettivamente position: absolute e margin-top:
+// auto) — su schermi alti e stretti un contenuto ingombrante (es. Fonte Arcana con tutte le pile)
+// finiva per coprirli. Sono ora in .board-compact__phase-bar, una riga fissa a parte sempre visibile.
+.board-compact__central {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+// L'elemento corrente (Raccolta o Fonte Arcana, mai entrambi — vedi showRaccolta()) riempie tutto lo
+// spazio libero di .board-compact__central e si centra al suo interno su entrambi gli assi. position
+// + z-index: sopra .board-compact__fonte-header (vedi sotto, z-index: 0) quale che sia la profondità
+// di nesting reale delle carte al suo interno.
+.board-compact__central-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Titolo "Fonte Arcana" (riutilizza il testo di board.fonteAria, come sul desktop) — niente
+// footer/frase esplicativa (board__fonte-footer sul desktop). Ancorato in alto a sinistra del
+// CONTENITORE MARRONE (.board-compact__central, non della sola riga di carte, più stretta) e fuori
+// dal flow (non occupa spazio, niente più riga dedicata). Su schermi piccoli le carte possono
+// arrivare a coprirlo (z-index più basso di .board-compact__central-content sopra) — meglio un
+// titolo parzialmente coperto quando lo spazio è poco, che spazio verticale rubato al resto.
+.board-compact__fonte-header {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 0;
+  pointer-events: none;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+// Riga fissa (non flex: 1, altezza intrinseca) tra la zona centrale e il cluster del giocatore —
+// sempre visibile e mai coperta, indipendentemente da quanto è ingombrante la Fonte/Raccolta sopra.
+// Ospita sia Grimorio/Regolamento (spostati qui da .board-compact__toolbar, che su schermi molto
+// alti finiva coperto dal contenuto della Fonte) sia la fase in corso.
+.board-compact__phase-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-top: none;
+}
+
+.board-compact__toolbar {
+  flex-shrink: 0;
+  display: flex;
+  gap: var(--sp-1);
+}
+
+// Solo la fase in corso (a differenza dello stepper completo di app-phase-tracker, pensato per la
+// larghezza della board desktop) — pallino+label tenuti insieme come un unico step (12px, non di
+// più), separati da segmenti di linea che si allargano per riempire lo spazio disponibile (flex: 1)
+// PRIMA dello step e PRIMA del bottone, come se fosse un frammento di una sequenza più lunga.
+.board-compact__phase {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: var(--sp-2);
+}
+
+.board-compact__phase-line {
+  flex: 1;
+  min-width: var(--sp-3);
+  height: 2px;
+  background: var(--border-gold);
+  opacity: 0.5;
+}
+
+.board-compact__phase-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.board-compact__phase-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent-hover);
+  border: 2px solid var(--accent-hover);
+  box-shadow: 0 0 6px rgba(176, 24, 24, 0.6);
+  animation: board-compact-phase-pulse 2s ease-in-out infinite;
+}
+
+@keyframes board-compact-phase-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.board-compact__phase-label {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-heading);
+  white-space: nowrap;
+}
+
+.board-compact__phase-advance {
+  flex-shrink: 0;
+}
+
+.board-compact__raccolta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.board-compact__raccolta-decks {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+// Spiega cosa fare con le 3 opzioni sotto (tenere una delle 2 carte, o accumulare mana) — mancava
+// del tutto, a differenza del desktop che ha lo stesso identico avviso (.board__collect-prompt,
+// riusata qui as-is: stessa classe, stesso testo, board.component.scss è caricato insieme a questo
+// file per lo stesso componente).
+.board-compact__collect-prompt-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.board-compact__collect-choice {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.board-compact__collect-card {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.board-compact__collect-deck--active {
+  cursor: pointer;
+  filter: drop-shadow(0 0 8px rgba(212, 168, 71, 0.6));
+}
+
+.board-compact__fonte-heading {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-heading);
+}
+
+.board-compact__fonte {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: var(--sp-3);
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0 var(--sp-1);
+}
+
+.board-compact__fonte-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+// Mazzo avanzato + scarti, incolonnati invece che affiancati — risparmia larghezza nella riga della
+// Fonte (prima arrivava a coprire Grimorio/Regolamento sui telefoni più larghi).
+.board-compact__fonte-advanced-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
