@@ -73,6 +73,7 @@ import { specialManaIconPath, REVEALED_ICON } from '../../models/card.model';
 import type { PlayerId, PlayerState } from '../../models/player.model';
 import { computePlayerMana } from '../../models/player.model';
 import { combineNeedsChoice, hasElements } from '../../game/turn-engine';
+import { TURN_PHASES, type TurnPhase } from '../../models/turn-phase.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -196,13 +197,43 @@ export class BoardComponent implements OnInit {
    * compatta, molto più stretta, la stessa riga di carte (Residuo/mazzo/griglia/scarti, o mazzo
    * comune+scarti in Raccolta) rischia di non starci e restare ancorata a sinistra invece di
    * centrarsi. Ridotta ma non troppo: .board-compact__fonte ha comunque uno scroll orizzontale di
-   * riserva per gli schermi più stretti (vedi board-compact.component.scss). */
-  protected readonly compactFonteCardWidth = 64;
+   * riserva per gli schermi più stretti (vedi board-compact.component.scss). Più grande su tablet
+   * (layoutTier 'tablet', 640-1023px): la zona centrale resta a piena larghezza come su mobile (lo
+   * stack verticale non cambia, solo il cluster mano+bacchetta diventa una riga), quindi c'è
+   * decisamente più spazio orizzontale da sfruttare rispetto a un telefono. */
+  protected readonly compactFonteCardWidth = computed(() =>
+    this.layoutTier() === 'tablet' ? 96 : 64,
+  );
   /** Mazzo avanzato e i suoi scarti, incolonnati invece che affiancati (risparmia larghezza — prima
-   * la riga arrivava a coprire i pulsanti Grimorio/Regolamento sui telefoni più larghi). Più piccoli
-   * di compactFonteCardWidth apposta: incolonnati raddoppierebbero comunque l'altezza della riga,
-   * meglio contenerla piuttosto che sommare due card intere una sopra l'altra. */
-  protected readonly compactFonteStackedCardWidth = 44;
+   * la riga arrivava a coprire i pulsanti Grimorio/Regolamento sui telefoni più larghi, ora spostati
+   * nella loro riga fissa, ma la colonna resta comunque comoda su un telefono stretto). Più piccoli
+   * di compactFonteCardWidth su mobile apposta: incolonnati raddoppierebbero comunque l'altezza della
+   * riga, meglio contenerla piuttosto che sommare due card intere una sopra l'altra. Su tablet invece
+   * c'è spazio a sufficienza per tornare alla dimensione "giusta" (la stessa dei mazzi/carte
+   * principali) coi rispettivi label, come sul desktop. */
+  protected readonly compactFonteStackedCardWidth = computed(() =>
+    this.layoutTier() === 'tablet' ? this.compactFonteCardWidth() : 44,
+  );
+  protected readonly compactFonteStackedShowLabel = computed(() => this.layoutTier() === 'tablet');
+
+  /** Ordine reale delle fasi, 'attesa' esclusa (non è mai il valore persistito, vedi turn-phase.model.ts)
+   * — stesso filtro di PhaseTrackerComponent.phases, usato qui solo per calcolare la fase SUCCESSIVA
+   * (compactNextPhase sotto), non per uno stepper completo. */
+  private readonly compactPhaseOrder: readonly TurnPhase[] = TURN_PHASES.filter(
+    (p) => p !== 'attesa',
+  );
+  /** Fase dopo quella in corso, per il layout compatto tablet (più spazio orizzontale nella
+   * phase-bar rispetto a mobile, ci sta anche un'anteprima) — avvolge da 'fine' a 'preparazione'
+   * invece di restituire null, riflettendo il vero ciclo del turno (dopo 'fine' si passa
+   * all'avversario e si riparte da 'preparazione'). null solo prima che lo stato carichi. */
+  protected readonly compactNextPhase = computed<TurnPhase | null>(() => {
+    const phase = this.state()?.phase;
+    if (!phase) return null;
+    const order = this.compactPhaseOrder;
+    const index = order.indexOf(phase);
+    if (index === -1) return null;
+    return order[(index + 1) % order.length];
+  });
 
   protected readonly handCardWidth = HAND_CARD_WIDTH;
   protected readonly handArcCardWidth = HAND_ARC_CARD_WIDTH;
@@ -315,6 +346,29 @@ export class BoardComponent implements OnInit {
 
   protected readonly playerPoisonLevel = computed(() => this.me()?.tokens.poison ?? 0);
   protected readonly opponentPoisonLevel = computed(() => this.opponentState()?.tokens.poison ?? 0);
+
+  /** Stessa matematica di PlayerHudComponent (barra vita desktop) per la barra compatta, che non
+   * passa per quel componente (markup proprio, non <app-player-hud>) — normalmente == health.max,
+   * la barra si allunga oltre solo quando lo scudo spinge il totale oltre il massimo, così il segmento
+   * scudo non viene mai tagliato. */
+  private compactHealthTotalUnits(h: { max: number; current: number; shield: number }): number {
+    return Math.max(h.max, h.current + h.shield);
+  }
+
+  protected compactHpPercent(h: { max: number; current: number; shield: number }): number {
+    const pct = (h.current / this.compactHealthTotalUnits(h)) * 100;
+    return Math.max(0, Math.min(100, pct));
+  }
+
+  protected compactShieldPercent(h: { max: number; current: number; shield: number }): number {
+    const pct = (h.shield / this.compactHealthTotalUnits(h)) * 100;
+    return Math.max(0, Math.min(100, pct));
+  }
+
+  /** Il numero sopra la barra fonde vita corrente + scudo, come sul desktop (displayedHp). */
+  protected compactDisplayedHp(h: { current: number; shield: number }): number {
+    return h.current + h.shield;
+  }
 
   /** true finché restano carte Congelamento (2.3.1) non sciolte in circolazione — in mano, mazzo o scarti, non solo in mano. */
   protected readonly playerFrozen = computed(() => this.hasFreezeCards(this.me()));
@@ -952,6 +1006,21 @@ export class BoardComponent implements OnInit {
   protected compactWandSlotWidth(trackWidth: number): number {
     if (trackWidth <= 0) return this.COMPACT_WAND_FALLBACK_WIDTH;
     return Math.max(1, Math.floor((trackWidth - 2 * this.COMPACT_WAND_GAP) / 3));
+  }
+
+  /** Larghezza della carta incastonata/trattenuta col suo header (icona+nome, [header]="true" — la
+   * label della sezione, "Punta"/"Asta"/"Manico", resta a parte, libera in alto a sinistra nel 20%
+   * riservato a lei, vedi il template) su una sezione, layout tablet. Lì la striscia è una colonna
+   * di 3 sezioni: trackWidth è la larghezza dell'INTERA colonna (non va divisa per 3 come in
+   * compactWandSlotWidth sopra, pensata per la striscia orizzontale mobile). Piena larghezza
+   * disponibile (80% della colonna, il restante 20% è della label) — l'header (icona+nome) ha
+   * bisogno di spazio per restare leggibile, non va ridotto per stare nell'altezza. L'altezza
+   * massima del CONTENITORE (non della carta, che resta a piena larghezza/proporzione) è imposta a
+   * livello CSS con overflow: hidden su .board-compact__wand-slot--overlay — l'eventuale eccedenza
+   * verticale viene ritagliata, non l'intera carta rimpicciolita. */
+  protected compactWandOverlayCardWidth(trackWidth: number): number {
+    if (trackWidth <= 0) return this.COMPACT_WAND_FALLBACK_WIDTH;
+    return Math.max(1, Math.floor(trackWidth * 0.8));
   }
 
   ngOnInit(): void {

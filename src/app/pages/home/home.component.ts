@@ -110,12 +110,12 @@ export class HomeComponent implements OnInit {
   }
 
   protected async createGame(): Promise<void> {
-    const user = this.auth.user();
-    if (!user) return;
+    const profile = this.auth.profile();
+    if (!profile) return;
 
     this.creating.set(true);
     try {
-      const gameId = await this.game.createGame(user);
+      const gameId = await this.game.createGame(profile);
       this.roomCode.set(gameId);
       this.startWaitingListener(gameId);
     } catch {
@@ -153,14 +153,14 @@ export class HomeComponent implements OnInit {
   }
 
   protected async joinGame(): Promise<void> {
-    const user = this.auth.user();
+    const profile = this.auth.profile();
     const code = this.codeControl.value.trim();
-    if (!user || code.length !== 6) return;
+    if (!profile || code.length !== 6) return;
 
     this.joining.set(true);
     this.joinError.set(null);
     try {
-      await this.game.joinGame(code, user);
+      await this.game.joinGame(code, profile);
       this.router.navigate(['/setup', code]);
     } catch (err) {
       this.joinError.set(this.joinErrorMessage(err));
@@ -185,11 +185,11 @@ export class HomeComponent implements OnInit {
   }
 
   protected async startDebugGame(): Promise<void> {
-    const user = this.auth.user();
-    if (!user) return;
+    const profile = this.auth.profile();
+    if (!profile) return;
     this.debugLoading.set(true);
     try {
-      const gameId = await this.game.createDebugGame(user);
+      const gameId = await this.game.createDebugGame(profile);
       await this.router.navigate(['/game', gameId]);
     } finally {
       this.debugLoading.set(false);

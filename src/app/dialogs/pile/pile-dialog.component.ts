@@ -206,6 +206,15 @@ export class PileDialogComponent {
     return this.cardTooltipFlags(card).some(Boolean);
   }
 
+  /** Occhio (5.x, Card.revealedToOpponent) segue la carta OVUNQUE vada — mano, mazzo, scarti,
+   * ripescata (regolamento, vedi il commento su Card.revealedToOpponent in card.model.ts) — quindi
+   * una carta con questo flag resta visibile anche dentro un mazzo altrimenti coperto (row.revealed
+   * false, il mazzo dell'avversario). row.revealed da solo copriva SEMPRE ogni carta della riga senza
+   * eccezioni, ignorando questo flag per-carta. */
+  protected isCardVisible(row: PileRow, card: Card): boolean {
+    return row.revealed || !!card.revealedToOpponent;
+  }
+
   protected isMultiCardTooltip(card: Card): boolean {
     return this.cardTooltipFlags(card).filter(Boolean).length > 1;
   }

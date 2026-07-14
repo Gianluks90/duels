@@ -13,10 +13,10 @@ import {
   limit,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { type User } from 'firebase/auth';
 import { FirebaseService } from './firebase.service';
 import type { Wand } from '../models/wand.model';
 import type { GameState } from '../models/game.model';
+import type { UserProfile } from '../models/user.model';
 import { createInitialGameState } from '../game/deck-builder';
 import { resolveElementalExplosions } from '../game/turn-engine';
 
@@ -46,14 +46,14 @@ export class GameService {
     return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
   }
 
-  async createGame(user: User): Promise<string> {
+  async createGame(profile: UserProfile): Promise<string> {
     const gameId = this.generateRoomCode();
     const data: GameDoc = {
       id: gameId,
       status: 'waiting',
-      hostId: user.uid,
-      hostName: user.displayName ?? 'Mago',
-      hostPhoto: user.photoURL,
+      hostId: profile.uid,
+      hostName: profile.displayName,
+      hostPhoto: profile.photoURL,
       hostWand: null,
       hostReady: false,
       guestId: null,
@@ -68,7 +68,7 @@ export class GameService {
     return gameId;
   }
 
-  async joinGame(gameId: string, user: User): Promise<void> {
+  async joinGame(gameId: string, profile: UserProfile): Promise<void> {
     const ref = doc(this.db, 'games', gameId);
     const snapshot = await getDoc(ref);
 
@@ -76,12 +76,12 @@ export class GameService {
 
     const data = snapshot.data() as GameDoc;
     if (data.status !== 'waiting') throw new Error('game-full-or-started');
-    if (data.hostId === user.uid) throw new Error('already-host');
+    if (data.hostId === profile.uid) throw new Error('already-host');
 
     await updateDoc(ref, {
-      guestId: user.uid,
-      guestName: user.displayName ?? 'Mago',
-      guestPhoto: user.photoURL,
+      guestId: profile.uid,
+      guestName: profile.displayName,
+      guestPhoto: profile.photoURL,
       status: 'setup',
     });
   }
@@ -94,17 +94,17 @@ export class GameService {
     });
   }
 
-  async createDebugGame(user: User): Promise<string> {
+  async createDebugGame(profile: UserProfile): Promise<string> {
     const gameId = this.generateRoomCode();
     const defaultWand: Wand = { handleSocket: null, bodySocket: null, tipSlot: null };
-    const hostName = user.displayName ?? 'Mago';
+    const hostName = profile.displayName;
     const guestName = 'Avversario Debug';
     const data: GameDoc = {
       id: gameId,
       status: 'playing',
-      hostId: user.uid,
+      hostId: profile.uid,
       hostName,
-      hostPhoto: user.photoURL,
+      hostPhoto: profile.photoURL,
       hostWand: defaultWand,
       hostReady: true,
       guestId: 'debug-guest',

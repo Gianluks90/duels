@@ -924,14 +924,21 @@
     class="board-compact__identity board-compact__identity--opponent"
     [attr.aria-label]="'board.opponentZoneAria' | translate"
   >
-    <span class="board-compact__hp-value">{{ opponentHealth().current }}</span>
+    <span class="board-compact__hp-value">{{ compactDisplayedHp(opponentHealth()) }}</span>
     <div class="board-compact__hp-bar">
       <div class="board-compact__hp-track">
         <div
           class="board-compact__hp-fill"
           [class.board-compact__hp-fill--poisoned]="opponentPoisonLevel() > 0"
-          [style.width.%]="(opponentHealth().current / opponentHealth().max) * 100"
+          [style.width.%]="compactHpPercent(opponentHealth())"
         ></div>
+        @if (opponentHealth().shield > 0) {
+          <div
+            class="board-compact__hp-shield-fill"
+            [style.width.%]="compactShieldPercent(opponentHealth())"
+            [style.left.%]="compactHpPercent(opponentHealth())"
+          ></div>
+        }
       </div>
     </div>
     <!-- Specchiato in orizzontale rispetto al giocatore (nome+avatar a sinistra, veleno a destra,
@@ -1129,67 +1136,124 @@
       </button>
     </div>
 
-    <!-- Etichette punta/asta/manico — ordine invertito (manico, asta, punta) rispetto al giocatore,
-         stessa convenzione del desktop. -->
-    <div
-      class="board-compact__wand-strip board-compact__wand-strip--opponent"
-      #compactOpponentWandTrack
-    >
-      <div class="board-compact__wand-slot">
-        <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+    @if (layoutTier() === 'tablet') {
+      <!-- Tablet: ogni sezione è divisa in riga, non più in sovraimpressione — 20% label (libera in
+           alto a sinistra), 80% carta col SUO solito header (icona+nome, [header]="true", come nel
+           ramo mobile sotto), mai più grande del proprio contenitore in nessuna delle due dimensioni
+           (compactWandOverlayCardWidth: min tra l'80% di larghezza e l'altezza di una sezione
+           convertita in larghezza). Stesso ordine invertito (manico, asta, punta) della striscia. -->
+      <div
+        class="board-compact__wand-strip board-compact__wand-strip--opponent"
+        #compactOpponentWandTrack
+      >
+        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+          <div class="board-compact__wand-overlay-card-wrap">
+            @if (opponentHandle(); as el) {
+              <app-card
+                class="board-compact__wand-overlay-card"
+                [element]="el"
+                [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
+                [header]="true"
+                [headerAlign]="'bottom'"
+              />
+            }
+          </div>
+        </div>
+        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+          <div class="board-compact__wand-overlay-card-wrap">
+            @if (opponentBody(); as el) {
+              <app-card
+                class="board-compact__wand-overlay-card"
+                [element]="el"
+                [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
+                [header]="true"
+                [headerAlign]="'bottom'"
+              />
+            }
+          </div>
+        </div>
+        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+          <div class="board-compact__wand-overlay-card-wrap">
+            @if (opponentTip(); as tip) {
+              <app-card
+                class="board-compact__wand-overlay-card"
+                [element]="tip.element"
+                [manaBonus]="tip.manaBonus ?? 0"
+                [specialMana]="tip.specialMana ?? null"
+                [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
+                [header]="true"
+                [headerAlign]="'bottom'"
+              />
+            }
+          </div>
+        </div>
       </div>
-      <div class="board-compact__wand-slot">
-        <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+    } @else {
+      <!-- Mobile: etichette punta/asta/manico — ordine invertito (manico, asta, punta) rispetto al
+           giocatore, stessa convenzione del desktop. -->
+      <div
+        class="board-compact__wand-strip board-compact__wand-strip--opponent"
+        #compactOpponentWandTrack
+      >
+        <div class="board-compact__wand-slot">
+          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+        </div>
+        <div class="board-compact__wand-slot">
+          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+        </div>
+        <div class="board-compact__wand-slot">
+          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+        </div>
       </div>
-      <div class="board-compact__wand-slot">
-        <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
-      </div>
-    </div>
 
-    <!-- Carta incastonata/trattenuta, tra le etichette e la Fonte (il centro sta sotto per
-         l'avversario) — stessa idea del desktop (board__wand-peek: header true, così la porzione
-         visibile mostra icona+nome invece di un frammento a caso), adattata alla striscia compatta
-         (molto più bassa dei pannelli da 252px del desktop): la finestra visibile è ritagliata
-         (overflow: hidden) invece di essere coperta da un pannello alto quanto la carta. Stesso
-         ordine invertito della striscia sopra. Nessuna animazione d'ingresso per l'avversario (non
-         ce l'ha nemmeno su desktop, solo il giocatore sotto). -->
-    <div class="board-compact__wand-peek">
-      <div class="board-compact__wand-peek-slot">
-        @if (opponentHandle(); as el) {
-          <app-card
-            class="board-compact__wand-peek-card"
-            [element]="el"
-            [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
-            [header]="true"
-            [headerAlign]="'bottom'"
-          />
-        }
+      <!-- Carta incastonata/trattenuta, tra le etichette e la Fonte (il centro sta sotto per
+           l'avversario) — stessa idea del desktop (board__wand-peek: header true, così la porzione
+           visibile mostra icona+nome invece di un frammento a caso), adattata alla striscia compatta
+           (molto più bassa dei pannelli da 252px del desktop): la finestra visibile è ritagliata
+           (overflow: hidden) invece di essere coperta da un pannello alto quanto la carta. Stesso
+           ordine invertito della striscia sopra. Nessuna animazione d'ingresso per l'avversario (non
+           ce l'ha nemmeno su desktop, solo il giocatore sotto). -->
+      <div class="board-compact__wand-peek">
+        <div class="board-compact__wand-peek-slot">
+          @if (opponentHandle(); as el) {
+            <app-card
+              class="board-compact__wand-peek-card"
+              [element]="el"
+              [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
+              [header]="true"
+              [headerAlign]="'bottom'"
+            />
+          }
+        </div>
+        <div class="board-compact__wand-peek-slot">
+          @if (opponentBody(); as el) {
+            <app-card
+              class="board-compact__wand-peek-card"
+              [element]="el"
+              [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
+              [header]="true"
+              [headerAlign]="'bottom'"
+            />
+          }
+        </div>
+        <div class="board-compact__wand-peek-slot">
+          @if (opponentTip(); as tip) {
+            <app-card
+              class="board-compact__wand-peek-card"
+              [element]="tip.element"
+              [manaBonus]="tip.manaBonus ?? 0"
+              [specialMana]="tip.specialMana ?? null"
+              [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
+              [header]="true"
+              [headerAlign]="'bottom'"
+            />
+          }
+        </div>
       </div>
-      <div class="board-compact__wand-peek-slot">
-        @if (opponentBody(); as el) {
-          <app-card
-            class="board-compact__wand-peek-card"
-            [element]="el"
-            [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
-            [header]="true"
-            [headerAlign]="'bottom'"
-          />
-        }
-      </div>
-      <div class="board-compact__wand-peek-slot">
-        @if (opponentTip(); as tip) {
-          <app-card
-            class="board-compact__wand-peek-card"
-            [element]="tip.element"
-            [manaBonus]="tip.manaBonus ?? 0"
-            [specialMana]="tip.specialMana ?? null"
-            [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
-            [header]="true"
-            [headerAlign]="'bottom'"
-          />
-        }
-      </div>
-    </div>
+    }
   </div>
 
   <!-- ZONA CENTRALE CONTESTUALE -->
@@ -1227,14 +1291,14 @@
         } @else {
           <div class="board-compact__raccolta-decks">
             <app-deck
-              [size]="compactFonteCardWidth"
+              [size]="compactFonteCardWidth()"
               [count]="commonDeckCount()"
               [label]="'board.fonte.mazzo' | translate"
               [class.board-compact__collect-deck--active]="canCollect()"
               (click)="drawTwo()"
             />
             <app-deck
-              [size]="compactFonteCardWidth"
+              [size]="compactFonteCardWidth()"
               [count]="commonDiscardCount()"
               [faceUp]="true"
               [messy]="true"
@@ -1249,42 +1313,68 @@
         }
       </div>
     } @else {
-      <div class="board-compact__fonte">
+      <ng-template #residuoTpl>
         <app-action-menu [items]="residuoMenuItems()">
           <app-deck
-            [size]="compactFonteCardWidth"
+            [size]="compactFonteCardWidth()"
             [count]="residuoDeckCount()"
             [faceUp]="true"
             [topElement]="'residium'"
             [label]="'board.fonte.residuo' | translate"
           />
         </app-action-menu>
+      </ng-template>
+      <ng-template #fonteGridTpl>
         <div class="board-compact__fonte-grid">
           @for (el of fonteCards(); track $index) {
             <app-action-menu [items]="fonteMenuItems(el, $index)">
-              <app-card [element]="el" [size]="compactFonteCardWidth" />
+              <app-card [element]="el" [size]="compactFonteCardWidth()" />
             </app-action-menu>
           }
         </div>
-        <div class="board-compact__fonte-advanced-col">
-          <app-deck
-            [size]="compactFonteStackedCardWidth"
-            [count]="advancedDeckCount()"
-            [showLabel]="false"
-            emptyPlaceholder="boxed"
-          />
-          <app-deck
-            [size]="compactFonteStackedCardWidth"
-            [count]="advancedDiscardCount()"
-            [faceUp]="true"
-            [messy]="true"
-            [topElement]="advancedDiscardTop()"
-            [showLabel]="false"
-            emptyPlaceholder="boxed"
-            (click)="openAdvancedDiscardDialog()"
-          />
+      </ng-template>
+      <ng-template #advancedDeckTpl>
+        <app-deck
+          [size]="compactFonteStackedCardWidth()"
+          [count]="advancedDeckCount()"
+          [showLabel]="compactFonteStackedShowLabel()"
+          [label]="'board.fonte.avanzato' | translate"
+          emptyPlaceholder="boxed"
+        />
+      </ng-template>
+      <ng-template #advancedDiscardTpl>
+        <app-deck
+          [size]="compactFonteStackedCardWidth()"
+          [count]="advancedDiscardCount()"
+          [faceUp]="true"
+          [messy]="true"
+          [topElement]="advancedDiscardTop()"
+          [showLabel]="compactFonteStackedShowLabel()"
+          [label]="'board.fonte.scarti' | translate"
+          emptyPlaceholder="boxed"
+          (click)="openAdvancedDiscardDialog()"
+        />
+      </ng-template>
+
+      <!-- Tablet: posizione originale (come sul desktop) — Residuo, Mazzo avanzato, Fonte, Pila
+           scarti in fila, niente più colonna dedicata (c'è spazio a sufficienza in larghezza). -->
+      @if (layoutTier() === 'tablet') {
+        <div class="board-compact__fonte">
+          <ng-container [ngTemplateOutlet]="residuoTpl" />
+          <ng-container [ngTemplateOutlet]="advancedDeckTpl" />
+          <ng-container [ngTemplateOutlet]="fonteGridTpl" />
+          <ng-container [ngTemplateOutlet]="advancedDiscardTpl" />
         </div>
-      </div>
+      } @else {
+        <div class="board-compact__fonte">
+          <ng-container [ngTemplateOutlet]="residuoTpl" />
+          <ng-container [ngTemplateOutlet]="fonteGridTpl" />
+          <div class="board-compact__fonte-advanced-col">
+            <ng-container [ngTemplateOutlet]="advancedDeckTpl" />
+            <ng-container [ngTemplateOutlet]="advancedDiscardTpl" />
+          </div>
+        </div>
+      }
     }
     </div>
   </div>
@@ -1317,6 +1407,17 @@
         <span class="board-compact__phase-dot" aria-hidden="true"></span>
         <span class="board-compact__phase-label">{{ i18n.turnPhaseLabel(state()?.phase ?? 'attesa') }}</span>
       </div>
+      <!-- Anteprima della fase successiva — solo tablet, la phase-bar ha più spazio orizzontale che
+           su un telefono e ci sta senza affollare la riga. -->
+      @if (layoutTier() === 'tablet' && compactNextPhase(); as next) {
+        <span class="board-compact__phase-line board-compact__phase-line--next" aria-hidden="true"></span>
+        <div class="board-compact__phase-step board-compact__phase-step--next">
+          <span class="board-compact__phase-dot board-compact__phase-dot--next" aria-hidden="true"></span>
+          <span class="board-compact__phase-label board-compact__phase-label--next">{{
+            i18n.turnPhaseLabel(next)
+          }}</span>
+        </div>
+      }
       <span class="board-compact__phase-line" aria-hidden="true"></span>
       <button
         type="button"
@@ -1331,75 +1432,144 @@
 
   <!-- PLAYER -->
   <div class="board-compact__cluster board-compact__cluster--player">
-    <!-- Carta incastonata/trattenuta, header true come sul desktop (mostra icona+nome nella
-         finestra visibile invece di un frammento a caso) — finestra ritagliata (overflow: hidden),
-         non coperta da un pannello alto quanto la carta come sul desktop (qui non esiste, la
-         striscia è molto più bassa). Animazione d'ingresso preservata via classe invece che sul
-         margine (tipEntering()/bodyEntering()/handleEntering(): appare con un lieve scale-in invece
-         che di scatto — vedi board-compact__wand-peek-card--entering). -->
-    <div class="board-compact__wand-peek">
-      <div class="board-compact__wand-peek-slot">
-        @if (playerTip(); as tip) {
-          <app-card
-            class="board-compact__wand-peek-card"
-            [class.board-compact__wand-peek-card--entering]="tipEntering()"
-            [element]="tip.element"
-            [manaBonus]="tip.manaBonus ?? 0"
-            [specialMana]="tip.specialMana ?? null"
-            [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-            [header]="true"
-          />
-        }
-        @if (tipVanishing(); as ghost) {
-          <app-card
-            class="board-compact__wand-peek-card board-compact__wand-peek-card--vanishing"
-            [element]="ghost.element"
-            [manaBonus]="ghost.manaBonus ?? 0"
-            [specialMana]="ghost.specialMana ?? null"
-            [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-            [header]="true"
-            aria-hidden="true"
-          />
-        }
+    @if (layoutTier() === 'tablet') {
+      <!-- Tablet: ogni sezione è divisa in riga, non più in sovraimpressione — 20% label (libera in
+           alto a sinistra), 80% carta col SUO solito header (icona+nome, [header]="true", come nel
+           ramo mobile sotto), mai più grande del proprio contenitore in nessuna delle due dimensioni
+           (compactWandOverlayCardWidth: min tra l'80% di larghezza e l'altezza di una sezione
+           convertita in larghezza). Animazione d'ingresso/uscita preservata via classe
+           (tipEntering()/bodyEntering()/handleEntering()/tipVanishing()). -->
+      <div
+        class="board-compact__wand-strip board-compact__wand-strip--player"
+        #compactPlayerWandTrack
+      >
+        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+          <div class="board-compact__wand-overlay-card-wrap">
+            @if (playerTip(); as tip) {
+              <app-card
+                class="board-compact__wand-overlay-card"
+                [class.board-compact__wand-overlay-card--entering]="tipEntering()"
+                [element]="tip.element"
+                [manaBonus]="tip.manaBonus ?? 0"
+                [specialMana]="tip.specialMana ?? null"
+                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                [header]="true"
+              />
+            }
+            @if (tipVanishing(); as ghost) {
+              <app-card
+                class="board-compact__wand-overlay-card board-compact__wand-overlay-card--vanishing"
+                [element]="ghost.element"
+                [manaBonus]="ghost.manaBonus ?? 0"
+                [specialMana]="ghost.specialMana ?? null"
+                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                [header]="true"
+                aria-hidden="true"
+              />
+            }
+          </div>
+        </div>
+        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+          <div class="board-compact__wand-overlay-card-wrap">
+            @if (playerBody(); as el) {
+              <app-card
+                class="board-compact__wand-overlay-card"
+                [class.board-compact__wand-overlay-card--entering]="bodyEntering()"
+                [element]="el"
+                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                [header]="true"
+              />
+            }
+          </div>
+        </div>
+        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+          <div class="board-compact__wand-overlay-card-wrap">
+            @if (playerHandle(); as el) {
+              <app-card
+                class="board-compact__wand-overlay-card"
+                [class.board-compact__wand-overlay-card--entering]="handleEntering()"
+                [element]="el"
+                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                [header]="true"
+              />
+            }
+          </div>
+        </div>
       </div>
-      <div class="board-compact__wand-peek-slot">
-        @if (playerBody(); as el) {
-          <app-card
-            class="board-compact__wand-peek-card"
-            [class.board-compact__wand-peek-card--entering]="bodyEntering()"
-            [element]="el"
-            [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-            [header]="true"
-          />
-        }
+    } @else {
+      <!-- Mobile: carta incastonata/trattenuta, header true come sul desktop (mostra icona+nome nella
+           finestra visibile invece di un frammento a caso) — finestra ritagliata (overflow: hidden),
+           non coperta da un pannello alto quanto la carta come sul desktop (qui non esiste, la
+           striscia è molto più bassa). Animazione d'ingresso preservata via classe invece che sul
+           margine (tipEntering()/bodyEntering()/handleEntering(): appare con un lieve scale-in invece
+           che di scatto — vedi board-compact__wand-peek-card--entering). -->
+      <div class="board-compact__wand-peek">
+        <div class="board-compact__wand-peek-slot">
+          @if (playerTip(); as tip) {
+            <app-card
+              class="board-compact__wand-peek-card"
+              [class.board-compact__wand-peek-card--entering]="tipEntering()"
+              [element]="tip.element"
+              [manaBonus]="tip.manaBonus ?? 0"
+              [specialMana]="tip.specialMana ?? null"
+              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+              [header]="true"
+            />
+          }
+          @if (tipVanishing(); as ghost) {
+            <app-card
+              class="board-compact__wand-peek-card board-compact__wand-peek-card--vanishing"
+              [element]="ghost.element"
+              [manaBonus]="ghost.manaBonus ?? 0"
+              [specialMana]="ghost.specialMana ?? null"
+              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+              [header]="true"
+              aria-hidden="true"
+            />
+          }
+        </div>
+        <div class="board-compact__wand-peek-slot">
+          @if (playerBody(); as el) {
+            <app-card
+              class="board-compact__wand-peek-card"
+              [class.board-compact__wand-peek-card--entering]="bodyEntering()"
+              [element]="el"
+              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+              [header]="true"
+            />
+          }
+        </div>
+        <div class="board-compact__wand-peek-slot">
+          @if (playerHandle(); as el) {
+            <app-card
+              class="board-compact__wand-peek-card"
+              [class.board-compact__wand-peek-card--entering]="handleEntering()"
+              [element]="el"
+              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+              [header]="true"
+            />
+          }
+        </div>
       </div>
-      <div class="board-compact__wand-peek-slot">
-        @if (playerHandle(); as el) {
-          <app-card
-            class="board-compact__wand-peek-card"
-            [class.board-compact__wand-peek-card--entering]="handleEntering()"
-            [element]="el"
-            [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-            [header]="true"
-          />
-        }
-      </div>
-    </div>
 
-    <div
-      class="board-compact__wand-strip board-compact__wand-strip--player"
-      #compactPlayerWandTrack
-    >
-      <div class="board-compact__wand-slot">
-        <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+      <div
+        class="board-compact__wand-strip board-compact__wand-strip--player"
+        #compactPlayerWandTrack
+      >
+        <div class="board-compact__wand-slot">
+          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+        </div>
+        <div class="board-compact__wand-slot">
+          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+        </div>
+        <div class="board-compact__wand-slot">
+          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+        </div>
       </div>
-      <div class="board-compact__wand-slot">
-        <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
-      </div>
-      <div class="board-compact__wand-slot">
-        <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
-      </div>
-    </div>
+    }
 
     <div class="board-compact__hand-row">
       <button
@@ -1560,7 +1730,7 @@
     class="board-compact__identity board-compact__identity--player"
     [attr.aria-label]="'board.playerZoneAria' | translate"
   >
-    <span class="board-compact__hp-value">{{ playerHealth().current }}</span>
+    <span class="board-compact__hp-value">{{ compactDisplayedHp(playerHealth()) }}</span>
     <!-- Righe invertite rispetto all'avversario: qui le info vengono prima, la barra vita dopo
          (non specchiato in orizzontale — stesso ordine sinistra/destra di sempre). -->
     <div class="board-compact__identity-meta">
@@ -1594,8 +1764,15 @@
         <div
           class="board-compact__hp-fill"
           [class.board-compact__hp-fill--poisoned]="playerPoisonLevel() > 0"
-          [style.width.%]="(playerHealth().current / playerHealth().max) * 100"
+          [style.width.%]="compactHpPercent(playerHealth())"
         ></div>
+        @if (playerHealth().shield > 0) {
+          <div
+            class="board-compact__hp-shield-fill"
+            [style.width.%]="compactShieldPercent(playerHealth())"
+            [style.left.%]="compactHpPercent(playerHealth())"
+          ></div>
+        }
       </div>
     </div>
   </footer>

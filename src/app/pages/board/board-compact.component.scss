@@ -86,6 +86,21 @@
   }
 }
 
+// Scudo (bonus vita effettiva dai gettoni scudo) — segmento subito dopo la barra vita (left:
+// compactHpPercent(), vedi board.component.html), stesso trattamento "metallico" argento di
+// .hud__hp-shield-fill sul desktop (player-hud.component.scss), non c'era affatto qui: la barra
+// compatta mostrava solo current/max, ignorando lo scudo del tutto.
+.board-compact__hp-shield-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #eef0f2 0%, #b4bac2 40%, #6b7078 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(255, 255, 255, 0.4),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.55);
+  transition: width var(--transition), left var(--transition);
+}
+
 .board-compact__identity-meta {
   display: flex;
   align-items: center;
@@ -232,8 +247,12 @@
   border: 1px solid var(--border-subtle);
 }
 
+// 60/40 tra mano e bacchetta (non 50/50, la mano è la parte più importante da leggere a colpo
+// d'occhio). Flex-grow puro (flex-basis: 0%, incluso nello shorthand a un numero) invece di
+// percentuali fisse — si spartiscono lo spazio residuo nella stessa proporzione qualunque sia la
+// larghezza reale del cluster.
 .board--tablet .board-compact__hand-row {
-  flex: 1;
+  flex: 6;
 }
 
 // Carte vere sovrapposte in riga (non a ventaglio): posizionamento assoluto con z-index esplicito
@@ -277,6 +296,22 @@
   gap: var(--sp-1);
   height: 40px;
   overflow: hidden;
+}
+
+// BUG: su tablet .board-compact__wand-strip diventa una colonna (punta/asta/manico impilati in
+// verticale, vedi .board--tablet .board-compact__wand-strip più sotto), ma questo contenitore
+// restava una riga orizzontale — le 3 carte finivano allineate punta/asta/manico da sinistra a
+// destra mentre le rispettive etichette scorrevano dall'alto in basso, completamente scollegate: una
+// carta incastonata al manico poteva finire visivamente accanto all'etichetta "Punta". Colonna anche
+// qui, stesso ordine (punta/asta/manico) e stesso numero di righe (flex: 1 per slot) della striscia
+// — allineamento riga-per-riga corretto anche se ancora senza uno stile proprio (vedi nota nel
+// prossimo giro sulla bacchetta). height/overflow del "clipped window" pensati per la striscia
+// orizzontale mobile non hanno senso qui: le carte restano per intero, non c'è ancora una vera
+// finestra ritagliata per l'orientamento verticale.
+.board--tablet .board-compact__wand-peek {
+  flex-direction: column;
+  height: auto;
+  overflow: visible;
 }
 
 .board-compact__wand-peek-slot {
@@ -350,7 +385,7 @@
 }
 
 .board--tablet .board-compact__wand-strip {
-  flex: 1;
+  flex: 4;
   flex-direction: column;
 }
 
@@ -392,6 +427,88 @@
   white-space: nowrap;
 }
 
+// ── Bacchetta, sezione divisa in riga label/carta (tablet) ────────────────────────
+// 20% label (libera in alto a sinistra, niente sovraimpressione) + 80% carta col suo solito header
+// (icona+nome, [header]="true" nel template) — non più una carta che copre la sezione con la label
+// sovrapposta, la carta resta invece nel proprio spazio dedicato. Specificità pari alla regola
+// generica .board--tablet .board-compact__wand-slot sopra (stesse due classi combinate) e dichiarata
+// dopo: vince lei sulle proprietà che ridefinisce.
+.board--tablet .board-compact__wand-slot--overlay {
+  align-items: stretch;
+  width: 100%;
+  overflow: hidden;
+}
+
+.board-compact__wand-slot--overlay .board-compact__wand-label {
+  flex: 0 0 20%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-top: var(--sp-1);
+}
+
+// Spazio dedicato alla carta (80% restante, piena larghezza — vedi compactWandOverlayCardWidth in
+// board.component.ts): la carta resta alla sua proporzione naturale (2:3), MAI rimpicciolita per
+// stare nell'altezza — è il contenitore (overflow: hidden sulla sezione sopra) a tagliare
+// l'eventuale eccedenza verticale, non la carta a rimpicciolirsi. Per questo l'ancoraggio verticale
+// non è centrato ma verso il lato che ha l'header della carta (icona+nome, [header]="true" nel
+// template): giocatore in alto (default headerAlign), avversario in basso (headerAlign="bottom") —
+// così un'eventuale eccedenza viene tagliata dal lato OPPOSTO all'header, che resta sempre intero e
+// leggibile, mai il lato sbagliato.
+.board-compact__wand-overlay-card-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.board-compact__cluster--player .board-compact__wand-overlay-card-wrap {
+  align-items: flex-start;
+}
+
+.board-compact__cluster--opponent .board-compact__wand-overlay-card-wrap {
+  align-items: flex-end;
+}
+
+.board-compact__wand-overlay-card {
+  flex-shrink: 0;
+  // Altezza fissa, punto — niente più calcoli su larghezza/proporzione: CardComponent imposta
+  // l'altezza inline (height = size * 1.5), !important qui è l'unico modo per scavalcarla.
+  // object-fit: cover su .card__art (card.component.scss) fa il resto, l'arte si ritaglia invece di
+  // stirarsi entro il nuovo rapporto largo/basso.
+  height: 80px !important;
+}
+
+.board-compact__wand-overlay-card--entering {
+  animation: board-compact-wand-overlay-enter 400ms ease;
+}
+
+@keyframes board-compact-wand-overlay-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.board-compact__wand-overlay-card--vanishing {
+  position: absolute;
+  pointer-events: none;
+  animation: board-compact-wand-overlay-vanish 600ms ease-in forwards;
+}
+
+@keyframes board-compact-wand-overlay-vanish {
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
 // ── Zona centrale contestuale ─────────────────────────────────────────────────────
 // A contatto pieno in orizzontale (niente margine laterale) come tutto il resto — bordo leggero,
 // nessun arrotondamento: non ha un "lato verso il centro" proprio, è lei stessa il centro. flex: 1,
@@ -413,6 +530,7 @@
   justify-content: flex-start;
   gap: var(--sp-2);
   padding: var(--sp-2);
+  margin-top: 24px;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
 }
@@ -457,6 +575,7 @@
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-2);
+  margin-bottom: 24px;
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   border-top: none;
@@ -525,6 +644,27 @@
   letter-spacing: 0.06em;
   color: var(--text-heading);
   white-space: nowrap;
+}
+
+// Anteprima della fase successiva (solo tablet, vedi board.component.html) — stesso schema
+// pallino+label del passo "active" sopra, ma spento: niente pulsazione/bordo dorato/colore heading,
+// per restare chiaramente in secondo piano rispetto alla fase in corso.
+.board-compact__phase-line--next {
+  flex: 0 0 var(--sp-3);
+  min-width: 0;
+}
+
+.board-compact__phase-dot--next {
+  background: transparent;
+  border-color: var(--text-muted);
+  box-shadow: none;
+  animation: none;
+  opacity: 0.6;
+}
+
+.board-compact__phase-label--next {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .board-compact__phase-advance {

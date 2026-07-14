@@ -123,10 +123,10 @@
                   [revealedToOpponent]="card.revealedToOpponent ?? false"
                   [showMana]="card.tier !== 'freeze'"
                   [freeze]="card.tier === 'freeze'"
-                  [revealed]="row.revealed"
+                  [revealed]="isCardVisible(row, card)"
                   [size]="80"
                   [style.z-index]="cardIndex"
-                  [appTooltip]="row.revealed && hasCardTooltip(card) ? cardTip : null"
+                  [appTooltip]="isCardVisible(row, card) && hasCardTooltip(card) ? cardTip : null"
                   tooltipPosition="top"
                 />
               }
