@@ -46,19 +46,48 @@
   }
 }
 
-// Artwork layer — fills the card
+// Artwork layer — fills the card. object-position esplicito (non solo l'object-fit) così il crop
+// resta sempre centrato sull'immagine indipendentemente dalle sue proporzioni reali, invece di
+// affidarsi al default del browser.
 .card__art {
   object-fit: cover;
+  object-position: center;
 }
 
 // Placeholder temporaneo per le carte incantesimo (nessuna arte propria ancora, regolamento 5) —
-// sfondo pergamena neutro con gradiente centrale + gettone scuro con l'icona bacchetta-stelle.
-.card__spell-bg {
+// metà superiore l'illustrazione (card__spell-art-wrap, un contenitore posizionato per limitare il
+// `fill` di NgOptimizedImage a metà altezza invece che all'intera carta, a differenza di card__art
+// sotto), metà inferiore un pannello a tinta unita (card__spell-panel) col gettone bacchetta-stelle.
+.card__spell-art-wrap {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 50% 42%, #f4e8c9 0%, #e2cd9c 55%, #cbae72 100%);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
 }
 
+.card__spell-art {
+  object-fit: cover;
+  object-position: center;
+}
+
+// Tono pergamena (stessi colori del vecchio sfondo pieno) per continuità visiva con l'identità
+// "libro di magia" — il gettone scuro (#212121, come i badge d'angolo) risalta sempre su questo
+// fondo chiaro, indipendentemente da quanto sia scura l'illustrazione sopra.
+.card__spell-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50%;
+  background: linear-gradient(180deg, #e2cd9c 0%, #cbae72 100%);
+}
+
+// Centrato sia orizzontalmente che verticalmente DENTRO card__spell-panel (che ne è il containing
+// block, essendo position: absolute) — non più rispetto all'intera carta come nel vecchio layout a
+// sfondo pieno. width in % risolve comunque contro la larghezza della carta (il pannello è largo
+// quanto lei), quindi il diametro del gettone resta identico a prima, solo la sua posizione cambia.
 .card__spell-token {
   position: absolute;
   top: 50%;

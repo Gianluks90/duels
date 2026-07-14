@@ -25,10 +25,17 @@ const CARD_FLIP_HALF_MS = 150;
   template: `
     @if (displayedRevealed()) {
       @if (spell(); as s) {
-        <!-- Placeholder temporaneo (regolamento 5): nessuna arte propria per gli incantesimi ancora, sfondo pergamena + gettone con l'icona bacchetta-stelle. -->
-        <div class="card__spell-bg" aria-hidden="true"></div>
-        <div class="card__spell-token" aria-hidden="true">
-          <img class="card__spell-icon" [src]="spellIcon" alt="" />
+        <!-- Layout incantesimo (regolamento 5): metà superiore l'arte (placeholder condiviso, nessuna
+             arte propria per singola magia ancora), metà inferiore un pannello a tinta unita col
+             gettone bacchetta-stelle centrato — stesso schema "arte sopra, riquadro sotto" delle carte
+             magia dei TCG classici, a differenza delle carte elemento (full art, vedi card__art sotto). -->
+        <div class="card__spell-art-wrap" aria-hidden="true">
+          <img class="card__spell-art" ngSrc="/images/book.png" [priority]="priority()" alt="" fill />
+        </div>
+        <div class="card__spell-panel" aria-hidden="true">
+          <div class="card__spell-token">
+            <img class="card__spell-icon" [src]="spellIcon" alt="" />
+          </div>
         </div>
       } @else {
         <img class="card__art" [ngSrc]="artSrc()" [alt]="label()" [priority]="priority()" fill />

@@ -256,8 +256,10 @@
       "opponentDiscardHand": "The opponent discards their whole hand and draws 5 new cards.",
       "revealOpponentHand": "Reveals the opponent's whole hand.",
       "revealOpponentHandRandom": "Reveals {amount} random card from the opponent's hand.",
+      "revealOpponentHandSpell": "Reveals every spell in the opponent's hand.",
+      "revealOpponentHandRandomSpell": "Reveals {amount} random spell from the opponent's hand (no effect if they have none).",
       "fonteReset": "Resets the Arcane Source.",
-      "boostCardMana": "Permanently increases the mana value of a chosen card in hand by {amount}."
+      "boostCardMana": "Permanently increases the mana value of a chosen card from your own discards by {amount}. Fails if the discard pile is empty."
     }
   },
 
@@ -285,9 +287,9 @@
     "title": "Cast {name}",
     "closeAria": "Cancel",
     "handListAria": "Cards available as payment",
-    "targetSectionTitle": "Choose the target card",
-    "targetListAria": "Cards available as target",
-    "targetEmpty": "No card available as target.",
+    "targetSectionTitle": "Choose the target card from your discards",
+    "targetListAria": "Cards available as target in your discards",
+    "targetEmpty": "No card available in your discards: the spell will have no effect.",
     "manaCounter": "{paid} / {cost} mana",
     "cancel": "Cancel",
     "confirm": "Confirm cast"
@@ -416,6 +418,14 @@
       "name": "Light Healing",
       "flavorText": "A flow of magic so pure it restores vigor and closes minor wounds."
     },
+    "mend": {
+      "name": "Healing Dew",
+      "flavorText": "A damp breeze wraps around the wounds, closing them the way time would — only much faster."
+    },
+    "radiant_heal": {
+      "name": "Radiant Heal",
+      "flavorText": "A warm glow washes over the skin: the wounds close as if they had never existed."
+    },
     "spore": {
       "name": "Spore",
       "flavorText": "Tiny toxic spores float in the air, silent and patient — just a few breaths are enough for them to take effect."
@@ -452,9 +462,17 @@
       "name": "Aegis",
       "flavorText": "A legendary defense: lava merges with light itself, forming a shield that seems impossible to break."
     },
+    "spark": {
+      "name": "Spark",
+      "flavorText": "A small electric jolt, barely noticeable — but enough to pass straight through any shield."
+    },
     "lightning_bolt": {
       "name": "Lightning Bolt",
       "flavorText": "A bolt that knows no obstacle: no shield, however solid, can stop it."
+    },
+    "thunderstorm": {
+      "name": "Thunderstorm",
+      "flavorText": "The sky splits open in a barrage of bolts that no defense can hold back."
     },
     "black_flame": {
       "name": "Black Flame",
@@ -484,6 +502,10 @@
       "name": "Violent Gust",
       "flavorText": "A cutting wind rips a card straight out of the target's hands, carrying it away."
     },
+    "dark_gust": {
+      "name": "Dark Gust",
+      "flavorText": "A wind tinged with darkness rips two cards from the target's hands, leaving them with precious little to work with."
+    },
     "reset": {
       "name": "Reset",
       "flavorText": "The Arcane Source resets in an instant: the old cards vanish, four new ones take their place."
@@ -499,6 +521,10 @@
     "supreme_eye": {
       "name": "Supreme Eye",
       "flavorText": "No secret survives this gaze: the opponent's entire hand lays open like a book."
+    },
+    "spell_glimpse": {
+      "name": "Arcane Glimpse",
+      "flavorText": "The gaze ignores common cards and loose mana: it seeks only the spell the opponent is hiding."
     },
     "risk": {
       "name": "Risk",

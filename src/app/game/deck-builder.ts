@@ -147,14 +147,12 @@ function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactor
     discards: [],
     pendingCollect: null,
     pendingSpells: [],
-    tokens: { shield: 0, poison: 0, ice: 0 },
+    tokens: { shield: 0, poison: 0 },
     cardBack: 'dark',
     hasCollectedThisTurn: false,
     spellsPlayedThisTurn: 0,
     tipCardPlacedTurn: null,
     tipHeldAtPreparation: false,
-    handRevealed: false,
-    immuneToElement: null,
   };
 }
 

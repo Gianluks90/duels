@@ -54,8 +54,8 @@ Ogni elemento avanzato vale 2 Mana ed è collegato a uno dei seguenti elementi: 
 **2.3.1 - Ghiaccio e Congelamento**
 Gli incantesimi che includono ghiaccio come componente possono applicare _Congelamento_ al bersaglio: quando un bersaglio viene congelato, aggiunge una o più carte Congelamento alla propria pila degli scarti. Le carte Congelamento occupano spazio e impediscono al giocatore di pescare carte utili. Durante la fase di Preparazione, le carte Congelamento pescate si sciolgono, ovvero vengono rimosse dal gioco.
 
-**2.3.2 - Tuono e Incantesimi rapidi**
-Gli incantesimi che includono tuono come componente possono avere la capacità di non finire mai nella pila degli scarti, tornando invece sempre sul fondo del mazzo del giocatore.
+**2.3.2 - Tuono**
+Gli incantesimi che includono tuono come componente possono avere la capacità di ignorare gli scudi del bersaglio, infliggendo il proprio danno diretto ai Punti Salute anche in presenza di scudi attivi.
 
 **2.3.3 - Lava**
 Gli incantesimi che includono lava come componente possono avere la capacità di _consumare_ carte per alleggerire il mazzo. Sono inoltre noti per creare difese più potenti, applicando scudi ai Punti Salute.
@@ -86,10 +86,10 @@ Su poche carte elemento base sono presenti _mana speciali_: modificatori legati 
 Un elemento base con mana _prismatico_ vale sempre 1 mana in più rispetto al proprio valore, indipendentemente da qualsiasi altro modificatore attivo sulla carta (es. bonus manico, 1.4.3).
 
 **3.2.2 - Mana vitale**
-Se un elemento base con mana _vitale_ viene speso per pagare un incantesimo che bersaglia chi lo lancia, chi lancia recupera 2 Punti Salute. Se l'incantesimo bersaglia l'avversario, il mana vitale non ha alcun effetto aggiuntivo: vale come un mana comune.
+Se un elemento base con mana _vitale_ viene speso per pagare un incantesimo che include un effetto di cura, chi lancia recupera 2 Punti Salute aggiuntivi, oltre alla cura base dell'incantesimo. Se l'incantesimo non include un effetto di cura, il mana vitale non ha alcun effetto aggiuntivo: vale come un mana comune, indipendentemente dal bersaglio dell'incantesimo.
 
 **3.2.3 - Mana caotico**
-Se un elemento base con mana _caotico_ viene speso per pagare un incantesimo che bersaglia l'avversario, l'avversario subisce 2 danni aggiuntivi. Se l'incantesimo bersaglia chi lo lancia, il mana caotico non ha alcun effetto aggiuntivo: vale come un mana comune.
+Se un elemento base con mana _caotico_ viene speso per pagare un incantesimo che include un effetto di danno, l'avversario subisce 2 danni aggiuntivi, oltre al danno base dell'incantesimo. Se l'incantesimo non include un effetto di danno, il mana caotico non ha alcun effetto aggiuntivo: vale come un mana comune, indipendentemente dal bersaglio dell'incantesimo.
 
 ## 4. Struttura del turno
 Il turno si articola nelle seguenti fasi.
@@ -103,7 +103,9 @@ Prima dell'inizio del turno vengono risolti alcuni effetti. Nello specifico:
 - si sciolgono le carte congelamento.
 
 **4.3 - Raccolta**
-Il giocatore può, se lo desidera, raccogliere risorse: pesca 2 carte dal mazzo comune, ne sceglie una e scarta l'altra. La carta selezionata si aggiunge alla pila degli scarti del proprio mazzo.
+Il giocatore può, se lo desidera, raccogliere risorse: pesca 2 carte dal mazzo comune. A questo punto sceglie fra due opzioni:
+- _tenerne una_: la carta scelta si aggiunge alla pila degli scarti del proprio mazzo, l'altra torna negli scarti comuni;
+- _scartarle entrambe_ negli scarti comuni, ottenendo invece 1 mana accumulato: un mana generico, spendibile subito ma solo in questo stesso turno. Se non viene usato entro la fine del turno svanisce, senza aggiungersi al proprio mazzo.
 
 **4.4 - Azione**
 Durante questa fase il giocatore può effettuare combinazioni per ottenere elementi avanzati o potenti, oppure creare incantesimi. Può inoltre scegliere quali incantesimi lanciare nella fase successiva, a patto di poterne pagare il costo, e conservare un elemento preso dalla mano nella punta della bacchetta.
@@ -118,13 +120,15 @@ Tutte le carte non utilizzate rimaste in mano vengono scartate. Viene pescata un
 Gli _incantesimi_ sono l'unico mezzo, o il più sicuro, per sconfiggere l'avversario. L'elenco degli incantesimi è conservato nel grimorio, a cui i giocatori possono accedere in qualsiasi momento.
 
 **5.1 - Creare incantesimi**
-Durante la fase Azione, un giocatore può accedere al grimorio e selezionare un incantesimo da produrre, se possiede gli elementi previsti dalla sua formula. In tal caso, il giocatore può scegliere se consumare uno degli elementi utilizzati oppure scartarli tutti. Quando un incantesimo viene creato, si aggiunge alla pila degli scarti del giocatore.
+Durante la fase Azione, un giocatore può accedere al grimorio e selezionare un incantesimo da produrre, se possiede gli elementi previsti dalla sua formula. Tutti gli elementi usati per la formula vengono scartati (finiscono nella pila degli scarti del giocatore). Quando un incantesimo viene creato, si aggiunge anch'esso alla pila degli scarti del giocatore.
+
+> In futuro, in base al bilanciamento, si valuterà se introdurre la possibilità di consumare uno degli elementi della formula invece di scartarlo — non ancora implementata.
 
 **5.2 - Lanciare incantesimi**
 Durante la fase Azione, un giocatore può selezionare uno degli incantesimi che ha in mano e lanciarlo, a patto di poterne pagare il costo in mana. Le carte utilizzate per pagare il costo vengono scartate. La risoluzione degli incantesimi lanciati avviene durante la fase Incantesimo.
 
 **5.3 - Permanenza degli incantesimi nel mazzo**
-Attualmente tutti gli incantesimi, una volta risolti, ritornano nella pila degli scarti (o in fondo al mazzo, per quelli del tuono). In futuro verranno introdotti incantesimi più potenti o meno costosi in termini di mana, ma a uso singolo: si consumano cioè quando vengono risolti.
+Attualmente tutti gli incantesimi, una volta risolti, ritornano nella pila degli scarti del giocatore. In futuro verranno introdotti incantesimi più potenti o meno costosi in termini di mana, ma a uso singolo: si consumano cioè quando vengono risolti.
 
 ## 6. Regola d'oro
 Se un incantesimo ha un effetto che sembra permettere un'azione normalmente vietata dal regolamento, è l'incantesimo ad avere ragione.

@@ -918,7 +918,7 @@ export class BoardComponent implements OnInit {
         data: {
           spellCard: card,
           payableHand,
-          hand: this.playerHand().filter((c) => c.id !== card.id),
+          discards: this.me()?.discards ?? [],
         },
         positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
         hasBackdrop: true,

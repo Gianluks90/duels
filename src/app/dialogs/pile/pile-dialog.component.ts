@@ -168,6 +168,11 @@ export class PileDialogComponent {
           case 'opponent_discard_hand':
             return this.i18n.t('grimoire.effects.opponentDiscardHand');
           case 'reveal_opponent_hand':
+            if (e.cardTierFilter === 'spell') {
+              return e.amount !== undefined
+                ? this.i18n.t('grimoire.effects.revealOpponentHandRandomSpell', { amount: e.amount })
+                : this.i18n.t('grimoire.effects.revealOpponentHandSpell');
+            }
             return e.amount !== undefined
               ? this.i18n.t('grimoire.effects.revealOpponentHandRandom', { amount: e.amount })
               : this.i18n.t('grimoire.effects.revealOpponentHand');

@@ -350,9 +350,10 @@ const SPECIAL_MANA_EFFECT_AMOUNT = 2;
  * regolamento 4.4/4.5. No-op se: non sei di turno, non sei in Azione, la carta non è un incantesimo
  * valido, le carte di pagamento indicate non coprono il costo (tier 'spell'/'freeze' esclusi dal
  * pagamento: non sono elementi, 3.1), o — per le magie con un effetto in TARGET_CARD_EFFECT_TYPES
- * (es. 'boost_card_mana') — `targetCardId` è assente o non punta a un elemento reale (base/avanzato/
- * potente) ancora in mano dopo il pagamento: niente Residuo/mana accumulato/carte "temporanee" come
- * bersaglio, e mai una delle stesse carte appena scelte per pagare (lascerebbero comunque la mano).
+ * (es. 'boost_card_mana') — ci sono carte bersaglio candidate nei PROPRI scarti (tier base/avanzato/
+ * potente) ma `targetCardId` non punta a nessuna di esse. Se invece gli scarti non hanno nessuna
+ * carta candidata, il bersaglio è semplicemente saltato (non bloccante): la magia si lancia comunque,
+ * ma resta senza effetto alla risoluzione (vedi applyBoostCardMana).
  */
 export function castSpell(
   state: GameState,
@@ -382,14 +383,15 @@ export function castSpell(
   if (computePlayerMana(paidCards) < spell.manaCost) return state;
 
   const needsTargetCard = spell.effects.some((e) => TARGET_CARD_EFFECT_TYPES.includes(e.type));
+  let resolvedTargetCardId: string | undefined;
   if (needsTargetCard) {
-    const targetCard = player.hand.find(
-      (c) =>
-        c.id === targetCardId &&
-        !paidCardIds.includes(c.id) &&
-        (c.tier === 'base' || c.tier === 'advanced' || c.tier === 'superior'),
+    const eligibleDiscards = player.discards.filter(
+      (c) => c.tier === 'base' || c.tier === 'advanced' || c.tier === 'superior',
     );
-    if (!targetCard) return state;
+    if (eligibleDiscards.length > 0) {
+      if (!eligibleDiscards.some((c) => c.id === targetCardId)) return state;
+      resolvedTargetCardId = targetCardId;
+    }
   }
 
   const vitalBonus =
@@ -412,7 +414,7 @@ export function castSpell(
         card: spellCard,
         vitalBonus,
         chaoticBonus,
-        targetCardId: needsTargetCard ? targetCardId : undefined,
+        targetCardId: needsTargetCard ? resolvedTargetCardId : undefined,
       },
     ],
     spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
@@ -892,7 +894,7 @@ function applySpellEffect(
     case 'opponent_discard_hand':
       return applyDiscardHand(state, opponentRole);
     case 'reveal_opponent_hand':
-      return applyRevealHand(state, opponentRole, effect.amount);
+      return applyRevealHand(state, opponentRole, effect.amount, effect.cardTierFilter);
     case 'fonte_reset':
       return applyFonteReset(state);
     default:
@@ -1120,45 +1122,68 @@ export function applyDiscardRandom(state: GameState, target: PlayerId, count: nu
  * Colpo basso: scarta l'intera mano del bersaglio e ne pesca subito 5 fresche — stessa identica
  * meccanica del ciclo mano di endTurn (resolveExpiringCards 'fine' PRIMA dello scarto, altrimenti un
  * Residuo Arcano/mana accumulato ancora in mano finirebbe negli scarti come una carta qualunque
- * invece di consumarsi; poi drawUpTo, che rimescola gli scarti nel mazzo se necessario), applicata
- * però solo alla mano — non tocca token/wand/flag di turno del bersaglio, a differenza di endTurn.
- * Chiamata da applySpellEffect per il tipo 'opponent_discard_hand', sempre col bersaglio l'avversario
- * del lanciatore.
+ * invece di consumarsi; poi drawUpTo, che rimescola gli scarti nel mazzo se necessario, il che riduce
+ * di 1 il livello di avvelenamento del bersaglio come qualunque altro rimescolamento del suo mazzo,
+ * 2.3.4/1.7), applicata però solo alla mano e al veleno — non tocca wand/flag di turno del bersaglio,
+ * a differenza di endTurn. Chiamata da applySpellEffect per il tipo 'opponent_discard_hand', sempre
+ * col bersaglio l'avversario del lanciatore.
  */
 export function applyDiscardHand(state: GameState, target: PlayerId): GameState {
   const player = state.players[target];
   const handAfterExpiry = resolveExpiringCards(player.hand, 'fine');
-  const { drawn, deck, discards } = drawUpTo(
+  const { drawn, deck, discards, reshuffled } = drawUpTo(
     player.deck,
     [...player.discards, ...handAfterExpiry],
     HAND_SIZE,
   );
-  return updatePlayer(state, target, { hand: drawn, deck, discards });
+  const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
+  return updatePlayer(state, target, {
+    hand: drawn,
+    deck,
+    discards,
+    tokens: { ...player.tokens, poison },
+  });
 }
 
 /**
- * Terzo occhio/Occhio supremo: marca `count` carte scelte a caso nella mano del bersaglio come
- * rivelate all'avversario (Card.revealedToOpponent) — `count` assente marca l'INTERA mano invece di
- * un numero fisso, stesso schema "amount assente = tutto" di applyShieldRemove/applyPoisonClear/
- * applyIceClear. A differenza di applyDiscardRandom/applyDiscardHand le carte non si spostano: la
- * marcatura è permanente sulla carta stessa (nessuna "guarigione" implementata oggi), quindi resta
- * anche se la carta lascia la mano e ci torna più avanti (scarti, rimescolata, ripescata) — non un
- * effetto temporaneo legato al turno. Chiamata da applySpellEffect per il tipo
- * 'reveal_opponent_hand', sempre col bersaglio l'avversario del lanciatore.
+ * Terzo occhio/Occhio supremo/Occhio arcano: marca `count` carte scelte a caso nella mano del
+ * bersaglio come rivelate all'avversario (Card.revealedToOpponent) — `count` assente marca l'INTERA
+ * mano invece di un numero fisso, stesso schema "amount assente = tutto" di
+ * applyShieldRemove/applyPoisonClear/applyIceClear. `tierFilter` (SpellEffect.cardTierFilter),
+ * quando presente, restringe il pescaggio casuale alle sole carte di quel tier (es. 'spell', per
+ * rivelare specificamente una magia invece di una carta qualunque) — se il bersaglio non ne ha,
+ * no-op, stesso "rischio di whiff" del bersaglio negli scarti di boost_card_mana. A differenza di
+ * applyDiscardRandom/applyDiscardHand le carte non si spostano: la marcatura è permanente sulla
+ * carta stessa (nessuna "guarigione" implementata oggi), quindi resta anche se la carta lascia la
+ * mano e ci torna più avanti (scarti, rimescolata, ripescata) — non un effetto temporaneo legato al
+ * turno. Chiamata da applySpellEffect per il tipo 'reveal_opponent_hand', sempre col bersaglio
+ * l'avversario del lanciatore.
  */
-export function applyRevealHand(state: GameState, target: PlayerId, count?: number): GameState {
+export function applyRevealHand(
+  state: GameState,
+  target: PlayerId,
+  count?: number,
+  tierFilter?: CardTier,
+): GameState {
   const player = state.players[target];
+  const eligibleIndices = player.hand
+    .map((_, i) => i)
+    .filter((i) => !tierFilter || player.hand[i].tier === tierFilter);
+
   if (count === undefined) {
-    const hand = player.hand.map((c) => ({ ...c, revealedToOpponent: true }));
+    const eligible = new Set(eligibleIndices);
+    const hand = player.hand.map((c, i) => (eligible.has(i) ? { ...c, revealedToOpponent: true } : c));
     return updatePlayer(state, target, { hand });
   }
 
-  const revealCount = Math.min(count, player.hand.length);
-  const indices = new Set<number>();
-  while (indices.size < revealCount) {
-    indices.add(Math.floor(Math.random() * player.hand.length));
+  const revealCount = Math.min(count, eligibleIndices.length);
+  const pool = [...eligibleIndices];
+  const chosen = new Set<number>();
+  while (chosen.size < revealCount) {
+    const pickAt = Math.floor(Math.random() * pool.length);
+    chosen.add(pool.splice(pickAt, 1)[0]);
   }
-  const hand = player.hand.map((c, i) => (indices.has(i) ? { ...c, revealedToOpponent: true } : c));
+  const hand = player.hand.map((c, i) => (chosen.has(i) ? { ...c, revealedToOpponent: true } : c));
   return updatePlayer(state, target, { hand });
 }
 
@@ -1189,14 +1214,14 @@ export function applyFonteReset(state: GameState): GameState {
 }
 
 /**
- * Migliora mana: aumenta permanentemente il valore di mana di UNA carta scelta in mano
+ * Migliora mana: aumenta permanentemente il valore di mana di UNA carta scelta nei PROPRI scarti
  * (Card.manaBonus, lo stesso campo del bonus manico 1.4.3 — le due fonti si sommano,
- * computePlayerMana le somma già entrambe senza bisogno di modifiche). `targetCardId` è scelto dal
- * giocatore al momento del lancio, non un target cablato come per gli altri effetti — validato in
- * castSpell (deve essere un elemento reale — base/avanzato/potente — già in mano, non la carta
- * incantesimo né una delle carte di pagamento) e portato fin qui dentro PendingSpell. No-op se
- * assente o se la carta non è (più) in mano a risoluzione: guard difensivo, non dovrebbe succedere
- * nello stesso turno in cui è stata scelta.
+ * computePlayerMana le somma già entrambe senza bisogno di modifiche, quando la carta verrà ripescata
+ * in un mazzo futuro rimescolamento). `targetCardId` è scelto dal giocatore al momento del lancio,
+ * non un target cablato come per gli altri effetti — validato in castSpell (deve essere un elemento
+ * reale — base/avanzato/potente — negli scarti al momento del lancio) e portato fin qui dentro
+ * PendingSpell. No-op se assente (nessuna carta candidata negli scarti al lancio, o guard difensivo
+ * se la carta è comunque sparita dagli scarti — non dovrebbe succedere nello stesso turno).
  */
 function applyBoostCardMana(
   state: GameState,
@@ -1206,10 +1231,10 @@ function applyBoostCardMana(
 ): GameState {
   if (!targetCardId) return state;
   const player = state.players[target];
-  const index = player.hand.findIndex((c) => c.id === targetCardId);
+  const index = player.discards.findIndex((c) => c.id === targetCardId);
   if (index === -1) return state;
-  const hand = [...player.hand];
-  const card = hand[index];
-  hand[index] = { ...card, manaBonus: (card.manaBonus ?? 0) + amount };
-  return updatePlayer(state, target, { hand });
+  const discards = [...player.discards];
+  const card = discards[index];
+  discards[index] = { ...card, manaBonus: (card.manaBonus ?? 0) + amount };
+  return updatePlayer(state, target, { discards });
 }

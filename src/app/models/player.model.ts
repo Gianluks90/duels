@@ -1,4 +1,3 @@
-import type { BaseElement } from './element.model';
 import { ELEMENT_MANA } from './element.model';
 import type { Card } from './card.model';
 import type { Wand } from './wand.model';
@@ -11,14 +10,13 @@ export interface PendingSpell {
   card: Card;
   vitalBonus: number;
   chaoticBonus: number;
-  /** Id della carta scelta come bersaglio al momento del lancio (castSpell), per gli SpellEffectType che lo richiedono (TARGET_CARD_EFFECT_TYPES in spell.model.ts, es. 'boost_card_mana') — assente per tutte le altre magie, il cui target è cablato nell'effetto stesso (avversario/sé stesso/casuale) invece che scelto dal giocatore. */
+  /** Id della carta scelta come bersaglio al momento del lancio (castSpell), per gli SpellEffectType che lo richiedono (TARGET_CARD_EFFECT_TYPES in spell.model.ts, es. 'boost_card_mana') — assente per tutte le altre magie, il cui target è cablato nell'effetto stesso (avversario/sé stesso/casuale) invece che scelto dal giocatore. Punta a una carta nei PROPRI scarti, non in mano. */
   targetCardId?: string;
 }
 
 export interface PlayerTokens {
   shield: number; // 0+, no cap (2.3.3 — unlike poison, the rulebook fixes no ceiling; applyShield in turn-engine.ts)
   poison: number; // 0–3
-  ice: number; // 0–3
 }
 
 /** The vita bar's shape: current/max hp plus bonus effective hp from shield tokens (PlayerTokens.shield, no cap — see the field's own comment). */
@@ -59,10 +57,6 @@ export interface PlayerState {
   tipCardPlacedTurn: number | null;
   /** true se all'inizio di QUESTO turno (fase Preparazione, vedi resolvePreparation) la punta era già occupata da una carta trattenuta in un turno precedente. Blocca holdAtTip anche se quella carta viene spesa più avanti in questa stessa fase Azione — altrimenti si potrebbe usare la carta trattenuta e trattenerne subito un'altra, vanificando il limite "a turni alterni" del potere (1.4.1). */
   tipHeldAtPreparation: boolean;
-
-  // Effetti attivi
-  handRevealed: boolean; // Occhio del Sole
-  immuneToElement: BaseElement | null; // Abbraccio Radiante
 }
 
 /** Mana prismatico (3.2.1): +1 mana permanente sul proprio valore, sempre — indipendente da qualsiasi altro modificatore attivo sulla carta (es. manaBonus del bonus manico). */

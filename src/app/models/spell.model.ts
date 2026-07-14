@@ -1,4 +1,5 @@
 import type { BaseElement, Element } from './element.model';
+import type { CardTier } from './card.model';
 
 export type SpellEffectType =
   | 'damage'
@@ -26,9 +27,11 @@ export type SpellEffectType =
 export interface SpellEffect {
   type: SpellEffectType;
   amount?: number;
+  /** Solo per 'reveal_opponent_hand': se presente, il pescaggio casuale del bersaglio è ristretto alle sole carte di questo tier (es. 'spell', per rivelare specificamente una magia in mano invece di una carta qualunque) — assente per un pescaggio libero su tutta la mano, come third_eye/supreme_eye. */
+  cardTierFilter?: CardTier;
 }
 
-/** SpellEffectType che richiedono una carta bersaglio scelta dal giocatore al momento del lancio (castSpell), non un target cablato come per gli altri effetti (avversario/sé stesso/casuale) — usata sia da CastSpellDialogComponent (per sapere se mostrare il selettore) sia da castSpell in turn-engine.ts (per validare che sia stato scelto). */
+/** SpellEffectType che richiedono una carta bersaglio scelta dal giocatore al momento del lancio (castSpell), non un target cablato come per gli altri effetti (avversario/sé stesso/casuale) — usata sia da CastSpellDialogComponent (per sapere se mostrare il selettore) sia da castSpell in turn-engine.ts (per validare che sia stato scelto). Il bersaglio si sceglie tra le carte nei PROPRI scarti, non in mano (boost_card_mana/improve_mana, 14/07/2026) — se gli scarti sono vuoti la scelta è saltata, non bloccante. */
 export const TARGET_CARD_EFFECT_TYPES: readonly SpellEffectType[] = ['boost_card_mana'];
 
 /** name/flavorText live in the i18n dictionaries under spells.<id>.name / spells.<id>.flavorText, not here. */

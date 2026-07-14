@@ -14,8 +14,8 @@ export interface CastSpellDialogData {
   spellCard: Card;
   /** Il resto della mano, già filtrato dal chiamante (esclusi tier 'spell'/'freeze' — non pagabili, 3.1). Include l'eventuale carta nella punta della bacchetta (1.4.1), pagabile anche lei. */
   payableHand: Card[];
-  /** Mano vera del giocatore, SENZA la punta — a differenza di payableHand. Letta solo se la magia richiede una carta bersaglio (TARGET_CARD_EFFECT_TYPES, es. 'boost_card_mana'): il bersaglio deve restare "in mano" in senso stretto (turn-engine.ts, castSpell non la cerca nella punta). */
-  hand: Card[];
+  /** Scarti del giocatore. Letti solo se la magia richiede una carta bersaglio (TARGET_CARD_EFFECT_TYPES, es. 'boost_card_mana'): il bersaglio si sceglie tra le proprie carte già scartate, non in mano (turn-engine.ts, castSpell/applyBoostCardMana). */
+  discards: Card[];
 }
 
 export interface CastSpellDialogResult {
@@ -57,12 +57,10 @@ export class CastSpellDialogComponent {
   protected readonly selectedIds = signal<ReadonlySet<string>>(new Set());
   protected readonly targetCardId = signal<string | null>(null);
 
-  /** Elementi reali (base/avanzato/potente) in mano, esclusi quelli già scelti come pagamento — un Residuo/mana accumulato/carta "temporanea" non è un bersaglio valido (turn-engine.ts, castSpell), né lo è una carta che sta comunque per lasciare la mano come pagamento. */
+  /** Elementi reali (base/avanzato/potente) nei propri scarti — pool separato dalla mano, quindi mai in conflitto con le carte scelte come pagamento (turn-engine.ts, castSpell). Un Residuo/mana accumulato non finisce mai negli scarti (si consuma), quindi non compare mai qui. */
   protected readonly targetableCards = computed(() =>
-    this.data.hand.filter(
-      (c) =>
-        !this.selectedIds().has(c.id) &&
-        (c.tier === 'base' || c.tier === 'advanced' || c.tier === 'superior'),
+    this.data.discards.filter(
+      (c) => c.tier === 'base' || c.tier === 'advanced' || c.tier === 'superior',
     ),
   );
 
@@ -72,7 +70,8 @@ export class CastSpellDialogComponent {
   protected readonly canConfirm = computed(() => {
     const spell = this.spell();
     if (!spell || this.totalPaid() < spell.manaCost) return false;
-    return !this.needsTarget() || this.targetCardId() !== null;
+    if (!this.needsTarget() || this.targetableCards().length === 0) return true;
+    return this.targetCardId() !== null;
   });
 
   protected toggle(cardId: string): void {
@@ -82,8 +81,6 @@ export class CastSpellDialogComponent {
       else next.add(cardId);
       return next;
     });
-    // Una carta appena scelta come pagamento lascia la mano — non può restare anche il bersaglio.
-    if (this.targetCardId() === cardId) this.targetCardId.set(null);
   }
 
   protected selectTarget(cardId: string): void {

@@ -91,18 +91,39 @@ export const SPELL_CATALOG: Spell[] = [
   },
   // formula: [] — non ottenibili dal flusso di creazione del grimorio (regolamento 5.1, non ancora
   // implementato): queste 2 sono seminate direttamente nel mazzo iniziale di ogni giocatore (vedi
-  // deck-builder.ts), un'eccezione dichiarata alla regola "ogni incantesimo si crea".
+  // deck-builder.ts), un'eccezione dichiarata alla regola "ogni incantesimo si crea". amount
+  // abbassato da 2 a 1 il 14/07/2026 (bilanciamento): a Difficoltà 0 e senza elemento (quindi mai
+  // bersaglio di un bonus da vulnerabilità sull'asta, 1.4.2, a differenza di fire_bolt e affini),
+  // dominava le 4 magie base mono-elemento a diff2/mana2 pur costando solo 1 mana in più — ora resta
+  // un dardo affidabile ma strettamente più debole di qualunque magia craftata.
   {
     id: 'starter_bolt',
     formula: [],
     manaCost: 3,
-    effects: [{ type: 'damage', amount: 2 }],
+    effects: [{ type: 'damage', amount: 1 }],
   },
   {
     id: 'starter_balm',
     formula: [],
     manaCost: 3,
     effects: [{ type: 'heal', amount: 1 }],
+  },
+  // Cura craftabile (aggiunta 14/07/2026, bilanciamento): fino ad ora 'heal' era usato solo da
+  // starter_balm, mai craftabile — il mana vitale (3.2.2) non aveva quasi mai occasione di scattare.
+  // Solo 2 livelli apposta (non una scala a 3 come mono-elemento/veleno/ghiaccio/scudo): troppa cura
+  // craftabile rischia di far stagnare la partita. element assente su entrambe, nessun effetto
+  // 'damage' qui.
+  {
+    id: 'mend',
+    formula: ['water', 'air'],
+    manaCost: 3,
+    effects: [{ type: 'heal', amount: 2 }],
+  },
+  {
+    id: 'radiant_heal',
+    formula: ['light', 'water'],
+    manaCost: 4,
+    effects: [{ type: 'heal', amount: 3 }],
   },
   // Veleno (2.3.4): formule con l'elemento avanzato Veleno come ingrediente — element assente su
   // tutte e 3 (Spell.element è tipizzato BaseElement, l'asta 1.4.2 non ha comunque un opposto
@@ -169,22 +190,39 @@ export const SPELL_CATALOG: Spell[] = [
   },
   // Tuono (2.3.2): stessa assenza di Spell.element dei blocchi sopra — nessun opposto per un
   // elemento avanzato sull'asta (1.4.2). damage_ignore_shields bypassa absorbWithShield in
-  // applySpellEffect di proposito: pensato per bucare le difese (Scudo, blocco sopra).
+  // applySpellEffect di proposito: pensato per bucare le difese (Scudo, blocco sopra). Scala a 3
+  // livelli completata il 14/07/2026 (bilanciamento) — stesso schema base+avanzato/avanzato+avanzato/
+  // avanzato+avanzato+potente delle altre famiglie a elemento avanzato sopra (Veleno/Ghiaccio/Lava).
+  {
+    id: 'spark',
+    formula: ['thunder', 'air'],
+    manaCost: 3,
+    effects: [{ type: 'damage_ignore_shields', amount: 2 }],
+  },
   {
     id: 'lightning_bolt',
     formula: ['thunder', 'thunder'],
     manaCost: 4,
     effects: [{ type: 'damage_ignore_shields', amount: 3 }],
   },
+  {
+    id: 'thunderstorm',
+    formula: ['thunder', 'thunder', 'dark'],
+    manaCost: 5,
+    effects: [{ type: 'damage_ignore_shields', amount: 5 }],
+  },
   // damage_self (nessun element carrier proprio: la formula mescola Tenebra, potente, e Fuoco,
   // base — entrambi gli effetti danno usano comunque 'fire' come spellElement, dato che "danni
-  // fuoco" vale sia per sé che per l'avversario secondo la formula dell'incantesimo).
+  // fuoco" vale sia per sé che per l'avversario secondo la formula dell'incantesimo). Danno a sé
+  // alzato da 2 a 4 il 14/07/2026 (bilanciamento): a parità di danno inflitto era di gran lunga
+  // l'incantesimo più efficiente in mana del catalogo; pareggiato ora a un vero scambio 1:1, pensato
+  // come mossa rischiosa di fine partita quando i PS dei due giocatori sono vicini.
   {
     id: 'black_flame',
     formula: ['dark', 'fire'],
     manaCost: 2,
     effects: [
-      { type: 'damage_self', amount: 2 },
+      { type: 'damage_self', amount: 4 },
       { type: 'damage', amount: 4 },
     ],
     element: 'fire',
@@ -239,6 +277,16 @@ export const SPELL_CATALOG: Spell[] = [
     manaCost: 4,
     effects: [{ type: 'opponent_discard_random', amount: 1 }],
   },
+  // Livello pesante di violent_gust sopra, aggiunto il 14/07/2026 (bilanciamento) — fermato a 2 carte
+  // di proposito: con una mano da 5, 3 scarterebbe più della metà della mano in un colpo solo,
+  // rischiando di far saltare il turno successivo del bersaglio quasi per intero. element assente,
+  // stesso motivo di violent_gust sopra.
+  {
+    id: 'dark_gust',
+    formula: ['air', 'dark'],
+    manaCost: 4,
+    effects: [{ type: 'opponent_discard_random', amount: 2 }],
+  },
   // fonte_reset: unico effetto che non tocca lo stato di un giocatore ma la Fonte Arcana condivisa
   // (applyFonteReset in turn-engine.ts) — element assente per lo stesso motivo di violent_gust sopra.
   {
@@ -269,6 +317,18 @@ export const SPELL_CATALOG: Spell[] = [
     manaCost: 6,
     effects: [{ type: 'reveal_opponent_hand' }],
   },
+  // Variante mirata di third_eye/supreme_eye sopra, aggiunta il 14/07/2026 (bilanciamento):
+  // cardTierFilter: 'spell' (SpellEffect, spell.model.ts) restringe il pescaggio casuale alle sole
+  // carte incantesimo in mano al bersaglio invece che a una carta qualunque — no-op se il bersaglio
+  // non ne ha, stesso "rischio di whiff" del bersaglio negli scarti di improve_mana sotto. Stessa
+  // fascia di costo/Difficoltà di third_eye (Luce+base, diff5/mana3): l'informazione è più mirata ma
+  // non garantita, quindi non vale un salto di prezzo.
+  {
+    id: 'spell_glimpse',
+    formula: ['light', 'fire'],
+    manaCost: 3,
+    effects: [{ type: 'reveal_opponent_hand', amount: 1, cardTierFilter: 'spell' }],
+  },
   // Rischio: formula = SUPERIOR_FORMULA (le stesse 4 basi di combineSuperior per Luce/Tenebra) — nessun
   // elemento portante unico, element assente. `amount` assente sull'effetto: il danno vero (3 per
   // coppia di elementi avanzati in Fonte Arcana, 0-6 con 4 slot) si calcola a risoluzione
@@ -284,14 +344,17 @@ export const SPELL_CATALOG: Spell[] = [
   },
   // Migliora mana: prima magia con una carta bersaglio scelta dal giocatore al lancio (5.x,
   // TARGET_CARD_EFFECT_TYPES in spell.model.ts) — element assente, l'effetto non è mai un 'damage'.
-  // manaCost tenuto basso (2, non i 3 originariamente proposti) apposta: con mano da 5 carte, spell
-  // card + pagamento consumano insieme fino a 3 carte già a 2 mana (se pagata con basi da 1 mana
-  // l'una) — a 3 mana il pagamento da solo poteva arrivare a consumarne altrettante, lasciando 1 sola
-  // carta rimasta in mano come bersaglio: una "scelta" a quel punto solo nominale, non reale.
+  // Bersaglio ridisegnato il 14/07/2026 (bilanciamento): non più una carta in mano (il costo basso
+  // a mana2 era pensato per lasciare comunque un bersaglio libero in una mano da 5, ma restava
+  // l'incantesimo più economico della sua fascia di Difficoltà) ma una carta nei PROPRI scarti — la
+  // scelta resta un vero atto strategico (si potenzia una carta che tornerà comunque in gioco al
+  // prossimo rimescolamento) e il costo può salire a mana5, in linea con gli altri incantesimi a
+  // Difficoltà 8. Se gli scarti sono vuoti l'incantesimo si lancia comunque (mana pagato) ma non ha
+  // alcun effetto — vedi castSpell/applyBoostCardMana in turn-engine.ts.
   {
     id: 'improve_mana',
     formula: ['light', 'dark'],
-    manaCost: 2,
+    manaCost: 5,
     effects: [{ type: 'boost_card_mana', amount: 1 }],
   },
 ];
