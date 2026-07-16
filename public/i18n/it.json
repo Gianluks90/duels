@@ -71,6 +71,9 @@
     "freeze": {
       "title": "Congelamento",
       "effect": "Questa carta non ha alcuna funzione se non quella di impedirti di pescare invece carte utili. Se pescata, si <em>scioglie</em> all'inizio del turno."
+    },
+    "spell": {
+      "category": "Incantesimo"
     }
   },
 
@@ -89,6 +92,7 @@
   },
 
   "board": {
+    "loadingGame": "Caricamento partita…",
     "you": "Tu",
     "opponent": "Avversario",
     "opponentZoneAria": "Zona avversario",
@@ -227,6 +231,7 @@
     "dialogAria": "Grimorio degli incantesimi",
     "title": "Grimorio",
     "closeAria": "Chiudi il grimorio",
+    "illustration": "Illustrazione",
     "filterGroupAria": "Filtri e ordinamento",
     "filterElementAria": "Filtra per elemento",
     "sortAria": "Ordina per",
@@ -252,7 +257,7 @@
       "damageSelf": "Infligge {amount} danno a sé stessi.",
       "damageHalveOpponent": "Dimezza i punti ferita correnti dell'avversario.",
       "damageFromFonte": "Infligge 3 danni all'avversario per ogni coppia di elementi avanzati uguali presenti nella Fonte Arcana (0-6).",
-      "heal": "Recupera {amount} punto ferita.",
+      "heal": "Guadagna {amount} punto ferita.",
       "shieldAdd": "Aggiunge {amount} scudo.",
       "shieldRemoveOpponent": "Rimuove {amount} scudo all'avversario.",
       "shieldRemoveOpponentAll": "Rimuove tutto lo scudo dell'avversario.",

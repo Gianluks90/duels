@@ -9,8 +9,6 @@ import {
   OnInit,
   viewChild,
   ElementRef,
-  afterNextRender,
-  type WritableSignal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -265,16 +263,19 @@ export class BoardComponent implements OnInit {
   /** Stessa icona teschio usata da player-hud.component per il livello di Avvelenamento (2.3.4) — riusata nel layout compatto, che non passa per PlayerHudComponent. */
   protected readonly poisonIcon = elementIconPath('poison');
 
+  /** Osservati con un effect dedicato (vedi costruttore), non afterNextRender: board.component.html
+   * avvolge tutto il layout (desktop e compatto) in un @if (state()), quindi questi elementi non
+   * esistono ancora nel DOM finché il primo snapshot Firestore non arriva (o durante il permission-
+   * denied di un non-partecipante) — afterNextRender, legato al primissimo render, li mancherebbe
+   * per sempre restando a signal(0) (bug reale osservato: arco di mano rimasto largo/non compresso
+   * dopo il caricamento). */
   private readonly playerHandTrackRef = viewChild<ElementRef<HTMLElement>>('playerHandTrack');
   private readonly opponentHandTrackRef = viewChild<ElementRef<HTMLElement>>('opponentHandTrack');
   protected readonly playerHandTrackWidth = signal(0);
   protected readonly opponentHandTrackWidth = signal(0);
 
   /** Stessa idea di playerHandTrackRef/opponentHandTrackRef sopra, ma per la mano sovrapposta del
-   * layout compatto (board-compact.component.scss) — elemento diverso, quindi tracciato a parte.
-   * Osservato con un effect dedicato (non afterNextRender come sopra): a differenza del layout
-   * desktop, questi elementi esistono solo quando layoutTier() !== 'desktop', quindi potrebbero non
-   * essere ancora nel DOM al primo render. */
+   * layout compatto (board-compact.component.scss) — elemento diverso, quindi tracciato a parte. */
   private readonly compactPlayerHandTrackRef =
     viewChild<ElementRef<HTMLElement>>('compactPlayerHandTrack');
   private readonly compactOpponentHandTrackRef = viewChild<ElementRef<HTMLElement>>(
@@ -632,17 +633,33 @@ export class BoardComponent implements OnInit {
   };
 
   constructor() {
-    afterNextRender(() => {
-      this.observeWidth(this.playerHandTrackRef(), this.playerHandTrackWidth);
-      this.observeWidth(this.opponentHandTrackRef(), this.opponentHandTrackWidth);
+    // effect (non afterNextRender): l'elemento potrebbe non esistere ancora al primissimo render
+    // (vedi il commento su playerHandTrackRef sopra) — l'effect si ri-attiva da solo non appena
+    // viewChild() smette di essere undefined (query a segnali, reattiva agli @if/@else). onCleanup
+    // scollega l'observer precedente a ogni ri-esecuzione, evitando di accumularne più d'uno sullo
+    // stesso elemento.
+    effect((onCleanup) => {
+      const el = this.playerHandTrackRef()?.nativeElement;
+      if (!el) return;
+      this.playerHandTrackWidth.set(el.clientWidth);
+      const observer = new ResizeObserver(([entry]) =>
+        this.playerHandTrackWidth.set(entry.contentRect.width),
+      );
+      observer.observe(el);
+      onCleanup(() => observer.disconnect());
+    });
+    effect((onCleanup) => {
+      const el = this.opponentHandTrackRef()?.nativeElement;
+      if (!el) return;
+      this.opponentHandTrackWidth.set(el.clientWidth);
+      const observer = new ResizeObserver(([entry]) =>
+        this.opponentHandTrackWidth.set(entry.contentRect.width),
+      );
+      observer.observe(el);
+      onCleanup(() => observer.disconnect());
     });
 
-    // Come sopra, ma con un effect invece di afterNextRender: questi due elementi esistono solo
-    // nel layout compatto (@else in board.component.html), quindi potrebbero non essere ancora nel
-    // DOM al primo render — l'effect si ri-attiva da solo non appena viewChild() smette di essere
-    // undefined (query a segnali, reattiva agli @if/@else). onCleanup scollega l'observer precedente
-    // a ogni ri-esecuzione (es. cambio di layoutTier avanti e indietro), evitando di accumularne più
-    // d'uno sullo stesso elemento.
+    // Come sopra, ma per la mano sovrapposta del layout compatto (@else in board.component.html).
     effect((onCleanup) => {
       const el = this.compactPlayerHandTrackRef()?.nativeElement;
       if (!el) return;
@@ -971,18 +988,6 @@ export class BoardComponent implements OnInit {
         this.audio.playFx('handDraw', { times: 1 });
       }
     });
-  }
-
-  private observeWidth(
-    ref: ElementRef<HTMLElement> | undefined,
-    target: WritableSignal<number>,
-  ): void {
-    const el = ref?.nativeElement;
-    if (!el) return;
-    target.set(el.clientWidth);
-    const observer = new ResizeObserver(([entry]) => target.set(entry.contentRect.width));
-    observer.observe(el);
-    this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
   /** Fans hand cards in a light arc: center card highest, outer cards dip lower and rotate outward.

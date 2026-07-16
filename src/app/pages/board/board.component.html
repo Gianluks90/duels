@@ -3,6 +3,7 @@
   [class.board--compact]="layoutTier() !== 'desktop'"
   [class.board--tablet]="layoutTier() === 'tablet'"
 >
+@if (state()) {
 @if (layoutTier() === 'desktop') {
   <!-- ═══════════════ OPPONENT ZONE (top 1/3) ═══════════════ -->
   <section
@@ -80,6 +81,7 @@
                  #cardTip include sempre #revealedTip, più uno tra spell/freeze/mana-token/
                  specialMana se la carta è anche una di quelle. -->
             <ng-template #spellTip>
+              <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
               <strong>{{ spellName(card) }}</strong>
               <hr class="rich-tooltip__rule" />
               <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
@@ -619,6 +621,7 @@
           <!-- Tooltip ricco solo per le carte incantesimo — dichiarato qui (non dentro un @if) così il
                ref #spellTip resta visibile alla app-card sotto, nella stessa iterazione. -->
           <ng-template #spellTip>
+            <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
             <strong>{{ spellName(card) }}</strong>
             <hr class="rich-tooltip__rule" />
             <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
@@ -1012,6 +1015,7 @@
                    resto), quindi #cardTip include sempre #revealedTip, più uno tra spell/freeze/
                    mana-token/specialMana se la carta è anche una di quelle. -->
               <ng-template #spellTip>
+                <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
                 <strong>{{ spellName(card) }}</strong>
                 <hr class="rich-tooltip__rule" />
                 <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
@@ -1601,6 +1605,7 @@
           >
             <!-- Stessi ng-template ricchi del desktop (vedi playerHand nel ramo desktop). -->
             <ng-template #spellTip>
+              <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
               <strong>{{ spellName(card) }}</strong>
               <hr class="rich-tooltip__rule" />
               <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
@@ -1776,5 +1781,10 @@
       </div>
     </div>
   </footer>
+}
+} @else {
+  <div class="board__loading">
+    <p class="t-muted">{{ 'board.loadingGame' | translate }}</p>
+  </div>
 }
 </div>

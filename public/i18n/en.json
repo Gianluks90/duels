@@ -68,6 +68,9 @@
     "freeze": {
       "title": "Freeze",
       "effect": "This card has no purpose other than to keep you from drawing useful cards instead. If drawn, it <em>melts</em> at the start of the turn."
+    },
+    "spell": {
+      "category": "Spell"
     }
   },
 
@@ -86,6 +89,7 @@
   },
 
   "board": {
+    "loadingGame": "Loading game…",
     "you": "You",
     "opponent": "Opponent",
     "opponentZoneAria": "Opponent zone",
@@ -224,6 +228,7 @@
     "dialogAria": "Grimoire of spells",
     "title": "Grimoire",
     "closeAria": "Close the grimoire",
+    "illustration": "Illustration",
     "filterGroupAria": "Filters and sorting",
     "filterElementAria": "Filter by element",
     "sortAria": "Sort by",

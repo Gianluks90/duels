@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  signal,
+  computed,
+  effect,
+} from '@angular/core';
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import type { Element } from '../../models/element.model';
 import { elementIconPath } from '../../models/element.model';
@@ -120,6 +127,29 @@ export class GrimoireDialogComponent {
   protected readonly selectedSpell = computed<Spell | null>(
     () => SPELL_CATALOG.find((s) => s.id === this.selectedSpellId()) ?? null,
   );
+
+  /** true se /cards-spell/{id}.webp ha risposto 404 per la magia SELEZIONATA ORA — a differenza di
+   * CardComponent (un'istanza per carta, mai riciclata tra magie diverse), qui lo stesso <img> nel
+   * DOM viene riusato al cambio di selectedSpellId(): l'effect sotto lo resetta a `false` a ogni
+   * cambio, altrimenti l'esito della magia precedente resterebbe appiccicato a quella nuova (nasconde
+   * la sezione anche quando la nuova magia ha davvero un'illustrazione, o viceversa la mostra un
+   * istante di troppo). */
+  protected readonly illustrationFailed = signal(false);
+
+  constructor() {
+    effect(() => {
+      this.selectedSpellId();
+      this.illustrationFailed.set(false);
+    });
+  }
+
+  protected illustrationSrc(spell: Spell): string {
+    return `/cards-spell/${spell.id}.webp`;
+  }
+
+  protected onIllustrationError(): void {
+    this.illustrationFailed.set(true);
+  }
 
   protected toggleFilter(element: Element): void {
     this.activeFilters.update((prev) => {

@@ -30,7 +30,7 @@ export const ELEMENT_MANA: Record<Element, number> = {
 };
 
 export function elementImagePath(element: Element): string {
-  return `/cards/${element}.png`;
+  return `/cards/${element}.webp`;
 }
 
 const ELEMENT_ICONS: Record<Element, string> = {

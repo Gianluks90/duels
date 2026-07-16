@@ -33,6 +33,18 @@
     max-height: none;
   }
 
+  // Finestra tra la navigazione a /game/:id e il primo snapshot Firestore (o un permission-denied,
+  // vedi board.component.ts ngOnInit) — state() è ancora null, quindi niente fasi/mani/bacchette da
+  // disegnare. grid-row/column su tutta la griglia (invece di finire nella sola prima riga, 150px
+  // min) così il messaggio resta centrato sull'intero .board indipendentemente da layoutTier().
+  &__loading {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   // ── Zones ───────────────────────────────────────────────────────────────────
   &__zone {
     position: relative;
@@ -259,7 +271,7 @@
     }
 
     &--back {
-      background-image: url('/cards-back/dark.png');
+      background-image: url('/cards-back/dark.webp');
       background-size: cover;
       background-position: center;
       border: 1px solid var(--border-gold);
@@ -707,6 +719,24 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
+}
+
+// #spellTip: banner di categoria sopra al nome — colori invertiti rispetto al resto del tooltip
+// (sfondo oro, testo marrone scuro invece dello sfondo scuro/testo chiaro di .tooltip) per
+// distinguerlo a colpo d'occhio come un'etichetta, non come contenuto. Margini negativi pari al
+// padding di .tooltip (tooltip.component.scss) per "sanguinare" fino ai bordi esterni invece di
+// restare rientrato come il resto del contenuto.
+.rich-tooltip__spell-header {
+  margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-3)) var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--text-heading);
+  color: #3a2410;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
 }
 
 // Icona ricolorata via maschera CSS, stessa tecnica del badge su CardComponent (le SVG sorgente sono

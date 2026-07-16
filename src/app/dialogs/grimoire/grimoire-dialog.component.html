@@ -141,6 +141,18 @@
             @if (spellFlavorText(spell); as flavor) {
               <blockquote class="grimoire__flavor">{{ flavor }}</blockquote>
             }
+
+            @if (!illustrationFailed()) {
+              <div class="grimoire__rule" aria-hidden="true"></div>
+
+              <h4 class="grimoire__section-title">{{ 'grimoire.illustration' | translate }}</h4>
+              <img
+                class="grimoire__illustration"
+                [src]="illustrationSrc(spell)"
+                [alt]="spellName(spell)"
+                (error)="onIllustrationError()"
+              />
+            }
           </div>
         </div>
 

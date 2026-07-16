@@ -380,6 +380,30 @@
     margin: 0;
   }
 
+  &__section-title {
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 var(--sp-3);
+  }
+
+  // Larghezza fissa (non 100%, vedi grimoire-dialog.component.html) — la pagina destra è larga
+  // abbastanza da far sembrare l'illustrazione sproporzionata se lasciata a piena larghezza. Bordo
+  // scuro + radius come app-card (card.component.scss: border 3px #212121, radius = min(size*0.09,
+  // 10), qui 180px → lo stesso tetto di 10px) per leggersi come "una carta", non solo un'immagine.
+  &__illustration {
+    display: block;
+    width: 180px;
+    max-width: 100%;
+    aspect-ratio: var(--card-ratio);
+    object-fit: cover;
+    border: 2px solid #212121;
+    border-radius: 12px;
+  }
+
   &__flavor {
     font-family: var(--font-body);
     font-size: 0.82rem;

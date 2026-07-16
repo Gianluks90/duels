@@ -25,18 +25,22 @@ const CARD_FLIP_HALF_MS = 150;
   template: `
     @if (displayedRevealed()) {
       @if (spell(); as s) {
-        <!-- Layout incantesimo (regolamento 5): metà superiore l'arte (placeholder condiviso, nessuna
-             arte propria per singola magia ancora), metà inferiore un pannello a tinta unita col
-             gettone bacchetta-stelle centrato — stesso schema "arte sopra, riquadro sotto" delle carte
-             magia dei TCG classici, a differenza delle carte elemento (full art, vedi card__art sotto). -->
-        <div class="card__spell-art-wrap" aria-hidden="true">
-          <img class="card__spell-art" ngSrc="/images/book.png" [priority]="priority()" alt="" fill />
-        </div>
-        <div class="card__spell-panel" aria-hidden="true">
-          <div class="card__spell-token">
-            <img class="card__spell-icon" [src]="spellIcon" alt="" />
-          </div>
-        </div>
+        <!-- Incantesimo (regolamento 5): full art come le carte elemento (card__art sotto), niente
+             più il vecchio schema "arte sopra, riquadro sotto" — l'icona bacchetta-stelle si sposta
+             nel badge card__badge--spell (stesso trattamento del mana speciale, poco sotto il costo
+             mana). L'arte è /cards-spell/{{ id spell }}.webp se esiste (assets-source/cards-spell/,
+             vedi scripts/optimize-images.mjs), altrimenti il placeholder condiviso book.webp —
+             nessuna lista da mantenere in codice: onSpellArtError() scatta sul 404 e fa ripiegare sul
+             placeholder, così una nuova arte diventa visibile semplicemente droppando il file (nome
+             = id magia) e rilanciando lo script, senza toccare questo componente. -->
+        <img
+          class="card__art"
+          [ngSrc]="spellArtSrc()"
+          [alt]="label()"
+          [priority]="priority()"
+          (error)="onSpellArtError()"
+          fill
+        />
       } @else {
         <img class="card__art" [ngSrc]="artSrc()" [alt]="label()" [priority]="priority()" fill />
         @if (freeze()) {
@@ -98,18 +102,26 @@ const CARD_FLIP_HALF_MS = 150;
               [attr.aria-label]="specialManaAria()"
             ></span>
           }
+          @if (showMana() && spell()) {
+            <!-- Icona incantesimo — stesso slot/dimensione del mana speciale sopra (mai insieme:
+                 una carta è o un elemento base, o un incantesimo, mai entrambi), ma un semplice
+                 <img> a colore fisso invece della maschera CSS: un solo stato, non serve
+                 ricolorare per tipo come prismatico/vitale/caotico. -->
+            <img class="card__badge card__badge--spell" [src]="spellIcon" alt="" aria-hidden="true" />
+          }
           @if (showMana() && revealedToOpponent()) {
             <!-- Occhio (5.x, Card.revealedToOpponent) — stesso gettone/tecnica maschera di
                  card__badge--special-mana sopra, ma grigio e senza varianti (un solo stato, non 3
-                 tipi da colorare). "In coda" alla colonna: sotto il mana speciale se presente, sennò
-                 nello stesso slot che occuperebbe il mana speciale. Solo visivo + aria-label, come il
-                 badge del mana speciale sopra — il tooltip ricco (titolo/icona, hr, descrizione) è
-                 responsabilità del chiamante (#revealedTip in board.component.html/pile-dialog), non
-                 di questo componente: deve poter convivere/combinarsi con lo spellTip/specialManaTip
-                 ecc. già gestiti lì, cosa che un tooltip proprio qui dentro non potrebbe fare. -->
+                 tipi da colorare). "In coda" alla colonna: sotto il mana speciale/l'icona incantesimo
+                 se presenti, sennò nello stesso slot che occuperebbero loro. Solo visivo + aria-label,
+                 come il badge del mana speciale sopra — il tooltip ricco (titolo/icona, hr,
+                 descrizione) è responsabilità del chiamante (#revealedTip in
+                 board.component.html/pile-dialog), non di questo componente: deve poter
+                 convivere/combinarsi con lo spellTip/specialManaTip ecc. già gestiti lì, cosa che un
+                 tooltip proprio qui dentro non potrebbe fare. -->
             <span
               class="card__badge card__badge--revealed"
-              [class.card__badge--revealed-after-special]="!!specialMana()"
+              [class.card__badge--revealed-after-special]="!!specialMana() || !!spell()"
               [style.--revealed-icon]="revealedIconUrl"
               role="img"
               [attr.aria-label]="revealedAria()"
@@ -126,7 +138,7 @@ const CARD_FLIP_HALF_MS = 150;
         }
       }
     } @else {
-      <img class="card__art card__art--back" ngSrc="/cards-back/dark.png" alt="" fill />
+      <img class="card__art card__art--back" ngSrc="/cards-back/dark.webp" alt="" fill />
     }
   `,
   styleUrl: './card.component.scss',
@@ -157,7 +169,7 @@ export class CardComponent {
   readonly manaBonus = input<number>(0);
   /** Fronte (vero volto) o retro (carta coperta) — un cambiamento dopo il primo render fa scattare il flip simulato (vedi @keyframes card-flip). */
   readonly revealed = input<boolean>(true);
-  /** Presente solo per una carta incantesimo (Card.spellId) — sovrascrive mana/etichetta/arte derivati da element() con quelli della Spell in SPELL_CATALOG (placeholder finché non esiste un'arte dedicata per incantesimo, vedi card__spell-bg/card__spell-token). */
+  /** Presente solo per una carta incantesimo (Card.spellId) — sovrascrive mana/etichetta/arte derivati da element() con quelli della Spell in SPELL_CATALOG (arte da spellArtSrc(), vedi sotto). */
   readonly spellId = input<string | null>(null);
   /** Mana speciale (regolamento 3.2) portato da questa carta — null per la stragrande maggioranza delle carte base. */
   readonly specialMana = input<SpecialMana | null>(null);
@@ -183,6 +195,16 @@ export class CardComponent {
   protected readonly spell = computed(() => {
     const id = this.spellId();
     return id ? (SPELL_CATALOG.find((s) => s.id === id) ?? null) : null;
+  });
+  /** true dopo un 404 su /cards-spell/{id}.webp — niente reset al variare di spellId(): ogni carta è
+   * tracciata per Card.id (univoco anche tra copie della stessa magia, vedi board.component.html),
+   * quindi questa istanza di CardComponent non cambia mai magia nel corso della sua vita. */
+  protected readonly spellArtFailed = signal(false);
+  protected readonly spellArtSrc = computed(() => {
+    const spell = this.spell();
+    return spell && !this.spellArtFailed()
+      ? `/cards-spell/${spell.id}.webp`
+      : '/images/book.webp';
   });
   protected readonly label = computed(() => {
     const spell = this.spell();
@@ -211,6 +233,10 @@ export class CardComponent {
       : '';
   });
   protected readonly revealedAria = computed(() => this.i18n.t('card.revealed.title'));
+
+  protected onSpellArtError(): void {
+    this.spellArtFailed.set(true);
+  }
 
   constructor() {
     effect((onCleanup) => {

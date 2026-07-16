@@ -54,65 +54,8 @@
   object-position: center;
 }
 
-// Placeholder temporaneo per le carte incantesimo (nessuna arte propria ancora, regolamento 5) —
-// metà superiore l'illustrazione (card__spell-art-wrap, un contenitore posizionato per limitare il
-// `fill` di NgOptimizedImage a metà altezza invece che all'intera carta, a differenza di card__art
-// sotto), metà inferiore un pannello a tinta unita (card__spell-panel) col gettone bacchetta-stelle.
-.card__spell-art-wrap {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  overflow: hidden;
-}
-
-.card__spell-art {
-  object-fit: cover;
-  object-position: center;
-}
-
-// Tono pergamena (stessi colori del vecchio sfondo pieno) per continuità visiva con l'identità
-// "libro di magia" — il gettone scuro (#212121, come i badge d'angolo) risalta sempre su questo
-// fondo chiaro, indipendentemente da quanto sia scura l'illustrazione sopra.
-.card__spell-panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 50%;
-  background: linear-gradient(180deg, #e2cd9c 0%, #cbae72 100%);
-}
-
-// Centrato sia orizzontalmente che verticalmente DENTRO card__spell-panel (che ne è il containing
-// block, essendo position: absolute) — non più rispetto all'intera carta come nel vecchio layout a
-// sfondo pieno. width in % risolve comunque contro la larghezza della carta (il pannello è largo
-// quanto lei), quindi il diametro del gettone resta identico a prima, solo la sua posizione cambia.
-.card__spell-token {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 56%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  // Stesso sfondo/ombra dei gettoni negli angoli (.card__badge) — coerenza visiva tra i due.
-  background: #212121;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card__spell-icon {
-  width: 74%;
-  height: 74%;
-}
-
-// Congelamento (2.3.1): a differenza del placeholder incantesimo sopra, qui l'arte sotto è quella vera
-// dell'elemento (Ghiaccio) — il gettone si sovrappone soltanto, non la sostituisce. Stesso linguaggio
-// visivo di .card__spell-token (cerchio scuro centrato) così le due "carte senza mana" si leggono
-// come imparentate a colpo d'occhio.
+// Congelamento (2.3.1): l'arte sotto è quella vera dell'elemento (Ghiaccio) — il gettone si
+// sovrappone soltanto, non la sostituisce.
 .card__freeze-token {
   position: absolute;
   top: 50%;
@@ -212,6 +155,20 @@
   &-chaotic {
     color: #d02f2f;
   }
+}
+
+// Icona incantesimo — stesso slot/dimensione del mana speciale sopra (mai insieme sulla stessa
+// carta: o è un elemento base con eventuale mana speciale, o è un incantesimo), ma un <img> a
+// colore fisso invece della maschera CSS: un solo stato, non serve ricolorare per tipo. padding
+// (non inset) perché qui risolve contro la carta intera, essendo position: absolute — non contro
+// il box del badge stesso (stessa nota di .card__badge--element sotto): 5% ≈ 20% della larghezza
+// propria del badge (24%), lo stesso "respiro" del resto della colonna.
+.card__badge--spell {
+  width: 24%;
+  top: 26%;
+  left: 3%;
+  object-fit: contain;
+  padding: 5%;
 }
 
 // Occhio (5.x, Card.revealedToOpponent) — stessa colonna/tecnica maschera di .card__badge--special-mana
