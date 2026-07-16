@@ -1,0 +1,39 @@
+// Layout compatto (mobile/tablet, BoardLayoutService, isCompact() sotto i 1024px) — stessa
+// convenzione di board-compact.component.scss: file separato da home.component.scss (non solo per
+// organizzazione, il budget anyComponentStyle di angular.json è per singolo file), attivato dalla
+// sola classe .home--compact sull'host (nessun @media qui, la soglia la decide già BreakpointObserver
+// lato TS). A differenza della board, Home non distingue mobile da tablet: un solo interruttore
+// basta per collassare header e pannelli, non serve una fascia intermedia a due colonne.
+.home--compact {
+  .home__main {
+    // .home ha height: 100dvh senza scroll proprio (pensato per il layout desktop, che ci sta
+    // sempre) — impilando i 2 pannelli su un viewport basso (telefono) il contenuto può superare
+    // l'altezza disponibile, quindi qui serve uno scroll verticale di riserva.
+    overflow-y: auto;
+    padding: var(--sp-4) var(--sp-3);
+  }
+
+  .home__panels {
+    flex-direction: column;
+    max-width: 420px;
+  }
+
+  .home__panel {
+    // Il minimo desktop (260px) pensato per 2 pannelli affiancati lascia troppo vuoto una volta
+    // impilati — il contenuto reale (poche righe di testo + un bottone) basta a riempirlo.
+    min-height: 0;
+    padding: var(--sp-4);
+  }
+
+  .home__header {
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .home__logo {
+    font-size: 1.4rem;
+  }
+
+  .home__user {
+    gap: var(--sp-2);
+  }
+}

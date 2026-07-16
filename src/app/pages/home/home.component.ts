@@ -1,4 +1,12 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, DestroyRef, OnInit } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  inject,
+  signal,
+  computed,
+  DestroyRef,
+  OnInit,
+} from '@angular/core';
 import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
@@ -6,20 +14,25 @@ import { Overlay } from '@angular/cdk/overlay';
 import { AuthService } from '../../services/auth.service';
 import { GameService } from '../../services/game.service';
 import { TranslationService } from '../../services/translation.service';
+import { BoardLayoutService } from '../../services/board-layout.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
 import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
-import { ActionMenuComponent, type ActionMenuItem } from '../../components/ui/action-menu/action-menu.component';
+import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import {
+  ActionMenuComponent,
+  type ActionMenuItem,
+} from '../../components/ui/action-menu/action-menu.component';
 
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [ReactiveFormsModule, ActionMenuComponent, TranslatePipe],
+  imports: [ReactiveFormsModule, ActionMenuComponent, IconButtonComponent, TranslatePipe],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.scss',
+  styleUrls: ['./home.component.scss', './home-compact.component.scss'],
 })
 export class HomeComponent implements OnInit {
   private readonly auth = inject(AuthService);
@@ -28,15 +41,38 @@ export class HomeComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);
+  private readonly boardLayout = inject(BoardLayoutService);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly profile = this.auth.profile;
   protected readonly isDebugUser = this.auth.isDebugUser;
 
+  protected readonly menuIcon = '/icons/menu_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  /** Riusa BoardLayoutService (nome storico, ma generico — nessuna logica specifica della board al suo interno) invece di ricreare un secondo BreakpointObserver con soglie proprie: stessa fascia mobile/tablet/desktop in tutta l'app. */
+  protected readonly layoutTier = this.boardLayout.tier;
+  /** Home non ha bisogno di distinguere mobile da tablet come la board (nessun layout a due colonne intermedio qui) — un solo interruttore "sotto i 1024px" basta per collassare header e pannelli. */
+  protected readonly isCompact = computed(() => this.layoutTier() !== 'desktop');
+
   protected readonly avatarMenuItems = computed<ActionMenuItem[]>(() => [
     { label: this.i18n.t('home.menu.profile'), action: () => this.openProfile() },
     { label: this.i18n.t('home.menu.signOut'), action: () => this.signOut() },
   ]);
+
+  /** Stesse azioni dei bottoni dell'header in versione desktop, raccolte in un unico menu a comparsa quando isCompact() — vedi home.component.html. */
+  protected readonly headerMenuItems = computed<ActionMenuItem[]>(() => {
+    const items: ActionMenuItem[] = [];
+    if (this.isDebugUser()) {
+      items.push({
+        label: this.debugLoading() ? '…' : this.i18n.t('home.debug'),
+        action: () => void this.startDebugGame(),
+        disabled: this.debugLoading(),
+      });
+    }
+    items.push({ label: this.i18n.t('home.grimoire'), action: () => this.openGrimoire() });
+    items.push({ label: this.i18n.t('home.rulebook'), action: () => this.openRulebook() });
+    items.push({ label: this.i18n.t('home.options'), action: () => this.openOptions() });
+    return items;
+  });
 
   protected readonly roomCode = signal<string | null>(null);
   protected readonly creating = signal(false);
@@ -54,7 +90,7 @@ export class HomeComponent implements OnInit {
   private waitingUnsub: (() => void) | null = null;
 
   ngOnInit(): void {
-    this.codeControl.valueChanges.subscribe(v => {
+    this.codeControl.valueChanges.subscribe((v) => {
       this.codeControl.setValue(v.toUpperCase(), { emitEvent: false });
     });
 
@@ -64,7 +100,7 @@ export class HomeComponent implements OnInit {
 
     const uid = this.auth.user()?.uid;
     if (uid) {
-      this.game.findMyWaitingGame(uid).then(gameId => {
+      this.game.findMyWaitingGame(uid).then((gameId) => {
         if (gameId) {
           this.roomCode.set(gameId);
           this.startWaitingListener(gameId);
@@ -139,7 +175,7 @@ export class HomeComponent implements OnInit {
   }
 
   private startWaitingListener(gameId: string): void {
-    this.waitingUnsub = this.game.listenToGame(gameId, gameDoc => {
+    this.waitingUnsub = this.game.listenToGame(gameId, (gameDoc) => {
       if (gameDoc?.status === 'setup') {
         this.stopWaitingListener();
         this.router.navigate(['/setup', gameId]);

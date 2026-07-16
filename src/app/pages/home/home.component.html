@@ -1,18 +1,38 @@
-<div class="home">
+<div class="home" [class.home--compact]="isCompact()">
   <header class="home__header panel">
     <span class="t-display home__logo">Duels</span>
     <div class="home__user">
-      @if (isDebugUser()) {
-        <button class="btn btn--secondary" [disabled]="debugLoading()" (click)="startDebugGame()">
-          {{ debugLoading() ? '…' : ('home.debug' | translate) }}
+      @if (isCompact()) {
+        <app-action-menu [items]="headerMenuItems()">
+          <app-icon-button
+            [icon]="menuIcon"
+            [ariaLabel]="'home.menuAria' | translate"
+            [size]="34"
+          />
+        </app-action-menu>
+      } @else {
+        @if (isDebugUser()) {
+          <button class="btn btn--secondary" [disabled]="debugLoading()" (click)="startDebugGame()">
+            {{ debugLoading() ? '…' : ('home.debug' | translate) }}
+          </button>
+        }
+        <button class="btn btn--secondary" (click)="openGrimoire()">
+          {{ 'home.grimoire' | translate }}
+        </button>
+        <button class="btn btn--secondary" (click)="openRulebook()">
+          {{ 'home.rulebook' | translate }}
+        </button>
+        <button class="btn btn--secondary" (click)="openOptions()">
+          {{ 'home.options' | translate }}
         </button>
       }
-      <button class="btn btn--secondary" (click)="openGrimoire()">{{ 'home.grimoire' | translate }}</button>
-      <button class="btn btn--secondary" (click)="openRulebook()">{{ 'home.rulebook' | translate }}</button>
-      <button class="btn btn--secondary" (click)="openOptions()">{{ 'home.options' | translate }}</button>
 
       <app-action-menu [items]="avatarMenuItems()">
-        <button type="button" class="home__avatar" [attr.aria-label]="'home.avatarAria' | translate">
+        <button
+          type="button"
+          class="home__avatar"
+          [attr.aria-label]="'home.avatarAria' | translate"
+        >
           @if (profile()?.photoURL; as url) {
             <img [src]="url" alt="" referrerpolicy="no-referrer" />
           } @else {
@@ -25,7 +45,6 @@
 
   <main class="home__main">
     <div class="home__panels">
-
       <!-- Crea partita -->
       <div class="panel panel--raised home__panel">
         <h2 class="t-heading home__panel-title">{{ 'home.newGame.title' | translate }}</h2>
@@ -50,19 +69,11 @@
 
         <div class="home__panel-actions">
           @if (roomCode()) {
-            <button
-              class="btn btn--secondary"
-              [disabled]="cancelling()"
-              (click)="cancelGame()"
-            >
+            <button class="btn btn--secondary" [disabled]="cancelling()" (click)="cancelGame()">
               {{ (cancelling() ? 'home.newGame.cancelling' : 'home.newGame.cancel') | translate }}
             </button>
           } @else {
-            <button
-              class="btn btn--primary"
-              [disabled]="creating()"
-              (click)="createGame()"
-            >
+            <button class="btn btn--primary" [disabled]="creating()" (click)="createGame()">
               {{ (creating() ? 'home.newGame.creating' : 'home.newGame.create') | translate }}
             </button>
           }
@@ -98,7 +109,6 @@
           </button>
         </div>
       </div>
-
     </div>
   </main>
 </div>

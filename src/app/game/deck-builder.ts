@@ -1,4 +1,9 @@
-import type { AdvancedElement, BaseElement, Element, SuperiorElement } from '../models/element.model';
+import type {
+  AdvancedElement,
+  BaseElement,
+  Element,
+  SuperiorElement,
+} from '../models/element.model';
 import type { Card, CardTier, SpecialMana } from '../models/card.model';
 import type { GameState } from '../models/game.model';
 import type { PlayerId, PlayerState } from '../models/player.model';
@@ -29,11 +34,16 @@ const SPECIAL_MANA_TYPES: readonly SpecialMana[] = ['prismatic', 'vital', 'chaot
 const SPECIAL_MANA_COPIES_PER_TYPE = 2;
 
 /** 4 copie per elemento avanzato (regolamento 1.1: mazzo avanzato da 20 carte, 16 avanzati + 4 potenti). */
-const ADVANCED_ELEMENT_SPLIT: Record<AdvancedElement, number> = { thunder: 4, poison: 4, ice: 4, lava: 4 };
+const ADVANCED_ELEMENT_SPLIT: Record<AdvancedElement, number> = {
+  thunder: 4,
+  poison: 4,
+  ice: 4,
+  lava: 4,
+};
 
-const SUPERIOR_ELEMENT_COUNT = 2;    // per elemento potente, nel mazzo avanzato (regolamento 1.1: 4 potenti totali)
+const SUPERIOR_ELEMENT_COUNT = 2; // per elemento potente, nel mazzo avanzato (regolamento 1.1: 4 potenti totali)
 const RESIDIUM_COUNT = 8;
-const STARTING_BASE_COUNT = 2;       // per elemento base, nelle carte iniziali (regolamento 1.2)
+const STARTING_BASE_COUNT = 2; // per elemento base, nelle carte iniziali (regolamento 1.2)
 /** Dimensione della mano: sia quella iniziale sia quella pescata in fase Finale (regolamento 1.6, 4.6). */
 export const HAND_SIZE = 5;
 const FONTE_VISIBLE_COUNT = 4;
@@ -62,7 +72,7 @@ function repeat(makeCard: CardFactory, tier: CardTier, element: Element, count: 
 
 /** Mazzo comune (60 carte base) — vedi COMMON_DECK_SPLIT per la nota sul placeholder. */
 export function buildCommonDeck(makeCard: CardFactory): Card[] {
-  return BASE_ELEMENTS.flatMap(el => repeat(makeCard, 'base', el, COMMON_DECK_SPLIT[el]));
+  return BASE_ELEMENTS.flatMap((el) => repeat(makeCard, 'base', el, COMMON_DECK_SPLIT[el]));
 }
 
 /** Assegna il mana speciale (3.2) a un sottoinsieme casuale del mazzo comune — 2 copie ciascuno di prismatico/vitale/caotico. Puro, non muta l'array in input. */
@@ -86,20 +96,30 @@ export function applySpecialMana(commonDeck: readonly Card[]): Card[] {
 /** Mazzo avanzato (22 carte: 18 elementi avanzati + 4 potenti) — vedi ADVANCED_ELEMENT_SPLIT per la nota sul placeholder. */
 export function buildAdvancedDeck(makeCard: CardFactory): Card[] {
   const advancedKeys = Object.keys(ADVANCED_ELEMENT_SPLIT) as AdvancedElement[];
-  const advanced = advancedKeys.flatMap(el => repeat(makeCard, 'advanced', el, ADVANCED_ELEMENT_SPLIT[el]));
-  const superior = SUPERIOR_ELEMENTS.flatMap(el => repeat(makeCard, 'superior', el, SUPERIOR_ELEMENT_COUNT));
+  const advanced = advancedKeys.flatMap((el) =>
+    repeat(makeCard, 'advanced', el, ADVANCED_ELEMENT_SPLIT[el]),
+  );
+  const superior = SUPERIOR_ELEMENTS.flatMap((el) =>
+    repeat(makeCard, 'superior', el, SUPERIOR_ELEMENT_COUNT),
+  );
   return [...advanced, ...superior];
 }
 
 /** Residuo Arcano: 8 copie, sempre scoperto (regolamento 2.5) — "il giocatore ha un turno per utilizzarlo, dopodiché si consuma": expiresAt 'fine' vale solo da quando finisce in mano (assegnato qui una volta per tutte, dato che è sempre lo stesso per ogni copia). */
 export function buildResiduumDeck(makeCard: CardFactory): Card[] {
-  return repeat(makeCard, 'residium', 'residium', RESIDIUM_COUNT).map(card => ({ ...card, expiresAt: 'fine' as const }));
+  return repeat(makeCard, 'residium', 'residium', RESIDIUM_COUNT).map((card) => ({
+    ...card,
+    expiresAt: 'fine' as const,
+  }));
 }
 
 /** Carte iniziali di un giocatore (regolamento 1.2): 2 per elemento base + le 2 magie di STARTER_SPELLS. Luce e Tenebra non ne fanno parte — si ottengono solo combinando nella Fonte Arcana (2.4), come qualunque altro elemento potente. */
 export function buildPlayerStartingDeck(makeCard: CardFactory): Card[] {
-  const bases = BASE_ELEMENTS.flatMap(el => repeat(makeCard, 'base', el, STARTING_BASE_COUNT));
-  const spells = STARTER_SPELLS.map(({ spellId, element }) => ({ ...makeCard('spell', element), spellId }));
+  const bases = BASE_ELEMENTS.flatMap((el) => repeat(makeCard, 'base', el, STARTING_BASE_COUNT));
+  const spells = STARTER_SPELLS.map(({ spellId, element }) => ({
+    ...makeCard('spell', element),
+    spellId,
+  }));
   return [...bases, ...spells];
 }
 
@@ -153,6 +173,8 @@ function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactor
     spellsPlayedThisTurn: 0,
     tipCardPlacedTurn: null,
     tipHeldAtPreparation: false,
+    handDrawBatchId: 0,
+    collectDrawBatchId: 0,
   };
 }
 
@@ -170,7 +192,7 @@ export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): G
   const advancedDiscards: Card[] = [];
   const activeAdvancedDeck = [...fullAdvancedDeck];
   for (const el of SUPERIOR_ELEMENTS) {
-    const index = activeAdvancedDeck.findIndex(c => c.element === el);
+    const index = activeAdvancedDeck.findIndex((c) => c.element === el);
     if (index !== -1) advancedDiscards.push(...activeAdvancedDeck.splice(index, 1));
   }
 

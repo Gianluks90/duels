@@ -233,6 +233,7 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
     discards: [...player.discards, kept],
     pendingCollect: null,
     hasCollectedThisTurn: true,
+    collectDrawBatchId: player.collectDrawBatchId + 1,
   });
 }
 
@@ -268,6 +269,7 @@ export function keepMana(state: GameState, role: PlayerId): GameState {
     hand: [...player.hand, manaCard],
     pendingCollect: null,
     hasCollectedThisTurn: true,
+    collectDrawBatchId: player.collectDrawBatchId + 1,
   });
 }
 
@@ -722,7 +724,10 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   );
   const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
 
-  const stateWithCommonDiscards: GameState = { ...state, commonDiscards: commonDiscardsAfterTip };
+  const stateWithCommonDiscards: GameState = {
+    ...state,
+    commonDiscards: commonDiscardsAfterTip,
+  };
   const stateAfterEnd = updatePlayer(stateWithCommonDiscards, role, {
     hand: drawn,
     deck,
@@ -732,6 +737,7 @@ function endTurn(state: GameState, role: PlayerId): GameState {
     spellsPlayedThisTurn: 0,
     wand,
     tipCardPlacedTurn,
+    handDrawBatchId: player.handDrawBatchId + 1,
   });
 
   const stateForNextTurn: GameState = {
@@ -1142,6 +1148,7 @@ export function applyDiscardHand(state: GameState, target: PlayerId): GameState 
     deck,
     discards,
     tokens: { ...player.tokens, poison },
+    handDrawBatchId: player.handDrawBatchId + 1,
   });
 }
 
@@ -1172,7 +1179,9 @@ export function applyRevealHand(
 
   if (count === undefined) {
     const eligible = new Set(eligibleIndices);
-    const hand = player.hand.map((c, i) => (eligible.has(i) ? { ...c, revealedToOpponent: true } : c));
+    const hand = player.hand.map((c, i) =>
+      eligible.has(i) ? { ...c, revealedToOpponent: true } : c,
+    );
     return updatePlayer(state, target, { hand });
   }
 

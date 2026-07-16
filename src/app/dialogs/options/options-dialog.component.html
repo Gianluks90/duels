@@ -1,17 +1,28 @@
 <div class="options-dialog">
   <header class="options-dialog__header">
     <h2 class="t-heading options-dialog__title">{{ 'options.title' | translate }}</h2>
-    <app-icon-button [icon]="closeIcon" [ariaLabel]="'options.close' | translate" [size]="32" (iconClick)="close()" />
+    <app-icon-button
+      [icon]="closeIcon"
+      [ariaLabel]="'options.close' | translate"
+      [size]="32"
+      (iconClick)="close()"
+    />
   </header>
 
   <div class="options-dialog__body">
-
     <section class="options-dialog__section">
       <h3 class="options-dialog__section-title">{{ 'options.preferences.title' | translate }}</h3>
 
       <div class="options-dialog__pref-row">
-        <label class="options-dialog__pref-label" for="options-language">{{ 'options.preferences.language' | translate }}</label>
-        <select id="options-language" class="options-dialog__select" [value]="i18n.language()" (change)="onLanguageChange($event)">
+        <label class="options-dialog__pref-label" for="options-language">{{
+          'options.preferences.language' | translate
+        }}</label>
+        <select
+          id="options-language"
+          class="options-dialog__select"
+          [value]="i18n.language()"
+          (change)="onLanguageChange($event)"
+        >
           @for (lang of languages; track lang) {
             <option [value]="lang">{{ languageLabel(lang) }}</option>
           }
@@ -19,16 +30,40 @@
       </div>
 
       <div class="options-dialog__pref-row">
-        <span class="options-dialog__pref-label" id="options-audio-label">{{ 'options.preferences.audio' | translate }}</span>
+        <span class="options-dialog__pref-label" id="options-music-label">{{
+          'options.preferences.music' | translate
+        }}</span>
         <button
           type="button"
           class="options-dialog__toggle"
           role="switch"
-          [attr.aria-checked]="audioEnabled()"
-          aria-labelledby="options-audio-label"
-          (click)="toggleAudio()"
+          [attr.aria-checked]="musicEnabled()"
+          aria-labelledby="options-music-label"
+          (click)="toggleMusic()"
         >
-          {{ (audioEnabled() ? 'options.preferences.audioOn' : 'options.preferences.audioOff') | translate }}
+          {{
+            (musicEnabled() ? 'options.preferences.audioOn' : 'options.preferences.audioOff')
+              | translate
+          }}
+        </button>
+      </div>
+
+      <div class="options-dialog__pref-row">
+        <span class="options-dialog__pref-label" id="options-fx-label">{{
+          'options.preferences.fx' | translate
+        }}</span>
+        <button
+          type="button"
+          class="options-dialog__toggle"
+          role="switch"
+          [attr.aria-checked]="fxEnabled()"
+          aria-labelledby="options-fx-label"
+          (click)="toggleFx()"
+        >
+          {{
+            (fxEnabled() ? 'options.preferences.audioOn' : 'options.preferences.audioOff')
+              | translate
+          }}
         </button>
       </div>
     </section>
@@ -37,16 +72,18 @@
       <section class="options-dialog__section options-dialog__section--debug">
         <h3 class="options-dialog__section-title">{{ 'options.debug.title' | translate }}</h3>
         <div class="options-dialog__debug-row">
-          <p class="options-dialog__danger-label">{{ 'options.debug.firebaseConsole' | translate }}</p>
+          <p class="options-dialog__danger-label">
+            {{ 'options.debug.firebaseConsole' | translate }}
+          </p>
           <a
             class="btn btn--secondary"
             href="https://console.firebase.google.com/project/duels-2026/overview"
             target="_blank"
             rel="noopener noreferrer"
-          >{{ 'options.debug.open' | translate }}</a>
+            >{{ 'options.debug.open' | translate }}</a
+          >
         </div>
       </section>
     }
-
   </div>
 </div>

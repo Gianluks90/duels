@@ -57,6 +57,21 @@ export interface PlayerState {
   tipCardPlacedTurn: number | null;
   /** true se all'inizio di QUESTO turno (fase Preparazione, vedi resolvePreparation) la punta era già occupata da una carta trattenuta in un turno precedente. Blocca holdAtTip anche se quella carta viene spesa più avanti in questa stessa fase Azione — altrimenti si potrebbe usare la carta trattenuta e trattenerne subito un'altra, vanificando il limite "a turni alterni" del potere (1.4.1). */
   tipHeldAtPreparation: boolean;
+
+  /**
+   * Ultima "mano ridisegnata per intero" DI QUESTO giocatore (Fine turno automatico, endTurn — o
+   * forzato da un incantesimo, opponent_discard_hand: low_blow) — incrementa solo quando succede
+   * davvero, invece di dedurlo confrontando la mano prima/dopo (quel confronto sembra affidabile ma
+   * non lo è: se il mazzo si rimescola durante la ripesca, una carta appena scartata da QUESTA stessa
+   * mano può rientrare subito nel pool e finire ripescata nella mano nuova, azzerando la differenza
+   * da rilevare). Per-giocatore, non su GameState: ENTRAMBI i client (il proprio e quello
+   * dell'avversario) osservano ENTRAMBI i contatori host/guest — così il fx "5 carte" si sente sui
+   * due schermi a prescindere da chi ha ripescato, invece di restare udibile solo su quello di chi
+   * ha compiuto l'azione (vedi l'effect dedicato in board.component.ts).
+   */
+  handDrawBatchId: number;
+  /** Ultima carta ottenuta in Raccolta (4.3, keepCard/keepMana) DI QUESTO giocatore — stesso schema di handDrawBatchId sopra, per lo stesso fx suonato una sola volta invece che 5. */
+  collectDrawBatchId: number;
 }
 
 /** Mana prismatico (3.2.1): +1 mana permanente sul proprio valore, sempre — indipendente da qualsiasi altro modificatore attivo sulla carta (es. manaBonus del bonus manico). */

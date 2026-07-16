@@ -1,0 +1,13 @@
+{
+  "menuTrack": "/sounds/andorios-crystal-republic-better-quality-v11-364337.mp3",
+  "playlist": [
+    "/sounds/psychronic-anvil-of-the-infinite-520111.mp3",
+    "/sounds/psychronic-ascension-theory-520113.mp3",
+    "/sounds/psychronic-the-radiant-threshold-548267.mp3",
+    "/sounds/psychronic-threshold-of-ascension-531590.mp3"
+  ],
+  "fx": {
+    "fonteReveal": "/sounds/fx/oxidvideos-taking-playing-card-522520.mp3",
+    "handDraw": "/sounds/fx/freesound_community-flipcard-91468.mp3"
+  }
+}

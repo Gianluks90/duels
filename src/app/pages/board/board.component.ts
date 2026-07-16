@@ -20,6 +20,7 @@ import { firstValueFrom } from 'rxjs';
 import { GameService, type GameDoc } from '../../services/game.service';
 import { GameEngineService } from '../../services/game-engine.service';
 import { AuthService } from '../../services/auth.service';
+import { AudioService } from '../../services/audio.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
 import {
@@ -164,6 +165,7 @@ export class BoardComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly game = inject(GameService);
   private readonly gameEngine = inject(GameEngineService);
+  private readonly audio = inject(AudioService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -617,6 +619,15 @@ export class BoardComponent implements OnInit {
   /** Evita di riprocessare due volte lo stesso batch nell'effect dedicato sotto. */
   private lastProcessedFonteExplosionBatchId: number | null = null;
 
+  /** Id delle 4 carte rivelate in Fonte Arcana all'ultimo render — confronto POSIZIONALE (per indice, non per set): a differenza della mano, qui la posizione è il significato stesso di "rivelata in quello slot". null solo al primissimo render, per non far scattare il fx sul semplice arrivo dello stato iniziale. */
+  private lastKnownFonteIds: string[] | null = null;
+  /** Evita di riprocessare due volte lo stesso batch per ciascun ruolo negli effect fx sotto (stesso schema di lastProcessedFonteExplosionBatchId, ma un contatore per host E uno per guest — entrambi i client osservano entrambi i ruoli, non solo il proprio, così il fx si sente su entrambi gli schermi). Inizializzati a 0 per combaciare col valore iniziale di PlayerState.handDrawBatchId/collectDrawBatchId (deck-builder.ts), niente fx spurio al primo render. */
+  private readonly lastProcessedHandDrawBatchIds: Record<PlayerId, number> = { host: 0, guest: 0 };
+  private readonly lastProcessedCollectDrawBatchIds: Record<PlayerId, number> = {
+    host: 0,
+    guest: 0,
+  };
+
   constructor() {
     afterNextRender(() => {
       this.observeWidth(this.playerHandTrackRef(), this.playerHandTrackWidth);
@@ -904,6 +915,59 @@ export class BoardComponent implements OnInit {
       const timer = setTimeout(() => this.revealedBonusIds.set(new Set(boosted)), 900);
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
+
+    // Fx "carta rivelata" in Fonte Arcana: confronto posizionale (per indice, non per set — qui la
+    // posizione conta, "rivelata nello slot X" è il significato dell'evento) contro l'ultimo
+    // render. Un solo colpo per batch anche quando più slot cambiano insieme (es. fonte_reset,
+    // Rischio in SPELL_CATALOG cambia tutti e 4), non uno per slot — suonerebbe come una raffica
+    // invece di una singola "rivelazione". Scatta per entrambi i giocatori allo stesso modo: la
+    // Fonte Arcana è condivisa, chiunque l'abbia cambiata il suono è per tutti e due.
+    effect(() => {
+      const fonte = this.state()?.fonteElementale;
+      if (!fonte) return;
+
+      const ids = fonte.map((c) => c.id);
+      const previous = this.lastKnownFonteIds;
+      this.lastKnownFonteIds = ids;
+      if (previous === null) return; // primo caricamento, non è una "rivelazione"
+
+      const changed = ids.length !== previous.length || ids.some((id, i) => id !== previous[i]);
+      if (changed) this.audio.playFx('fonteReveal');
+    });
+
+    // Fx "pescata nuova mano" (Fine turno, endTurn — o Colpo basso, opponent_discard_hand):
+    // PlayerState.handDrawBatchId, osservato per ENTRAMBI i ruoli (host e guest), non solo il
+    // proprio — un suono sentito da un giocatore deve sentirsi anche sullo schermo dell'avversario,
+    // quindi entrambi i client reagiscono a entrambi i contatori invece che al solo proprio.
+    // Contatore invece di un diff su playerHand(): un diff ("nessun id in comune tra mano vecchia e
+    // nuova") sembra affidabile ma non lo è, se il mazzo si rimescola durante la ripesca una carta
+    // appena scartata da QUESTA stessa mano può rientrare subito nel pool e finire ripescata nella
+    // mano nuova, azzerando la differenza da rilevare. Stesso schema di
+    // lastProcessedFonteExplosionBatchId, ma un tracker per ruolo (lastProcessedHandDrawBatchIds).
+    effect(() => {
+      const s = this.state();
+      if (!s) return;
+      for (const role of ['host', 'guest'] as const) {
+        const batchId = s.players[role].handDrawBatchId;
+        if (batchId === this.lastProcessedHandDrawBatchIds[role]) continue;
+        this.lastProcessedHandDrawBatchIds[role] = batchId;
+        this.audio.playFx('handDraw', { times: 5 });
+      }
+    });
+
+    // Fx "carta ottenuta in Raccolta" (keepCard/keepMana, 4.3): stesso suono della pescata di mano,
+    // un solo colpo invece di 5 — stesso schema dell'effect sopra (entrambi i ruoli, entrambi i
+    // client), su PlayerState.collectDrawBatchId.
+    effect(() => {
+      const s = this.state();
+      if (!s) return;
+      for (const role of ['host', 'guest'] as const) {
+        const batchId = s.players[role].collectDrawBatchId;
+        if (batchId === this.lastProcessedCollectDrawBatchIds[role]) continue;
+        this.lastProcessedCollectDrawBatchIds[role] = batchId;
+        this.audio.playFx('handDraw', { times: 1 });
+      }
+    });
   }
 
   private observeWidth(
@@ -997,7 +1061,6 @@ export class BoardComponent implements OnInit {
     const minSpacing = cardWidth * (1 - HAND_MAX_OVERLAP_FRACTION);
     return Math.max(fitSpacing, minSpacing);
   }
-
 
   /** Larghezza della carta infilata dietro punta/asta/manico nel layout compatto — deve corrispondere
    * a quella reale della sua sezione (un terzo della striscia, al netto dei 2 gap tra le 3 etichette),

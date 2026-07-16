@@ -1,26 +1,81 @@
 <div class="game-settings-dialog">
   <header class="game-settings-dialog__header">
     <h2 class="t-heading game-settings-dialog__title">{{ 'gameSettings.title' | translate }}</h2>
-    <app-icon-button [icon]="closeIcon" [ariaLabel]="'gameSettings.closeAria' | translate" [size]="32" (iconClick)="close()" />
+    <app-icon-button
+      [icon]="closeIcon"
+      [ariaLabel]="'gameSettings.closeAria' | translate"
+      [size]="32"
+      (iconClick)="close()"
+    />
   </header>
 
   <div class="game-settings-dialog__body">
     <section class="game-settings-dialog__section">
+      <div class="game-settings-dialog__row">
+        <span class="game-settings-dialog__label" id="game-settings-music-label">{{
+          'gameSettings.music' | translate
+        }}</span>
+        <button
+          type="button"
+          class="game-settings-dialog__toggle"
+          role="switch"
+          [attr.aria-checked]="musicEnabled()"
+          aria-labelledby="game-settings-music-label"
+          (click)="toggleMusic()"
+        >
+          {{ (musicEnabled() ? 'gameSettings.audioOn' : 'gameSettings.audioOff') | translate }}
+        </button>
+      </div>
+
+      <div class="game-settings-dialog__row">
+        <span class="game-settings-dialog__label" id="game-settings-fx-label">{{
+          'gameSettings.fx' | translate
+        }}</span>
+        <button
+          type="button"
+          class="game-settings-dialog__toggle"
+          role="switch"
+          [attr.aria-checked]="fxEnabled()"
+          aria-labelledby="game-settings-fx-label"
+          (click)="toggleFx()"
+        >
+          {{ (fxEnabled() ? 'gameSettings.audioOn' : 'gameSettings.audioOff') | translate }}
+        </button>
+      </div>
+    </section>
+
+    <section class="game-settings-dialog__section game-settings-dialog__section--danger">
       @if (!confirmSurrender()) {
         <div class="game-settings-dialog__row">
           <div>
             <p class="game-settings-dialog__label">{{ 'gameSettings.surrender' | translate }}</p>
-            <p class="t-muted game-settings-dialog__desc">{{ 'gameSettings.surrenderDesc' | translate }}</p>
+            <p class="t-muted game-settings-dialog__desc">
+              {{ 'gameSettings.surrenderDesc' | translate }}
+            </p>
           </div>
-          <button class="btn btn--danger" (click)="requestConfirm()">{{ 'gameSettings.surrender' | translate }}</button>
+          <button class="btn btn--danger" (click)="requestConfirm()">
+            {{ 'gameSettings.surrender' | translate }}
+          </button>
         </div>
       } @else {
         <div class="game-settings-dialog__confirm">
-          <p class="game-settings-dialog__confirm-text" [innerHTML]="'gameSettings.confirmText' | translate"></p>
+          <p
+            class="game-settings-dialog__confirm-text"
+            [innerHTML]="'gameSettings.confirmText' | translate"
+          ></p>
           <div class="game-settings-dialog__confirm-actions">
-            <button class="btn btn--secondary" [disabled]="surrendering()" (click)="cancelConfirm()">{{ 'gameSettings.cancel' | translate }}</button>
+            <button
+              class="btn btn--secondary"
+              [disabled]="surrendering()"
+              (click)="cancelConfirm()"
+            >
+              {{ 'gameSettings.cancel' | translate }}
+            </button>
             <button class="btn btn--danger" [disabled]="surrendering()" (click)="surrender()">
-              {{ (surrendering() ? 'gameSettings.surrendering' : 'gameSettings.confirmSurrender') | translate }}
+              {{
+                (surrendering() ? 'gameSettings.surrendering' : 'gameSettings.confirmSurrender')
+                  | translate
+              }}
             </button>
           </div>
         </div>

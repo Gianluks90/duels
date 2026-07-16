@@ -1,11 +1,7 @@
-import {
-  Component,
-  ChangeDetectionStrategy,
-  inject,
-  signal,
-} from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { DialogRef } from '@angular/cdk/dialog';
 import { AuthService } from '../../services/auth.service';
+import { AudioService } from '../../services/audio.service';
 import { TranslationService } from '../../services/translation.service';
 import { SUPPORTED_LANGUAGES, languageLabel, type LanguageCode } from '../../models/language.model';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
@@ -21,6 +17,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 export class OptionsDialogComponent {
   private readonly dialogRef = inject(DialogRef);
   private readonly auth = inject(AuthService);
+  private readonly audio = inject(AudioService);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
@@ -28,8 +25,8 @@ export class OptionsDialogComponent {
 
   protected readonly languages = SUPPORTED_LANGUAGES;
   protected readonly languageLabel = languageLabel;
-  /** No audio system yet — this only holds the toggle's visual state until there's something real to control. */
-  protected readonly audioEnabled = signal(true);
+  protected readonly musicEnabled = this.audio.musicEnabled;
+  protected readonly fxEnabled = this.audio.fxEnabled;
 
   protected close(): void {
     this.dialogRef.close();
@@ -40,7 +37,11 @@ export class OptionsDialogComponent {
     void this.i18n.setLanguage(value);
   }
 
-  protected toggleAudio(): void {
-    this.audioEnabled.update(v => !v);
+  protected toggleMusic(): void {
+    this.audio.toggleMusic();
+  }
+
+  protected toggleFx(): void {
+    this.audio.toggleFx();
   }
 }

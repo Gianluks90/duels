@@ -14,14 +14,14 @@ export interface ExplosionEvent {
 
 export interface GameState {
   currentTurn: PlayerId;
-  phase: ActiveTurnPhase;                  // 'attesa' è un valore solo di visualizzazione, mai persistito (vedi ActiveTurnPhase)
+  phase: ActiveTurnPhase; // 'attesa' è un valore solo di visualizzazione, mai persistito (vedi ActiveTurnPhase)
   turnNumber: number;
   players: Record<PlayerId, PlayerState>;
 
   // Stato condiviso del tavolo
-  commonDeck: Card[];                      // mazzo comune (60), pescato in fase di Raccolta
+  commonDeck: Card[]; // mazzo comune (60), pescato in fase di Raccolta
   commonDiscards: Card[];
-  fonteElementale: Card[];                 // sempre 4 carte visibili
+  fonteElementale: Card[]; // sempre 4 carte visibili
   advancedDeck: Card[];
   advancedDiscards: Card[];
   residiumDeck: Card[];
@@ -39,5 +39,5 @@ export interface GameState {
   winner: PlayerId | null;
 
   // Meta
-  createdAt: number;                       // timestamp ms di inizio partita (diverso da GameDoc.createdAt, che è la creazione della stanza)
+  createdAt: number; // timestamp ms di inizio partita (diverso da GameDoc.createdAt, che è la creazione della stanza)
 }

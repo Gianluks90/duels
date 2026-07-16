@@ -156,6 +156,7 @@
     "rulebook": "Regolamento",
     "options": "Opzioni",
     "avatarAria": "Profilo",
+    "menuAria": "Menu",
     "menu": {
       "profile": "Profilo",
       "signOut": "Esci"
@@ -317,6 +318,10 @@
   "gameSettings": {
     "title": "Impostazioni Partita",
     "closeAria": "Chiudi",
+    "music": "Musica",
+    "fx": "Effetti sonori",
+    "audioOn": "Attivo",
+    "audioOff": "Disattivo",
     "surrender": "Arrenditi",
     "surrenderDesc": "Concludi subito la partita in corso.",
     "confirmText": "Sei sicuro di volerti arrendere? La partita terminerà <strong>subito</strong>.",
@@ -331,7 +336,8 @@
     "preferences": {
       "title": "Preferenze",
       "language": "Lingua",
-      "audio": "Audio",
+      "music": "Musica",
+      "fx": "Effetti sonori",
       "audioOn": "Attivo",
       "audioOff": "Disattivo"
     },

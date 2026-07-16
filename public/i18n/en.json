@@ -153,6 +153,7 @@
     "rulebook": "Rulebook",
     "options": "Options",
     "avatarAria": "Profile",
+    "menuAria": "Menu",
     "menu": {
       "profile": "Profile",
       "signOut": "Sign out"
@@ -314,6 +315,10 @@
   "gameSettings": {
     "title": "Game Settings",
     "closeAria": "Close",
+    "music": "Music",
+    "fx": "Sound effects",
+    "audioOn": "On",
+    "audioOff": "Off",
     "surrender": "Surrender",
     "surrenderDesc": "Immediately end the current game.",
     "confirmText": "Are you sure you want to surrender? The game will end <strong>immediately</strong>.",
@@ -328,7 +333,8 @@
     "preferences": {
       "title": "Preferences",
       "language": "Language",
-      "audio": "Audio",
+      "music": "Music",
+      "fx": "Sound effects",
       "audioOn": "On",
       "audioOff": "Off"
     },

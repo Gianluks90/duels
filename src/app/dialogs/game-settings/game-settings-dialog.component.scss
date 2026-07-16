@@ -31,8 +31,14 @@
     flex-direction: column;
     gap: var(--sp-3);
     padding: var(--sp-4);
-    border: 1px solid rgba(139, 16, 16, 0.4);
-    background: rgba(139, 16, 16, 0.05);
+    border: 1px solid var(--border-subtle);
+
+    // Solo la sezione Arrenditi è "zona pericolosa" — estratto da &__section apposta (prima era
+    // sempre rosso, anche per la nuova sezione Audio, che non ha nulla di distruttivo).
+    &--danger {
+      border-color: rgba(139, 16, 16, 0.4);
+      background: rgba(139, 16, 16, 0.05);
+    }
   }
 
   &__row {
@@ -50,6 +56,31 @@
 
   &__desc {
     font-size: 0.7rem;
+  }
+
+  // Stesso linguaggio visivo del toggle in options-dialog.component.scss — duplicato invece di
+  // condiviso, due componenti diversi, nessun mixin nel progetto.
+  &__toggle {
+    min-width: 84px;
+    padding: var(--sp-1) var(--sp-3);
+    background: transparent;
+    border: 1px solid var(--border-gold);
+    color: var(--text-heading);
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background var(--transition);
+
+    &:hover {
+      background: rgba(122, 92, 30, 0.12);
+    }
+
+    &[aria-checked='false'] {
+      color: var(--text-muted);
+    }
   }
 
   &__confirm {
