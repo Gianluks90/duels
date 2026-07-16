@@ -21,16 +21,79 @@ import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.com
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { CardComponent } from '../../components/card/card.component';
+import type { Element } from '../../models/element.model';
 import {
   ActionMenuComponent,
   type ActionMenuItem,
 } from '../../components/ui/action-menu/action-menu.component';
 
+/** I 10 elementi "carta" del mazzo — Residuo Arcano e magie escluse di proposito (regolamento 2.1: non sono elementi veri, non hanno senso come decorazione "elemento" sullo sfondo). */
+const BACKGROUND_ELEMENTS: readonly Element[] = [
+  'fire',
+  'water',
+  'air',
+  'earth',
+  'thunder',
+  'poison',
+  'ice',
+  'lava',
+  'light',
+  'dark',
+];
+
+interface BackgroundCard {
+  element: Element;
+  top: number;
+  left: number;
+  rotation: number;
+  /** Ritardo prima del fade-in (ms), indipendente e casuale per ogni carta — non un ordine
+   * sequenziale a indice: dà un effetto "materializzazione" organica invece che meccanico. */
+  delay: number;
+}
+
+interface BackgroundPoint {
+  top: number;
+  left: number;
+}
+
+/** In punti percentuali (top/left condividono la stessa scala 0-100): sotto questa distanza le due
+ * copie dello stesso elemento si leggono come "vicine" a colpo d'occhio invece che sparse. */
+const MIN_SAME_ELEMENT_DISTANCE = 30;
+/** Tentativi prima di arrendersi e accettare comunque il punto — pura decorazione, non serve una
+ * garanzia matematica: con un solo vincolo (dalla prima copia) 30 tentativi bastano quasi sempre. */
+const MAX_PLACEMENT_ATTEMPTS = 30;
+
+function randomPoint(): BackgroundPoint {
+  return { top: Math.random() * 100, left: Math.random() * 100 };
+}
+
+function distance(a: BackgroundPoint, b: BackgroundPoint): number {
+  return Math.hypot(a.top - b.top, a.left - b.left);
+}
+
+/** Ripesca finché non è abbastanza lontano da `other` (la prima copia dello stesso elemento) — solo
+ * questo vincolo, nessuno tra elementi diversi: evita le coppie identiche affiancate mantenendo
+ * intatta la sensazione di casualità nel resto dello sfondo. */
+function randomPointAwayFrom(other: BackgroundPoint): BackgroundPoint {
+  for (let attempt = 0; attempt < MAX_PLACEMENT_ATTEMPTS; attempt++) {
+    const point = randomPoint();
+    if (distance(point, other) >= MIN_SAME_ELEMENT_DISTANCE) return point;
+  }
+  return randomPoint();
+}
+
 @Component({
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [ReactiveFormsModule, ActionMenuComponent, IconButtonComponent, TranslatePipe],
+  imports: [
+    ReactiveFormsModule,
+    ActionMenuComponent,
+    IconButtonComponent,
+    CardComponent,
+    TranslatePipe,
+  ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss', './home-compact.component.scss'],
 })
@@ -48,6 +111,28 @@ export class HomeComponent implements OnInit {
   protected readonly isDebugUser = this.auth.isDebugUser;
 
   protected readonly menuIcon = '/icons/menu_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  /** 2 carte per ciascuno dei 10 elementi (20 totali) — con solo 10 restavano troppi vuoti visibili
+   * sullo sfondo. La seconda copia di ogni elemento ripesca la posizione finché non è a
+   * MIN_SAME_ELEMENT_DISTANCE dalla prima (randomPointAwayFrom) — solo questo vincolo, nessuno tra
+   * elementi diversi: evita le due copie identiche affiancate senza irrigidire il resto dello
+   * sparpagliamento. Rotazione/delay restano indipendenti e casuali per ogni carta, coppie incluse.
+   * Generate una sola volta qui (field initializer, gira nel costruttore) e mai più ricalcolate: un
+   * nuovo layout a ogni caricamento della pagina, ma stabile per tutta la sessione della Home
+   * (niente "salti" a ogni change detection). Puramente decorative (home.component.html,
+   * aria-hidden sul contenitore) — nessuna interazione, nessun tooltip. */
+  protected readonly backgroundCards: readonly BackgroundCard[] = BACKGROUND_ELEMENTS.flatMap(
+    (element) => {
+      const first = randomPoint();
+      const second = randomPointAwayFrom(first);
+      return [first, second].map((point) => ({
+        element,
+        top: point.top,
+        left: point.left,
+        rotation: Math.random() * 50 - 25,
+        delay: Math.random() * 1000,
+      }));
+    },
+  );
   /** Riusa BoardLayoutService (nome storico, ma generico — nessuna logica specifica della board al suo interno) invece di ricreare un secondo BreakpointObserver con soglie proprie: stessa fascia mobile/tablet/desktop in tutta l'app. */
   protected readonly layoutTier = this.boardLayout.tier;
   /** Home non ha bisogno di distinguere mobile da tablet come la board (nessun layout a due colonne intermedio qui) — un solo interruttore "sotto i 1024px" basta per collassare header e pannelli. */

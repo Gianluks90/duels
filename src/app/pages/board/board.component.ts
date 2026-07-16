@@ -300,11 +300,14 @@ export class BoardComponent implements OnInit {
   /** Stato di gioco reale, letto dal campo `state` del documento Firestore (null finché la partita non è iniziata). */
   protected readonly state = computed(() => this.gameDoc()?.state ?? null);
 
+  /** null sia quando manca doc/uid sia quando l'utente autenticato non è né host né guest di QUESTA partita — chi apre l'URL conoscendo solo il gameId (ma senza esserne parte) non deve essere trattato come guest, vedi il redirect in ngOnInit. */
   private readonly myRole = computed<PlayerId | null>(() => {
     const doc = this.gameDoc();
     const uid = this.auth.user()?.uid;
     if (!doc || !uid) return null;
-    return doc.hostId === uid ? 'host' : 'guest';
+    if (doc.hostId === uid) return 'host';
+    if (doc.guestId === uid) return 'guest';
+    return null;
   });
 
   private readonly me = computed(() => {
@@ -1095,8 +1098,18 @@ export class BoardComponent implements OnInit {
       if (doc?.status === 'finished') {
         unsub();
         this.router.navigate(['/result', id]);
+        return;
       }
-    });
+      // Regole Firestore già negano lettura/scrittura a chi non è host/guest di QUESTA partita
+      // (games/{gameId}) — questo redirect copre il caso limite in cui `doc` arriva comunque
+      // (es. partita ancora 'waiting', leggibile da chiunque per permettere il join by code) ma
+      // l'utente autenticato non vi appartiene, invece di lasciarlo su una board vuota/rotta.
+      const uid = this.auth.user()?.uid;
+      if (doc && uid && doc.hostId !== uid && doc.guestId !== uid) {
+        unsub();
+        this.router.navigate(['/home']);
+      }
+    }, () => this.router.navigate(['/home']));
 
     this.destroyRef.onDestroy(() => unsub());
   }

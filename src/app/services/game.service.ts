@@ -143,9 +143,18 @@ export class GameService {
     return snapshot.empty ? null : snapshot.docs[0].id;
   }
 
-  listenToGame(gameId: string, callback: (game: GameDoc | null) => void): Unsubscribe {
-    return onSnapshot(doc(this.db, 'games', gameId), snapshot => {
-      callback(snapshot.exists() ? (snapshot.data() as GameDoc) : null);
-    });
+  /** `onError`: le regole Firestore negano la lettura a chi non è host/guest della partita — senza un handler l'errore resterebbe silenzioso e `callback` non verrebbe più richiamato. */
+  listenToGame(
+    gameId: string,
+    callback: (game: GameDoc | null) => void,
+    onError?: () => void,
+  ): Unsubscribe {
+    return onSnapshot(
+      doc(this.db, 'games', gameId),
+      snapshot => {
+        callback(snapshot.exists() ? (snapshot.data() as GameDoc) : null);
+      },
+      () => onError?.(),
+    );
   }
 }

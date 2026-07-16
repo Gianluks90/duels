@@ -25,6 +25,7 @@ export const routes: Routes = [
   {
     path: 'game/:gameId',
     loadComponent: () => import('./pages/board/board.component').then(m => m.BoardComponent),
+    canActivate: [authGuard],
   },
   {
     path: 'result/:gameId',

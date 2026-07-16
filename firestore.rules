@@ -7,9 +7,29 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Le regole di gioco verranno raffinate quando implementeremo la logica di partita
     match /games/{gameId} {
-      allow read, write: if request.auth != null;
+      // 'waiting' (nessun guest ancora) leggibile da chiunque sia autenticato: serve a joinGame()
+      // per verificare il codice stanza prima che il giocatore diventi guestId. Da 'setup' in poi
+      // (stato di gioco presente, mani coperte incluse) solo host/guest della partita.
+      allow read: if request.auth != null &&
+        (resource.data.status == 'waiting' ||
+         resource.data.hostId == request.auth.uid ||
+         resource.data.guestId == request.auth.uid);
+
+      allow create: if request.auth != null &&
+        request.resource.data.hostId == request.auth.uid &&
+        request.resource.data.guestId in [null, 'debug-guest'];
+
+      allow update: if request.auth != null &&
+        request.resource.data.hostId == resource.data.hostId && (
+          // joinGame(): l'unico caso in cui chi scrive non è ancora host/guest della partita.
+          (resource.data.status == 'waiting' &&
+           resource.data.guestId == null &&
+           request.resource.data.guestId == request.auth.uid) ||
+          (resource.data.hostId == request.auth.uid || resource.data.guestId == request.auth.uid)
+        );
+
+      allow delete: if request.auth != null && resource.data.hostId == request.auth.uid;
     }
   }
 }

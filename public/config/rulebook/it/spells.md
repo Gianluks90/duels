@@ -12,7 +12,7 @@ Durante la fase Azione puoi scegliere un incantesimo che hai in mano e lanciarlo
 
 ## Dopo il lancio
 
-Oggi, una volta risolto, un incantesimo torna nella pila degli scarti — tranne quelli **del tuono**, che tornano in fondo al mazzo. In futuro arriveranno incantesimi più potenti o più economici ma a **uso singolo**: si consumeranno invece di tornare in gioco.
+Oggi, una volta risolto, un incantesimo torna sempre nella pila degli scarti del giocatore. In futuro arriveranno incantesimi più potenti o più economici ma a **uso singolo**: si consumeranno invece di tornare in gioco.
 
 ---
 

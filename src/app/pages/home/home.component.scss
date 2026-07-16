@@ -1,9 +1,41 @@
 .home {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100dvh;
 
+  &__card-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    // Cerchio del mana già scala con la carta (30% della larghezza); solo la cifra dentro no —
+    // su carte a 160px resterebbe minuscola rispetto al cerchio col default pensato per la mano.
+    --card-mana-font-size: 1.4rem;
+  }
+
+  // fill-mode "both": applica il fotogramma iniziale (opacity 0, scale 1.3) per tutta la durata del
+  // delay, invece di lampeggiare al valore base finché l'animazione non parte — e mantiene il
+  // fotogramma finale dopo la fine, invece di tornare al valore base del box. --card-transform
+  // (translate/rotate, impostata per-carta in home.component.html) è fissa per carta: la teniamo
+  // fuori dalla keyframe e la componiamo lì con lo scale animato, altrimenti la keyframe
+  // sovrascriverebbe l'intero `transform` (le animazioni CSS hanno priorità sullo style inline) e le
+  // carte perderebbero posizione/rotazione a fine animazione.
+  &__card-bg-item {
+    --card-transform: translate(-50%, -50%);
+    animation: home-card-fade-in 500ms ease both;
+
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+      opacity: 1;
+      transform: var(--card-transform);
+    }
+  }
+
   &__header {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -60,6 +92,8 @@
   }
 
   &__main {
+    position: relative;
+    z-index: 1;
     flex: 1;
     display: flex;
     align-items: center;
@@ -171,4 +205,18 @@
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
+}
+
+// "Cadono dall'alto": scale 1.3 → 1 insieme al fade, non una vera traslazione verticale — combinato
+// con --card-transform (translate/rotate fissi per carta, vedi .home__card-bg-item sopra) invece di
+// sovrascriverlo, altrimenti la carta perderebbe l'offset di centratura e la rotazione casuale.
+@keyframes home-card-fade-in {
+  from {
+    opacity: 0;
+    transform: var(--card-transform) scale(1.3);
+  }
+  to {
+    opacity: 1;
+    transform: var(--card-transform) scale(1);
+  }
 }

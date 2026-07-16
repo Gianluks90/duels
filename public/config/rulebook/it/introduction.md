@@ -16,7 +16,7 @@ All'inizio della partita vengono preparati:
 | Mazzo comune | 60 carte | coperto |
 | Mazzo avanzato | 20 carte (16 elementi avanzati, 4 per tipo, + 4 elementi potenti) | coperto, con 4 carte subito rivelate accanto ad esso |
 
-Il mazzo coperto e le 4 carte rivelate formano insieme la **Fonte Arcana** (vedi la sezione dedicata).
+Il mazzo coperto e le 4 carte rivelate formano insieme la **Fonte Arcana** (vedi la sezione dedicata). Due delle 4 carte Luce/Tenebra iniziano già nella pila degli scarti del mazzo avanzato: per ottenerle devi prima esaurire una volta il mazzo avanzato, così i suoi scarti si rimescolano e tornano in gioco.
 
 ## Il tuo mazzo
 

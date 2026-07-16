@@ -1,4 +1,19 @@
 <div class="home" [class.home--compact]="isCompact()">
+  <div class="home__card-bg" aria-hidden="true">
+    @for (card of backgroundCards; track $index) {
+      <app-card
+        class="home__card-bg-item"
+        [element]="card.element"
+        [size]="160"
+        [style.position]="'absolute'"
+        [style.top.%]="card.top"
+        [style.left.%]="card.left"
+        [style.--card-transform]="'translate(-50%, -50%) rotate(' + card.rotation + 'deg)'"
+        [style.animation-delay.ms]="card.delay"
+      />
+    }
+  </div>
+
   <header class="home__header panel">
     <span class="t-display home__logo">Duels</span>
     <div class="home__user">

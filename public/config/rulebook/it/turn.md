@@ -15,7 +15,10 @@ Vengono risolti gli effetti di inizio turno:
 
 ## 3. Raccolta
 
-Se lo desideri, puoi raccogliere risorse: peschi 2 carte dal mazzo comune, ne scegli una e scarti l'altra. La carta scelta va nella pila degli scarti del tuo mazzo — non in mano.
+Se lo desideri, puoi raccogliere risorse: peschi 2 carte dal mazzo comune, poi scegli tra due opzioni:
+
+- **tenerne una** — va nella pila degli scarti del tuo mazzo, non in mano; l'altra torna negli scarti comuni;
+- **scartarle entrambe** negli scarti comuni, ottenendo invece **1 mana accumulato**: un mana generico, spendibile subito ma solo in questo stesso turno. Se non lo usi entro la fine del turno svanisce, senza aggiungersi al tuo mazzo.
 
 > Quando un mazzo si esaurisce — il tuo, quello comune o quello avanzato — si ricompone rimescolando la propria pila degli scarti. Se è il tuo mazzo a rimescolarsi e sei avvelenato, il livello di avvelenamento si riduce di 1.
 

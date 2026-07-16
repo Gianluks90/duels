@@ -56,6 +56,15 @@
     color: var(--text-primary);
   }
 
+  // Larghezza fissa condivisa da select e toggle (sotto): senza, ciascuno si ridimensiona in base al
+  // proprio contenuto (nome lingua selezionato, "Attivo"/"Disattivo") e i controlli a destra di ogni
+  // riga finiscono disallineati tra loro invece di formare una colonna.
+  &__select,
+  &__toggle {
+    width: 130px;
+    text-align: center;
+  }
+
   &__select {
     padding: var(--sp-1) var(--sp-3);
     background: var(--bg-panel);
@@ -68,7 +77,6 @@
 
   // Reuses .btn--secondary's language but as a fixed-width switch-style readout (Attivo/Disattivo).
   &__toggle {
-    min-width: 84px;
     padding: var(--sp-1) var(--sp-3);
     background: transparent;
     border: 1px solid var(--border-gold);
