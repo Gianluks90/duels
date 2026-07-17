@@ -19,17 +19,17 @@ Le 4 magie "livello 1" e le rispettive escalation a 3/4 copie dello stesso eleme
 | Nome | Formula | Elemento | Mana | Effetti | Difficoltà |
 | --- | --- | --- | --- | --- | --- |
 | Ustione leggera (`fire_bolt`) | Fuoco + Fuoco | Fuoco | 2 | 1 danno | 2 |
-| Lama d'Acqua (`water_lance`) | Acqua + Acqua | Acqua | 2 | 1 danno | 2 |
+| Frusta d'Acqua (`water_lance`) | Acqua + Acqua | Acqua | 2 | 1 danno | 2 |
 | Raffica d'Aria (`air_slash`) | Aria + Aria | Aria | 2 | 1 danno | 2 |
 | Proiettile terreno (`earth_shard`) | Terra + Terra | Terra | 2 | 1 danno | 2 |
 | Combustione (`combustion`) | Fuoco × 3 | Fuoco | 3 | 3 danni | 3 |
 | Inferno (`inferno`) | Fuoco × 4 | Fuoco | 5 | 5 danni | 4 |
 | Diluvio (`flood`) | Acqua × 3 | Acqua | 3 | 3 danni | 3 |
-| Affogamento (`drowning`) | Acqua × 4 | Acqua | 5 | 5 danni | 4 |
+| Maremoto (`drowning`) | Acqua × 4 | Acqua | 5 | 5 danni | 4 |
 | Turbine (`whirlwind`) | Aria × 3 | Aria | 3 | 3 danni | 3 |
 | Tornado (`tornado`) | Aria × 4 | Aria | 5 | 5 danni | 4 |
-| Piccola frana (`rockfall`) | Terra × 3 | Terra | 3 | 3 danni | 3 |
-| Frana (`landslide`) | Terra × 4 | Terra | 5 | 5 danni | 4 |
+| Frana (`rockfall`) | Terra × 3 | Terra | 3 | 3 danni | 3 |
+| Terremoto (`landslide`) | Terra × 4 | Terra | 5 | 5 danni | 4 |
 
 ## Magie iniziali (mazzo di partenza, non creabili dal grimorio)
 

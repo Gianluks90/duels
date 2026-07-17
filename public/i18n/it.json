@@ -386,7 +386,7 @@
       "flavorText": "Evocare un Dardo di fuoco ti fa sentire proprio bene, senti il potere che fluisce dalle mani ed esplode ad una certa distanza. Emozionante!."
     },
     "water_lance": {
-      "name": "Lama d'Acqua",
+      "name": "Frusta d'Acqua",
       "flavorText": "Hai mai provato a lanciare un getto d'acqua ad una grande velocità? Ottieni lo stesso effetto di una sciabolata, ma più bagnato."
     },
     "air_slash": {
@@ -410,7 +410,7 @@
       "flavorText": "Un'ondata che non lascia scampo, capace di travolgere qualunque difesa."
     },
     "drowning": {
-      "name": "Affogamento",
+      "name": "Maremoto",
       "flavorText": "L'acqua si stringe attorno al bersaglio come una morsa, senza lasciargli un solo respiro."
     },
     "whirlwind": {
@@ -422,11 +422,11 @@
       "flavorText": "Una furia incontrollabile che spazza via ogni cosa sul proprio cammino."
     },
     "rockfall": {
-      "name": "Piccola frana",
+      "name": "Frana",
       "flavorText": "Una manciata di rocce cade dall'alto, quanto basta per far male."
     },
     "landslide": {
-      "name": "Frana",
+      "name": "Terremoto",
       "flavorText": "Un'intera parete di roccia si stacca e travolge tutto quello che trova."
     },
     "starter_bolt": {

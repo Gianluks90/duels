@@ -383,7 +383,7 @@
       "flavorText": "Conjuring a fire bolt feels amazing: you can feel the power flowing from your hands and exploding at a distance. Exciting!"
     },
     "water_lance": {
-      "name": "Water Blade",
+      "name": "Water Whip",
       "flavorText": "Have you ever tried launching a jet of water at high speed? You get the same effect as a sword slash, but wetter."
     },
     "air_slash": {
@@ -407,7 +407,7 @@
       "flavorText": "A wave that leaves no escape, capable of overwhelming any defense."
     },
     "drowning": {
-      "name": "Drowning",
+      "name": "Tidal Wave",
       "flavorText": "Water tightens around the target like a vice, without leaving a single breath."
     },
     "whirlwind": {
@@ -423,7 +423,7 @@
       "flavorText": "A handful of rocks falls from above, just enough to hurt."
     },
     "landslide": {
-      "name": "Landslide",
+      "name": "Earthquake",
       "flavorText": "An entire rock face breaks away and crushes everything in its path."
     },
     "starter_bolt": {
