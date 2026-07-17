@@ -458,11 +458,11 @@
       "flavorText": "Alcuni incantesimi sono talmente malvagi che lanciarli è quasi un crimine."
     },
     "frost": {
-      "name": "Freddo",
+      "name": "Brina",
       "flavorText": "Una sottile patina di ghiaccio si posa sulla pelle del bersaglio: basta un contatto per rallentarlo."
     },
     "blizzard": {
-      "name": "Brina",
+      "name": "Gelata",
       "flavorText": "Un vento gelido che toglie il fiato — chi lo respira sente le membra irrigidirsi all'istante."
     },
     "ice_age": {
@@ -470,7 +470,7 @@
       "flavorText": "Il tempo stesso sembra fermarsi: pochi istanti bastano per intrappolare il bersaglio in una morsa di ghiaccio eterno."
     },
     "protection": {
-      "name": "Protezione",
+      "name": "Pelle di pietra",
       "flavorText": "Una scaglia di roccia infuocata si salda alla pelle, dura come una corazza."
     },
     "wall": {
@@ -507,11 +507,11 @@
     },
     "fracture": {
       "name": "Frattura",
-      "flavorText": "Una crepa improvvisa attraversa lo scudo, indebolendolo dall'interno."
+      "flavorText": "Un colpo così violento da spazzare via qualunque difesa in un solo istante."
     },
     "breach": {
       "name": "Breccia",
-      "flavorText": "Un colpo così violento da spazzare via qualunque difesa in un solo istante."
+      "flavorText": "Una crepa improvvisa attraversa lo scudo, indebolendolo dall'interno."
     },
     "black_hole": {
       "name": "Buco nero",

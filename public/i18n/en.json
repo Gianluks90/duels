@@ -459,7 +459,7 @@
       "flavorText": "A thin layer of ice settles on the target's skin — just a touch is enough to slow them down."
     },
     "blizzard": {
-      "name": "Bora",
+      "name": "Freeze",
       "flavorText": "An icy wind that steals your breath — anyone caught in it feels their limbs stiffen instantly."
     },
     "ice_age": {
@@ -467,7 +467,7 @@
       "flavorText": "Time itself seems to stop: it only takes a moment to trap the target in an eternal grip of ice."
     },
     "protection": {
-      "name": "Protection",
+      "name": "Stoneskin",
       "flavorText": "A scale of fiery rock fuses to the skin, hard as armor."
     },
     "wall": {
@@ -504,11 +504,11 @@
     },
     "fracture": {
       "name": "Fracture",
-      "flavorText": "A sudden crack runs through the shield, weakening it from within."
+      "flavorText": "A blow so violent it sweeps away any defense in a single instant."
     },
     "breach": {
       "name": "Breach",
-      "flavorText": "A blow so violent it sweeps away any defense in a single instant."
+      "flavorText": "A sudden crack runs through the shield, weakening it from within."
     },
     "black_hole": {
       "name": "Black Hole",

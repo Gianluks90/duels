@@ -243,18 +243,20 @@ export const SPELL_CATALOG: Spell[] = [
     effects: [{ type: 'poison_clear_self' }],
   },
   // Anti-scudo (2.3.3, stesso ingrediente Lava dello Scudo sopra, in chiave offensiva stavolta) —
-  // element assente per lo stesso motivo dei blocchi avanzati sopra. `amount` assente su 'breach'
+  // element assente per lo stesso motivo dei blocchi avanzati sopra. `amount` assente su 'fracture'
   // ("annulla lo scudo dell'avversario", non un numero fisso) è intenzionale: applyShieldRemove in
   // turn-engine.ts tratta l'assenza di amount come "azzera tutto", stesso schema di ice_clear_self/
-  // poison_clear_self.
+  // poison_clear_self. Formula/effetti di 'fracture' e 'breach' invertiti il 17/07/2026 per far
+  // combaciare meglio nome/illustrazione con l'effetto (Breccia = crepa parziale, Frattura = rottura
+  // totale) — solo formula/manaCost/effects sono stati scambiati, gli id restano invariati.
   {
-    id: 'fracture',
+    id: 'breach',
     formula: ['lava', 'fire'],
     manaCost: 3,
     effects: [{ type: 'shield_remove_opponent', amount: 2 }],
   },
   {
-    id: 'breach',
+    id: 'fracture',
     formula: ['lava', 'lava'],
     manaCost: 5,
     effects: [{ type: 'shield_remove_opponent' }],

@@ -59,15 +59,15 @@ Solo 2 livelli apposta (non una scala a 3 come le altre famiglie sotto) — trop
 
 | Nome | Formula | Elemento | Mana | Effetti | Difficoltà |
 | --- | --- | --- | --- | --- | --- |
-| Freddo (`frost`) | Ghiaccio + Acqua | — | 3 | +1 carta Congelamento | 3 |
-| Brina (`blizzard`) | Ghiaccio + Ghiaccio | — | 4 | +2 carte Congelamento | 4 |
+| Brina (`frost`) | Ghiaccio + Acqua | — | 3 | +1 carta Congelamento | 3 |
+| Gelata (`blizzard`) | Ghiaccio + Ghiaccio | — | 4 | +2 carte Congelamento | 4 |
 | Zero assoluto (`ice_age`) | Ghiaccio + Ghiaccio + Tenebra | — | 5 | +3 carte Congelamento | 8 |
 
 ## Scudo — Lava (2.3.3)
 
 | Nome | Formula | Elemento | Mana | Effetti | Difficoltà |
 | --- | --- | --- | --- | --- | --- |
-| Protezione (`protection`) | Lava + Terra | — | 3 | +2 scudo | 3 |
+| Pelle di pietra (`protection`) | Lava + Terra | — | 3 | +2 scudo | 3 |
 | Muro (`wall`) | Lava + Lava | — | 4 | +3 scudo | 4 |
 | Egida (`aegis`) | Lava + Lava + Luce | — | 5 | +5 scudo | 8 |
 
@@ -75,8 +75,8 @@ Solo 2 livelli apposta (non una scala a 3 come le altre famiglie sotto) — trop
 
 | Nome | Formula | Elemento | Mana | Effetti | Difficoltà |
 | --- | --- | --- | --- | --- | --- |
-| Frattura (`fracture`) | Lava + Fuoco | — | 3 | -2 scudo avversario | 3 |
-| Breccia (`breach`) | Lava + Lava | — | 5 | azzera scudo avversario | 4 |
+| Breccia (`breach`) | Lava + Fuoco | — | 3 | -2 scudo avversario | 3 |
+| Frattura (`fracture`) | Lava + Lava | — | 5 | azzera scudo avversario | 4 |
 
 ## Tuono (2.3.2)
 
