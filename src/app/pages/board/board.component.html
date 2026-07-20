@@ -3,1019 +3,645 @@
   [class.board--compact]="layoutTier() !== 'desktop'"
   [class.board--tablet]="layoutTier() === 'tablet'"
 >
-@if (state()) {
-@if (layoutTier() === 'desktop') {
-  <!-- ═══════════════ OPPONENT ZONE (top 1/3) ═══════════════ -->
-  <section
-    class="board__zone board__zone--opponent"
-    [attr.aria-label]="'board.opponentZoneAria' | translate"
-  >
-    <!-- Vita: anchored exactly like a wand card — tall, only the bottom strip
+  @if (state()) {
+    @if (layoutTier() === 'desktop') {
+      <!-- ═══════════════ OPPONENT ZONE (top 1/3) ═══════════════ -->
+      <section
+        class="board__zone board__zone--opponent"
+        [attr.aria-label]="'board.opponentZoneAria' | translate"
+      >
+        <!-- Vita: anchored exactly like a wand card — tall, only the bottom strip
          stays on screen, the rest hangs off past the top edge (mirrored). -->
-    <app-player-hud
-      class="board__hud board__hud--opponent"
-      [style.--wand-label-height.px]="wandLabelHeight"
-      [style.--visible-content-height.px]="visibleContentHeight"
-      [width]="hudWidth"
-      [name]="opponentName()"
-      [photoUrl]="opponentPhoto()"
-      [health]="opponentHealth()"
-      [poisonLevel]="opponentPoisonLevel()"
-      [frozen]="opponentFrozen()"
-      [damageEvent]="opponentDamageEvent()"
-      [mirrored]="true"
-    />
+        <app-player-hud
+          class="board__hud board__hud--opponent"
+          [style.--wand-label-height.px]="wandLabelHeight"
+          [style.--visible-content-height.px]="visibleContentHeight"
+          [width]="hudWidth"
+          [name]="opponentName()"
+          [photoUrl]="opponentPhoto()"
+          [health]="opponentHealth()"
+          [poisonLevel]="opponentPoisonLevel()"
+          [frozen]="opponentFrozen()"
+          [damageEvent]="opponentDamageEvent()"
+          [mirrored]="true"
+        />
 
-    <!-- Box: mazzo (15%) | arco (1fr, l'unico che esce sopra il box) | scarti (15%).
+        <!-- Box: mazzo (15%) | arco (1fr, l'unico che esce sopra il box) | scarti (15%).
          Anchored exactly like a wand card (same height, same edge offset): tall,
          only the bottom strip stays on screen, the rest hangs off past the top edge. -->
-    <div
-      class="board__hand-box board__hand-box--opponent"
-      [style.--hand-card-width.px]="handArcCardWidth"
-      [style.--visible-content-height.px]="visibleContentHeight"
-      [style.--wand-label-height.px]="wandLabelHeight"
-      [style.left.px]="handBoxWandInset"
-      [style.right.px]="handBoxHudInset"
-    >
-      <!-- Specchiato rispetto al riquadro del giocatore: là il mazzo è adiacente all'HUD (sinistra) e
+        <div
+          class="board__hand-box board__hand-box--opponent"
+          [style.--hand-card-width.px]="handArcCardWidth"
+          [style.--visible-content-height.px]="visibleContentHeight"
+          [style.--wand-label-height.px]="wandLabelHeight"
+          [style.left.px]="handBoxWandInset"
+          [style.right.px]="handBoxHudInset"
+        >
+          <!-- Specchiato rispetto al riquadro del giocatore: là il mazzo è adiacente all'HUD (sinistra) e
            gli scarti adiacenti alla bacchetta (destra); qui l'HUD è a destra e la bacchetta a sinistra,
            quindi l'ordine si inverte per mantenere le stesse adiacenze relative. -->
-      <div class="board__hand-box-side">
-        <button
-          type="button"
-          class="board__deck-trigger board__deck-trigger--pile"
-          (click)="openOpponentPileDialog()"
-        >
-          <app-deck
-            [size]="handCardWidth"
-            [count]="opponentDiscardCount()"
-            [faceUp]="true"
-            [topElement]="opponentDiscardTop()"
-            [topManaBonus]="opponentDiscardTopManaBonus()"
-            [topSpecialMana]="opponentDiscardTopSpecialMana()"
-            [topFreeze]="opponentDiscardTopFreeze()"
-            [topRevealedToOpponent]="opponentDiscardTopRevealed()"
-            [messy]="true"
-            [showLabel]="false"
-            [showCount]="false"
-            [label]="'board.fonte.scarti' | translate"
-            [emptyPlaceholder]="'boxed-text'"
-            [appTooltip]="'board.deckDiscarded' | translate: { count: opponentDiscardCount() }"
-            tooltipPosition="bottom"
-          />
-        </button>
-      </div>
+          <div class="board__hand-box-side">
+            <button
+              type="button"
+              class="board__deck-trigger board__deck-trigger--pile"
+              (click)="openOpponentPileDialog()"
+            >
+              <app-deck
+                [size]="handCardWidth"
+                [count]="opponentDiscardCount()"
+                [faceUp]="true"
+                [topElement]="opponentDiscardTop()"
+                [topManaBonus]="opponentDiscardTopManaBonus()"
+                [topSpecialMana]="opponentDiscardTopSpecialMana()"
+                [topFreeze]="opponentDiscardTopFreeze()"
+                [topRevealedToOpponent]="opponentDiscardTopRevealed()"
+                [messy]="true"
+                [showLabel]="false"
+                [showCount]="false"
+                [label]="'board.fonte.scarti' | translate"
+                [emptyPlaceholder]="'boxed-text'"
+                [appTooltip]="'board.deckDiscarded' | translate: { count: opponentDiscardCount() }"
+                tooltipPosition="bottom"
+              />
+            </button>
+          </div>
 
-      <div
-        class="board__hand-track"
-        #opponentHandTrack
-        [attr.aria-label]="'board.handAriaOpponent' | translate: { count: opponentHandCount() }"
-      >
-        @for (card of opponentHand(); track card.id; let i = $index) {
-          @if (card.revealedToOpponent) {
-            <!-- Occhio (5.x, Card.revealedToOpponent) — questa carta specifica è stata rivelata
+          <div
+            class="board__hand-track"
+            #opponentHandTrack
+            [attr.aria-label]="'board.handAriaOpponent' | translate: { count: opponentHandCount() }"
+          >
+            @for (card of opponentHand(); track card.id; let i = $index) {
+              @if (card.revealedToOpponent) {
+                <!-- Occhio (5.x, Card.revealedToOpponent) — questa carta specifica è stata rivelata
                  permanentemente: mostra la carta vera al posto del dorso generico, stessa posizione
                  nel ventaglio di prima (handCardStyle non distingue dorso/carta vera, solo indice).
                  Stessi 5 tooltip ricchi della propria mano (vedi playerHand più sotto) — qui
                  revealedToOpponent è SEMPRE true (il ramo @else sotto copre il resto), quindi
                  #cardTip include sempre #revealedTip, più uno tra spell/freeze/mana-token/
                  specialMana se la carta è anche una di quelle. -->
-            <ng-template #spellTip>
-              <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
-              <strong>{{ spellName(card) }}</strong>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
-              @if (spellFlavor(card); as flavor) {
-                <p class="rich-tooltip__flavor">
-                  <em>{{ flavor }}</em>
-                </p>
-              }
-            </ng-template>
-            <ng-template #specialManaTip>
-              <div class="rich-tooltip__header">
-                <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
-                <span
-                  class="rich-tooltip__special-icon"
-                  [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
-                  [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
-                  [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
-                  [style.--special-mana-icon]="
-                    'url(' + specialManaIconPath(card.specialMana!) + ')'
-                  "
-                  aria-hidden="true"
-                ></span>
-              </div>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
-            </ng-template>
-            <ng-template #manaTokenTip>
-              <strong>{{ 'card.manaToken.title' | translate }}</strong>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
-            </ng-template>
-            <ng-template #freezeTip>
-              <strong>{{ 'card.freeze.title' | translate }}</strong>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect" [innerHTML]="'card.freeze.effect' | translate"></p>
-            </ng-template>
-            <ng-template #revealedTip>
-              <div class="rich-tooltip__header">
-                <strong>{{ 'card.revealed.title' | translate }}</strong>
-                <span
-                  class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
-                  [style.--special-mana-icon]="revealedIconUrl"
-                  aria-hidden="true"
-                ></span>
-              </div>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
-            </ng-template>
-            <ng-template #cardTip>
-              @if (isMultiCardTooltip(card)) {
-                <div class="rich-tooltip__multi">
-                  @if (card.tier === 'spell') {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="spellTip" />
-                    </div>
-                  } @else if (card.tier === 'mana') {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="manaTokenTip" />
-                    </div>
-                  } @else if (card.tier === 'freeze') {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="freezeTip" />
-                    </div>
-                  } @else if (card.specialMana) {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="specialManaTip" />
-                    </div>
-                  }
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="revealedTip" />
+                <ng-template #spellTip>
+                  <div class="rich-tooltip__spell-header">
+                    {{ 'card.spell.category' | translate }}
                   </div>
-                </div>
+                  <strong>{{ spellName(card) }}</strong>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
+                  @if (spellFlavor(card); as flavor) {
+                    <p class="rich-tooltip__flavor">
+                      <em>{{ flavor }}</em>
+                    </p>
+                  }
+                </ng-template>
+                <ng-template #specialManaTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+                    <span
+                      class="rich-tooltip__special-icon"
+                      [class.rich-tooltip__special-icon--prismatic]="
+                        card.specialMana === 'prismatic'
+                      "
+                      [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                      [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                      [style.--special-mana-icon]="
+                        'url(' + specialManaIconPath(card.specialMana!) + ')'
+                      "
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
+                </ng-template>
+                <ng-template #manaTokenTip>
+                  <strong>{{ 'card.manaToken.title' | translate }}</strong>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
+                </ng-template>
+                <ng-template #freezeTip>
+                  <strong>{{ 'card.freeze.title' | translate }}</strong>
+                  <hr class="rich-tooltip__rule" />
+                  <p
+                    class="rich-tooltip__effect"
+                    [innerHTML]="'card.freeze.effect' | translate"
+                  ></p>
+                </ng-template>
+                <ng-template #revealedTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ 'card.revealed.title' | translate }}</strong>
+                    <span
+                      class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                      [style.--special-mana-icon]="revealedIconUrl"
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+                </ng-template>
+                <ng-template #cardTip>
+                  @if (isMultiCardTooltip(card)) {
+                    <div class="rich-tooltip__multi">
+                      @if (card.tier === 'spell') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="spellTip" />
+                        </div>
+                      } @else if (card.tier === 'mana') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="manaTokenTip" />
+                        </div>
+                      } @else if (card.tier === 'freeze') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="freezeTip" />
+                        </div>
+                      } @else if (card.specialMana) {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="specialManaTip" />
+                        </div>
+                      }
+                      <div class="rich-tooltip__multi-item">
+                        <ng-container [ngTemplateOutlet]="revealedTip" />
+                      </div>
+                    </div>
+                  } @else {
+                    <ng-container [ngTemplateOutlet]="revealedTip" />
+                  }
+                </ng-template>
+                <app-card
+                  class="board__hand-card board__hand-card--mirrored board__hand-card--revealing"
+                  [element]="card.element"
+                  [spellId]="card.spellId ?? null"
+                  [manaBonus]="card.manaBonus ?? 0"
+                  [specialMana]="card.specialMana ?? null"
+                  [revealedToOpponent]="true"
+                  [showMana]="card.tier !== 'freeze'"
+                  [freeze]="card.tier === 'freeze'"
+                  [size]="handArcCardWidth"
+                  [appTooltip]="cardTip"
+                  tooltipPosition="top"
+                  [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
+                />
               } @else {
-                <ng-container [ngTemplateOutlet]="revealedTip" />
+                <div
+                  class="board__hand-card board__hand-card--back board__hand-card--mirrored"
+                  [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
+                  aria-hidden="true"
+                ></div>
               }
-            </ng-template>
-            <app-card
-              class="board__hand-card board__hand-card--mirrored"
-              [element]="card.element"
-              [spellId]="card.spellId ?? null"
-              [manaBonus]="card.manaBonus ?? 0"
-              [specialMana]="card.specialMana ?? null"
-              [revealedToOpponent]="true"
-              [showMana]="card.tier !== 'freeze'"
-              [freeze]="card.tier === 'freeze'"
-              [size]="handArcCardWidth"
-              [appTooltip]="cardTip"
-              tooltipPosition="top"
-              [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
-            />
-          } @else {
-            <div
-              class="board__hand-card board__hand-card--back board__hand-card--mirrored"
-              [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
-              aria-hidden="true"
-            ></div>
-          }
-        }
+            }
 
-        <!-- Esplosione elementale (2.4) nella mano dell'avversario — le sue carte, altrimenti mai
+            <!-- Esplosione elementale (2.4) nella mano dell'avversario — le sue carte, altrimenti mai
              visibili, si rivelano per l'istante dell'esplosione (vedi handExplosions in board.component.ts). -->
-        @if (opponentHandExplosion(); as ex) {
-          <div class="board__hand-explosion">
-            @for (card of ex.cards; track card.id) {
-              <app-card
-                [class.board__hand-card--exploding]="handExplosionRevealed()"
-                [element]="card.element"
-                [manaBonus]="card.manaBonus ?? 0"
-                [size]="handArcCardWidth"
-                [revealed]="handExplosionRevealed()"
-                aria-hidden="true"
-              />
+            @if (opponentHandExplosion(); as ex) {
+              <div class="board__hand-explosion">
+                @for (card of ex.cards; track card.id) {
+                  <app-card
+                    [class.board__hand-card--exploding]="handExplosionShaking()"
+                    [element]="card.element"
+                    [manaBonus]="card.manaBonus ?? 0"
+                    [size]="handArcCardWidth"
+                    [revealed]="handExplosionRevealed()"
+                    aria-hidden="true"
+                  />
+                }
+              </div>
             }
           </div>
-        }
-      </div>
 
-      <div class="board__hand-box-side">
-        <button
-          type="button"
-          class="board__deck-trigger board__deck-trigger--pile"
-          (click)="openOpponentPileDialog()"
-        >
-          <app-deck
-            [size]="handCardWidth"
-            [count]="opponentDeckCount()"
-            [showLabel]="false"
-            [showCount]="false"
-            [label]="'board.fonte.mazzo' | translate"
-            [emptyPlaceholder]="'boxed-text'"
-            [appTooltip]="'board.deckRemaining' | translate: { count: opponentDeckCount() }"
-            tooltipPosition="bottom"
-          />
-        </button>
-      </div>
-    </div>
+          <div class="board__hand-box-side">
+            <button
+              type="button"
+              class="board__deck-trigger board__deck-trigger--pile"
+              (click)="openOpponentPileDialog()"
+            >
+              <app-deck
+                [size]="handCardWidth"
+                [count]="opponentDeckCount()"
+                [showLabel]="false"
+                [showCount]="false"
+                [label]="'board.fonte.mazzo' | translate"
+                [emptyPlaceholder]="'boxed-text'"
+                [appTooltip]="'board.deckRemaining' | translate: { count: opponentDeckCount() }"
+                tooltipPosition="bottom"
+              />
+            </button>
+          </div>
+        </div>
 
-    <!-- Wand panels: only the bottom third of each card stays on screen — label card touches
+        <!-- Wand panels: only the bottom third of each card stays on screen — label card touches
          the screen's top border, the rest hangs off past it. The element card is slid in behind
          and peeks out below. Description/hr/label order is flipped vs. the player's row. -->
-    <div
-      class="board__wand-panels board__wand-panels--opponent"
-      [style.--wand-card-width.px]="wandCardWidth"
-      [style.--wand-label-height.px]="wandLabelHeight"
-    >
-      <div class="board__wand-title board__wand-title--opponent">
-        {{ 'board.wand.title' | translate }}
-      </div>
+        <div
+          class="board__wand-panels board__wand-panels--opponent"
+          [style.--wand-card-width.px]="wandCardWidth"
+          [style.--wand-label-height.px]="wandLabelHeight"
+        >
+          <div class="board__wand-title board__wand-title--opponent">
+            {{ 'board.wand.title' | translate }}
+          </div>
 
-      <!-- Ordine invertito rispetto al riquadro del giocatore (punta, asta, manico): là la bacchetta
+          <!-- Ordine invertito rispetto al riquadro del giocatore (punta, asta, manico): là la bacchetta
            è a destra quindi la punta (adiacente alla mano) è a sinistra e il manico all'estremità
            destra dello schermo; qui la bacchetta è a sinistra, quindi manico all'estremità sinistra
            e punta adiacente alla mano, per mantenere le stesse adiacenze relative. -->
-      <div class="board__wand-panel">
-        <div
-          class="board__wand-card board__wand-card--opponent"
-          [style.--el-color]="opponentHandle() ? elementColorVar(opponentHandle()!) : null"
-        >
-          <p class="board__wand-card-effect">{{ handleEffectText(opponentHandle()) }}</p>
-          <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
-        </div>
-        @if (opponentHandle(); as el) {
-          <app-card
-            class="board__wand-peek"
-            [element]="el"
-            [size]="wandCardWidth"
-            [header]="true"
-            [headerAlign]="'bottom'"
-            [style.margin-top.px]="-wandPeekOverlap"
-          />
-        }
-      </div>
-
-      <div class="board__wand-panel">
-        <div
-          class="board__wand-card board__wand-card--opponent"
-          [style.--el-color]="opponentBody() ? elementColorVar(opponentBody()!) : null"
-        >
-          <p class="board__wand-card-effect">{{ bodyEffectText(opponentBody()) }}</p>
-          <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">{{ 'board.wand.body' | translate }}</span>
-        </div>
-        @if (opponentBody(); as el) {
-          <app-card
-            class="board__wand-peek"
-            [element]="el"
-            [size]="wandCardWidth"
-            [header]="true"
-            [headerAlign]="'bottom'"
-            [style.margin-top.px]="-wandPeekOverlap"
-          />
-        }
-      </div>
-
-      <div class="board__wand-panel">
-        <div
-          class="board__wand-card board__wand-card--opponent"
-          [style.--el-color]="opponentTip() ? elementColorVar($any(opponentTip()!.element)) : null"
-        >
-          <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
-          <hr class="board__wand-card-hr" />
-          <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
-        </div>
-        @if (opponentTip(); as tip) {
-          <app-card
-            class="board__wand-peek"
-            [element]="tip.element"
-            [manaBonus]="tip.manaBonus ?? 0"
-            [specialMana]="tip.specialMana ?? null"
-            [size]="wandCardWidth"
-            [header]="true"
-            [headerAlign]="'bottom'"
-            [style.margin-top.px]="-wandPeekOverlap"
-          />
-        }
-      </div>
-    </div>
-  </section>
-
-  <!-- ═══════════════ FONTE ARCANA (middle 1/3) ═══════════════ -->
-  <section class="board__zone board__zone--fonte" [attr.aria-label]="'board.fonteAria' | translate">
-    <div class="board__toolbar">
-      <app-icon-button
-        [icon]="grimoireIcon"
-        [ariaLabel]="'board.toolbar.grimoireAria' | translate"
-        (iconClick)="openGrimoire()"
-        [appTooltip]="'board.toolbar.grimoireTooltip' | translate"
-        tooltipPosition="right"
-      />
-      <app-icon-button
-        [icon]="rulebookIcon"
-        [ariaLabel]="'board.toolbar.rulebookAria' | translate"
-        (iconClick)="openRulebook()"
-        [appTooltip]="'board.toolbar.rulebookTooltip' | translate"
-        tooltipPosition="right"
-      />
-    </div>
-
-    <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
-      <!-- Group 1: Residuo Arcano — a single pile, always face up -->
-      <div class="board__fonte-group">
-        <ng-template #residuoTip>
-          <strong>{{ 'board.fonte.residuoName' | translate }}</strong>
-          <hr class="rich-tooltip__rule" />
-          <ul class="rich-tooltip__list">
-            <li>{{ i18n.elementLabel('fire') }} + {{ i18n.elementLabel('water') }}</li>
-            <li>{{ i18n.elementLabel('air') }} + {{ i18n.elementLabel('earth') }}</li>
-          </ul>
-          <p class="rich-tooltip__flavor">
-            <em>{{ 'board.fonte.residuoExpiry' | translate }}</em>
-          </p>
-        </ng-template>
-        <app-action-menu
-          [items]="residuoMenuItems()"
-          (mouseenter)="onResiduoHover()"
-          (mouseleave)="onFonteHoverEnd()"
-        >
-          <app-deck
-            [size]="fonteCardWidth"
-            [count]="residuoDeckCount()"
-            [faceUp]="true"
-            [topElement]="'residium'"
-            [label]="'board.fonte.residuo' | translate"
-            [appTooltip]="residuoTip"
-            tooltipPosition="top"
-          />
-        </app-action-menu>
-      </div>
-
-      <!-- Group 2: Base — mazzo comune (face down, left, cliccabile in fase Raccolta) e scarti (face up, right, messy) -->
-      <div class="board__fonte-group">
-        <button
-          type="button"
-          class="board__deck-trigger"
-          [class.board__deck-trigger--active]="canCollect()"
-          [disabled]="!canCollect()"
-          (click)="drawTwo()"
-          [appTooltip]="'board.fonte.collectTooltip' | translate"
-          tooltipPosition="top"
-        >
-          <app-deck
-            [size]="fonteCardWidth"
-            [count]="commonDeckCount()"
-            [label]="'board.fonte.base' | translate"
-            [showBorder]="!canCollect()"
-            [emptyPlaceholder]="'boxed'"
-          />
-        </button>
-        <button
-          type="button"
-          class="board__deck-trigger board__deck-trigger--pile"
-          (click)="openCommonDiscardDialog()"
-        >
-          <app-deck
-            [size]="fonteCardWidth"
-            [count]="commonDiscardCount()"
-            [faceUp]="true"
-            [topElement]="commonDiscardTop()"
-            [topManaBonus]="commonDiscardTopManaBonus()"
-            [topSpecialMana]="commonDiscardTopSpecialMana()"
-            [messy]="true"
-            [label]="'board.fonte.scarti' | translate"
-            [emptyPlaceholder]="'boxed'"
-          />
-        </button>
-      </div>
-
-      <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
-      <div class="board__fonte-group board__fonte-group--arcana">
-        <div class="board__fonte-header">
-          <span class="board__fonte-heading">{{ 'board.fonteAria' | translate }}</span>
-        </div>
-
-        <div class="board__fonte-group-content">
-          <app-deck
-            [size]="fonteCardWidth"
-            [count]="advancedDeckCount()"
-            [label]="'board.fonte.avanzato' | translate"
-            [emptyPlaceholder]="'boxed'"
-          />
-
-          <div
-            class="board__fonte-row"
-            role="region"
-            [attr.aria-label]="'board.fonteAria' | translate"
-            [class.board__fonte-row--exploding]="fonteExploding()"
-          >
-            @for (card of fonteCards(); track $index) {
-              <ng-template #recipeTip>
-                <strong>{{ i18n.elementLabel(card) }}</strong>
-                <hr class="rich-tooltip__rule" />
-                <p class="rich-tooltip__effect">{{ recipeFormula(card) }}</p>
-                <p class="rich-tooltip__flavor">
-                  <em>{{ 'board.fonte.recipeMana' | translate: { value: ELEMENT_MANA[card] } }}</em>
-                </p>
-              </ng-template>
-              <app-action-menu
-                [items]="fonteMenuItems(card, $index)"
-                (mouseenter)="onFonteHover(card)"
-                (mouseleave)="onFonteHoverEnd()"
-              >
-                <app-card
-                  [element]="card"
-                  [size]="handArcCardWidth"
-                  [appTooltip]="recipeTip"
-                  tooltipPosition="top"
-                />
-              </app-action-menu>
+          <div class="board__wand-panel">
+            <div
+              class="board__wand-card board__wand-card--opponent"
+              [style.--el-color]="opponentHandle() ? elementColorVar(opponentHandle()!) : null"
+            >
+              <p class="board__wand-card-effect">{{ handleEffectText(opponentHandle()) }}</p>
+              <hr class="board__wand-card-hr" />
+              <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
+            </div>
+            @if (opponentHandle(); as el) {
+              <app-card
+                class="board__wand-peek"
+                [element]="el"
+                [size]="wandCardWidth"
+                [header]="true"
+                [headerAlign]="'bottom'"
+                [style.margin-top.px]="-wandPeekOverlap"
+              />
             }
           </div>
 
-          <button
-            type="button"
-            class="board__deck-trigger board__deck-trigger--pile"
-            (click)="openAdvancedDiscardDialog()"
-          >
-            <app-deck
-              [size]="fonteCardWidth"
-              [count]="advancedDiscardCount()"
-              [faceUp]="true"
-              [topElement]="advancedDiscardTop()"
-              [messy]="true"
-              [label]="'board.fonte.scarti' | translate"
-              [emptyPlaceholder]="'boxed'"
-            />
-          </button>
-        </div>
-
-        <div class="board__fonte-footer">
-          <p class="board__fonte-description">{{ 'board.fonte.description' | translate }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tracker di fase: unico e condiviso (non duplicato per pannello) — mostra le 6 fasi in linea
-         e il bottone di avanzamento manuale, abilitato solo quando è davvero possibile farlo. -->
-    <app-phase-tracker
-      [turnPlayerName]="turnPlayerName()"
-      [phase]="state()!.phase"
-      [canAdvance]="canAdvancePhase()"
-      [pendingSpellsCount]="currentTurnPendingSpellsCount()"
-      (advance)="advancePhase()"
-    />
-
-    <!-- Raccolta: le 2 carte pescate, in attesa che il giocatore scelga quale tenere. -->
-    @if (pendingCollect(); as pair) {
-      <div
-        class="board__collect-overlay"
-        role="dialog"
-        [attr.aria-label]="'board.fonte.collectPrompt' | translate"
-      >
-        <p class="board__collect-prompt">{{ 'board.fonte.collectPrompt' | translate }}</p>
-        <div class="board__collect-cards">
-          @for (card of pair; track card.id) {
-            <!-- Stesso tooltip ricco #specialManaTip usato in mano (vedi board.component.scss, .rich-tooltip__*). -->
-            <ng-template #specialManaTip>
-              <div class="rich-tooltip__header">
-                <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
-                <span
-                  class="rich-tooltip__special-icon"
-                  [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
-                  [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
-                  [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
-                  [style.--special-mana-icon]="
-                    'url(' + specialManaIconPath(card.specialMana!) + ')'
-                  "
-                  aria-hidden="true"
-                ></span>
-              </div>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
-            </ng-template>
-            <!-- Occhio (5.x) — le carte pescate in Raccolta sono sempre tier 'base' (mai spell/freeze/
-                 mana), quindi l'unica combinazione possibile qui è con #specialManaTip sopra. -->
-            <ng-template #revealedTip>
-              <div class="rich-tooltip__header">
-                <strong>{{ 'card.revealed.title' | translate }}</strong>
-                <span
-                  class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
-                  [style.--special-mana-icon]="revealedIconUrl"
-                  aria-hidden="true"
-                ></span>
-              </div>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
-            </ng-template>
-            <ng-template #collectCardTip>
-              @if (card.specialMana && card.revealedToOpponent) {
-                <div class="rich-tooltip__multi">
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="specialManaTip" />
-                  </div>
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="revealedTip" />
-                  </div>
-                </div>
-              } @else if (card.specialMana) {
-                <ng-container [ngTemplateOutlet]="specialManaTip" />
-              } @else if (card.revealedToOpponent) {
-                <ng-container [ngTemplateOutlet]="revealedTip" />
-              }
-            </ng-template>
-            <button type="button" class="board__collect-card" (click)="keepCard(card)">
+          <div class="board__wand-panel">
+            <div
+              class="board__wand-card board__wand-card--opponent"
+              [style.--el-color]="opponentBody() ? elementColorVar(opponentBody()!) : null"
+            >
+              <p class="board__wand-card-effect">{{ bodyEffectText(opponentBody()) }}</p>
+              <hr class="board__wand-card-hr" />
+              <span class="board__wand-card-label">{{ 'board.wand.body' | translate }}</span>
+            </div>
+            @if (opponentBody(); as el) {
               <app-card
-                [element]="card.element"
-                [manaBonus]="collectCardManaBonus(card)"
-                [specialMana]="card.specialMana ?? null"
-                [revealedToOpponent]="card.revealedToOpponent ?? false"
-                [size]="handArcCardWidth"
-                [class.board__collect-card__art--bonus]="collectCardRevealing(card)"
-                [appTooltip]="card.specialMana || card.revealedToOpponent ? collectCardTip : null"
+                class="board__wand-peek"
+                [element]="el"
+                [size]="wandCardWidth"
+                [header]="true"
+                [headerAlign]="'bottom'"
+                [style.margin-top.px]="-wandPeekOverlap"
+              />
+            }
+          </div>
+
+          <div class="board__wand-panel">
+            <div
+              class="board__wand-card board__wand-card--opponent"
+              [style.--el-color]="
+                opponentTip() ? elementColorVar($any(opponentTip()!.element)) : null
+              "
+            >
+              <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
+              <hr class="board__wand-card-hr" />
+              <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
+            </div>
+            @if (opponentTip(); as tip) {
+              <app-card
+                class="board__wand-peek"
+                [element]="tip.element"
+                [manaBonus]="tip.manaBonus ?? 0"
+                [specialMana]="tip.specialMana ?? null"
+                [size]="wandCardWidth"
+                [header]="true"
+                [headerAlign]="'bottom'"
+                [style.margin-top.px]="-wandPeekOverlap"
+              />
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════ FONTE ARCANA (middle 1/3) ═══════════════ -->
+      <section
+        class="board__zone board__zone--fonte"
+        [attr.aria-label]="'board.fonteAria' | translate"
+      >
+        <div class="board__toolbar">
+          <app-icon-button
+            [icon]="grimoireIcon"
+            [ariaLabel]="'board.toolbar.grimoireAria' | translate"
+            (iconClick)="openGrimoire()"
+            [appTooltip]="'board.toolbar.grimoireTooltip' | translate"
+            tooltipPosition="right"
+          />
+          <app-icon-button
+            [icon]="rulebookIcon"
+            [ariaLabel]="'board.toolbar.rulebookAria' | translate"
+            (iconClick)="openRulebook()"
+            [appTooltip]="'board.toolbar.rulebookTooltip' | translate"
+            tooltipPosition="right"
+          />
+        </div>
+
+        <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
+          <!-- Group 1: Residuo Arcano — a single pile, always face up -->
+          <div class="board__fonte-group">
+            <ng-template #residuoTip>
+              <strong>{{ 'board.fonte.residuoName' | translate }}</strong>
+              <hr class="rich-tooltip__rule" />
+              <ul class="rich-tooltip__list">
+                <li>{{ i18n.elementLabel('fire') }} + {{ i18n.elementLabel('water') }}</li>
+                <li>{{ i18n.elementLabel('air') }} + {{ i18n.elementLabel('earth') }}</li>
+              </ul>
+              <p class="rich-tooltip__flavor">
+                <em>{{ 'board.fonte.residuoExpiry' | translate }}</em>
+              </p>
+            </ng-template>
+            <app-action-menu
+              [items]="residuoMenuItems()"
+              (mouseenter)="onResiduoHover()"
+              (mouseleave)="onFonteHoverEnd()"
+            >
+              <app-deck
+                [size]="fonteCardWidth"
+                [count]="residuoDeckCount()"
+                [faceUp]="true"
+                [topElement]="'residium'"
+                [label]="'board.fonte.residuo' | translate"
+                [appTooltip]="residuoTip"
+                tooltipPosition="top"
+              />
+            </app-action-menu>
+          </div>
+
+          <!-- Group 2: Base — mazzo comune (face down, left, cliccabile in fase Raccolta) e scarti (face up, right, messy) -->
+          <div class="board__fonte-group">
+            <button
+              type="button"
+              class="board__deck-trigger"
+              [class.board__deck-trigger--active]="canCollect()"
+              [disabled]="!canCollect()"
+              (click)="drawTwo()"
+              [appTooltip]="'board.fonte.collectTooltip' | translate"
+              tooltipPosition="top"
+            >
+              <app-deck
+                [size]="fonteCardWidth"
+                [count]="commonDeckCount()"
+                [label]="'board.fonte.base' | translate"
+                [showBorder]="!canCollect()"
+                [emptyPlaceholder]="'boxed'"
+              />
+            </button>
+            <button
+              type="button"
+              class="board__deck-trigger board__deck-trigger--pile"
+              (click)="openCommonDiscardDialog()"
+            >
+              <app-deck
+                [size]="fonteCardWidth"
+                [count]="commonDiscardCount()"
+                [faceUp]="true"
+                [topElement]="commonDiscardTop()"
+                [topManaBonus]="commonDiscardTopManaBonus()"
+                [topSpecialMana]="commonDiscardTopSpecialMana()"
+                [messy]="true"
+                [label]="'board.fonte.scarti' | translate"
+                [emptyPlaceholder]="'boxed'"
+              />
+            </button>
+          </div>
+
+          <!-- Group 3: Fonte Arcana — its own header/content/footer, scoped to just this group -->
+          <div class="board__fonte-group board__fonte-group--arcana">
+            <div class="board__fonte-header">
+              <span class="board__fonte-heading">{{ 'board.fonteAria' | translate }}</span>
+            </div>
+
+            <div class="board__fonte-group-content">
+              <app-deck
+                [size]="fonteCardWidth"
+                [count]="advancedDeckCount()"
+                [label]="'board.fonte.avanzato' | translate"
+                [emptyPlaceholder]="'boxed'"
+              />
+
+              <div
+                class="board__fonte-row"
+                role="region"
+                [attr.aria-label]="'board.fonteAria' | translate"
+                [class.board__fonte-row--exploding]="fonteExploding()"
+              >
+                @for (card of fonteCards(); track $index) {
+                  <ng-template #recipeTip>
+                    <strong>{{ i18n.elementLabel(card) }}</strong>
+                    <hr class="rich-tooltip__rule" />
+                    <p class="rich-tooltip__effect">{{ recipeFormula(card) }}</p>
+                    <p class="rich-tooltip__flavor">
+                      <em>{{
+                        'board.fonte.recipeMana' | translate: { value: ELEMENT_MANA[card] }
+                      }}</em>
+                    </p>
+                  </ng-template>
+                  <app-action-menu
+                    [items]="fonteMenuItems(card, $index)"
+                    (mouseenter)="onFonteHover(card)"
+                    (mouseleave)="onFonteHoverEnd()"
+                  >
+                    <app-card
+                      [element]="card"
+                      [size]="handArcCardWidth"
+                      [appTooltip]="recipeTip"
+                      tooltipPosition="top"
+                    />
+                  </app-action-menu>
+                }
+              </div>
+
+              <button
+                type="button"
+                class="board__deck-trigger board__deck-trigger--pile"
+                (click)="openAdvancedDiscardDialog()"
+              >
+                <app-deck
+                  [size]="fonteCardWidth"
+                  [count]="advancedDiscardCount()"
+                  [faceUp]="true"
+                  [topElement]="advancedDiscardTop()"
+                  [messy]="true"
+                  [label]="'board.fonte.scarti' | translate"
+                  [emptyPlaceholder]="'boxed'"
+                />
+              </button>
+            </div>
+
+            <div class="board__fonte-footer">
+              <p class="board__fonte-description">{{ 'board.fonte.description' | translate }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tracker di fase: unico e condiviso (non duplicato per pannello) — mostra le 6 fasi in linea
+         e il bottone di avanzamento manuale, abilitato solo quando è davvero possibile farlo. -->
+        <app-phase-tracker
+          [turnPlayerName]="turnPlayerName()"
+          [phase]="state()!.phase"
+          [canAdvance]="canAdvancePhase()"
+          [pendingSpellsCount]="currentTurnPendingSpellsCount()"
+          (advance)="advancePhase()"
+        />
+
+        <!-- Raccolta: le 2 carte pescate, in attesa che il giocatore scelga quale tenere. -->
+        @if (pendingCollect(); as pair) {
+          <div
+            class="board__collect-overlay"
+            role="dialog"
+            [attr.aria-label]="'board.fonte.collectPrompt' | translate"
+          >
+            <p class="board__collect-prompt">{{ 'board.fonte.collectPrompt' | translate }}</p>
+            <div class="board__collect-cards">
+              @for (card of pair; track card.id) {
+                <!-- Stesso tooltip ricco #specialManaTip usato in mano (vedi board.component.scss, .rich-tooltip__*). -->
+                <ng-template #specialManaTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+                    <span
+                      class="rich-tooltip__special-icon"
+                      [class.rich-tooltip__special-icon--prismatic]="
+                        card.specialMana === 'prismatic'
+                      "
+                      [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                      [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                      [style.--special-mana-icon]="
+                        'url(' + specialManaIconPath(card.specialMana!) + ')'
+                      "
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
+                </ng-template>
+                <!-- Occhio (5.x) — le carte pescate in Raccolta sono sempre tier 'base' (mai spell/freeze/
+                 mana), quindi l'unica combinazione possibile qui è con #specialManaTip sopra. -->
+                <ng-template #revealedTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ 'card.revealed.title' | translate }}</strong>
+                    <span
+                      class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                      [style.--special-mana-icon]="revealedIconUrl"
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+                </ng-template>
+                <ng-template #collectCardTip>
+                  @if (card.specialMana && card.revealedToOpponent) {
+                    <div class="rich-tooltip__multi">
+                      <div class="rich-tooltip__multi-item">
+                        <ng-container [ngTemplateOutlet]="specialManaTip" />
+                      </div>
+                      <div class="rich-tooltip__multi-item">
+                        <ng-container [ngTemplateOutlet]="revealedTip" />
+                      </div>
+                    </div>
+                  } @else if (card.specialMana) {
+                    <ng-container [ngTemplateOutlet]="specialManaTip" />
+                  } @else if (card.revealedToOpponent) {
+                    <ng-container [ngTemplateOutlet]="revealedTip" />
+                  }
+                </ng-template>
+                <button type="button" class="board__collect-card" (click)="keepCard(card)">
+                  <app-card
+                    [element]="card.element"
+                    [manaBonus]="collectCardManaBonus(card)"
+                    [specialMana]="card.specialMana ?? null"
+                    [revealedToOpponent]="card.revealedToOpponent ?? false"
+                    [size]="handArcCardWidth"
+                    [class.board__collect-card__art--bonus]="collectCardRevealing(card)"
+                    [appTooltip]="
+                      card.specialMana || card.revealedToOpponent ? collectCardTip : null
+                    "
+                    tooltipPosition="top"
+                  />
+                </button>
+              }
+              <!-- Terza opzione, alternativa a tenere una delle 2 carte: scartale entrambe e ottieni mana accumulato
+               subito in mano, valido solo questo turno (1.4.3, keepMana in turn-engine.ts). Stesso tooltip
+               ricco #manaTokenTip riusato anche in mano (vedi playerHand qui sotto). -->
+              <ng-template #collectManaTokenTip>
+                <strong>{{ 'card.manaToken.title' | translate }}</strong>
+                <hr class="rich-tooltip__rule" />
+                <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
+              </ng-template>
+              <button type="button" class="board__collect-card" (click)="keepMana()">
+                <app-card
+                  element="mana"
+                  [size]="handArcCardWidth"
+                  [appTooltip]="collectManaTokenTip"
+                  tooltipPosition="top"
+                />
+              </button>
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- ═══════════════ PLAYER ZONE (bottom 1/3) ═══════════════ -->
+      <section
+        class="board__zone board__zone--player"
+        [attr.aria-label]="'board.playerZoneAria' | translate"
+      >
+        <!-- Vita: anchored exactly like a wand card — tall, only the top strip
+         stays on screen, the rest hangs off past the bottom edge. -->
+        <app-player-hud
+          class="board__hud board__hud--player"
+          [style.--wand-label-height.px]="wandLabelHeight"
+          [style.--visible-content-height.px]="visibleContentHeight"
+          [width]="hudWidth"
+          [name]="playerName()"
+          [photoUrl]="playerPhoto()"
+          [health]="playerHealth()"
+          [poisonLevel]="playerPoisonLevel()"
+          [frozen]="playerFrozen()"
+          [damageEvent]="playerDamageEvent()"
+          [mirrored]="false"
+          (settingsClick)="openGameSettings()"
+        />
+
+        <!-- Box: mazzo (15%) | arco (1fr, l'unico che esce sopra il box) | scarti (15%).
+         Anchored exactly like a wand card (same height, same edge offset): tall,
+         only the top strip stays on screen, the rest hangs off past the bottom edge. -->
+        <div
+          class="board__hand-box"
+          [style.--hand-card-width.px]="handArcCardWidth"
+          [style.--visible-content-height.px]="visibleContentHeight"
+          [style.--wand-label-height.px]="wandLabelHeight"
+          [style.left.px]="handBoxHudInset"
+          [style.right.px]="handBoxWandInset"
+        >
+          <div class="board__hand-box-side">
+            <button
+              type="button"
+              class="board__deck-trigger board__deck-trigger--pile"
+              (click)="openOwnPileDialog()"
+            >
+              <app-deck
+                [size]="handCardWidth"
+                [count]="playerDeckCount()"
+                [showLabel]="false"
+                [showCount]="false"
+                [label]="'board.fonte.mazzo' | translate"
+                [emptyPlaceholder]="'boxed-text'"
+                [appTooltip]="'board.deckRemaining' | translate: { count: playerDeckCount() }"
                 tooltipPosition="top"
               />
             </button>
-          }
-          <!-- Terza opzione, alternativa a tenere una delle 2 carte: scartale entrambe e ottieni mana accumulato
-               subito in mano, valido solo questo turno (1.4.3, keepMana in turn-engine.ts). Stesso tooltip
-               ricco #manaTokenTip riusato anche in mano (vedi playerHand qui sotto). -->
-          <ng-template #collectManaTokenTip>
-            <strong>{{ 'card.manaToken.title' | translate }}</strong>
-            <hr class="rich-tooltip__rule" />
-            <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
-          </ng-template>
-          <button type="button" class="board__collect-card" (click)="keepMana()">
-            <app-card
-              element="mana"
-              [size]="handArcCardWidth"
-              [appTooltip]="collectManaTokenTip"
-              tooltipPosition="top"
-            />
-          </button>
-        </div>
-      </div>
-    }
-  </section>
-
-  <!-- ═══════════════ PLAYER ZONE (bottom 1/3) ═══════════════ -->
-  <section
-    class="board__zone board__zone--player"
-    [attr.aria-label]="'board.playerZoneAria' | translate"
-  >
-    <!-- Vita: anchored exactly like a wand card — tall, only the top strip
-         stays on screen, the rest hangs off past the bottom edge. -->
-    <app-player-hud
-      class="board__hud board__hud--player"
-      [style.--wand-label-height.px]="wandLabelHeight"
-      [style.--visible-content-height.px]="visibleContentHeight"
-      [width]="hudWidth"
-      [name]="playerName()"
-      [photoUrl]="playerPhoto()"
-      [health]="playerHealth()"
-      [poisonLevel]="playerPoisonLevel()"
-      [frozen]="playerFrozen()"
-      [damageEvent]="playerDamageEvent()"
-      [mirrored]="false"
-      (settingsClick)="openGameSettings()"
-    />
-
-    <!-- Box: mazzo (15%) | arco (1fr, l'unico che esce sopra il box) | scarti (15%).
-         Anchored exactly like a wand card (same height, same edge offset): tall,
-         only the top strip stays on screen, the rest hangs off past the bottom edge. -->
-    <div
-      class="board__hand-box"
-      [style.--hand-card-width.px]="handArcCardWidth"
-      [style.--visible-content-height.px]="visibleContentHeight"
-      [style.--wand-label-height.px]="wandLabelHeight"
-      [style.left.px]="handBoxHudInset"
-      [style.right.px]="handBoxWandInset"
-    >
-      <div class="board__hand-box-side">
-        <button
-          type="button"
-          class="board__deck-trigger board__deck-trigger--pile"
-          (click)="openOwnPileDialog()"
-        >
-          <app-deck
-            [size]="handCardWidth"
-            [count]="playerDeckCount()"
-            [showLabel]="false"
-            [showCount]="false"
-            [label]="'board.fonte.mazzo' | translate"
-            [emptyPlaceholder]="'boxed-text'"
-            [appTooltip]="'board.deckRemaining' | translate: { count: playerDeckCount() }"
-            tooltipPosition="top"
-          />
-        </button>
-      </div>
-
-      <div
-        class="board__hand-track"
-        #playerHandTrack
-        role="region"
-        [attr.aria-label]="'board.handAriaPlayer' | translate"
-      >
-        @for (card of playerHand(); track card.id) {
-          <!-- Tooltip ricco solo per le carte incantesimo — dichiarato qui (non dentro un @if) così il
-               ref #spellTip resta visibile alla app-card sotto, nella stessa iterazione. -->
-          <ng-template #spellTip>
-            <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
-            <strong>{{ spellName(card) }}</strong>
-            <hr class="rich-tooltip__rule" />
-            <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
-            @if (spellFlavor(card); as flavor) {
-              <p class="rich-tooltip__flavor">
-                <em>{{ flavor }}</em>
-              </p>
-            }
-          </ng-template>
-          <!-- Tooltip ricco per il mana speciale (3.2) — il solo badge/aria-label non ne spiega
-               l'effetto a chi non conosce già la regola. Mai insieme a #spellTip sopra: specialMana
-               esiste solo su carte tier 'base', mai su carte incantesimo. -->
-          <ng-template #specialManaTip>
-            <div class="rich-tooltip__header">
-              <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
-              <span
-                class="rich-tooltip__special-icon"
-                [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
-                [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
-                [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
-                [style.--special-mana-icon]="'url(' + specialManaIconPath(card.specialMana!) + ')'"
-                aria-hidden="true"
-              ></span>
-            </div>
-            <hr class="rich-tooltip__rule" />
-            <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
-          </ng-template>
-          <!-- Stesso tooltip #manaTokenTip della dialog di raccolta (mana accumulato, 1.4.3) — mai insieme
-               a #spellTip/#specialManaTip: tier 'mana' non è mai né 'spell' né una base con mana speciale. -->
-          <ng-template #manaTokenTip>
-            <strong>{{ 'card.manaToken.title' | translate }}</strong>
-            <hr class="rich-tooltip__rule" />
-            <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
-          </ng-template>
-          <!-- Congelamento (2.3.1) — stesso schema #manaTokenTip sopra, ma [innerHTML] invece di
-               interpolazione: card.freeze.effect porta un <em> incorporato (vedi en/it.json) per
-               enfatizzare "si scioglie" a metà frase, cosa che {{ }} non renderizzerebbe. -->
-          <ng-template #freezeTip>
-            <strong>{{ 'card.freeze.title' | translate }}</strong>
-            <hr class="rich-tooltip__rule" />
-            <p class="rich-tooltip__effect" [innerHTML]="'card.freeze.effect' | translate"></p>
-          </ng-template>
-          <!-- Occhio (5.x, Card.revealedToOpponent) — unico tra i tooltip qui sopra che può comparire
-               INSIEME a uno degli altri (una carta 'base' con mana speciale può anche essere stata
-               rivelata) invece che in alternativa: da qui in poi la scelta tra "uno solo" e "affiancati
-               in #cardTip sotto (isMultiCardTooltip). -->
-          <ng-template #revealedTip>
-            <div class="rich-tooltip__header">
-              <strong>{{ 'card.revealed.title' | translate }}</strong>
-              <span
-                class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
-                [style.--special-mana-icon]="revealedIconUrl"
-                aria-hidden="true"
-              ></span>
-            </div>
-            <hr class="rich-tooltip__rule" />
-            <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
-          </ng-template>
-          <!-- Compone i tooltip sopra secondo cardTooltipFlags/isMultiCardTooltip (board.component.ts):
-               uno solo di spell/freeze/mana-token/specialMana può valere per una data carta (il tier è
-               uno solo, specialMana esiste solo su 'base'), revealedToOpponent può aggiungersi a
-               qualunque di essi — in quel caso i blocchi si affiancano in #rich-tooltip__multi invece
-               che sceglierne uno solo. -->
-          <ng-template #cardTip>
-            @if (isMultiCardTooltip(card)) {
-              <div class="rich-tooltip__multi">
-                @if (card.tier === 'spell') {
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="spellTip" />
-                  </div>
-                } @else if (card.tier === 'mana') {
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="manaTokenTip" />
-                  </div>
-                } @else if (card.tier === 'freeze') {
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="freezeTip" />
-                  </div>
-                } @else if (card.specialMana) {
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="specialManaTip" />
-                  </div>
-                }
-                <div class="rich-tooltip__multi-item">
-                  <ng-container [ngTemplateOutlet]="revealedTip" />
-                </div>
-              </div>
-            } @else if (card.tier === 'spell') {
-              <ng-container [ngTemplateOutlet]="spellTip" />
-            } @else if (card.tier === 'mana') {
-              <ng-container [ngTemplateOutlet]="manaTokenTip" />
-            } @else if (card.tier === 'freeze') {
-              <ng-container [ngTemplateOutlet]="freezeTip" />
-            } @else if (card.specialMana) {
-              <ng-container [ngTemplateOutlet]="specialManaTip" />
-            } @else if (card.revealedToOpponent) {
-              <ng-container [ngTemplateOutlet]="revealedTip" />
-            }
-          </ng-template>
-          <app-action-menu [items]="handCardMenuItems(card, $index)">
-            <app-card
-              class="board__hand-card"
-              [element]="card.element"
-              [spellId]="card.spellId ?? null"
-              [manaBonus]="card.manaBonus ?? 0"
-              [specialMana]="card.specialMana ?? null"
-              [revealedToOpponent]="card.revealedToOpponent ?? false"
-              [showMana]="card.tier !== 'freeze'"
-              [freeze]="card.tier === 'freeze'"
-              [size]="handArcCardWidth"
-              [priority]="$index === 0"
-              [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
-              [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
-              [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
-              [appTooltip]="hasCardTooltip(card) ? cardTip : null"
-              tooltipPosition="top"
-              [style]="handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)"
-            />
-          </app-action-menu>
-        }
-        <!-- Carte "temporanee" (Congelamento/Residuo) già sparite da playerHand() ma ancora in animazione
-             di sparizione — restano nella loro vecchia posizione (indice/conteggio congelati al momento
-             in cui sono sparite) finché l'animazione non finisce, invece di sparire di scatto. -->
-        @for (ghost of vanishingGhosts(); track ghost.card.id) {
-          <app-card
-            class="board__hand-card board__hand-card--vanishing"
-            [element]="ghost.card.element"
-            [manaBonus]="ghost.card.manaBonus ?? 0"
-            [specialMana]="ghost.card.specialMana ?? null"
-            [showMana]="ghost.card.tier !== 'freeze'"
-            [freeze]="ghost.card.tier === 'freeze'"
-            [size]="handArcCardWidth"
-            [style]="handCardStyle(ghost.index, ghost.total, playerHandTrackWidth(), false)"
-            aria-hidden="true"
-          />
-        }
-
-        <!-- Esplosione elementale (2.4) nella propria mano — le carte vere prese dall'evento, si
-             rivelano con un flip prima di lampeggiare/scuotere e sparire (vedi handExplosions). -->
-        @if (playerHandExplosion(); as ex) {
-          <div class="board__hand-explosion">
-            @for (card of ex.cards; track card.id) {
-              <app-card
-                [class.board__hand-card--exploding]="handExplosionRevealed()"
-                [element]="card.element"
-                [manaBonus]="card.manaBonus ?? 0"
-                [size]="handArcCardWidth"
-                [revealed]="handExplosionRevealed()"
-                aria-hidden="true"
-              />
-            }
           </div>
-        }
-      </div>
 
-      <div class="board__hand-box-side">
-        <button
-          type="button"
-          class="board__deck-trigger board__deck-trigger--pile"
-          (click)="openOwnPileDialog()"
-        >
-          <app-deck
-            [size]="handCardWidth"
-            [count]="playerDiscardCount()"
-            [faceUp]="true"
-            [topElement]="playerDiscardTop()"
-            [topManaBonus]="playerDiscardTopManaBonus()"
-            [topSpecialMana]="playerDiscardTopSpecialMana()"
-            [topFreeze]="playerDiscardTopFreeze()"
-            [topRevealedToOpponent]="playerDiscardTopRevealed()"
-            [messy]="true"
-            [showLabel]="false"
-            [showCount]="false"
-            [label]="'board.fonte.scarti' | translate"
-            [emptyPlaceholder]="'boxed-text'"
-            [appTooltip]="'board.deckDiscarded' | translate: { count: playerDiscardCount() }"
-            tooltipPosition="top"
-          />
-        </button>
-      </div>
-    </div>
-
-    <!-- Wand panels: only the top third of each card stays on screen — label card touches
-         the screen's bottom border, the rest hangs off past it, as if laid on the table.
-         The element card slides in behind and peeks out above it. -->
-    <div
-      class="board__wand-panels board__wand-panels--player"
-      [style.--wand-card-width.px]="wandCardWidth"
-      [style.--wand-label-height.px]="wandLabelHeight"
-    >
-      <div class="board__wand-title board__wand-title--player">
-        {{ 'board.wand.title' | translate }}
-      </div>
-
-      <div class="board__wand-panel">
-        @if (playerTip(); as tip) {
-          <!-- Stesso tooltip ricco delle carte in mano (vedi #specialManaTip nel loop della mano) — ref
-               separato perché quello è scoped a quel @for, non visibile qui. -->
-          <ng-template #tipSpecialManaTip>
-            <div class="rich-tooltip__header">
-              <strong>{{ i18n.specialManaLabel(tip.specialMana!) }}</strong>
-              <span
-                class="rich-tooltip__special-icon"
-                [class.rich-tooltip__special-icon--prismatic]="tip.specialMana === 'prismatic'"
-                [class.rich-tooltip__special-icon--vital]="tip.specialMana === 'vital'"
-                [class.rich-tooltip__special-icon--chaotic]="tip.specialMana === 'chaotic'"
-                [style.--special-mana-icon]="'url(' + specialManaIconPath(tip.specialMana!) + ')'"
-                aria-hidden="true"
-              ></span>
-            </div>
-            <hr class="rich-tooltip__rule" />
-            <p class="rich-tooltip__effect">{{ specialManaEffectText(tip.specialMana!) }}</p>
-          </ng-template>
-          <app-card
-            class="board__wand-peek"
-            [element]="tip.element"
-            [manaBonus]="tip.manaBonus ?? 0"
-            [specialMana]="tip.specialMana ?? null"
-            [size]="wandCardWidth"
-            [header]="true"
-            [class.board__hand-card--gold]="handCardHighlight(tip) === 'gold'"
-            [class.board__hand-card--blue]="handCardHighlight(tip) === 'blue'"
-            [appTooltip]="tip.specialMana ? tipSpecialManaTip : null"
-            tooltipPosition="top"
-            [style.margin-bottom.px]="tipEntering() ? 0 : -wandPeekOverlap"
-          />
-        }
-        <!-- Carta appena uscita dalla punta (consumata, spesa in una combinazione, o come mana per un
-             incantesimo) — stessa animazione di sparizione delle carte in mano, invece di un salto secco. -->
-        @if (tipVanishing(); as ghost) {
-          <app-card
-            class="board__wand-peek board__hand-card--vanishing"
-            [element]="ghost.element"
-            [manaBonus]="ghost.manaBonus ?? 0"
-            [specialMana]="ghost.specialMana ?? null"
-            [size]="wandCardWidth"
-            [header]="true"
-            [style.margin-bottom.px]="-wandPeekOverlap"
-            aria-hidden="true"
-          />
-        }
-        <div
-          class="board__wand-card board__wand-card--player"
-          [style.--el-color]="playerTip() ? elementColorVar($any(playerTip()!.element)) : null"
-        >
-          <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
-          <hr class="board__wand-card-hr" />
-          <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
-        </div>
-      </div>
-
-      <div class="board__wand-panel">
-        @if (playerBody(); as el) {
-          <app-card
-            class="board__wand-peek"
-            [element]="el"
-            [size]="wandCardWidth"
-            [header]="true"
-            [style.margin-bottom.px]="bodyEntering() ? 0 : -wandPeekOverlap"
-          />
-        }
-        <div
-          class="board__wand-card board__wand-card--player"
-          [style.--el-color]="playerBody() ? elementColorVar(playerBody()!) : null"
-        >
-          <span class="board__wand-card-label">{{ 'board.wand.body' | translate }}</span>
-          <hr class="board__wand-card-hr" />
-          <p class="board__wand-card-effect">{{ bodyEffectText(playerBody()) }}</p>
-        </div>
-      </div>
-
-      <div class="board__wand-panel">
-        @if (playerHandle(); as el) {
-          <app-card
-            class="board__wand-peek"
-            [element]="el"
-            [size]="wandCardWidth"
-            [header]="true"
-            [style.margin-bottom.px]="handleEntering() ? 0 : -wandPeekOverlap"
-          />
-        }
-        <div
-          class="board__wand-card board__wand-card--player"
-          [style.--el-color]="playerHandle() ? elementColorVar(playerHandle()!) : null"
-        >
-          <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
-          <hr class="board__wand-card-hr" />
-          <p class="board__wand-card-effect">{{ handleEffectText(playerHandle()) }}</p>
-        </div>
-      </div>
-    </div>
-  </section>
-} @else {
-  <!-- ═══════════════ LAYOUT COMPATTO (mobile/tablet) ═══════════════
-       Struttura unica condivisa tra 'mobile' e 'tablet' (board-compact--tablet aggiunge solo la
-       riga mano+bacchetta affiancata via CSS, il resto è identico): per ciascuna zona, dal bordo
-       esterno dello schermo verso il centro → identità (avatar+nome+vita) → mano (mazzo/mano/scarti)
-       → bacchetta (striscia compatta). Zona centrale contestuale: Raccolta durante
-       Preparazione/Raccolta, Fonte Arcana nelle altre fasi (showRaccolta()). -->
-
-  <!-- OPPONENT -->
-  <header
-    class="board-compact__identity board-compact__identity--opponent"
-    [attr.aria-label]="'board.opponentZoneAria' | translate"
-  >
-    <span class="board-compact__hp-value">{{ compactDisplayedHp(opponentHealth()) }}</span>
-    <div class="board-compact__hp-bar">
-      <div class="board-compact__hp-track">
-        <div
-          class="board-compact__hp-fill"
-          [class.board-compact__hp-fill--poisoned]="opponentPoisonLevel() > 0"
-          [style.width.%]="compactHpPercent(opponentHealth())"
-        ></div>
-        @if (opponentHealth().shield > 0) {
           <div
-            class="board-compact__hp-shield-fill"
-            [style.width.%]="compactShieldPercent(opponentHealth())"
-            [style.left.%]="compactHpPercent(opponentHealth())"
-          ></div>
-        }
-      </div>
-    </div>
-    <!-- Specchiato in orizzontale rispetto al giocatore (nome+avatar a sinistra, veleno a destra,
-         accanto ai PS che qui sono ancorati a destra) — non invertito in verticale: la riga barra
-         vita resta comunque per prima, a differenza del footer giocatore sotto. -->
-    <div class="board-compact__identity-meta">
-      <div class="board-compact__identity-name-group">
-        @if (opponentPhoto(); as photo) {
-          <img class="board-compact__avatar" [src]="photo" alt="" referrerpolicy="no-referrer" />
-        } @else {
-          <span class="board-compact__avatar board-compact__avatar--fallback">{{
-            opponentName().charAt(0)
-          }}</span>
-        }
-        <span class="board-compact__name">{{ opponentName() }}</span>
-      </div>
-      @if (opponentPoisonLevel() > 0) {
-        <span
-          class="board-compact__poison"
-          [attr.aria-label]="'playerHud.poisonAria' | translate: { level: opponentPoisonLevel() }"
-        >
-          <img [src]="poisonIcon" alt="" aria-hidden="true" />{{ opponentPoisonLevel() }}
-        </span>
-      }
-    </div>
-  </header>
-
-  <div class="board-compact__cluster board-compact__cluster--opponent">
-    <div class="board-compact__hand-row">
-      <button
-        type="button"
-        class="board__deck-trigger board__deck-trigger--pile"
-        (click)="openOpponentPileDialog()"
-      >
-        <app-deck
-          [size]="compactOpponentHandCardWidth"
-          [count]="opponentDeckCount()"
-          [showLabel]="false"
-          [showCount]="false"
-          [label]="'board.fonte.mazzo' | translate"
-          [emptyPlaceholder]="'boxed-text'"
-          [appTooltip]="'board.deckRemaining' | translate: { count: opponentDeckCount() }"
-          tooltipPosition="bottom"
-        />
-      </button>
-      <div
-        class="board-compact__hand-overlap"
-        #compactOpponentHandTrack
-        aria-hidden="true"
-        [style.height.px]="compactOpponentHandArcCardWidth * 1.5"
-      >
-        @for (card of opponentHand(); track card.id; let i = $index) {
-          <div
-            [style]="
-              compactHandCardStyle(
-                i,
-                opponentHand().length,
-                compactOpponentHandTrackWidth(),
-                compactOpponentHandArcCardWidth
-              )
-            "
+            class="board__hand-track"
+            #playerHandTrack
+            role="region"
+            [attr.aria-label]="'board.handAriaPlayer' | translate"
           >
-            <!-- Come sul desktop (board__hand-card--back): per le carte NON rivelate non passiamo
-                 affatto i dati veri (elemento/spellId/manaBonus/manaSpeciale) a un app-card con
-                 [revealed]=false — un semplice dorso senza dati è la sola garanzia che non possano
-                 mai comparire, anche solo per un istante, indipendentemente da eventuali bug del
-                 flip in CardComponent. Scelta di template (@if/@else), non un prop da solo. -->
-            @if (card.revealedToOpponent) {
-              <!-- Stessi ng-template ricchi del desktop (vedi opponentHand più sopra nel ramo
-                   desktop) — qui revealedToOpponent è SEMPRE true (il ramo @else sotto copre il
-                   resto), quindi #cardTip include sempre #revealedTip, più uno tra spell/freeze/
-                   mana-token/specialMana se la carta è anche una di quelle. -->
+            @for (card of playerHand(); track card.id) {
+              <!-- Tooltip ricco solo per le carte incantesimo — dichiarato qui (non dentro un @if) così il
+               ref #spellTip resta visibile alla app-card sotto, nella stessa iterazione. -->
               <ng-template #spellTip>
-                <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
+                <div class="rich-tooltip__spell-header">
+                  {{ 'card.spell.category' | translate }}
+                </div>
                 <strong>{{ spellName(card) }}</strong>
                 <hr class="rich-tooltip__rule" />
                 <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
@@ -1025,6 +651,9 @@
                   </p>
                 }
               </ng-template>
+              <!-- Tooltip ricco per il mana speciale (3.2) — il solo badge/aria-label non ne spiega
+               l'effetto a chi non conosce già la regola. Mai insieme a #spellTip sopra: specialMana
+               esiste solo su carte tier 'base', mai su carte incantesimo. -->
               <ng-template #specialManaTip>
                 <div class="rich-tooltip__header">
                   <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
@@ -1042,16 +671,25 @@
                 <hr class="rich-tooltip__rule" />
                 <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
               </ng-template>
+              <!-- Stesso tooltip #manaTokenTip della dialog di raccolta (mana accumulato, 1.4.3) — mai insieme
+               a #spellTip/#specialManaTip: tier 'mana' non è mai né 'spell' né una base con mana speciale. -->
               <ng-template #manaTokenTip>
                 <strong>{{ 'card.manaToken.title' | translate }}</strong>
                 <hr class="rich-tooltip__rule" />
                 <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
               </ng-template>
+              <!-- Congelamento (2.3.1) — stesso schema #manaTokenTip sopra, ma [innerHTML] invece di
+               interpolazione: card.freeze.effect porta un <em> incorporato (vedi en/it.json) per
+               enfatizzare "si scioglie" a metà frase, cosa che {{ }} non renderizzerebbe. -->
               <ng-template #freezeTip>
                 <strong>{{ 'card.freeze.title' | translate }}</strong>
                 <hr class="rich-tooltip__rule" />
                 <p class="rich-tooltip__effect" [innerHTML]="'card.freeze.effect' | translate"></p>
               </ng-template>
+              <!-- Occhio (5.x, Card.revealedToOpponent) — unico tra i tooltip qui sopra che può comparire
+               INSIEME a uno degli altri (una carta 'base' con mana speciale può anche essere stata
+               rivelata) invece che in alternativa: da qui in poi la scelta tra "uno solo" e "affiancati
+               in #cardTip sotto (isMultiCardTooltip). -->
               <ng-template #revealedTip>
                 <div class="rich-tooltip__header">
                   <strong>{{ 'card.revealed.title' | translate }}</strong>
@@ -1064,6 +702,11 @@
                 <hr class="rich-tooltip__rule" />
                 <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
               </ng-template>
+              <!-- Compone i tooltip sopra secondo cardTooltipFlags/isMultiCardTooltip (board.component.ts):
+               uno solo di spell/freeze/mana-token/specialMana può valere per una data carta (il tier è
+               uno solo, specialMana esiste solo su 'base'), revealedToOpponent può aggiungersi a
+               qualunque di essi — in quel caso i blocchi si affiancano in #rich-tooltip__multi invece
+               che sceglierne uno solo. -->
               <ng-template #cardTip>
                 @if (isMultiCardTooltip(card)) {
                   <div class="rich-tooltip__multi">
@@ -1088,703 +731,1130 @@
                       <ng-container [ngTemplateOutlet]="revealedTip" />
                     </div>
                   </div>
-                } @else {
+                } @else if (card.tier === 'spell') {
+                  <ng-container [ngTemplateOutlet]="spellTip" />
+                } @else if (card.tier === 'mana') {
+                  <ng-container [ngTemplateOutlet]="manaTokenTip" />
+                } @else if (card.tier === 'freeze') {
+                  <ng-container [ngTemplateOutlet]="freezeTip" />
+                } @else if (card.specialMana) {
+                  <ng-container [ngTemplateOutlet]="specialManaTip" />
+                } @else if (card.revealedToOpponent) {
                   <ng-container [ngTemplateOutlet]="revealedTip" />
                 }
               </ng-template>
+              <app-action-menu [items]="handCardMenuItems(card, $index)">
+                <app-card
+                  class="board__hand-card"
+                  [element]="card.element"
+                  [spellId]="card.spellId ?? null"
+                  [manaBonus]="card.manaBonus ?? 0"
+                  [specialMana]="card.specialMana ?? null"
+                  [revealedToOpponent]="card.revealedToOpponent ?? false"
+                  [showMana]="card.tier !== 'freeze'"
+                  [freeze]="card.tier === 'freeze'"
+                  [size]="handArcCardWidth"
+                  [priority]="$index === 0"
+                  [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
+                  [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
+                  [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
+                  [appTooltip]="hasCardTooltip(card) ? cardTip : null"
+                  tooltipPosition="top"
+                  [style]="
+                    handCardStyle($index, playerHand().length, playerHandTrackWidth(), false)
+                  "
+                />
+              </app-action-menu>
+            }
+            <!-- Carte "temporanee" (Congelamento/Residuo) già sparite da playerHand() ma ancora in animazione
+             di sparizione — restano nella loro vecchia posizione (indice/conteggio congelati al momento
+             in cui sono sparite) finché l'animazione non finisce, invece di sparire di scatto. -->
+            @for (ghost of vanishingGhosts(); track ghost.card.id) {
               <app-card
-                [element]="card.element"
-                [spellId]="card.spellId ?? null"
-                [manaBonus]="card.manaBonus ?? 0"
-                [specialMana]="card.specialMana ?? null"
-                [revealedToOpponent]="true"
-                [showMana]="card.tier !== 'freeze'"
-                [freeze]="card.tier === 'freeze'"
-                [size]="compactOpponentHandArcCardWidth"
-                [appTooltip]="cardTip"
+                class="board__hand-card board__hand-card--vanishing"
+                [element]="ghost.card.element"
+                [manaBonus]="ghost.card.manaBonus ?? 0"
+                [specialMana]="ghost.card.specialMana ?? null"
+                [showMana]="ghost.card.tier !== 'freeze'"
+                [freeze]="ghost.card.tier === 'freeze'"
+                [size]="handArcCardWidth"
+                [style]="handCardStyle(ghost.index, ghost.total, playerHandTrackWidth(), false)"
+                aria-hidden="true"
+              />
+            }
+
+            <!-- Esplosione elementale (2.4) nella propria mano — le carte vere prese dall'evento, si
+             rivelano con un flip prima di lampeggiare/scuotere e sparire (vedi handExplosions). -->
+            @if (playerHandExplosion(); as ex) {
+              <div class="board__hand-explosion">
+                @for (card of ex.cards; track card.id) {
+                  <app-card
+                    [class.board__hand-card--exploding]="handExplosionShaking()"
+                    [element]="card.element"
+                    [manaBonus]="card.manaBonus ?? 0"
+                    [size]="handArcCardWidth"
+                    [revealed]="handExplosionRevealed()"
+                    aria-hidden="true"
+                  />
+                }
+              </div>
+            }
+          </div>
+
+          <div class="board__hand-box-side">
+            <button
+              type="button"
+              class="board__deck-trigger board__deck-trigger--pile"
+              (click)="openOwnPileDialog()"
+            >
+              <app-deck
+                [size]="handCardWidth"
+                [count]="playerDiscardCount()"
+                [faceUp]="true"
+                [topElement]="playerDiscardTop()"
+                [topManaBonus]="playerDiscardTopManaBonus()"
+                [topSpecialMana]="playerDiscardTopSpecialMana()"
+                [topFreeze]="playerDiscardTopFreeze()"
+                [topRevealedToOpponent]="playerDiscardTopRevealed()"
+                [messy]="true"
+                [showLabel]="false"
+                [showCount]="false"
+                [label]="'board.fonte.scarti' | translate"
+                [emptyPlaceholder]="'boxed-text'"
+                [appTooltip]="'board.deckDiscarded' | translate: { count: playerDiscardCount() }"
                 tooltipPosition="top"
               />
-            } @else {
-              <div
-                class="board__hand-card--back board-compact__hand-card-back"
-                [style.width.px]="compactOpponentHandArcCardWidth"
-                [style.height.px]="compactOpponentHandArcCardWidth * 1.5"
+            </button>
+          </div>
+        </div>
+
+        <!-- Wand panels: only the top third of each card stays on screen — label card touches
+         the screen's bottom border, the rest hangs off past it, as if laid on the table.
+         The element card slides in behind and peeks out above it. -->
+        <div
+          class="board__wand-panels board__wand-panels--player"
+          [style.--wand-card-width.px]="wandCardWidth"
+          [style.--wand-label-height.px]="wandLabelHeight"
+        >
+          <div class="board__wand-title board__wand-title--player">
+            {{ 'board.wand.title' | translate }}
+          </div>
+
+          <div class="board__wand-panel">
+            @if (playerTip(); as tip) {
+              <!-- Stesso tooltip ricco delle carte in mano (vedi #specialManaTip nel loop della mano) — ref
+               separato perché quello è scoped a quel @for, non visibile qui. -->
+              <ng-template #tipSpecialManaTip>
+                <div class="rich-tooltip__header">
+                  <strong>{{ i18n.specialManaLabel(tip.specialMana!) }}</strong>
+                  <span
+                    class="rich-tooltip__special-icon"
+                    [class.rich-tooltip__special-icon--prismatic]="tip.specialMana === 'prismatic'"
+                    [class.rich-tooltip__special-icon--vital]="tip.specialMana === 'vital'"
+                    [class.rich-tooltip__special-icon--chaotic]="tip.specialMana === 'chaotic'"
+                    [style.--special-mana-icon]="
+                      'url(' + specialManaIconPath(tip.specialMana!) + ')'
+                    "
+                    aria-hidden="true"
+                  ></span>
+                </div>
+                <hr class="rich-tooltip__rule" />
+                <p class="rich-tooltip__effect">{{ specialManaEffectText(tip.specialMana!) }}</p>
+              </ng-template>
+              <app-card
+                class="board__wand-peek"
+                [element]="tip.element"
+                [manaBonus]="tip.manaBonus ?? 0"
+                [specialMana]="tip.specialMana ?? null"
+                [size]="wandCardWidth"
+                [header]="true"
+                [class.board__hand-card--gold]="handCardHighlight(tip) === 'gold'"
+                [class.board__hand-card--blue]="handCardHighlight(tip) === 'blue'"
+                [appTooltip]="tip.specialMana ? tipSpecialManaTip : null"
+                tooltipPosition="top"
+                [style.margin-bottom.px]="tipEntering() ? 0 : -wandPeekOverlap"
+              />
+            }
+            <!-- Carta appena uscita dalla punta (consumata, spesa in una combinazione, o come mana per un
+             incantesimo) — stessa animazione di sparizione delle carte in mano, invece di un salto secco. -->
+            @if (tipVanishing(); as ghost) {
+              <app-card
+                class="board__wand-peek board__hand-card--vanishing"
+                [element]="ghost.element"
+                [manaBonus]="ghost.manaBonus ?? 0"
+                [specialMana]="ghost.specialMana ?? null"
+                [size]="wandCardWidth"
+                [header]="true"
+                [style.margin-bottom.px]="-wandPeekOverlap"
                 aria-hidden="true"
+              />
+            }
+            <div
+              class="board__wand-card board__wand-card--player"
+              [style.--el-color]="playerTip() ? elementColorVar($any(playerTip()!.element)) : null"
+            >
+              <span class="board__wand-card-label">{{ 'board.wand.tip' | translate }}</span>
+              <hr class="board__wand-card-hr" />
+              <p class="board__wand-card-effect">{{ 'board.wand.tipEffect' | translate }}</p>
+            </div>
+          </div>
+
+          <div class="board__wand-panel">
+            @if (playerBody(); as el) {
+              <app-card
+                class="board__wand-peek"
+                [element]="el"
+                [size]="wandCardWidth"
+                [header]="true"
+                [style.margin-bottom.px]="bodyEntering() ? 0 : -wandPeekOverlap"
+              />
+            }
+            <div
+              class="board__wand-card board__wand-card--player"
+              [style.--el-color]="playerBody() ? elementColorVar(playerBody()!) : null"
+            >
+              <span class="board__wand-card-label">{{ 'board.wand.body' | translate }}</span>
+              <hr class="board__wand-card-hr" />
+              <p class="board__wand-card-effect">{{ bodyEffectText(playerBody()) }}</p>
+            </div>
+          </div>
+
+          <div class="board__wand-panel">
+            @if (playerHandle(); as el) {
+              <app-card
+                class="board__wand-peek"
+                [element]="el"
+                [size]="wandCardWidth"
+                [header]="true"
+                [style.margin-bottom.px]="handleEntering() ? 0 : -wandPeekOverlap"
+              />
+            }
+            <div
+              class="board__wand-card board__wand-card--player"
+              [style.--el-color]="playerHandle() ? elementColorVar(playerHandle()!) : null"
+            >
+              <span class="board__wand-card-label">{{ 'board.wand.handle' | translate }}</span>
+              <hr class="board__wand-card-hr" />
+              <p class="board__wand-card-effect">{{ handleEffectText(playerHandle()) }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    } @else {
+      <!-- ═══════════════ LAYOUT COMPATTO (mobile/tablet) ═══════════════
+       Struttura unica condivisa tra 'mobile' e 'tablet' (board-compact--tablet aggiunge solo la
+       riga mano+bacchetta affiancata via CSS, il resto è identico): per ciascuna zona, dal bordo
+       esterno dello schermo verso il centro → identità (avatar+nome+vita) → mano (mazzo/mano/scarti)
+       → bacchetta (striscia compatta). Zona centrale contestuale: Raccolta durante
+       Preparazione/Raccolta, Fonte Arcana nelle altre fasi (showRaccolta()). -->
+
+      <!-- OPPONENT -->
+      <header
+        class="board-compact__identity board-compact__identity--opponent"
+        [attr.aria-label]="'board.opponentZoneAria' | translate"
+      >
+        <span class="board-compact__hp-value">{{ compactDisplayedHp(opponentHealth()) }}</span>
+        <div class="board-compact__hp-bar">
+          <div class="board-compact__hp-track">
+            <div
+              class="board-compact__hp-fill"
+              [class.board-compact__hp-fill--poisoned]="opponentPoisonLevel() > 0"
+              [style.width.%]="compactHpPercent(opponentHealth())"
+            ></div>
+            @if (opponentHealth().shield > 0) {
+              <div
+                class="board-compact__hp-shield-fill"
+                [style.width.%]="compactShieldPercent(opponentHealth())"
+                [style.left.%]="compactHpPercent(opponentHealth())"
               ></div>
             }
           </div>
-        }
-      </div>
-      <button
-        type="button"
-        class="board__deck-trigger board__deck-trigger--pile"
-        (click)="openOpponentPileDialog()"
-      >
-        <app-deck
-          [size]="compactOpponentHandCardWidth"
-          [count]="opponentDiscardCount()"
-          [faceUp]="true"
-          [messy]="true"
-          [topElement]="opponentDiscardTop()"
-          [topManaBonus]="opponentDiscardTopManaBonus()"
-          [topSpecialMana]="opponentDiscardTopSpecialMana()"
-          [topFreeze]="opponentDiscardTopFreeze()"
-          [topRevealedToOpponent]="opponentDiscardTopRevealed()"
-          [showLabel]="false"
-          [showCount]="false"
-          [label]="'board.fonte.scarti' | translate"
-          [emptyPlaceholder]="'boxed-text'"
-          [appTooltip]="'board.deckDiscarded' | translate: { count: opponentDiscardCount() }"
-          tooltipPosition="bottom"
-        />
-      </button>
-    </div>
+        </div>
+        <!-- Specchiato in orizzontale rispetto al giocatore (nome+avatar a sinistra, veleno a destra,
+         accanto ai PS che qui sono ancorati a destra) — non invertito in verticale: la riga barra
+         vita resta comunque per prima, a differenza del footer giocatore sotto. -->
+        <div class="board-compact__identity-meta">
+          <div class="board-compact__identity-name-group">
+            @if (opponentPhoto(); as photo) {
+              <img
+                class="board-compact__avatar"
+                [src]="photo"
+                alt=""
+                referrerpolicy="no-referrer"
+              />
+            } @else {
+              <span class="board-compact__avatar board-compact__avatar--fallback">{{
+                opponentName().charAt(0)
+              }}</span>
+            }
+            <span class="board-compact__name">{{ opponentName() }}</span>
+          </div>
+          @if (opponentPoisonLevel() > 0) {
+            <span
+              class="board-compact__poison"
+              [attr.aria-label]="
+                'playerHud.poisonAria' | translate: { level: opponentPoisonLevel() }
+              "
+            >
+              <img [src]="poisonIcon" alt="" aria-hidden="true" />{{ opponentPoisonLevel() }}
+            </span>
+          }
+        </div>
+      </header>
 
-    @if (layoutTier() === 'tablet') {
-      <!-- Tablet: ogni sezione è divisa in riga, non più in sovraimpressione — 20% label (libera in
+      <div class="board-compact__cluster board-compact__cluster--opponent">
+        <div class="board-compact__hand-row">
+          <button
+            type="button"
+            class="board__deck-trigger board__deck-trigger--pile"
+            (click)="openOpponentPileDialog()"
+          >
+            <app-deck
+              [size]="compactOpponentHandCardWidth"
+              [count]="opponentDeckCount()"
+              [showLabel]="false"
+              [showCount]="false"
+              [label]="'board.fonte.mazzo' | translate"
+              [emptyPlaceholder]="'boxed-text'"
+              [appTooltip]="'board.deckRemaining' | translate: { count: opponentDeckCount() }"
+              tooltipPosition="bottom"
+            />
+          </button>
+          <div
+            class="board-compact__hand-overlap"
+            #compactOpponentHandTrack
+            aria-hidden="true"
+            [style.height.px]="compactOpponentHandArcCardWidth * 1.5"
+          >
+            @for (card of opponentHand(); track card.id; let i = $index) {
+              <div
+                [style]="
+                  compactHandCardStyle(
+                    i,
+                    opponentHand().length,
+                    compactOpponentHandTrackWidth(),
+                    compactOpponentHandArcCardWidth
+                  )
+                "
+              >
+                <!-- Come sul desktop (board__hand-card--back): per le carte NON rivelate non passiamo
+                 affatto i dati veri (elemento/spellId/manaBonus/manaSpeciale) a un app-card con
+                 [revealed]=false — un semplice dorso senza dati è la sola garanzia che non possano
+                 mai comparire, anche solo per un istante, indipendentemente da eventuali bug del
+                 flip in CardComponent. Scelta di template (@if/@else), non un prop da solo. -->
+                @if (card.revealedToOpponent) {
+                  <!-- Stessi ng-template ricchi del desktop (vedi opponentHand più sopra nel ramo
+                   desktop) — qui revealedToOpponent è SEMPRE true (il ramo @else sotto copre il
+                   resto), quindi #cardTip include sempre #revealedTip, più uno tra spell/freeze/
+                   mana-token/specialMana se la carta è anche una di quelle. -->
+                  <ng-template #spellTip>
+                    <div class="rich-tooltip__spell-header">
+                      {{ 'card.spell.category' | translate }}
+                    </div>
+                    <strong>{{ spellName(card) }}</strong>
+                    <hr class="rich-tooltip__rule" />
+                    <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
+                    @if (spellFlavor(card); as flavor) {
+                      <p class="rich-tooltip__flavor">
+                        <em>{{ flavor }}</em>
+                      </p>
+                    }
+                  </ng-template>
+                  <ng-template #specialManaTip>
+                    <div class="rich-tooltip__header">
+                      <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+                      <span
+                        class="rich-tooltip__special-icon"
+                        [class.rich-tooltip__special-icon--prismatic]="
+                          card.specialMana === 'prismatic'
+                        "
+                        [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                        [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                        [style.--special-mana-icon]="
+                          'url(' + specialManaIconPath(card.specialMana!) + ')'
+                        "
+                        aria-hidden="true"
+                      ></span>
+                    </div>
+                    <hr class="rich-tooltip__rule" />
+                    <p class="rich-tooltip__effect">
+                      {{ specialManaEffectText(card.specialMana!) }}
+                    </p>
+                  </ng-template>
+                  <ng-template #manaTokenTip>
+                    <strong>{{ 'card.manaToken.title' | translate }}</strong>
+                    <hr class="rich-tooltip__rule" />
+                    <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
+                  </ng-template>
+                  <ng-template #freezeTip>
+                    <strong>{{ 'card.freeze.title' | translate }}</strong>
+                    <hr class="rich-tooltip__rule" />
+                    <p
+                      class="rich-tooltip__effect"
+                      [innerHTML]="'card.freeze.effect' | translate"
+                    ></p>
+                  </ng-template>
+                  <ng-template #revealedTip>
+                    <div class="rich-tooltip__header">
+                      <strong>{{ 'card.revealed.title' | translate }}</strong>
+                      <span
+                        class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                        [style.--special-mana-icon]="revealedIconUrl"
+                        aria-hidden="true"
+                      ></span>
+                    </div>
+                    <hr class="rich-tooltip__rule" />
+                    <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+                  </ng-template>
+                  <ng-template #cardTip>
+                    @if (isMultiCardTooltip(card)) {
+                      <div class="rich-tooltip__multi">
+                        @if (card.tier === 'spell') {
+                          <div class="rich-tooltip__multi-item">
+                            <ng-container [ngTemplateOutlet]="spellTip" />
+                          </div>
+                        } @else if (card.tier === 'mana') {
+                          <div class="rich-tooltip__multi-item">
+                            <ng-container [ngTemplateOutlet]="manaTokenTip" />
+                          </div>
+                        } @else if (card.tier === 'freeze') {
+                          <div class="rich-tooltip__multi-item">
+                            <ng-container [ngTemplateOutlet]="freezeTip" />
+                          </div>
+                        } @else if (card.specialMana) {
+                          <div class="rich-tooltip__multi-item">
+                            <ng-container [ngTemplateOutlet]="specialManaTip" />
+                          </div>
+                        }
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="revealedTip" />
+                        </div>
+                      </div>
+                    } @else {
+                      <ng-container [ngTemplateOutlet]="revealedTip" />
+                    }
+                  </ng-template>
+                  <app-card
+                    class="board-compact__hand-card--revealing"
+                    [element]="card.element"
+                    [spellId]="card.spellId ?? null"
+                    [manaBonus]="card.manaBonus ?? 0"
+                    [specialMana]="card.specialMana ?? null"
+                    [revealedToOpponent]="true"
+                    [showMana]="card.tier !== 'freeze'"
+                    [freeze]="card.tier === 'freeze'"
+                    [size]="compactOpponentHandArcCardWidth"
+                    [appTooltip]="cardTip"
+                    tooltipPosition="top"
+                  />
+                } @else {
+                  <div
+                    class="board__hand-card--back board-compact__hand-card-back"
+                    [style.width.px]="compactOpponentHandArcCardWidth"
+                    [style.height.px]="compactOpponentHandArcCardWidth * 1.5"
+                    aria-hidden="true"
+                  ></div>
+                }
+              </div>
+            }
+          </div>
+          <button
+            type="button"
+            class="board__deck-trigger board__deck-trigger--pile"
+            (click)="openOpponentPileDialog()"
+          >
+            <app-deck
+              [size]="compactOpponentHandCardWidth"
+              [count]="opponentDiscardCount()"
+              [faceUp]="true"
+              [messy]="true"
+              [topElement]="opponentDiscardTop()"
+              [topManaBonus]="opponentDiscardTopManaBonus()"
+              [topSpecialMana]="opponentDiscardTopSpecialMana()"
+              [topFreeze]="opponentDiscardTopFreeze()"
+              [topRevealedToOpponent]="opponentDiscardTopRevealed()"
+              [showLabel]="false"
+              [showCount]="false"
+              [label]="'board.fonte.scarti' | translate"
+              [emptyPlaceholder]="'boxed-text'"
+              [appTooltip]="'board.deckDiscarded' | translate: { count: opponentDiscardCount() }"
+              tooltipPosition="bottom"
+            />
+          </button>
+        </div>
+
+        @if (layoutTier() === 'tablet') {
+          <!-- Tablet: ogni sezione è divisa in riga, non più in sovraimpressione — 20% label (libera in
            alto a sinistra), 80% carta col SUO solito header (icona+nome, [header]="true", come nel
            ramo mobile sotto), mai più grande del proprio contenitore in nessuna delle due dimensioni
            (compactWandOverlayCardWidth: min tra l'80% di larghezza e l'altezza di una sezione
            convertita in larghezza). Stesso ordine invertito (manico, asta, punta) della striscia. -->
-      <div
-        class="board-compact__wand-strip board-compact__wand-strip--opponent"
-        #compactOpponentWandTrack
-      >
-        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
-          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
-          <div class="board-compact__wand-overlay-card-wrap">
-            @if (opponentHandle(); as el) {
-              <app-card
-                class="board-compact__wand-overlay-card"
-                [element]="el"
-                [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
-                [header]="true"
-                [headerAlign]="'bottom'"
-              />
-            }
+          <div
+            class="board-compact__wand-strip board-compact__wand-strip--opponent"
+            #compactOpponentWandTrack
+          >
+            <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+              <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+              <div class="board-compact__wand-overlay-card-wrap">
+                @if (opponentHandle(); as el) {
+                  <app-card
+                    class="board-compact__wand-overlay-card"
+                    [element]="el"
+                    [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
+                    [header]="true"
+                    [headerAlign]="'bottom'"
+                  />
+                }
+              </div>
+            </div>
+            <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+              <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+              <div class="board-compact__wand-overlay-card-wrap">
+                @if (opponentBody(); as el) {
+                  <app-card
+                    class="board-compact__wand-overlay-card"
+                    [element]="el"
+                    [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
+                    [header]="true"
+                    [headerAlign]="'bottom'"
+                  />
+                }
+              </div>
+            </div>
+            <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+              <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+              <div class="board-compact__wand-overlay-card-wrap">
+                @if (opponentTip(); as tip) {
+                  <app-card
+                    class="board-compact__wand-overlay-card"
+                    [element]="tip.element"
+                    [manaBonus]="tip.manaBonus ?? 0"
+                    [specialMana]="tip.specialMana ?? null"
+                    [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
+                    [header]="true"
+                    [headerAlign]="'bottom'"
+                  />
+                }
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
-          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
-          <div class="board-compact__wand-overlay-card-wrap">
-            @if (opponentBody(); as el) {
-              <app-card
-                class="board-compact__wand-overlay-card"
-                [element]="el"
-                [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
-                [header]="true"
-                [headerAlign]="'bottom'"
-              />
-            }
-          </div>
-        </div>
-        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
-          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
-          <div class="board-compact__wand-overlay-card-wrap">
-            @if (opponentTip(); as tip) {
-              <app-card
-                class="board-compact__wand-overlay-card"
-                [element]="tip.element"
-                [manaBonus]="tip.manaBonus ?? 0"
-                [specialMana]="tip.specialMana ?? null"
-                [size]="compactWandOverlayCardWidth(compactOpponentWandTrackWidth())"
-                [header]="true"
-                [headerAlign]="'bottom'"
-              />
-            }
-          </div>
-        </div>
-      </div>
-    } @else {
-      <!-- Mobile: etichette punta/asta/manico — ordine invertito (manico, asta, punta) rispetto al
+        } @else {
+          <!-- Mobile: etichette punta/asta/manico — ordine invertito (manico, asta, punta) rispetto al
            giocatore, stessa convenzione del desktop. -->
-      <div
-        class="board-compact__wand-strip board-compact__wand-strip--opponent"
-        #compactOpponentWandTrack
-      >
-        <div class="board-compact__wand-slot">
-          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
-        </div>
-        <div class="board-compact__wand-slot">
-          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
-        </div>
-        <div class="board-compact__wand-slot">
-          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
-        </div>
-      </div>
+          <div
+            class="board-compact__wand-strip board-compact__wand-strip--opponent"
+            #compactOpponentWandTrack
+          >
+            <div class="board-compact__wand-slot">
+              <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+            </div>
+            <div class="board-compact__wand-slot">
+              <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+            </div>
+            <div class="board-compact__wand-slot">
+              <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+            </div>
+          </div>
 
-      <!-- Carta incastonata/trattenuta, tra le etichette e la Fonte (il centro sta sotto per
+          <!-- Carta incastonata/trattenuta, tra le etichette e la Fonte (il centro sta sotto per
            l'avversario) — stessa idea del desktop (board__wand-peek: header true, così la porzione
            visibile mostra icona+nome invece di un frammento a caso), adattata alla striscia compatta
            (molto più bassa dei pannelli da 252px del desktop): la finestra visibile è ritagliata
            (overflow: hidden) invece di essere coperta da un pannello alto quanto la carta. Stesso
            ordine invertito della striscia sopra. Nessuna animazione d'ingresso per l'avversario (non
            ce l'ha nemmeno su desktop, solo il giocatore sotto). -->
-      <div class="board-compact__wand-peek">
-        <div class="board-compact__wand-peek-slot">
-          @if (opponentHandle(); as el) {
-            <app-card
-              class="board-compact__wand-peek-card"
-              [element]="el"
-              [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
-              [header]="true"
-              [headerAlign]="'bottom'"
-            />
-          }
-        </div>
-        <div class="board-compact__wand-peek-slot">
-          @if (opponentBody(); as el) {
-            <app-card
-              class="board-compact__wand-peek-card"
-              [element]="el"
-              [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
-              [header]="true"
-              [headerAlign]="'bottom'"
-            />
-          }
-        </div>
-        <div class="board-compact__wand-peek-slot">
-          @if (opponentTip(); as tip) {
-            <app-card
-              class="board-compact__wand-peek-card"
-              [element]="tip.element"
-              [manaBonus]="tip.manaBonus ?? 0"
-              [specialMana]="tip.specialMana ?? null"
-              [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
-              [header]="true"
-              [headerAlign]="'bottom'"
-            />
-          }
-        </div>
-      </div>
-    }
-  </div>
-
-  <!-- ZONA CENTRALE CONTESTUALE -->
-  <div class="board-compact__central">
-    @if (!showRaccolta()) {
-      <div class="board-compact__fonte-header">
-        <span class="board-compact__fonte-heading">{{ 'board.fonteAria' | translate }}</span>
-      </div>
-    }
-    <div class="board-compact__central-content">
-    @if (showRaccolta()) {
-      <div class="board-compact__raccolta">
-        @if (pendingCollect(); as pending) {
-          <div class="board-compact__collect-prompt-wrap">
-            <p class="board__collect-prompt">{{ 'board.fonte.collectPrompt' | translate }}</p>
-            <div class="board-compact__collect-choice">
-            @for (card of pending; track card.id) {
-              <button
-                type="button"
-                class="board-compact__collect-card"
-                (click)="keepCard(card)"
-              >
+          <div class="board-compact__wand-peek">
+            <div class="board-compact__wand-peek-slot">
+              @if (opponentHandle(); as el) {
                 <app-card
-                  [element]="card.element"
-                  [manaBonus]="collectCardManaBonus(card)"
-                  [size]="handArcCardWidth"
+                  class="board-compact__wand-peek-card"
+                  [element]="el"
+                  [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
+                  [header]="true"
+                  [headerAlign]="'bottom'"
                 />
-              </button>
-            }
-            <button type="button" class="board-compact__collect-card" (click)="keepMana()">
-              <app-card element="mana" [size]="handArcCardWidth" />
-            </button>
+              }
             </div>
-          </div>
-        } @else {
-          <div class="board-compact__raccolta-decks">
-            <app-deck
-              [size]="compactFonteCardWidth()"
-              [count]="commonDeckCount()"
-              [label]="'board.fonte.mazzo' | translate"
-              [class.board-compact__collect-deck--active]="canCollect()"
-              (click)="drawTwo()"
-            />
-            <app-deck
-              [size]="compactFonteCardWidth()"
-              [count]="commonDiscardCount()"
-              [faceUp]="true"
-              [messy]="true"
-              [topElement]="commonDiscardTop()"
-              [topManaBonus]="commonDiscardTopManaBonus()"
-              [topSpecialMana]="commonDiscardTopSpecialMana()"
-              [label]="'board.fonte.scarti' | translate"
-              emptyPlaceholder="boxed"
-              (click)="openCommonDiscardDialog()"
-            />
+            <div class="board-compact__wand-peek-slot">
+              @if (opponentBody(); as el) {
+                <app-card
+                  class="board-compact__wand-peek-card"
+                  [element]="el"
+                  [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
+                  [header]="true"
+                  [headerAlign]="'bottom'"
+                />
+              }
+            </div>
+            <div class="board-compact__wand-peek-slot">
+              @if (opponentTip(); as tip) {
+                <app-card
+                  class="board-compact__wand-peek-card"
+                  [element]="tip.element"
+                  [manaBonus]="tip.manaBonus ?? 0"
+                  [specialMana]="tip.specialMana ?? null"
+                  [size]="compactWandSlotWidth(compactOpponentWandTrackWidth())"
+                  [header]="true"
+                  [headerAlign]="'bottom'"
+                />
+              }
+            </div>
           </div>
         }
       </div>
-    } @else {
-      <ng-template #residuoTpl>
-        <app-action-menu [items]="residuoMenuItems()">
-          <app-deck
-            [size]="compactFonteCardWidth()"
-            [count]="residuoDeckCount()"
-            [faceUp]="true"
-            [topElement]="'residium'"
-            [label]="'board.fonte.residuo' | translate"
-          />
-        </app-action-menu>
-      </ng-template>
-      <ng-template #fonteGridTpl>
-        <div class="board-compact__fonte-grid">
-          @for (el of fonteCards(); track $index) {
-            <app-action-menu [items]="fonteMenuItems(el, $index)">
-              <app-card [element]="el" [size]="compactFonteCardWidth()" />
-            </app-action-menu>
+
+      <!-- ZONA CENTRALE CONTESTUALE -->
+      <div class="board-compact__central">
+        @if (!showRaccolta()) {
+          <div class="board-compact__fonte-header">
+            <span class="board-compact__fonte-heading">{{ 'board.fonteAria' | translate }}</span>
+          </div>
+        }
+        <div class="board-compact__central-content">
+          @if (showRaccolta()) {
+            <div class="board-compact__raccolta">
+              @if (pendingCollect(); as pending) {
+                <div class="board-compact__collect-prompt-wrap">
+                  <p class="board__collect-prompt">{{ 'board.fonte.collectPrompt' | translate }}</p>
+                  <div class="board-compact__collect-choice">
+                    @for (card of pending; track card.id) {
+                      <button
+                        type="button"
+                        class="board-compact__collect-card"
+                        (click)="keepCard(card)"
+                      >
+                        <app-card
+                          [element]="card.element"
+                          [manaBonus]="collectCardManaBonus(card)"
+                          [size]="handArcCardWidth"
+                        />
+                      </button>
+                    }
+                    <button type="button" class="board-compact__collect-card" (click)="keepMana()">
+                      <app-card element="mana" [size]="handArcCardWidth" />
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <div class="board-compact__raccolta-decks">
+                  <app-deck
+                    [size]="compactFonteCardWidth()"
+                    [count]="commonDeckCount()"
+                    [label]="'board.fonte.mazzo' | translate"
+                    [class.board-compact__collect-deck--active]="canCollect()"
+                    (click)="drawTwo()"
+                  />
+                  <app-deck
+                    [size]="compactFonteCardWidth()"
+                    [count]="commonDiscardCount()"
+                    [faceUp]="true"
+                    [messy]="true"
+                    [topElement]="commonDiscardTop()"
+                    [topManaBonus]="commonDiscardTopManaBonus()"
+                    [topSpecialMana]="commonDiscardTopSpecialMana()"
+                    [label]="'board.fonte.scarti' | translate"
+                    emptyPlaceholder="boxed"
+                    (click)="openCommonDiscardDialog()"
+                  />
+                </div>
+              }
+            </div>
+          } @else {
+            <ng-template #residuoTpl>
+              <app-action-menu [items]="residuoMenuItems()">
+                <app-deck
+                  [size]="compactFonteCardWidth()"
+                  [count]="residuoDeckCount()"
+                  [faceUp]="true"
+                  [topElement]="'residium'"
+                  [label]="'board.fonte.residuo' | translate"
+                />
+              </app-action-menu>
+            </ng-template>
+            <ng-template #fonteGridTpl>
+              <div class="board-compact__fonte-grid">
+                @for (el of fonteCards(); track $index) {
+                  <app-action-menu [items]="fonteMenuItems(el, $index)">
+                    <app-card [element]="el" [size]="compactFonteCardWidth()" />
+                  </app-action-menu>
+                }
+              </div>
+            </ng-template>
+            <ng-template #advancedDeckTpl>
+              <app-deck
+                [size]="compactFonteStackedCardWidth()"
+                [count]="advancedDeckCount()"
+                [showLabel]="compactFonteStackedShowLabel()"
+                [label]="'board.fonte.avanzato' | translate"
+                emptyPlaceholder="boxed"
+              />
+            </ng-template>
+            <ng-template #advancedDiscardTpl>
+              <app-deck
+                [size]="compactFonteStackedCardWidth()"
+                [count]="advancedDiscardCount()"
+                [faceUp]="true"
+                [messy]="true"
+                [topElement]="advancedDiscardTop()"
+                [showLabel]="compactFonteStackedShowLabel()"
+                [label]="'board.fonte.scarti' | translate"
+                emptyPlaceholder="boxed"
+                (click)="openAdvancedDiscardDialog()"
+              />
+            </ng-template>
+
+            <!-- Tablet: posizione originale (come sul desktop) — Residuo, Mazzo avanzato, Fonte, Pila
+           scarti in fila, niente più colonna dedicata (c'è spazio a sufficienza in larghezza). -->
+            @if (layoutTier() === 'tablet') {
+              <div class="board-compact__fonte">
+                <ng-container [ngTemplateOutlet]="residuoTpl" />
+                <ng-container [ngTemplateOutlet]="advancedDeckTpl" />
+                <ng-container [ngTemplateOutlet]="fonteGridTpl" />
+                <ng-container [ngTemplateOutlet]="advancedDiscardTpl" />
+              </div>
+            } @else {
+              <div class="board-compact__fonte">
+                <ng-container [ngTemplateOutlet]="residuoTpl" />
+                <ng-container [ngTemplateOutlet]="fonteGridTpl" />
+                <div class="board-compact__fonte-advanced-col">
+                  <ng-container [ngTemplateOutlet]="advancedDeckTpl" />
+                  <ng-container [ngTemplateOutlet]="advancedDiscardTpl" />
+                </div>
+              </div>
+            }
           }
         </div>
-      </ng-template>
-      <ng-template #advancedDeckTpl>
-        <app-deck
-          [size]="compactFonteStackedCardWidth()"
-          [count]="advancedDeckCount()"
-          [showLabel]="compactFonteStackedShowLabel()"
-          [label]="'board.fonte.avanzato' | translate"
-          emptyPlaceholder="boxed"
-        />
-      </ng-template>
-      <ng-template #advancedDiscardTpl>
-        <app-deck
-          [size]="compactFonteStackedCardWidth()"
-          [count]="advancedDiscardCount()"
-          [faceUp]="true"
-          [messy]="true"
-          [topElement]="advancedDiscardTop()"
-          [showLabel]="compactFonteStackedShowLabel()"
-          [label]="'board.fonte.scarti' | translate"
-          emptyPlaceholder="boxed"
-          (click)="openAdvancedDiscardDialog()"
-        />
-      </ng-template>
+      </div>
 
-      <!-- Tablet: posizione originale (come sul desktop) — Residuo, Mazzo avanzato, Fonte, Pila
-           scarti in fila, niente più colonna dedicata (c'è spazio a sufficienza in larghezza). -->
-      @if (layoutTier() === 'tablet') {
-        <div class="board-compact__fonte">
-          <ng-container [ngTemplateOutlet]="residuoTpl" />
-          <ng-container [ngTemplateOutlet]="advancedDeckTpl" />
-          <ng-container [ngTemplateOutlet]="fonteGridTpl" />
-          <ng-container [ngTemplateOutlet]="advancedDiscardTpl" />
-        </div>
-      } @else {
-        <div class="board-compact__fonte">
-          <ng-container [ngTemplateOutlet]="residuoTpl" />
-          <ng-container [ngTemplateOutlet]="fonteGridTpl" />
-          <div class="board-compact__fonte-advanced-col">
-            <ng-container [ngTemplateOutlet]="advancedDeckTpl" />
-            <ng-container [ngTemplateOutlet]="advancedDiscardTpl" />
-          </div>
-        </div>
-      }
-    }
-    </div>
-  </div>
-
-  <!-- Riga fissa indipendente dalla Fonte/Raccolta: Grimorio/Regolamento + fase in corso, sempre
+      <!-- Riga fissa indipendente dalla Fonte/Raccolta: Grimorio/Regolamento + fase in corso, sempre
        visibile e mai coperta, quale che sia l'ingombro del contenuto della zona centrale. Solo la
        fase in corso (pallino illuminato) + Prossima fase, non lo stepper completo di
        app-phase-tracker (pensato per la larghezza della board desktop) — stessa etichetta/stile
        del pallino "active" del tracker, per coerenza visiva. -->
-  <div class="board-compact__phase-bar">
-    <div class="board-compact__toolbar">
-      <app-icon-button
-        [icon]="grimoireIcon"
-        [ariaLabel]="'board.toolbar.grimoireTooltip' | translate"
-        [appTooltip]="'board.toolbar.grimoireTooltip' | translate"
-        [size]="32"
-        (iconClick)="openGrimoire()"
-      />
-      <app-icon-button
-        [icon]="rulebookIcon"
-        [ariaLabel]="'board.toolbar.rulebookTooltip' | translate"
-        [appTooltip]="'board.toolbar.rulebookTooltip' | translate"
-        [size]="32"
-        (iconClick)="openRulebook()"
-      />
-    </div>
-    <div class="board-compact__phase">
-      <span class="board-compact__phase-line" aria-hidden="true"></span>
-      <div class="board-compact__phase-step">
-        <span class="board-compact__phase-dot" aria-hidden="true"></span>
-        <span class="board-compact__phase-label">{{ i18n.turnPhaseLabel(state()?.phase ?? 'attesa') }}</span>
-      </div>
-      <!-- Anteprima della fase successiva — solo tablet, la phase-bar ha più spazio orizzontale che
-           su un telefono e ci sta senza affollare la riga. -->
-      @if (layoutTier() === 'tablet' && compactNextPhase(); as next) {
-        <span class="board-compact__phase-line board-compact__phase-line--next" aria-hidden="true"></span>
-        <div class="board-compact__phase-step board-compact__phase-step--next">
-          <span class="board-compact__phase-dot board-compact__phase-dot--next" aria-hidden="true"></span>
-          <span class="board-compact__phase-label board-compact__phase-label--next">{{
-            i18n.turnPhaseLabel(next)
-          }}</span>
+      <div class="board-compact__phase-bar">
+        <div class="board-compact__toolbar">
+          <app-icon-button
+            [icon]="grimoireIcon"
+            [ariaLabel]="'board.toolbar.grimoireTooltip' | translate"
+            [appTooltip]="'board.toolbar.grimoireTooltip' | translate"
+            [size]="32"
+            (iconClick)="openGrimoire()"
+          />
+          <app-icon-button
+            [icon]="rulebookIcon"
+            [ariaLabel]="'board.toolbar.rulebookTooltip' | translate"
+            [appTooltip]="'board.toolbar.rulebookTooltip' | translate"
+            [size]="32"
+            (iconClick)="openRulebook()"
+          />
         </div>
-      }
-      <span class="board-compact__phase-line" aria-hidden="true"></span>
-      <button
-        type="button"
-        class="btn btn--primary board-compact__phase-advance"
-        [disabled]="!canAdvancePhase()"
-        (click)="advancePhase()"
-      >
-        {{ 'board.turn.advance' | translate }}
-      </button>
-    </div>
-  </div>
+        <div class="board-compact__phase">
+          <span class="board-compact__phase-line" aria-hidden="true"></span>
+          <div class="board-compact__phase-step">
+            <span class="board-compact__phase-dot" aria-hidden="true"></span>
+            <span class="board-compact__phase-label">{{
+              i18n.turnPhaseLabel(state()?.phase ?? 'attesa')
+            }}</span>
+          </div>
+          <!-- Anteprima della fase successiva — solo tablet, la phase-bar ha più spazio orizzontale che
+           su un telefono e ci sta senza affollare la riga. -->
+          @if (layoutTier() === 'tablet' && compactNextPhase(); as next) {
+            <span
+              class="board-compact__phase-line board-compact__phase-line--next"
+              aria-hidden="true"
+            ></span>
+            <div class="board-compact__phase-step board-compact__phase-step--next">
+              <span
+                class="board-compact__phase-dot board-compact__phase-dot--next"
+                aria-hidden="true"
+              ></span>
+              <span class="board-compact__phase-label board-compact__phase-label--next">{{
+                i18n.turnPhaseLabel(next)
+              }}</span>
+            </div>
+          }
+          <span class="board-compact__phase-line" aria-hidden="true"></span>
+          <button
+            type="button"
+            class="btn btn--primary board-compact__phase-advance"
+            [disabled]="!canAdvancePhase()"
+            (click)="advancePhase()"
+          >
+            {{ 'board.turn.advance' | translate }}
+          </button>
+        </div>
+      </div>
 
-  <!-- PLAYER -->
-  <div class="board-compact__cluster board-compact__cluster--player">
-    @if (layoutTier() === 'tablet') {
-      <!-- Tablet: ogni sezione è divisa in riga, non più in sovraimpressione — 20% label (libera in
+      <!-- PLAYER -->
+      <div class="board-compact__cluster board-compact__cluster--player">
+        @if (layoutTier() === 'tablet') {
+          <!-- Tablet: ogni sezione è divisa in riga, non più in sovraimpressione — 20% label (libera in
            alto a sinistra), 80% carta col SUO solito header (icona+nome, [header]="true", come nel
            ramo mobile sotto), mai più grande del proprio contenitore in nessuna delle due dimensioni
            (compactWandOverlayCardWidth: min tra l'80% di larghezza e l'altezza di una sezione
            convertita in larghezza). Animazione d'ingresso/uscita preservata via classe
            (tipEntering()/bodyEntering()/handleEntering()/tipVanishing()). -->
-      <div
-        class="board-compact__wand-strip board-compact__wand-strip--player"
-        #compactPlayerWandTrack
-      >
-        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
-          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
-          <div class="board-compact__wand-overlay-card-wrap">
-            @if (playerTip(); as tip) {
-              <app-card
-                class="board-compact__wand-overlay-card"
-                [class.board-compact__wand-overlay-card--entering]="tipEntering()"
-                [element]="tip.element"
-                [manaBonus]="tip.manaBonus ?? 0"
-                [specialMana]="tip.specialMana ?? null"
-                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
-                [header]="true"
-              />
-            }
-            @if (tipVanishing(); as ghost) {
-              <app-card
-                class="board-compact__wand-overlay-card board-compact__wand-overlay-card--vanishing"
-                [element]="ghost.element"
-                [manaBonus]="ghost.manaBonus ?? 0"
-                [specialMana]="ghost.specialMana ?? null"
-                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
-                [header]="true"
-                aria-hidden="true"
-              />
-            }
+          <div
+            class="board-compact__wand-strip board-compact__wand-strip--player"
+            #compactPlayerWandTrack
+          >
+            <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+              <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+              <div class="board-compact__wand-overlay-card-wrap">
+                @if (playerTip(); as tip) {
+                  <app-card
+                    class="board-compact__wand-overlay-card"
+                    [class.board-compact__wand-overlay-card--entering]="tipEntering()"
+                    [element]="tip.element"
+                    [manaBonus]="tip.manaBonus ?? 0"
+                    [specialMana]="tip.specialMana ?? null"
+                    [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                    [header]="true"
+                  />
+                }
+                @if (tipVanishing(); as ghost) {
+                  <app-card
+                    class="board-compact__wand-overlay-card board-compact__wand-overlay-card--vanishing"
+                    [element]="ghost.element"
+                    [manaBonus]="ghost.manaBonus ?? 0"
+                    [specialMana]="ghost.specialMana ?? null"
+                    [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                    [header]="true"
+                    aria-hidden="true"
+                  />
+                }
+              </div>
+            </div>
+            <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+              <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+              <div class="board-compact__wand-overlay-card-wrap">
+                @if (playerBody(); as el) {
+                  <app-card
+                    class="board-compact__wand-overlay-card"
+                    [class.board-compact__wand-overlay-card--entering]="bodyEntering()"
+                    [element]="el"
+                    [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                    [header]="true"
+                  />
+                }
+              </div>
+            </div>
+            <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
+              <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+              <div class="board-compact__wand-overlay-card-wrap">
+                @if (playerHandle(); as el) {
+                  <app-card
+                    class="board-compact__wand-overlay-card"
+                    [class.board-compact__wand-overlay-card--entering]="handleEntering()"
+                    [element]="el"
+                    [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
+                    [header]="true"
+                  />
+                }
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
-          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
-          <div class="board-compact__wand-overlay-card-wrap">
-            @if (playerBody(); as el) {
-              <app-card
-                class="board-compact__wand-overlay-card"
-                [class.board-compact__wand-overlay-card--entering]="bodyEntering()"
-                [element]="el"
-                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
-                [header]="true"
-              />
-            }
-          </div>
-        </div>
-        <div class="board-compact__wand-slot board-compact__wand-slot--overlay">
-          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
-          <div class="board-compact__wand-overlay-card-wrap">
-            @if (playerHandle(); as el) {
-              <app-card
-                class="board-compact__wand-overlay-card"
-                [class.board-compact__wand-overlay-card--entering]="handleEntering()"
-                [element]="el"
-                [size]="compactWandOverlayCardWidth(compactPlayerWandTrackWidth())"
-                [header]="true"
-              />
-            }
-          </div>
-        </div>
-      </div>
-    } @else {
-      <!-- Mobile: carta incastonata/trattenuta, header true come sul desktop (mostra icona+nome nella
+        } @else {
+          <!-- Mobile: carta incastonata/trattenuta, header true come sul desktop (mostra icona+nome nella
            finestra visibile invece di un frammento a caso) — finestra ritagliata (overflow: hidden),
            non coperta da un pannello alto quanto la carta come sul desktop (qui non esiste, la
            striscia è molto più bassa). Animazione d'ingresso preservata via classe invece che sul
            margine (tipEntering()/bodyEntering()/handleEntering(): appare con un lieve scale-in invece
            che di scatto — vedi board-compact__wand-peek-card--entering). -->
-      <div class="board-compact__wand-peek">
-        <div class="board-compact__wand-peek-slot">
-          @if (playerTip(); as tip) {
-            <app-card
-              class="board-compact__wand-peek-card"
-              [class.board-compact__wand-peek-card--entering]="tipEntering()"
-              [element]="tip.element"
-              [manaBonus]="tip.manaBonus ?? 0"
-              [specialMana]="tip.specialMana ?? null"
-              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-              [header]="true"
-            />
-          }
-          @if (tipVanishing(); as ghost) {
-            <app-card
-              class="board-compact__wand-peek-card board-compact__wand-peek-card--vanishing"
-              [element]="ghost.element"
-              [manaBonus]="ghost.manaBonus ?? 0"
-              [specialMana]="ghost.specialMana ?? null"
-              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-              [header]="true"
-              aria-hidden="true"
-            />
-          }
-        </div>
-        <div class="board-compact__wand-peek-slot">
-          @if (playerBody(); as el) {
-            <app-card
-              class="board-compact__wand-peek-card"
-              [class.board-compact__wand-peek-card--entering]="bodyEntering()"
-              [element]="el"
-              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-              [header]="true"
-            />
-          }
-        </div>
-        <div class="board-compact__wand-peek-slot">
-          @if (playerHandle(); as el) {
-            <app-card
-              class="board-compact__wand-peek-card"
-              [class.board-compact__wand-peek-card--entering]="handleEntering()"
-              [element]="el"
-              [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
-              [header]="true"
-            />
-          }
-        </div>
-      </div>
+          <div class="board-compact__wand-peek">
+            <div class="board-compact__wand-peek-slot">
+              @if (playerTip(); as tip) {
+                <app-card
+                  class="board-compact__wand-peek-card"
+                  [class.board-compact__wand-peek-card--entering]="tipEntering()"
+                  [element]="tip.element"
+                  [manaBonus]="tip.manaBonus ?? 0"
+                  [specialMana]="tip.specialMana ?? null"
+                  [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+                  [header]="true"
+                />
+              }
+              @if (tipVanishing(); as ghost) {
+                <app-card
+                  class="board-compact__wand-peek-card board-compact__wand-peek-card--vanishing"
+                  [element]="ghost.element"
+                  [manaBonus]="ghost.manaBonus ?? 0"
+                  [specialMana]="ghost.specialMana ?? null"
+                  [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+                  [header]="true"
+                  aria-hidden="true"
+                />
+              }
+            </div>
+            <div class="board-compact__wand-peek-slot">
+              @if (playerBody(); as el) {
+                <app-card
+                  class="board-compact__wand-peek-card"
+                  [class.board-compact__wand-peek-card--entering]="bodyEntering()"
+                  [element]="el"
+                  [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+                  [header]="true"
+                />
+              }
+            </div>
+            <div class="board-compact__wand-peek-slot">
+              @if (playerHandle(); as el) {
+                <app-card
+                  class="board-compact__wand-peek-card"
+                  [class.board-compact__wand-peek-card--entering]="handleEntering()"
+                  [element]="el"
+                  [size]="compactWandSlotWidth(compactPlayerWandTrackWidth())"
+                  [header]="true"
+                />
+              }
+            </div>
+          </div>
 
-      <div
-        class="board-compact__wand-strip board-compact__wand-strip--player"
-        #compactPlayerWandTrack
-      >
-        <div class="board-compact__wand-slot">
-          <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
-        </div>
-        <div class="board-compact__wand-slot">
-          <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
-        </div>
-        <div class="board-compact__wand-slot">
-          <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
-        </div>
-      </div>
-    }
-
-    <div class="board-compact__hand-row">
-      <button
-        type="button"
-        class="board__deck-trigger board__deck-trigger--pile"
-        (click)="openOwnPileDialog()"
-      >
-        <app-deck
-          [size]="handCardWidth"
-          [count]="playerDeckCount()"
-          [showLabel]="false"
-          [showCount]="false"
-          [label]="'board.fonte.mazzo' | translate"
-          [emptyPlaceholder]="'boxed-text'"
-          [appTooltip]="'board.deckRemaining' | translate: { count: playerDeckCount() }"
-          tooltipPosition="top"
-        />
-      </button>
-      <div
-        class="board-compact__hand-overlap"
-        #compactPlayerHandTrack
-        [style.height.px]="handArcCardWidth * 1.5"
-      >
-        @for (card of playerHand(); track card.id; let i = $index) {
           <div
-            [style]="
-              compactHandCardStyle(i, playerHand().length, compactPlayerHandTrackWidth(), handArcCardWidth)
-            "
+            class="board-compact__wand-strip board-compact__wand-strip--player"
+            #compactPlayerWandTrack
           >
-            <!-- Stessi ng-template ricchi del desktop (vedi playerHand nel ramo desktop). -->
-            <ng-template #spellTip>
-              <div class="rich-tooltip__spell-header">{{ 'card.spell.category' | translate }}</div>
-              <strong>{{ spellName(card) }}</strong>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
-              @if (spellFlavor(card); as flavor) {
-                <p class="rich-tooltip__flavor">
-                  <em>{{ flavor }}</em>
-                </p>
-              }
-            </ng-template>
-            <ng-template #specialManaTip>
-              <div class="rich-tooltip__header">
-                <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
-                <span
-                  class="rich-tooltip__special-icon"
-                  [class.rich-tooltip__special-icon--prismatic]="card.specialMana === 'prismatic'"
-                  [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
-                  [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
-                  [style.--special-mana-icon]="'url(' + specialManaIconPath(card.specialMana!) + ')'"
-                  aria-hidden="true"
-                ></span>
-              </div>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
-            </ng-template>
-            <ng-template #manaTokenTip>
-              <strong>{{ 'card.manaToken.title' | translate }}</strong>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
-            </ng-template>
-            <ng-template #freezeTip>
-              <strong>{{ 'card.freeze.title' | translate }}</strong>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect" [innerHTML]="'card.freeze.effect' | translate"></p>
-            </ng-template>
-            <ng-template #revealedTip>
-              <div class="rich-tooltip__header">
-                <strong>{{ 'card.revealed.title' | translate }}</strong>
-                <span
-                  class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
-                  [style.--special-mana-icon]="revealedIconUrl"
-                  aria-hidden="true"
-                ></span>
-              </div>
-              <hr class="rich-tooltip__rule" />
-              <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
-            </ng-template>
-            <ng-template #cardTip>
-              @if (isMultiCardTooltip(card)) {
-                <div class="rich-tooltip__multi">
-                  @if (card.tier === 'spell') {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="spellTip" />
-                    </div>
-                  } @else if (card.tier === 'mana') {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="manaTokenTip" />
-                    </div>
-                  } @else if (card.tier === 'freeze') {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="freezeTip" />
-                    </div>
-                  } @else if (card.specialMana) {
-                    <div class="rich-tooltip__multi-item">
-                      <ng-container [ngTemplateOutlet]="specialManaTip" />
-                    </div>
-                  }
-                  <div class="rich-tooltip__multi-item">
-                    <ng-container [ngTemplateOutlet]="revealedTip" />
-                  </div>
-                </div>
-              } @else if (card.tier === 'spell') {
-                <ng-container [ngTemplateOutlet]="spellTip" />
-              } @else if (card.tier === 'mana') {
-                <ng-container [ngTemplateOutlet]="manaTokenTip" />
-              } @else if (card.tier === 'freeze') {
-                <ng-container [ngTemplateOutlet]="freezeTip" />
-              } @else if (card.specialMana) {
-                <ng-container [ngTemplateOutlet]="specialManaTip" />
-              } @else if (card.revealedToOpponent) {
-                <ng-container [ngTemplateOutlet]="revealedTip" />
-              }
-            </ng-template>
-            <app-action-menu [items]="handCardMenuItems(card, i)">
-              <app-card
-                [element]="card.element"
-                [spellId]="card.spellId ?? null"
-                [manaBonus]="card.manaBonus ?? 0"
-                [specialMana]="card.specialMana ?? null"
-                [revealedToOpponent]="card.revealedToOpponent ?? false"
-                [showMana]="card.tier !== 'freeze'"
-                [freeze]="card.tier === 'freeze'"
-                [size]="handArcCardWidth"
-                [appTooltip]="hasCardTooltip(card) ? cardTip : null"
-                tooltipPosition="top"
-              />
-            </app-action-menu>
+            <div class="board-compact__wand-slot">
+              <span class="board-compact__wand-label">{{ 'board.wand.tip' | translate }}</span>
+            </div>
+            <div class="board-compact__wand-slot">
+              <span class="board-compact__wand-label">{{ 'board.wand.body' | translate }}</span>
+            </div>
+            <div class="board-compact__wand-slot">
+              <span class="board-compact__wand-label">{{ 'board.wand.handle' | translate }}</span>
+            </div>
           </div>
         }
-      </div>
-      <button
-        type="button"
-        class="board__deck-trigger board__deck-trigger--pile"
-        (click)="openOwnPileDialog()"
-      >
-        <app-deck
-          [size]="handCardWidth"
-          [count]="playerDiscardCount()"
-          [faceUp]="true"
-          [messy]="true"
-          [topElement]="playerDiscardTop()"
-          [topManaBonus]="playerDiscardTopManaBonus()"
-          [topSpecialMana]="playerDiscardTopSpecialMana()"
-          [topFreeze]="playerDiscardTopFreeze()"
-          [topRevealedToOpponent]="playerDiscardTopRevealed()"
-          [showLabel]="false"
-          [showCount]="false"
-          [label]="'board.fonte.scarti' | translate"
-          [emptyPlaceholder]="'boxed-text'"
-          [appTooltip]="'board.deckDiscarded' | translate: { count: playerDiscardCount() }"
-          tooltipPosition="top"
-        />
-      </button>
-    </div>
-  </div>
 
-  <footer
-    class="board-compact__identity board-compact__identity--player"
-    [attr.aria-label]="'board.playerZoneAria' | translate"
-  >
-    <span class="board-compact__hp-value">{{ compactDisplayedHp(playerHealth()) }}</span>
-    <!-- Righe invertite rispetto all'avversario: qui le info vengono prima, la barra vita dopo
-         (non specchiato in orizzontale — stesso ordine sinistra/destra di sempre). -->
-    <div class="board-compact__identity-meta">
-      @if (playerPoisonLevel() > 0) {
-        <span
-          class="board-compact__poison"
-          [attr.aria-label]="'playerHud.poisonAria' | translate: { level: playerPoisonLevel() }"
-        >
-          <img [src]="poisonIcon" alt="" aria-hidden="true" />{{ playerPoisonLevel() }}
-        </span>
-      }
-      <div class="board-compact__identity-name-group">
-        <span class="board-compact__name">{{ playerName() }}</span>
-        @if (playerPhoto(); as photo) {
-          <img class="board-compact__avatar" [src]="photo" alt="" referrerpolicy="no-referrer" />
-        } @else {
-          <span class="board-compact__avatar board-compact__avatar--fallback">{{
-            playerName().charAt(0)
-          }}</span>
-        }
-        <app-icon-button
-          [icon]="settingsIcon"
-          [ariaLabel]="'playerHud.settingsAria' | translate"
-          [size]="28"
-          (iconClick)="openGameSettings()"
-        />
-      </div>
-    </div>
-    <div class="board-compact__hp-bar">
-      <div class="board-compact__hp-track">
-        <div
-          class="board-compact__hp-fill"
-          [class.board-compact__hp-fill--poisoned]="playerPoisonLevel() > 0"
-          [style.width.%]="compactHpPercent(playerHealth())"
-        ></div>
-        @if (playerHealth().shield > 0) {
+        <div class="board-compact__hand-row">
+          <button
+            type="button"
+            class="board__deck-trigger board__deck-trigger--pile"
+            (click)="openOwnPileDialog()"
+          >
+            <app-deck
+              [size]="handCardWidth"
+              [count]="playerDeckCount()"
+              [showLabel]="false"
+              [showCount]="false"
+              [label]="'board.fonte.mazzo' | translate"
+              [emptyPlaceholder]="'boxed-text'"
+              [appTooltip]="'board.deckRemaining' | translate: { count: playerDeckCount() }"
+              tooltipPosition="top"
+            />
+          </button>
           <div
-            class="board-compact__hp-shield-fill"
-            [style.width.%]="compactShieldPercent(playerHealth())"
-            [style.left.%]="compactHpPercent(playerHealth())"
-          ></div>
-        }
+            class="board-compact__hand-overlap"
+            #compactPlayerHandTrack
+            [style.height.px]="handArcCardWidth * 1.5"
+          >
+            @for (card of playerHand(); track card.id; let i = $index) {
+              <div
+                [style]="
+                  compactHandCardStyle(
+                    i,
+                    playerHand().length,
+                    compactPlayerHandTrackWidth(),
+                    handArcCardWidth
+                  )
+                "
+              >
+                <!-- Stessi ng-template ricchi del desktop (vedi playerHand nel ramo desktop). -->
+                <ng-template #spellTip>
+                  <div class="rich-tooltip__spell-header">
+                    {{ 'card.spell.category' | translate }}
+                  </div>
+                  <strong>{{ spellName(card) }}</strong>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ spellEffectSummary(card) }}</p>
+                  @if (spellFlavor(card); as flavor) {
+                    <p class="rich-tooltip__flavor">
+                      <em>{{ flavor }}</em>
+                    </p>
+                  }
+                </ng-template>
+                <ng-template #specialManaTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ i18n.specialManaLabel(card.specialMana!) }}</strong>
+                    <span
+                      class="rich-tooltip__special-icon"
+                      [class.rich-tooltip__special-icon--prismatic]="
+                        card.specialMana === 'prismatic'
+                      "
+                      [class.rich-tooltip__special-icon--vital]="card.specialMana === 'vital'"
+                      [class.rich-tooltip__special-icon--chaotic]="card.specialMana === 'chaotic'"
+                      [style.--special-mana-icon]="
+                        'url(' + specialManaIconPath(card.specialMana!) + ')'
+                      "
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ specialManaEffectText(card.specialMana!) }}</p>
+                </ng-template>
+                <ng-template #manaTokenTip>
+                  <strong>{{ 'card.manaToken.title' | translate }}</strong>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ 'card.manaToken.effect' | translate }}</p>
+                </ng-template>
+                <ng-template #freezeTip>
+                  <strong>{{ 'card.freeze.title' | translate }}</strong>
+                  <hr class="rich-tooltip__rule" />
+                  <p
+                    class="rich-tooltip__effect"
+                    [innerHTML]="'card.freeze.effect' | translate"
+                  ></p>
+                </ng-template>
+                <ng-template #revealedTip>
+                  <div class="rich-tooltip__header">
+                    <strong>{{ 'card.revealed.title' | translate }}</strong>
+                    <span
+                      class="rich-tooltip__special-icon rich-tooltip__special-icon--revealed"
+                      [style.--special-mana-icon]="revealedIconUrl"
+                      aria-hidden="true"
+                    ></span>
+                  </div>
+                  <hr class="rich-tooltip__rule" />
+                  <p class="rich-tooltip__effect">{{ 'card.revealed.effect' | translate }}</p>
+                </ng-template>
+                <ng-template #cardTip>
+                  @if (isMultiCardTooltip(card)) {
+                    <div class="rich-tooltip__multi">
+                      @if (card.tier === 'spell') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="spellTip" />
+                        </div>
+                      } @else if (card.tier === 'mana') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="manaTokenTip" />
+                        </div>
+                      } @else if (card.tier === 'freeze') {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="freezeTip" />
+                        </div>
+                      } @else if (card.specialMana) {
+                        <div class="rich-tooltip__multi-item">
+                          <ng-container [ngTemplateOutlet]="specialManaTip" />
+                        </div>
+                      }
+                      <div class="rich-tooltip__multi-item">
+                        <ng-container [ngTemplateOutlet]="revealedTip" />
+                      </div>
+                    </div>
+                  } @else if (card.tier === 'spell') {
+                    <ng-container [ngTemplateOutlet]="spellTip" />
+                  } @else if (card.tier === 'mana') {
+                    <ng-container [ngTemplateOutlet]="manaTokenTip" />
+                  } @else if (card.tier === 'freeze') {
+                    <ng-container [ngTemplateOutlet]="freezeTip" />
+                  } @else if (card.specialMana) {
+                    <ng-container [ngTemplateOutlet]="specialManaTip" />
+                  } @else if (card.revealedToOpponent) {
+                    <ng-container [ngTemplateOutlet]="revealedTip" />
+                  }
+                </ng-template>
+                <app-action-menu [items]="handCardMenuItems(card, i)">
+                  <app-card
+                    [element]="card.element"
+                    [spellId]="card.spellId ?? null"
+                    [manaBonus]="card.manaBonus ?? 0"
+                    [specialMana]="card.specialMana ?? null"
+                    [revealedToOpponent]="card.revealedToOpponent ?? false"
+                    [showMana]="card.tier !== 'freeze'"
+                    [freeze]="card.tier === 'freeze'"
+                    [size]="handArcCardWidth"
+                    [appTooltip]="hasCardTooltip(card) ? cardTip : null"
+                    tooltipPosition="top"
+                  />
+                </app-action-menu>
+              </div>
+            }
+          </div>
+          <button
+            type="button"
+            class="board__deck-trigger board__deck-trigger--pile"
+            (click)="openOwnPileDialog()"
+          >
+            <app-deck
+              [size]="handCardWidth"
+              [count]="playerDiscardCount()"
+              [faceUp]="true"
+              [messy]="true"
+              [topElement]="playerDiscardTop()"
+              [topManaBonus]="playerDiscardTopManaBonus()"
+              [topSpecialMana]="playerDiscardTopSpecialMana()"
+              [topFreeze]="playerDiscardTopFreeze()"
+              [topRevealedToOpponent]="playerDiscardTopRevealed()"
+              [showLabel]="false"
+              [showCount]="false"
+              [label]="'board.fonte.scarti' | translate"
+              [emptyPlaceholder]="'boxed-text'"
+              [appTooltip]="'board.deckDiscarded' | translate: { count: playerDiscardCount() }"
+              tooltipPosition="top"
+            />
+          </button>
+        </div>
       </div>
+
+      <footer
+        class="board-compact__identity board-compact__identity--player"
+        [attr.aria-label]="'board.playerZoneAria' | translate"
+      >
+        <span class="board-compact__hp-value">{{ compactDisplayedHp(playerHealth()) }}</span>
+        <!-- Righe invertite rispetto all'avversario: qui le info vengono prima, la barra vita dopo
+         (non specchiato in orizzontale — stesso ordine sinistra/destra di sempre). -->
+        <div class="board-compact__identity-meta">
+          @if (playerPoisonLevel() > 0) {
+            <span
+              class="board-compact__poison"
+              [attr.aria-label]="'playerHud.poisonAria' | translate: { level: playerPoisonLevel() }"
+            >
+              <img [src]="poisonIcon" alt="" aria-hidden="true" />{{ playerPoisonLevel() }}
+            </span>
+          }
+          <div class="board-compact__identity-name-group">
+            <span class="board-compact__name">{{ playerName() }}</span>
+            @if (playerPhoto(); as photo) {
+              <img
+                class="board-compact__avatar"
+                [src]="photo"
+                alt=""
+                referrerpolicy="no-referrer"
+              />
+            } @else {
+              <span class="board-compact__avatar board-compact__avatar--fallback">{{
+                playerName().charAt(0)
+              }}</span>
+            }
+            <app-icon-button
+              [icon]="settingsIcon"
+              [ariaLabel]="'playerHud.settingsAria' | translate"
+              [size]="28"
+              (iconClick)="openGameSettings()"
+            />
+          </div>
+        </div>
+        <div class="board-compact__hp-bar">
+          <div class="board-compact__hp-track">
+            <div
+              class="board-compact__hp-fill"
+              [class.board-compact__hp-fill--poisoned]="playerPoisonLevel() > 0"
+              [style.width.%]="compactHpPercent(playerHealth())"
+            ></div>
+            @if (playerHealth().shield > 0) {
+              <div
+                class="board-compact__hp-shield-fill"
+                [style.width.%]="compactShieldPercent(playerHealth())"
+                [style.left.%]="compactHpPercent(playerHealth())"
+              ></div>
+            }
+          </div>
+        </div>
+      </footer>
+    }
+  } @else {
+    <div class="board__loading">
+      <p class="t-muted">{{ 'board.loadingGame' | translate }}</p>
     </div>
-  </footer>
-}
-} @else {
-  <div class="board__loading">
-    <p class="t-muted">{{ 'board.loadingGame' | translate }}</p>
-  </div>
-}
+  }
 </div>

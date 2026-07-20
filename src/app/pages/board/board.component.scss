@@ -309,6 +309,18 @@
       pointer-events: none;
       animation: hand-card-explode 700ms ease-out forwards;
     }
+
+    // Occhio (5.x, Card.revealedToOpponent): la carta dell'avversario passa dal dorso al volto vero
+    // tramite uno swap di template (@if/@else in board.component.html), non un cambio di [revealed]
+    // sulla stessa istanza — la garanzia di privacy vuole che i dati veri non vengano MAI passati a un
+    // app-card finché non è rivelata, nemmeno con [revealed]=false, quindi qui non può scattare il
+    // flip interno di CardComponent (mai una stessa istanza che passa da retro a fronte). L'elemento
+    // è sempre nuovo di zecca nell'istante in cui compare: basta una classe statica, l'animazione CSS
+    // parte da sola all'inserimento nel DOM, senza bisogno di alcun segnale. Usa `scale`/`filter`
+    // standalone (non `transform`/`box-shadow`) per lo stesso motivo di --vanishing/--exploding sopra.
+    &--revealing {
+      animation: card-reveal-pop 500ms ease-out;
+    }
   }
 
   // Esplosione elementale (2.4) in mano: le 1-2 carte vere consumate, centrate sopra il ventaglio
@@ -668,6 +680,25 @@
     filter: brightness(1);
     translate: 0 0;
     opacity: 0;
+  }
+}
+
+// Occhio (5.x) — "pop" d'ingresso quando la carta vera dell'avversario compare al posto del dorso
+// (vedi .board__hand-card--revealing sopra): parte piccola e sovraesposta, si assesta alla misura
+// reale. Nessun collegamento a un batch id/segnale — riparte da sola ogni volta che questa classe si
+// applica a un elemento appena inserito nel DOM (mai su un elemento già a video, vedi il commento sopra).
+@keyframes card-reveal-pop {
+  0% {
+    scale: 0.55 0.55;
+    filter: brightness(2.4);
+  }
+  60% {
+    scale: 1.08 1.08;
+    filter: brightness(1.6);
+  }
+  100% {
+    scale: 1 1;
+    filter: brightness(1);
   }
 }
 

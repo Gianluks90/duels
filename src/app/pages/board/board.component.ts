@@ -15,10 +15,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import { firstValueFrom } from 'rxjs';
-import { GameService, type GameDoc } from '../../services/game.service';
+import { GameService } from '../../services/game.service';
 import { GameEngineService } from '../../services/game-engine.service';
 import { AuthService } from '../../services/auth.service';
-import { AudioService } from '../../services/audio.service';
+import { GameStateService } from '../../services/game-state.service';
+import { AnimationQueueService, VANISH_DURATION_MS } from '../../services/animation-queue.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
 import {
@@ -120,31 +121,11 @@ type HoverRecipe =
   | { kind: 'superior' }
   | { kind: 'opposite' };
 
-/** Durata dell'animazione di sparizione delle carte "temporanee" (Congelamento/Residuo, Card.expiresAt) — deve combaciare con @keyframes hand-card-vanish in board.component.scss. */
-const VANISH_DURATION_MS = 1000;
-/** Durata dell'animazione "lampo + scossa" delle carte Luce/Tenebra coinvolte in un'Esplosione elementale (2.4) in mano — deve combaciare con @keyframes hand-card-explode in board.component.scss. */
-const EXPLOSION_GHOST_DURATION_MS = 700;
-/** Durata del lampo + scossa sull'intera riga della Fonte Arcana quando un'Esplosione elementale (2.4) avviene lì — deve combaciare con @keyframes fonte-explode in board.component.scss. */
-const FONTE_EXPLOSION_DURATION_MS = 500;
-
-/** Una carta "temporanea" già sparita da playerHand() ma ancora mostrata come ghost, nella sua vecchia posizione, finché l'animazione di sparizione (lift + fade) non finisce — 'expiry' per Congelamento/Residuo (Card.expiresAt), 'toTip' per una carta appena trattenuta nella punta della bacchetta (1.4.1), 'toSocket' per una carta appena incastonata nell'asta o nel manico (1.4.2/1.4.3) — stessa animazione in tutti e 3 i casi, solo azione deliberata del giocatore invece di una scadenza. L'Esplosione elementale (2.4) ha un proprio meccanismo dedicato, vedi handExplosions più sotto. */
-interface VanishingGhost {
-  card: Card;
-  index: number;
-  total: number;
-  kind: 'expiry' | 'toTip' | 'toSocket';
-}
-
-/** Esplosione elementale (2.4) risolta in mano — le 2 carte (1 Luce + 1 Tenebra) prese direttamente dall'evento, non dedotte confrontando la mano prima/dopo (impossibile: si consumano nella stessa transazione atomica in cui entrano in mano, il client non vede mai lo stato intermedio). */
-interface HandExplosion {
-  role: PlayerId;
-  cards: readonly Card[];
-}
-
 @Component({
   selector: 'app-board',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
+  providers: [GameStateService, AnimationQueueService],
   imports: [
     CardComponent,
     DeckComponent,
@@ -163,7 +144,8 @@ export class BoardComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly game = inject(GameService);
   private readonly gameEngine = inject(GameEngineService);
-  private readonly audio = inject(AudioService);
+  private readonly gameState = inject(GameStateService);
+  private readonly animationQueue = inject(AnimationQueueService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -296,10 +278,14 @@ export class BoardComponent implements OnInit {
   protected readonly compactOpponentWandTrackWidth = signal(0);
 
   protected readonly gameId = signal<string>('');
-  protected readonly gameDoc = signal<GameDoc | null>(null);
+  /** Documento Firestore grezzo, alias di GameStateService.gameDoc (scritto da ngOnInit) — il resto
+   * della classe continua a leggerlo/scriverlo come un proprio signal, invariato rispetto a prima. */
+  protected readonly gameDoc = this.gameState.gameDoc;
 
-  /** Stato di gioco reale, letto dal campo `state` del documento Firestore (null finché la partita non è iniziata). */
-  protected readonly state = computed(() => this.gameDoc()?.state ?? null);
+  /** Stato di gioco reale, alias di GameStateService.rawState — sempre il valore vero e immediato,
+   * mai ritardato: solo AnimationQueueService (sincronizzato da un effect nel costruttore) decide
+   * cosa animare a partire dagli stessi cambiamenti, senza mai ritardare questo signal stesso. */
+  protected readonly state = this.gameState.rawState;
 
   /** null sia quando manca doc/uid sia quando l'utente autenticato non è né host né guest di QUESTA partita — chi apre l'URL conoscendo solo il gameId (ma senza esserne parte) non deve essere trattato come guest, vedi il redirect in ngOnInit. */
   private readonly myRole = computed<PlayerId | null>(() => {
@@ -328,16 +314,15 @@ export class BoardComponent implements OnInit {
     return s && role ? s.players[role] : null;
   });
 
-  /** Esplosione elementale (2.4): quante volte questo ruolo è stato colpito nell'ultimo batch (2.4 può risolvere più coppie in un colpo solo) — null finché non ce n'è una da mostrare. Il "lampo" sulla barra vita funziona sempre, anche quando la causa non è visibile (mano coperta dell'avversario). */
-  private damageEventFor(role: PlayerId | null): DamageEvent | null {
-    const s = this.state();
-    if (!s || !role) return null;
-    const amount = s.lastExplosions.filter((e) => e.affectedRoles.includes(role)).length;
-    return amount > 0 ? { id: s.explosionBatchId, amount } : null;
-  }
-
-  protected readonly playerDamageEvent = computed(() => this.damageEventFor(this.myRole()));
-  protected readonly opponentDamageEvent = computed(() => this.damageEventFor(this.opponentRole()));
+  /** Danno subito da mostrare come lampo sulla barra vita — copre qualunque causa (Esplosione
+   * elementale, incantesimo, veleno), derivato da AnimationQueueService confrontando l'HP tra due
+   * GameState consecutivi (vedi deriveGameEvents), non più solo dalle Esplosioni come in passato. */
+  protected readonly playerDamageEvent = computed(() =>
+    this.animationQueue.damageEventFor(this.myRole()),
+  );
+  protected readonly opponentDamageEvent = computed(() =>
+    this.animationQueue.damageEventFor(this.opponentRole()),
+  );
 
   protected readonly playerHealth = computed(() => ({
     max: 20,
@@ -485,8 +470,8 @@ export class BoardComponent implements OnInit {
 
   /** Le 2 carte pescate dal mazzo comune in attesa di scelta — solo locale, nessuna scrittura su Firestore finché non si sceglie quale tenere (regolamento 4.3). */
   protected readonly pendingCollect = computed(() => this.me()?.pendingCollect ?? null);
-  /** Id delle carte pescate il cui bonus manico (regolamento 1.4.3) è già stato rivelato in UI — il bonus è già risolto lato stato, ma resta nascosto un attimo per farlo notare (vedi l'effect nel costruttore). */
-  protected readonly revealedBonusIds = signal<ReadonlySet<string>>(new Set());
+  /** Id delle carte pescate il cui bonus manico (regolamento 1.4.3) è già stato rivelato in UI — il bonus è già risolto lato stato, ma resta nascosto un attimo per farlo notare (AnimationQueueService, evento collectBonusRevealed). */
+  protected readonly revealedBonusIds = this.animationQueue.revealedBonusIds;
   protected readonly canCollect = computed(
     () =>
       this.isPlayerTurn() &&
@@ -545,8 +530,6 @@ export class BoardComponent implements OnInit {
   private autoAdvanceKey: string | null = null;
   /** Come sopra, ma per l'auto-avanzamento del giocatore reale (vedi effect dedicato nel costruttore) — chiave separata da autoAdvanceKey perché sono due avanzamenti indipendenti (ruoli diversi). */
   private turnAutoAdvanceKey: string | null = null;
-  /** Evita di ripianificare la rivelazione del bonus manico se l'effect sotto rieseguisce senza che la coppia pescata sia davvero cambiata. */
-  private revealedBonusKey: string | null = null;
 
   /**
    * Quali fasi si risolvono già da sole (regolamento v2, sez. 4) e quando è il momento di
@@ -573,43 +556,76 @@ export class BoardComponent implements OnInit {
   });
 
   /**
-   * Preparazione dà un attimo per notare gli effetti appena risolti (danno da veleno, carte
-   * Congelamento sciolte). Finale allunga il ritardo solo se in mano c'è un Residuo in scadenza
-   * (Card.expiresAt 'fine'), così l'animazione di sparizione (VANISH_DURATION_MS) ha il tempo di
-   * giocare prima che endTurn lo rimuova davvero — altrimenti niente da mostrare, resta rapida.
+   * Preparazione e Incantesimo danno un attimo per notare gli effetti appena risolti in modo
+   * sincrono al solo ingresso in fase (Preparazione: danno da veleno, carte Congelamento sciolte —
+   * Incantesimo: resolveSpells applica danno/scudo/rivelazione/ecc. di ogni magia in coda subito
+   * dentro advanceTurnPhase, "chi osserva lo stato la vede già risolta", stesso schema — vedi
+   * turn-engine.ts). Senza questo, un incantesimo come Terzo occhio risolveva sì correttamente (il
+   * flag Card.revealedToOpponent era già impostato) ma il ritardo generico di 500ms sotto lasciava
+   * a malapena il tempo al pop CSS di board__hand-card--revealing di partire prima che la fase
+   * avanzasse già a Finale — la rivelazione passava semplicemente inosservata. Finale allunga il
+   * ritardo solo se in mano c'è un Residuo in scadenza (Card.expiresAt 'fine'), così l'animazione di
+   * sparizione (VANISH_DURATION_MS) ha il tempo di giocare prima che endTurn lo rimuova davvero —
+   * altrimenti niente da mostrare, resta rapida.
    */
   private readonly autoAdvanceDelayMs = computed(() => {
     const phase = this.state()?.phase;
-    if (phase === 'preparazione') return 2000;
+    if (phase === 'preparazione' || phase === 'incantesimo') return 2000;
     if (phase === 'fine' && (this.me()?.hand ?? []).some((card) => card.expiresAt === 'fine'))
       return VANISH_DURATION_MS;
     return 500;
   });
 
-  /** Id delle carte "temporanee" ancora presenti in playerHand() ma già in animazione di sparizione (es. Residuo, marcato non appena si programma il ritardo di Finale sopra — vedi l'effect nel costruttore). */
-  protected readonly vanishingCardIds = signal<ReadonlySet<string>>(new Set());
-  /** Carte "temporanee" già sparite da playerHand() ma non ancora mostrate come tali (es. Congelamento, sciolto in modo atomico dentro l'endTurn dell'avversario — il nostro client la vede già sparita, senza un "prima" da segnare proattivamente) — restano a video come ghost nella loro vecchia posizione finché l'animazione non finisce. */
-  protected readonly vanishingGhosts = signal<readonly VanishingGhost[]>([]);
-  private lastKnownHand: Card[] = [];
+  /** Ritardo "umano" per fase usato SOLO dal bot di debug (guestId 'debug-guest', vedi l'effect nel
+   * costruttore) — indipendente da autoAdvanceDelayMs sopra: quello è tarato sui millisecondi esatti
+   * di animazioni specifiche del PROPRIO turno (es. VANISH_DURATION_MS), questo serve solo a far
+   * "sembrare che il bot ci pensi" invece di attraversare tutte e 5 le fasi (incluso il fine turno
+   * che scarta l'intera mano e ne pesca una fresca) in ~2,5s fissi come prima — troppo rapido per
+   * accorgersi di qualunque animazione lato bot (es. Terzo occhio: la carta rivelata sopravvive solo
+   * finché il bot non completa il proprio turno). Il bot non decide comunque nulla di concreto (non
+   * raccoglie, non combina, non lancia magie — vedi il commento sull'effect stesso), quindi i valori
+   * sono arbitrari ma nell'ordine di grandezza di una vera decisione umana. */
+  private readonly DEBUG_BOT_PHASE_DELAY_MS: Record<TurnPhase, number> = {
+    attesa: 500, // mai davvero raggiunta come fase persistita (turn-phase.model.ts), fallback innocuo
+    preparazione: 1200,
+    raccolta: 1600,
+    azione: 2200,
+    incantesimo: 1500,
+    fine: 900,
+  };
 
-  /** true per un attimo subito dopo che una nuova carta arriva nella punta della bacchetta (1.4.1) — pilota l'animazione d'ingresso nel pannello punta (vedi l'effect dedicato nel costruttore e board__wand-peek in board.component.scss). */
-  protected readonly tipEntering = signal(false);
-  /** La carta appena uscita dalla punta (consumata a Finale, spesa in una combinazione, o come mana per un incantesimo) — resta qui come ghost per la durata dell'animazione di sparizione (stessa hand-card-vanish già usata per le carte in mano), invece di sparire di scatto dal pannello. */
-  protected readonly tipVanishing = signal<Card | null>(null);
-  private lastKnownPlayerTip: Card | null = null;
+  // I segnali "overlay" sotto (vanishingCardIds/Ghosts, tip/body/handle entering/vanishing,
+  // handExplosions, fonteExploding, revealedBonusIds) sono tutti di proprietà di
+  // AnimationQueueService, che li deriva confrontando ogni nuovo state() col precedente (vedi
+  // deriveGameEvents) — qui solo alias di sola lettura, così il template e il resto della classe
+  // restano invariati. tipEntering/tipVanishing/bodyEntering/handleEntering sono filtrati sul
+  // proprio ruolo (myRole()): il servizio li tiene per entrambi i giocatori, ma solo il proprio
+  // pannello bacchetta li anima, mai quello dell'avversario (vedi board.component.html).
+  protected readonly vanishingCardIds = this.animationQueue.vanishingCardIds;
+  protected readonly vanishingGhosts = this.animationQueue.vanishingGhosts;
+  protected readonly tipEntering = computed(() =>
+    this.animationQueue.tipEnteringFor(this.myRole()),
+  );
+  protected readonly tipVanishing = computed(() =>
+    this.animationQueue.tipVanishingFor(this.myRole()),
+  );
+  protected readonly bodyEntering = computed(() =>
+    this.animationQueue.bodyEnteringFor(this.myRole()),
+  );
+  protected readonly handleEntering = computed(() =>
+    this.animationQueue.handleEnteringFor(this.myRole()),
+  );
 
-  /** Come tipEntering, ma per asta e manico (1.4.2/1.4.3) — qui non serve un equivalente di tipVanishing: una volta incastonato un elemento non esce mai più dal proprio slot (socketElement rifiuta di sovrascrivere), quindi c'è sempre e solo un ingresso, mai un'uscita. */
-  protected readonly bodyEntering = signal(false);
-  protected readonly handleEntering = signal(false);
-  private lastKnownPlayerBody: BaseElement | null = null;
-  private lastKnownPlayerHandle: BaseElement | null = null;
-
-  /** Esplosioni elementali (2.4) risolte in una mano nell'ultimo batch — una entry per ruolo colpito, con le carte vere prese dall'evento (vedi HandExplosion sopra). Popolata dall'effect dedicato sotto, non dal diff di playerHand(): le carte si consumano nella stessa transazione in cui entrano in mano, quindi non compaiono mai in un render precedente da cui poterle dedurre. */
-  protected readonly handExplosions = signal<readonly HandExplosion[]>([]);
-  /** true per un attimo dopo la comparsa di handExplosions() — pilota il flip di rivelazione (CardComponent.revealed) delle carte coinvolte, invece di mostrarle già scoperte di scatto. */
-  protected readonly handExplosionRevealed = signal(false);
-  /** Evita di riprocessare due volte lo stesso batch nell'effect dedicato sotto. */
-  private lastProcessedHandExplosionBatchId: number | null = null;
+  /** Esplosioni elementali (2.4) risolte in una mano nell'ultimo batch — una entry per ruolo
+   * colpito, con le carte vere prese dall'evento (vedi HandExplosion). */
+  protected readonly handExplosions = this.animationQueue.handExplosions;
+  /** true per un attimo dopo la comparsa di handExplosions() — pilota SOLO il flip di rivelazione
+   * (CardComponent.revealed) delle carte coinvolte, invece di mostrarle già scoperte di scatto. */
+  protected readonly handExplosionRevealed = this.animationQueue.handExplosionRevealed;
+  /** true a flip concluso — pilota SOLO il lampo/scossa (board__hand-card--exploding), mai in
+   * contemporanea al flip (le due animation CSS sullo stesso elemento si sovrascriverebbero a
+   * vicenda, vedi AnimationQueueService). */
+  protected readonly handExplosionShaking = this.animationQueue.handExplosionShaking;
 
   protected readonly playerHandExplosion = computed(
     () => this.handExplosions().find((e) => e.role === this.myRole()) ?? null,
@@ -618,19 +634,9 @@ export class BoardComponent implements OnInit {
     () => this.handExplosions().find((e) => e.role === this.opponentRole()) ?? null,
   );
 
-  /** true per la durata del lampo + scossa quando un'Esplosione elementale (2.4) avviene in Fonte Arcana (danneggia entrambi i giocatori, quindi non è legata a un ruolo). */
-  protected readonly fonteExploding = signal(false);
-  /** Evita di riprocessare due volte lo stesso batch nell'effect dedicato sotto. */
-  private lastProcessedFonteExplosionBatchId: number | null = null;
-
-  /** Id delle 4 carte rivelate in Fonte Arcana all'ultimo render — confronto POSIZIONALE (per indice, non per set): a differenza della mano, qui la posizione è il significato stesso di "rivelata in quello slot". null solo al primissimo render, per non far scattare il fx sul semplice arrivo dello stato iniziale. */
-  private lastKnownFonteIds: string[] | null = null;
-  /** Evita di riprocessare due volte lo stesso batch per ciascun ruolo negli effect fx sotto (stesso schema di lastProcessedFonteExplosionBatchId, ma un contatore per host E uno per guest — entrambi i client osservano entrambi i ruoli, non solo il proprio, così il fx si sente su entrambi gli schermi). Inizializzati a 0 per combaciare col valore iniziale di PlayerState.handDrawBatchId/collectDrawBatchId (deck-builder.ts), niente fx spurio al primo render. */
-  private readonly lastProcessedHandDrawBatchIds: Record<PlayerId, number> = { host: 0, guest: 0 };
-  private readonly lastProcessedCollectDrawBatchIds: Record<PlayerId, number> = {
-    host: 0,
-    guest: 0,
-  };
+  /** true per la durata del lampo + scossa quando un'Esplosione elementale (2.4) avviene in Fonte
+   * Arcana (danneggia entrambi i giocatori, quindi non è legata a un ruolo). */
+  protected readonly fonteExploding = this.animationQueue.fonteExploding;
 
   constructor() {
     // effect (non afterNextRender): l'elemento potrebbe non esistere ancora al primissimo render
@@ -705,8 +711,11 @@ export class BoardComponent implements OnInit {
     // (guestId 'debug-guest', vedi game.service.ts) nessun client reale guida il turno
     // dell'avversario — senza questo, il turno resterebbe bloccato su 'guest' per sempre.
     // Fa avanzare l'avversario di debug attraverso tutte le fasi (senza raccogliere né
-    // combinare nulla) finché il turno non torna al giocatore reale. Da rimuovere/sostituire
-    // quando ci sarà un modo vero di testare con due client.
+    // combinare nulla) finché il turno non torna al giocatore reale, con un ritardo per fase
+    // "umano" (DEBUG_BOT_PHASE_DELAY_MS sopra) invece di un valore fisso a raffica — così c'è
+    // il tempo di notare cosa succede nel suo turno (es. una carta appena rivelata con Terzo
+    // Occhio) prima che lo attraversi tutto e lo chiuda. Da rimuovere/sostituire quando ci sarà
+    // un modo vero di testare con due client.
     effect(() => {
       const s = this.state();
       const doc = this.gameDoc();
@@ -717,7 +726,10 @@ export class BoardComponent implements OnInit {
       this.autoAdvanceKey = key;
 
       const gameId = this.gameId();
-      const timer = setTimeout(() => void this.gameEngine.advancePhase(gameId, 'guest'), 500);
+      const timer = setTimeout(
+        () => void this.gameEngine.advancePhase(gameId, 'guest'),
+        this.DEBUG_BOT_PHASE_DELAY_MS[s.phase],
+      );
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
 
@@ -751,7 +763,7 @@ export class BoardComponent implements OnInit {
           .filter((card) => card.expiresAt === 'fine')
           .map((card) => card.id);
         if (expiringIds.length > 0) {
-          this.vanishingCardIds.update((set) => new Set([...set, ...expiringIds]));
+          this.animationQueue.markExpiringSoon(expiringIds);
         }
       }
 
@@ -763,230 +775,15 @@ export class BoardComponent implements OnInit {
       this.destroyRef.onDestroy(() => clearTimeout(timer));
     });
 
-    // Carte "temporanee" (Congelamento/Residuo, Card.expiresAt) che spariscono da playerHand() —
-    // unico punto che ripulisce vanishingCardIds (niente timer indipendenti altrove, vedi sopra):
-    // se una carta sparita era già marcata "in sparizione" (Residuo, marcato proattivamente
-    // sopra), l'abbiamo già mostrata/la stiamo mostrando nel loop principale — qui si ripulisce
-    // solo il segnale. Se invece sparisce "di sorpresa" (Congelamento, risolto in modo atomico
-    // dentro l'endTurn dell'avversario — il nostro client la vede già sparita, mai "prima"),
-    // diventa un ghost nella sua vecchia posizione con la stessa animazione.
+    // Tutte le animazioni/fx derivate da un cambio di stato (carte scadute sparite dalla mano,
+    // Esplosioni elementali, bacchetta, bonus manico rivelato, suoni di pesca/rivelazione Fonte,
+    // flash danno) sono centralizzate in AnimationQueueService: ogni nuovo state() grezzo viene
+    // confrontato col precedente (deriveGameEvents) e tradotto negli overlay effimeri esposti sopra
+    // (vanishingGhosts, handExplosions, tipEntering, ecc.), invece di 9 effect separati con un
+    // proprio "lastKnownX" mutabile ciascuno.
     effect(() => {
-      const current = this.playerHand();
-      const previous = this.lastKnownHand;
-      this.lastKnownHand = current;
-      if (previous.length === 0) return;
-
-      const currentIds = new Set(current.map((card) => card.id));
-      const goneWithIndex = previous
-        .map((card, index) => ({ card, index }))
-        .filter(({ card }) => !currentIds.has(card.id));
-      if (goneWithIndex.length === 0) return;
-
-      const alreadyShown = this.vanishingCardIds();
-
-      const stillMarkedIds = goneWithIndex
-        .filter(({ card }) => alreadyShown.has(card.id))
-        .map(({ card }) => card.id);
-      if (stillMarkedIds.length > 0) {
-        this.vanishingCardIds.update((set) => {
-          const next = new Set(set);
-          stillMarkedIds.forEach((id) => next.delete(id));
-          return next;
-        });
-      }
-
-      const surprises = goneWithIndex.filter(
-        ({ card }) => card.expiresAt && !alreadyShown.has(card.id),
-      );
-      if (surprises.length === 0) return;
-
-      const total = previous.length;
-      const ghosts: VanishingGhost[] = surprises.map(({ card, index }) => ({
-        card,
-        index,
-        total,
-        kind: 'expiry' as const,
-      }));
-      this.vanishingGhosts.update((list) => [...list, ...ghosts]);
-
-      const ids = surprises.map(({ card }) => card.id);
-      const timer = setTimeout(() => {
-        this.vanishingGhosts.update((list) => list.filter((g) => !ids.includes(g.card.id)));
-      }, VANISH_DURATION_MS);
-      this.destroyRef.onDestroy(() => clearTimeout(timer));
-    });
-
-    // Esplosione elementale (2.4) in una mano: le carte vere arrivano direttamente dall'evento
-    // (ExplosionEvent.cards), non da un diff — vedi il commento su HandExplosion sopra sul perché
-    // il diff non può funzionare qui. Rivela le carte con un breve ritardo (handExplosionRevealed)
-    // così il flip stesso comunica "ecco cos'è esploso", poi lampo+scossa (stessa animazione CSS
-    // della Fonte) e sparizione. Vale sia per la propria mano sia per quella dell'avversario: prima
-    // d'ora le carte dell'avversario non erano mai visibili, ora lo sono per questo istante.
-    effect(() => {
-      const s = this.state();
-      if (!s || s.explosionBatchId === this.lastProcessedHandExplosionBatchId) return;
-      this.lastProcessedHandExplosionBatchId = s.explosionBatchId;
-
-      const events = s.lastExplosions.filter((e) => e.location === 'hand');
-      if (events.length === 0) return;
-
-      this.handExplosions.set(events.map((e) => ({ role: e.affectedRoles[0], cards: e.cards })));
-      this.handExplosionRevealed.set(false);
-
-      const revealTimer = setTimeout(() => this.handExplosionRevealed.set(true), 100);
-      this.destroyRef.onDestroy(() => clearTimeout(revealTimer));
-
-      const clearTimer = setTimeout(() => {
-        this.handExplosions.set([]);
-        this.handExplosionRevealed.set(false);
-      }, EXPLOSION_GHOST_DURATION_MS);
-      this.destroyRef.onDestroy(() => clearTimeout(clearTimer));
-    });
-
-    // Esplosione elementale (2.4) in Fonte Arcana: danneggia entrambi i giocatori, non è legata a
-    // singole carte in mano (il template usa track $index sulla riga) — semplificato a un lampo +
-    // scossa sull'intera riga invece di un ghost per carta.
-    effect(() => {
-      const s = this.state();
-      if (!s || s.explosionBatchId === this.lastProcessedFonteExplosionBatchId) return;
-      this.lastProcessedFonteExplosionBatchId = s.explosionBatchId;
-      if (!s.lastExplosions.some((e) => e.location === 'fonte')) return;
-
-      this.fonteExploding.set(true);
-      const timer = setTimeout(() => this.fonteExploding.set(false), FONTE_EXPLOSION_DURATION_MS);
-      this.destroyRef.onDestroy(() => clearTimeout(timer));
-    });
-
-    // Punta della bacchetta (1.4.1): stesso effect gestisce sia l'ingresso sia l'uscita, dato che
-    // playerTip() può solo passare da vuota a occupata o viceversa (holdAtTip rifiuta di sovrascrivere
-    // una punta già occupata — non esiste una transizione diretta carta A → carta B).
-    effect(() => {
-      const tip = this.playerTip();
-      const previous = this.lastKnownPlayerTip;
-      this.lastKnownPlayerTip = tip;
-
-      if (tip && tip.id !== previous?.id) {
-        // Nuova carta arrivata — tipEntering() resta true fin dal primo render in cui la carta
-        // compare (stesso ciclo sincrono di questo effect), poi torna false un istante dopo per far
-        // scattare la transizione CSS invece di un salto.
-        this.tipEntering.set(true);
-        const enterTimer = setTimeout(() => this.tipEntering.set(false), 20);
-        this.destroyRef.onDestroy(() => clearTimeout(enterTimer));
-        return;
-      }
-
-      if (!tip && previous) {
-        // La carta ha lasciato la punta — consumata a Finale (endTurn), spesa in una combinazione, o
-        // usata come mana per un incantesimo: in tutti e 3 i casi il client vede solo il "dopo", mai
-        // uno stato intermedio da cui dedurre la causa, e non serve distinguerli — stessa animazione
-        // di sparizione (hand-card-vanish) in ogni caso, invece di un salto secco nel pannello.
-        this.tipVanishing.set(previous);
-        const vanishTimer = setTimeout(() => this.tipVanishing.set(null), VANISH_DURATION_MS);
-        this.destroyRef.onDestroy(() => clearTimeout(vanishTimer));
-      }
-    });
-
-    // Asta e manico (1.4.2/1.4.3): stesso schema dell'effect sopra per l'ingresso, ma senza il ramo
-    // di uscita — un elemento incastonato non lascia mai più il proprio slot (socketElement rifiuta
-    // di sovrascriverlo), quindi qui la transizione osservabile è sempre e solo null → elemento.
-    effect(() => {
-      const body = this.playerBody();
-      const previous = this.lastKnownPlayerBody;
-      this.lastKnownPlayerBody = body;
-
-      if (body && body !== previous) {
-        this.bodyEntering.set(true);
-        const enterTimer = setTimeout(() => this.bodyEntering.set(false), 20);
-        this.destroyRef.onDestroy(() => clearTimeout(enterTimer));
-      }
-    });
-
-    effect(() => {
-      const handle = this.playerHandle();
-      const previous = this.lastKnownPlayerHandle;
-      this.lastKnownPlayerHandle = handle;
-
-      if (handle && handle !== previous) {
-        this.handleEntering.set(true);
-        const enterTimer = setTimeout(() => this.handleEntering.set(false), 20);
-        this.destroyRef.onDestroy(() => clearTimeout(enterTimer));
-      }
-    });
-
-    // Raccolta: il bonus manico (regolamento 1.4.3, +1 mana permanente) è già risolto nello stato
-    // appena le 2 carte vengono pescate — qui lo teniamo solo nascosto in UI per un attimo, cosicché
-    // la rivelazione (scale up/down + valore di mana aggiornato) si noti invece di apparire già fatta.
-    effect(() => {
-      const pair = this.pendingCollect();
-      if (!pair) {
-        this.revealedBonusKey = null;
-        this.revealedBonusIds.set(new Set());
-        return;
-      }
-
-      const key = `${pair[0].id}:${pair[1].id}`;
-      if (key === this.revealedBonusKey) return;
-      this.revealedBonusKey = key;
-      this.revealedBonusIds.set(new Set());
-
-      const boosted = pair.filter((card) => (card.manaBonus ?? 0) > 0).map((card) => card.id);
-      if (boosted.length === 0) return;
-
-      const timer = setTimeout(() => this.revealedBonusIds.set(new Set(boosted)), 900);
-      this.destroyRef.onDestroy(() => clearTimeout(timer));
-    });
-
-    // Fx "carta rivelata" in Fonte Arcana: confronto posizionale (per indice, non per set — qui la
-    // posizione conta, "rivelata nello slot X" è il significato dell'evento) contro l'ultimo
-    // render. Un solo colpo per batch anche quando più slot cambiano insieme (es. fonte_reset,
-    // Rischio in SPELL_CATALOG cambia tutti e 4), non uno per slot — suonerebbe come una raffica
-    // invece di una singola "rivelazione". Scatta per entrambi i giocatori allo stesso modo: la
-    // Fonte Arcana è condivisa, chiunque l'abbia cambiata il suono è per tutti e due.
-    effect(() => {
-      const fonte = this.state()?.fonteElementale;
-      if (!fonte) return;
-
-      const ids = fonte.map((c) => c.id);
-      const previous = this.lastKnownFonteIds;
-      this.lastKnownFonteIds = ids;
-      if (previous === null) return; // primo caricamento, non è una "rivelazione"
-
-      const changed = ids.length !== previous.length || ids.some((id, i) => id !== previous[i]);
-      if (changed) this.audio.playFx('fonteReveal');
-    });
-
-    // Fx "pescata nuova mano" (Fine turno, endTurn — o Colpo basso, opponent_discard_hand):
-    // PlayerState.handDrawBatchId, osservato per ENTRAMBI i ruoli (host e guest), non solo il
-    // proprio — un suono sentito da un giocatore deve sentirsi anche sullo schermo dell'avversario,
-    // quindi entrambi i client reagiscono a entrambi i contatori invece che al solo proprio.
-    // Contatore invece di un diff su playerHand(): un diff ("nessun id in comune tra mano vecchia e
-    // nuova") sembra affidabile ma non lo è, se il mazzo si rimescola durante la ripesca una carta
-    // appena scartata da QUESTA stessa mano può rientrare subito nel pool e finire ripescata nella
-    // mano nuova, azzerando la differenza da rilevare. Stesso schema di
-    // lastProcessedFonteExplosionBatchId, ma un tracker per ruolo (lastProcessedHandDrawBatchIds).
-    effect(() => {
-      const s = this.state();
-      if (!s) return;
-      for (const role of ['host', 'guest'] as const) {
-        const batchId = s.players[role].handDrawBatchId;
-        if (batchId === this.lastProcessedHandDrawBatchIds[role]) continue;
-        this.lastProcessedHandDrawBatchIds[role] = batchId;
-        this.audio.playFx('handDraw', { times: 5 });
-      }
-    });
-
-    // Fx "carta ottenuta in Raccolta" (keepCard/keepMana, 4.3): stesso suono della pescata di mano,
-    // un solo colpo invece di 5 — stesso schema dell'effect sopra (entrambi i ruoli, entrambi i
-    // client), su PlayerState.collectDrawBatchId.
-    effect(() => {
-      const s = this.state();
-      if (!s) return;
-      for (const role of ['host', 'guest'] as const) {
-        const batchId = s.players[role].collectDrawBatchId;
-        if (batchId === this.lastProcessedCollectDrawBatchIds[role]) continue;
-        this.lastProcessedCollectDrawBatchIds[role] = batchId;
-        this.audio.playFx('handDraw', { times: 1 });
-      }
+      const raw = this.state();
+      if (raw) this.animationQueue.sync(raw, this.myRole());
     });
   }
 
@@ -1098,23 +895,27 @@ export class BoardComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('gameId') ?? '';
     this.gameId.set(id);
 
-    const unsub = this.game.listenToGame(id, (doc) => {
-      this.gameDoc.set(doc);
-      if (doc?.status === 'finished') {
-        unsub();
-        this.router.navigate(['/result', id]);
-        return;
-      }
-      // Regole Firestore già negano lettura/scrittura a chi non è host/guest di QUESTA partita
-      // (games/{gameId}) — questo redirect copre il caso limite in cui `doc` arriva comunque
-      // (es. partita ancora 'waiting', leggibile da chiunque per permettere il join by code) ma
-      // l'utente autenticato non vi appartiene, invece di lasciarlo su una board vuota/rotta.
-      const uid = this.auth.user()?.uid;
-      if (doc && uid && doc.hostId !== uid && doc.guestId !== uid) {
-        unsub();
-        this.router.navigate(['/home']);
-      }
-    }, () => this.router.navigate(['/home']));
+    const unsub = this.game.listenToGame(
+      id,
+      (doc) => {
+        this.gameDoc.set(doc);
+        if (doc?.status === 'finished') {
+          unsub();
+          this.router.navigate(['/result', id]);
+          return;
+        }
+        // Regole Firestore già negano lettura/scrittura a chi non è host/guest di QUESTA partita
+        // (games/{gameId}) — questo redirect copre il caso limite in cui `doc` arriva comunque
+        // (es. partita ancora 'waiting', leggibile da chiunque per permettere il join by code) ma
+        // l'utente autenticato non vi appartiene, invece di lasciarlo su una board vuota/rotta.
+        const uid = this.auth.user()?.uid;
+        if (doc && uid && doc.hostId !== uid && doc.guestId !== uid) {
+          unsub();
+          this.router.navigate(['/home']);
+        }
+      },
+      () => this.router.navigate(['/home']),
+    );
 
     this.destroyRef.onDestroy(() => unsub());
   }
@@ -1257,25 +1058,18 @@ export class BoardComponent implements OnInit {
       });
   }
 
-  /** Regolamento 1.4.1/4.4: trattiene una carta base dalla mano nella punta della bacchetta — l'animazione di uscita dalla mano riusa lo stesso meccanismo/aspetto del Residuo in scadenza (vedi VanishingGhost, kind 'toTip'), quella d'ingresso nel pannello punta è pilotata dall'effect su playerTip() nel costruttore (tipEntering). */
+  /** Regolamento 1.4.1/4.4: trattiene una carta base dalla mano nella punta della bacchetta — l'animazione di uscita dalla mano riusa lo stesso meccanismo/aspetto del Residuo in scadenza (AnimationQueueService.addVanishingGhost, kind 'toTip'), quella d'ingresso nel pannello punta è pilotata da AnimationQueueService in risposta al wandTipFilled event (tipEntering). */
   protected holdAtTip(card: Card, index: number): void {
     const role = this.myRole();
     if (!role) return;
 
     const total = this.playerHand().length;
-    this.vanishingGhosts.update((list) => [
-      ...list,
-      { card, index, total, kind: 'toTip' as const },
-    ]);
-    const timer = setTimeout(() => {
-      this.vanishingGhosts.update((list) => list.filter((g) => g.card.id !== card.id));
-    }, VANISH_DURATION_MS);
-    this.destroyRef.onDestroy(() => clearTimeout(timer));
+    this.animationQueue.addVanishingGhost({ card, index, total, kind: 'toTip' });
 
     void this.gameEngine.holdAtTip(this.gameId(), role, card.id);
   }
 
-  /** Regolamento 1.4.2/1.4.3/4.4: apre la dialog di scelta asta/manico per una carta base dalla mano — applica la scelta solo se il giocatore conferma (annullare chiude senza risultato, vedi SocketDialogComponent). Il cast a BaseElement è sicuro: questa azione compare solo per card.tier === 'base' (handCardMenuItems). L'animazione di uscita dalla mano riusa lo stesso meccanismo/aspetto della punta (VanishingGhost, kind 'toSocket'), quella d'ingresso nel pannello asta/manico è pilotata dagli effect su playerBody()/playerHandle() nel costruttore (bodyEntering/handleEntering). */
+  /** Regolamento 1.4.2/1.4.3/4.4: apre la dialog di scelta asta/manico per una carta base dalla mano — applica la scelta solo se il giocatore conferma (annullare chiude senza risultato, vedi SocketDialogComponent). Il cast a BaseElement è sicuro: questa azione compare solo per card.tier === 'base' (handCardMenuItems). L'animazione di uscita dalla mano riusa lo stesso meccanismo/aspetto della punta (AnimationQueueService.addVanishingGhost, kind 'toSocket'), quella d'ingresso nel pannello asta/manico è pilotata da AnimationQueueService in risposta al wandSocketFilled event (bodyEntering/handleEntering). */
   protected openSocketDialog(card: Card, index: number): void {
     const role = this.myRole();
     if (!role) return;
@@ -1296,14 +1090,7 @@ export class BoardComponent implements OnInit {
         if (!target) return;
 
         const total = this.playerHand().length;
-        this.vanishingGhosts.update((list) => [
-          ...list,
-          { card, index, total, kind: 'toSocket' as const },
-        ]);
-        const timer = setTimeout(() => {
-          this.vanishingGhosts.update((list) => list.filter((g) => g.card.id !== card.id));
-        }, VANISH_DURATION_MS);
-        this.destroyRef.onDestroy(() => clearTimeout(timer));
+        this.animationQueue.addVanishingGhost({ card, index, total, kind: 'toSocket' });
 
         void this.gameEngine.socketElement(this.gameId(), role, card.id, target);
       });
@@ -1359,6 +1146,13 @@ export class BoardComponent implements OnInit {
           case 'opponent_discard_hand':
             return this.i18n.t('grimoire.effects.opponentDiscardHand');
           case 'reveal_opponent_hand':
+            if (e.cardTierFilter === 'spell') {
+              return e.amount !== undefined
+                ? this.i18n.t('grimoire.effects.revealOpponentHandRandomSpell', {
+                    amount: e.amount,
+                  })
+                : this.i18n.t('grimoire.effects.revealOpponentHandSpell');
+            }
             return e.amount !== undefined
               ? this.i18n.t('grimoire.effects.revealOpponentHandRandom', { amount: e.amount })
               : this.i18n.t('grimoire.effects.revealOpponentHand');

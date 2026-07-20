@@ -1159,7 +1159,10 @@ export function applyDiscardHand(state: GameState, target: PlayerId): GameState 
  * applyShieldRemove/applyPoisonClear/applyIceClear. `tierFilter` (SpellEffect.cardTierFilter),
  * quando presente, restringe il pescaggio casuale alle sole carte di quel tier (es. 'spell', per
  * rivelare specificamente una magia invece di una carta qualunque) — se il bersaglio non ne ha,
- * no-op, stesso "rischio di whiff" del bersaglio negli scarti di boost_card_mana. A differenza di
+ * no-op, stesso "rischio di whiff" del bersaglio negli scarti di boost_card_mana. Il pescaggio
+ * casuale esclude le carte già rivelate: un ricasting deve poter sempre colpirne una nuova finché
+ * ce ne sono, non rischiare di ripescare a caso una già rivelata (nessun cambiamento visibile, il
+ * colpo sprecato). A differenza di
  * applyDiscardRandom/applyDiscardHand le carte non si spostano: la marcatura è permanente sulla
  * carta stessa (nessuna "guarigione" implementata oggi), quindi resta anche se la carta lascia la
  * mano e ci torna più avanti (scarti, rimescolata, ripescata) — non un effetto temporaneo legato al
@@ -1173,17 +1176,23 @@ export function applyRevealHand(
   tierFilter?: CardTier,
 ): GameState {
   const player = state.players[target];
-  const eligibleIndices = player.hand
-    .map((_, i) => i)
-    .filter((i) => !tierFilter || player.hand[i].tier === tierFilter);
+  const matchesTier = (i: number) => !tierFilter || player.hand[i].tier === tierFilter;
 
   if (count === undefined) {
-    const eligible = new Set(eligibleIndices);
+    const eligible = new Set(player.hand.map((_, i) => i).filter(matchesTier));
     const hand = player.hand.map((c, i) =>
       eligible.has(i) ? { ...c, revealedToOpponent: true } : c,
     );
     return updatePlayer(state, target, { hand });
   }
+
+  // Esclude le carte già rivelate dal pool: un ricasting di Terzo occhio/Occhio arcano (o un
+  // secondo bersaglio già colpito da Sguardo Incantato) deve avere sempre la possibilità di
+  // rivelarne una NUOVA, non rischiare di ripescare a caso una già rivelata (nessun cambiamento
+  // visibile, il colpo va sprecato) finché ne restano di non rivelate da colpire.
+  const eligibleIndices = player.hand
+    .map((_, i) => i)
+    .filter((i) => matchesTier(i) && !player.hand[i].revealedToOpponent);
 
   const revealCount = Math.min(count, eligibleIndices.length);
   const pool = [...eligibleIndices];

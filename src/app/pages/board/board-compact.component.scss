@@ -98,7 +98,9 @@
   box-shadow:
     inset 0 2px 2px rgba(255, 255, 255, 0.4),
     inset 0 -3px 5px rgba(0, 0, 0, 0.55);
-  transition: width var(--transition), left var(--transition);
+  transition:
+    width var(--transition),
+    left var(--transition);
 }
 
 .board-compact__identity-meta {
@@ -278,6 +280,14 @@
   display: block;
   width: 100px;
   height: 150px;
+}
+
+// Occhio (5.x) — stesso "pop" d'ingresso del desktop (.board__hand-card--revealing, keyframes
+// card-reveal-pop in board.component.scss, condiviso: styleUrls concatena i due file in un solo
+// foglio di stile incapsulato per questo componente) quando la carta vera dell'avversario compare
+// al posto del dorso.
+.board-compact__hand-card--revealing {
+  animation: card-reveal-pop 500ms ease-out;
 }
 
 // ── Carte incastonate/trattenute, sopra ciascuna sezione della striscia bacchetta ────
