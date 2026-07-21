@@ -3,7 +3,11 @@ import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import type { Card } from '../../models/card.model';
 import { computePlayerMana } from '../../models/player.model';
 import { SPELL_CATALOG } from '../../data/spells';
-import { TARGET_CARD_EFFECT_TYPES } from '../../models/spell.model';
+import {
+  TARGET_CARD_EFFECT_TYPES,
+  MULTI_TARGET_CARD_EFFECT_TYPES,
+  DEFAULT_CONSUMABLE_CARD_TIERS,
+} from '../../models/spell.model';
 import { CardComponent } from '../../components/card/card.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TranslationService } from '../../services/translation.service';
@@ -22,6 +26,8 @@ export interface CastSpellDialogResult {
   paidCardIds: string[];
   /** Presente solo se la magia richiede una carta bersaglio — vedi CastSpellDialogData.hand. */
   targetCardId?: string;
+  /** Come targetCardId sopra, ma per le magie con bersagli in numero variabile (MULTI_TARGET_CARD_EFFECT_TYPES, es. 'consume_discards') — 0 a N carte, mai obbligatorio. */
+  targetCardIds?: string[];
 }
 
 /** Ritorna il pagamento (ed eventuale bersaglio) scelti (dialogRef.close(result)), o undefined se annullato — primo dialog nel codebase a restituire un risultato via .closed. */
@@ -54,8 +60,24 @@ export class CastSpellDialogComponent {
     return !!spell && spell.effects.some((e) => TARGET_CARD_EFFECT_TYPES.includes(e.type));
   });
 
+  /** Come needsTarget sopra, ma per gli effetti con bersagli in numero VARIABILE (es. 'consume_discards', "Sciogliere") — a differenza di needsTarget la scelta non è mai obbligatoria (0 sempre valido), vedi canConfirm. */
+  protected readonly needsMultiTarget = computed(() => {
+    const spell = this.spell();
+    return !!spell && spell.effects.some((e) => MULTI_TARGET_CARD_EFFECT_TYPES.includes(e.type));
+  });
+
+  /** L'effetto multi-target della magia (es. 'consume_discards'), se presente — fonte sia del tetto (multiTargetMax) sia del pool eleggibile (multiTargetableCards), che variano magia per magia (SpellEffect.consumableCardTiers, es. 'destroy' allarga a incantesimi/Congelamento rispetto a 'dissolve'). */
+  protected readonly multiTargetEffect = computed(() => {
+    const spell = this.spell();
+    return spell?.effects.find((e) => MULTI_TARGET_CARD_EFFECT_TYPES.includes(e.type)) ?? null;
+  });
+
+  /** Tetto di carte selezionabili per l'effetto multi-target (effect.amount) — 0 se assente per qualche motivo, così toggleMultiTarget non selezionerebbe comunque nulla. */
+  protected readonly multiTargetMax = computed(() => this.multiTargetEffect()?.amount ?? 0);
+
   protected readonly selectedIds = signal<ReadonlySet<string>>(new Set());
   protected readonly targetCardId = signal<string | null>(null);
+  protected readonly selectedTargetIds = signal<ReadonlySet<string>>(new Set());
 
   /** Elementi reali (base/avanzato/potente) nei propri scarti — pool separato dalla mano, quindi mai in conflitto con le carte scelte come pagamento (turn-engine.ts, castSpell). Un Residuo/mana accumulato non finisce mai negli scarti (si consuma), quindi non compare mai qui. */
   protected readonly targetableCards = computed(() =>
@@ -64,14 +86,24 @@ export class CastSpellDialogComponent {
     ),
   );
 
+  /** Pool eleggibile per la scelta a bersagli multipli — a differenza di targetableCards sopra (sempre solo elementi, per boost_card_mana) qui il tier ammesso dipende dalla magia: DEFAULT_CONSUMABLE_CARD_TIERS (solo elementi) se l'effetto non specifica altro, altrimenti SpellEffect.consumableCardTiers (es. 'destroy' include anche 'spell'/'freeze'). */
+  protected readonly multiTargetableCards = computed(() => {
+    const tiers = this.multiTargetEffect()?.consumableCardTiers ?? DEFAULT_CONSUMABLE_CARD_TIERS;
+    return this.data.discards.filter((c) => tiers.includes(c.tier));
+  });
+
   protected readonly totalPaid = computed(() =>
     computePlayerMana(this.payableHand.filter((card) => this.selectedIds().has(card.id))),
   );
   protected readonly canConfirm = computed(() => {
     const spell = this.spell();
     if (!spell || this.totalPaid() < spell.manaCost) return false;
-    if (!this.needsTarget() || this.targetableCards().length === 0) return true;
-    return this.targetCardId() !== null;
+    if (this.needsTarget() && this.targetableCards().length > 0 && this.targetCardId() === null) {
+      return false;
+    }
+    // needsMultiTarget non compare qui: 0 carte selezionate è sempre una scelta valida (fino a 2, non
+    // esattamente 2) — l'unico vincolo (il tetto) è già imposto da toggleMultiTarget, non da un guard qui.
+    return true;
   });
 
   protected toggle(cardId: string): void {
@@ -87,11 +119,24 @@ export class CastSpellDialogComponent {
     this.targetCardId.set(this.targetCardId() === cardId ? null : cardId);
   }
 
+  protected toggleMultiTarget(cardId: string): void {
+    this.selectedTargetIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(cardId)) {
+        next.delete(cardId);
+      } else if (next.size < this.multiTargetMax()) {
+        next.add(cardId);
+      }
+      return next;
+    });
+  }
+
   protected confirm(): void {
     if (!this.canConfirm()) return;
     this.dialogRef.close({
       paidCardIds: [...this.selectedIds()],
       targetCardId: this.targetCardId() ?? undefined,
+      targetCardIds: this.needsMultiTarget() ? [...this.selectedTargetIds()] : undefined,
     });
   }
 

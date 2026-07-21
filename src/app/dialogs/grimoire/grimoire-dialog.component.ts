@@ -272,6 +272,10 @@ export class GrimoireDialogComponent {
             return this.i18n.t('grimoire.effects.fonteReset');
           case 'boost_card_mana':
             return this.i18n.t('grimoire.effects.boostCardMana', { amount });
+          case 'consume_discards':
+            return e.consumableCardTiers?.includes('spell')
+              ? this.i18n.t('grimoire.effects.consumeDiscardsExtended', { amount })
+              : this.i18n.t('grimoire.effects.consumeDiscards', { amount });
           default:
             return e.type;
         }

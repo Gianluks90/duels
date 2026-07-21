@@ -74,6 +74,50 @@
       </div>
     }
 
+    @if (needsMultiTarget()) {
+      <div class="cast-spell-dialog__target-section">
+        <p class="cast-spell-dialog__section-label">
+          {{
+            'castSpell.multiTargetSectionTitle' | translate: { max: multiTargetMax() }
+          }}
+          @if (multiTargetableCards().length > 0) {
+            <span class="cast-spell-dialog__target-counter">{{
+              'castSpell.multiTargetCounter'
+                | translate: { selected: selectedTargetIds().size, max: multiTargetMax() }
+            }}</span>
+          }
+        </p>
+        @if (multiTargetableCards().length > 0) {
+          <ul
+            class="cast-spell-dialog__hand"
+            role="listbox"
+            [attr.aria-label]="'castSpell.multiTargetListAria' | translate"
+          >
+            @for (card of multiTargetableCards(); track card.id) {
+              <li
+                class="cast-spell-dialog__hand-item cast-spell-dialog__hand-item--target"
+                [class.cast-spell-dialog__hand-item--selected]="selectedTargetIds().has(card.id)"
+                role="option"
+                [attr.aria-selected]="selectedTargetIds().has(card.id)"
+                (click)="toggleMultiTarget(card.id)"
+              >
+                <app-card
+                  [element]="card.element"
+                  [manaBonus]="card.manaBonus ?? 0"
+                  [specialMana]="card.specialMana ?? null"
+                  [spellId]="card.spellId ?? null"
+                  [freeze]="card.tier === 'freeze'"
+                  [size]="56"
+                />
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="cast-spell-dialog__target-empty">{{ 'castSpell.targetEmpty' | translate }}</p>
+        }
+      </div>
+    }
+
     <div class="cast-spell-dialog__footer">
       <span class="cast-spell-dialog__mana-counter">{{
         'castSpell.manaCounter' | translate: { paid: totalPaid(), cost: spell()?.manaCost ?? 0 }

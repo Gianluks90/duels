@@ -78,6 +78,13 @@ Solo 2 livelli apposta (non una scala a 3 come le altre famiglie sotto) — trop
 | Breccia (`breach`) | Lava + Fuoco | — | 3 | -2 scudo avversario | 3 |
 | Frattura (`fracture`) | Lava + Lava | — | 5 | azzera scudo avversario | 4 |
 
+## Consumare — Lava (2.3.3)
+
+| Nome | Formula | Elemento | Mana | Effetti | Difficoltà |
+| --- | --- | --- | --- | --- | --- |
+| Sciogliere (`dissolve`) | Lava + Terra | — | 4 | consuma fino a 2 carte elemento scelte dai propri scarti (nessun effetto se gli scarti sono vuoti) | 3 |
+| Distruggere (`destroy`) | Lava + Lava + Terra | — | 5 | consuma fino a 2 carte scelte dai propri scarti — elementi, incantesimi o carte effetto (es. Congelamento); incantesimi/effetti consumati spariscono dal gioco invece di tornare in un mazzo (nessun effetto se gli scarti sono vuoti) | 5 |
+
 ## Tuono (2.3.2)
 
 | Nome | Formula | Elemento | Mana | Effetti | Difficoltà |

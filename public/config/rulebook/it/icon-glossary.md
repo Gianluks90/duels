@@ -1,4 +1,4 @@
-# Glossario Icone
+# Icone
 
 Le icone usate in gioco, spiegate una per una — utile se hai visto un simbolo a schermo e non ricordi cosa significa.
 
@@ -20,8 +20,6 @@ Le icone usate in gioco, spiegate una per una — utile se hai visto un simbolo 
 | <img class="rb-icon" src="/icons/diamond_shine_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg" alt="Mana accumulato" /> | Mana accumulato | il mana generico ottenuto in Raccolta scartando entrambe le carte |
 
 ## Mana Speciale
-
-Sulla carta questi simboli sono ricolorati, esattamente come qui sotto — stessa tecnica, stessi colori.
 
 | Icona | Tipo | Effetto |
 |---|---|---|
@@ -46,6 +44,8 @@ Il **Congelamento** non ha un'icona propria: sulla carta usa l'arte di Ghiaccio 
 |---|---|
 | <span class="rb-icon-mask rb-icon-mask--gray" style="mask-image:url(/icons/visibility_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/visibility_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Carta rivelata"></span> | la carta è visibile all'avversario (es. Terzo Occhio) |
 | <img class="rb-icon" src="/icons/wand_stars_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg" alt="Incantesimo" /> | badge che contrassegna una carta incantesimo |
+| <span class="rb-mana-digit rb-mana-digit--element">1</span> | valore in mana di un elemento |
+| <span class="rb-mana-digit rb-mana-digit--spell">3</span> | costo in mana di un incantesimo |
 
 ## Barra degli strumenti
 

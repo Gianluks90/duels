@@ -273,7 +273,9 @@
       "revealOpponentHandSpell": "Reveals every spell in the opponent's hand.",
       "revealOpponentHandRandomSpell": "Reveals {amount} random spell from the opponent's hand (no effect if they have none).",
       "fonteReset": "Resets the Arcane Source.",
-      "boostCardMana": "Permanently increases the mana value of a chosen card from your own discards by {amount}. Fails if the discard pile is empty."
+      "boostCardMana": "Permanently increases the mana value of a chosen card from your own discards by {amount}. Fails if the discard pile is empty.",
+      "consumeDiscards": "Consumes up to {amount} cards chosen from your own discards. No effect if the discard pile is empty.",
+      "consumeDiscardsExtended": "Consumes up to {amount} cards chosen from your own discards — elements, spells, or effect cards (e.g. Freeze). No effect if the discard pile is empty."
     }
   },
 
@@ -349,6 +351,9 @@
     "targetSectionTitle": "Choose the target card from your discards",
     "targetListAria": "Cards available as target in your discards",
     "targetEmpty": "No card available in your discards: the spell will have no effect.",
+    "multiTargetSectionTitle": "Choose up to {max} cards from your discards (optional)",
+    "multiTargetListAria": "Cards available as target in your discards",
+    "multiTargetCounter": "{selected} / {max} chosen",
     "manaCounter": "{paid} / {cost} mana",
     "cancel": "Cancel",
     "confirm": "Confirm cast"
@@ -534,6 +539,14 @@
     "wall": {
       "name": "Wall",
       "flavorText": "Plates of molten rock rise from the ground, forming a barrier no ordinary blow can scratch."
+    },
+    "dissolve": {
+      "name": "Dissolve",
+      "flavorText": "Lava undoes what time has already made useless, lightening the path of those who wield it."
+    },
+    "destroy": {
+      "name": "Destroy",
+      "flavorText": "Where fire merely melts, this flow leaves nothing left to remember."
     },
     "aegis": {
       "name": "Aegis",

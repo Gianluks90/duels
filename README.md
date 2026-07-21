@@ -4,8 +4,7 @@
 
 Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [documentation/todo-archive-2026-07-21.md](documentation/todo-archive-2026-07-21.md) — qui restano solo i punti ancora aperti.
 
-1. **Lava (2.3.3)** — manca ancora un `SpellEffectType` per "consumare carte dal proprio mazzo per alleggerirlo"; oggi solo la metà scudo (`shield_add`) è coperta. Tuono è invece completo (`lightning_bolt`/`damage_ignore_shields` ignorano già lo scudo del bersaglio).
-2. **Debito tecnico**: l'`effect()` di auto-avanzamento per l'avversario di debug in `board.component.ts` va rimosso/sostituito appena esiste un modo vero di testare con un secondo client reale (o un'IA vera).
+1. **Debito tecnico**: l'`effect()` di auto-avanzamento per l'avversario di debug in `board.component.ts` va rimosso/sostituito appena esiste un modo vero di testare con un secondo client reale (o un'IA vera).
 
 ## Qualità della vita
 

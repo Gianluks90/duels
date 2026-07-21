@@ -15,6 +15,8 @@ export interface PendingSpell {
   chaoticBonus: number;
   /** Id della carta scelta come bersaglio al momento del lancio (castSpell), per gli SpellEffectType che lo richiedono (TARGET_CARD_EFFECT_TYPES in spell.model.ts, es. 'boost_card_mana') — assente per tutte le altre magie, il cui target è cablato nell'effetto stesso (avversario/sé stesso/casuale) invece che scelto dal giocatore. Punta a una carta nei PROPRI scarti, non in mano. */
   targetCardId?: string;
+  /** Come targetCardId sopra, ma per gli SpellEffectType con bersagli in numero VARIABILE (MULTI_TARGET_CARD_EFFECT_TYPES in spell.model.ts, es. 'consume_discards', "Sciogliere") — 0 a effect.amount carte scelte dai propri scarti, mai obbligatorio. Omesso (non array vuoto) quando non applicabile, stessa convenzione di targetCardId. */
+  targetCardIds?: string[];
 }
 
 export interface PlayerTokens {

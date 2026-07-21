@@ -6,7 +6,11 @@ import type { DamageLogSource, GameLogEntryData } from '../models/game-log.model
 import type { PendingSpell, PlayerId, PlayerState } from '../models/player.model';
 import { computePlayerMana } from '../models/player.model';
 import type { SpellEffect } from '../models/spell.model';
-import { TARGET_CARD_EFFECT_TYPES } from '../models/spell.model';
+import {
+  TARGET_CARD_EFFECT_TYPES,
+  MULTI_TARGET_CARD_EFFECT_TYPES,
+  DEFAULT_CONSUMABLE_CARD_TIERS,
+} from '../models/spell.model';
 import { ELEMENT_OPPOSITES } from '../models/wand.model';
 import { TURN_PHASES, type ActiveTurnPhase } from '../models/turn-phase.model';
 import { SPELL_CATALOG } from '../data/spells';
@@ -396,7 +400,10 @@ const SPECIAL_MANA_EFFECT_AMOUNT = 2;
  * (es. 'boost_card_mana') — ci sono carte bersaglio candidate nei PROPRI scarti (tier base/avanzato/
  * potente) ma `targetCardId` non punta a nessuna di esse. Se invece gli scarti non hanno nessuna
  * carta candidata, il bersaglio è semplicemente saltato (non bloccante): la magia si lancia comunque,
- * ma resta senza effetto alla risoluzione (vedi applyBoostCardMana).
+ * ma resta senza effetto alla risoluzione (vedi applyBoostCardMana). `targetCardIds` è l'analogo per
+ * MULTI_TARGET_CARD_EFFECT_TYPES (es. 'consume_discards', "Sciogliere"): fino a `effect.amount`
+ * carte dallo stesso pool, ma qui 0 è SEMPRE valido (mai bloccante) — id extra o duplicati oltre il
+ * tetto, o non presenti nel pool eleggibile, fanno fallire il lancio (return state).
  */
 export function castSpell(
   state: GameState,
@@ -404,6 +411,7 @@ export function castSpell(
   spellCardId: string,
   paidCardIds: readonly string[],
   targetCardId?: string,
+  targetCardIds?: readonly string[],
 ): GameState {
   if (role !== state.currentTurn || state.phase !== 'azione') return state;
 
@@ -437,6 +445,23 @@ export function castSpell(
     }
   }
 
+  // 'consume_discards' ecc. (MULTI_TARGET_CARD_EFFECT_TYPES): a differenza del blocco sopra, qui 0
+  // bersagli è SEMPRE valido — non un fallback per scarti vuoti, ma la scelta normale di chi non
+  // vuole consumare nulla. Fallisce solo per input scorretto (duplicati, oltre il tetto, o una carta
+  // non eleggibile) — mai per assenza di scelta.
+  const multiTargetEffect = spell.effects.find((e) => MULTI_TARGET_CARD_EFFECT_TYPES.includes(e.type));
+  let resolvedTargetCardIds: string[] | undefined;
+  if (multiTargetEffect) {
+    const eligibleTiers = multiTargetEffect.consumableCardTiers ?? DEFAULT_CONSUMABLE_CARD_TIERS;
+    const eligibleDiscards = player.discards.filter((c) => eligibleTiers.includes(c.tier));
+    const requested = targetCardIds ?? [];
+    const max = multiTargetEffect.amount ?? 0;
+    if (new Set(requested).size !== requested.length) return state;
+    if (requested.length > max) return state;
+    if (!requested.every((id) => eligibleDiscards.some((c) => c.id === id))) return state;
+    if (requested.length > 0) resolvedTargetCardIds = [...requested];
+  }
+
   const vitalBonus =
     paidCards.filter((c) => c.specialMana === 'vital').length * SPECIAL_MANA_EFFECT_AMOUNT;
   const chaoticBonus =
@@ -452,10 +477,15 @@ export function castSpell(
   // qualunque campo con valore `undefined` in un documento, ovunque sia annidato — un
   // `Transaction.update()`/`updateDoc()` con un `undefined` nascosto dentro un array fallisce
   // sempre con "Unsupported field value: undefined", a differenza di `null` che è permesso.
-  const pendingSpell: PendingSpell =
-    needsTargetCard && resolvedTargetCardId !== undefined
-      ? { card: spellCard, vitalBonus, chaoticBonus, targetCardId: resolvedTargetCardId }
-      : { card: spellCard, vitalBonus, chaoticBonus };
+  const pendingSpell: PendingSpell = {
+    card: spellCard,
+    vitalBonus,
+    chaoticBonus,
+    ...(needsTargetCard && resolvedTargetCardId !== undefined
+      ? { targetCardId: resolvedTargetCardId }
+      : {}),
+    ...(resolvedTargetCardIds !== undefined ? { targetCardIds: resolvedTargetCardIds } : {}),
+  };
   return appendLog(
     updatePlayer(state, role, {
       hand: player.hand.filter((c) => !spentIds.has(c.id)),
@@ -924,12 +954,12 @@ function countAdvancedPairsInFonte(fonteElementale: readonly Card[]): number {
 
 const FONTE_PAIR_DAMAGE = 3;
 
-/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'damage_halve_opponent'/'damage_from_fonte'/'heal'/'shield_add'/'shield_remove_opponent'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self'/'opponent_discard_random'/'opponent_discard_hand'/'reveal_opponent_hand'/'fonte_reset'/'boost_card_mana' per ora; 'element_immunity' resta l'unico SpellEffectType senza risoluzione (no-op, rimandato — vedi spell.model.ts). `pending` porta sia il mana speciale (3.2.2/3.2.3, calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente — vitale→heal, caotico→damage/damage_ignore_shields/damage_from_fonte, tutti e 3 danno all'avversario "nel modo standard", altrimenti resta inerte, gli altri non ne beneficiano di proposito) sia l'eventuale carta bersaglio scelta dal giocatore (`targetCardId`, solo per 'boost_card_mana' oggi — TARGET_CARD_EFFECT_TYPES in spell.model.ts). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno "normali" (non 'damage_from_fonte': `element` è sempre assente sulla sua formula, 4 basi miste senza un elemento portante, vedi risk in SPELL_CATALOG), ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — 'damage_halve_opponent' ne resta fuori apposta (dimezza l'hp corrente, un valore già post-asta/scudo di colpi precedenti, non un nuovo danno da filtrare) e gli altri non sono mai elementali. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'damage_halve_opponent'/'damage_from_fonte'/'heal'/'shield_add'/'shield_remove_opponent'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self'/'opponent_discard_random'/'opponent_discard_hand'/'reveal_opponent_hand'/'fonte_reset'/'boost_card_mana'/'consume_discards' per ora; 'element_immunity' resta l'unico SpellEffectType senza risoluzione (no-op, rimandato — vedi spell.model.ts). `pending` porta sia il mana speciale (3.2.2/3.2.3, calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente — vitale→heal, caotico→damage/damage_ignore_shields/damage_from_fonte, tutti e 3 danno all'avversario "nel modo standard", altrimenti resta inerte, gli altri non ne beneficiano di proposito) sia l'eventuale carta/e bersaglio scelte dal giocatore (`targetCardId` per 'boost_card_mana', `targetCardIds` per 'consume_discards' — TARGET_CARD_EFFECT_TYPES/MULTI_TARGET_CARD_EFFECT_TYPES in spell.model.ts). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno "normali" (non 'damage_from_fonte': `element` è sempre assente sulla sua formula, 4 basi miste senza un elemento portante, vedi risk in SPELL_CATALOG), ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — 'damage_halve_opponent' ne resta fuori apposta (dimezza l'hp corrente, un valore già post-asta/scudo di colpi precedenti, non un nuovo danno da filtrare) e gli altri non sono mai elementali. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
 function applySpellEffect(
   state: GameState,
   casterRole: PlayerId,
   effect: SpellEffect,
-  pending: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus' | 'targetCardId'>,
+  pending: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus' | 'targetCardId' | 'targetCardIds'>,
   spellElement: BaseElement | undefined,
   spellId: string,
 ): GameState {
@@ -990,6 +1020,8 @@ function applySpellEffect(
     }
     case 'boost_card_mana':
       return applyBoostCardMana(state, casterRole, pending.targetCardId, effect.amount ?? 1);
+    case 'consume_discards':
+      return applyConsumeDiscards(state, casterRole, pending.targetCardIds, effect.amount ?? 0);
     case 'shield_add': {
       const amount = effect.amount ?? 0;
       const next = applyShield(state, casterRole, amount);
@@ -1402,4 +1434,40 @@ function applyBoostCardMana(
   const card = discards[index];
   discards[index] = { ...card, manaBonus: (card.manaBonus ?? 0) + amount };
   return updatePlayer(state, target, { discards });
+}
+
+/**
+ * "Sciogliere"/"Distruggere" (Lava, 2.3.3 — "consumare carte per alleggerire il mazzo",
+ * elements.md): consuma fino a `maxAmount` carte scelte dal giocatore nei PROPRI scarti. Elementi
+ * veri tornano negli scarti del mazzo COMUNE (tier 'base') o AVANZATO (tier 'advanced'/'superior')
+ * a cui appartengono, mai in quelli del giocatore stesso — stesso instradamento per tier già usato
+ * da combineElements/resolveElementalExplosions per le carte consumate dalla mano. Incantesimi e
+ * carte effetto (tier 'spell'/'freeze', eleggibili solo per magie con consumableCardTiers allargato
+ * — es. 'destroy') non appartengono a nessun mazzo condiviso: consumarli li fa sparire dal gioco,
+ * semplicemente non finiscono in nessuna delle due pile sotto. `targetCardIds` è scelto dal
+ * giocatore al momento del lancio (0..maxAmount, mai obbligatorio a differenza di
+ * applyBoostCardMana) e già validato in castSpell (solo tier eleggibili per la magia, nessun
+ * duplicato, entro il tetto); `slice` qui è solo un guard difensivo, non dovrebbe mai tagliare
+ * nulla. No-op se assente/vuoto o se le carte sono comunque sparite dagli scarti nel frattempo.
+ */
+function applyConsumeDiscards(
+  state: GameState,
+  target: PlayerId,
+  targetCardIds: readonly string[] | undefined,
+  maxAmount: number,
+): GameState {
+  if (!targetCardIds || targetCardIds.length === 0) return state;
+  const player = state.players[target];
+  const ids = new Set(targetCardIds.slice(0, maxAmount));
+  const consumed = player.discards.filter((c) => ids.has(c.id));
+  if (consumed.length === 0) return state;
+  const remainingDiscards = player.discards.filter((c) => !ids.has(c.id));
+  const consumedBase = consumed.filter((c) => c.tier === 'base');
+  const consumedAdvanced = consumed.filter((c) => c.tier === 'advanced' || c.tier === 'superior');
+  const next = updatePlayer(state, target, { discards: remainingDiscards });
+  return {
+    ...next,
+    commonDiscards: [...next.commonDiscards, ...consumedBase],
+    advancedDiscards: [...next.advancedDiscards, ...consumedAdvanced],
+  };
 }

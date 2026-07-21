@@ -87,6 +87,15 @@
     margin: 0;
   }
 
+  // Conteggio "N / max" per la scelta a bersagli multipli (es. "Sciogliere") — stesso trattamento
+  // testuale di __section-label, solo più chiaro (--text-primary) per farlo risaltare come stato
+  // dinamico invece che come etichetta statica.
+  &__target-counter {
+    color: var(--text-primary);
+    font-weight: 700;
+    margin-left: var(--sp-2);
+  }
+
   &__footer {
     display: flex;
     align-items: center;

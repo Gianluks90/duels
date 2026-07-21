@@ -276,7 +276,9 @@
       "revealOpponentHandSpell": "Rivela tutte le magie nella mano dell'avversario.",
       "revealOpponentHandRandomSpell": "Rivela {amount} magia casuale nella mano dell'avversario (nessun effetto se non ne ha).",
       "fonteReset": "Scarta le carte della Fonte Arcana e ne pesca di nuove.",
-      "boostCardMana": "Aumenta permanentemente di {amount} il valore di mana di una carta scelta dai propri scarti. Fallisce se la pila degli scarti è vuota."
+      "boostCardMana": "Aumenta permanentemente di {amount} il valore di mana di una carta scelta dai propri scarti. Fallisce se la pila degli scarti è vuota.",
+      "consumeDiscards": "<strong>Consuma</strong> fino a {amount} carte elemento scelte dai propri scarti. Nessun effetto se la pila degli scarti è vuota.",
+      "consumeDiscardsExtended": "<strong>Consuma</strong> fino a {amount} carte scelte dai propri scarti — elementi, incantesimi o carte effetto (es. Congelamento). Nessun effetto se la pila degli scarti è vuota."
     }
   },
 
@@ -352,6 +354,9 @@
     "targetSectionTitle": "Scegli la carta bersaglio dai tuoi scarti",
     "targetListAria": "Carte disponibili come bersaglio nei tuoi scarti",
     "targetEmpty": "Nessuna carta disponibile nei tuoi scarti: l'incantesimo non avrà effetto.",
+    "multiTargetSectionTitle": "Scegli fino a {max} carte dai tuoi scarti (facoltativo)",
+    "multiTargetListAria": "Carte disponibili come bersaglio nei tuoi scarti",
+    "multiTargetCounter": "{selected} / {max} scelte",
     "manaCounter": "{paid} / {cost} mana",
     "cancel": "Annulla",
     "confirm": "Conferma lancio"
@@ -537,6 +542,14 @@
     "wall": {
       "name": "Muro",
       "flavorText": "Placche di roccia fusa si sollevano dal terreno, formando una barriera che nessun colpo comune riesce a scalfire."
+    },
+    "dissolve": {
+      "name": "Sciogliere",
+      "flavorText": "La lava disfa ciò che il tempo ha già reso inutile, alleggerendo il cammino di chi la governa."
+    },
+    "destroy": {
+      "name": "Distruggere",
+      "flavorText": "Dove il fuoco si limita a fondere, questa colata non lascia nulla da ricordare."
     },
     "aegis": {
       "name": "Egida",

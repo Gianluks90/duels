@@ -119,16 +119,17 @@ export class GameEngineService {
     await this.mutate(gameId, (state) => advanceTurnPhase(state, role));
   }
 
-  /** Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagando il costo con le carte indicate. L'effetto si risolve più avanti, al passaggio in fase Incantesimo (dentro advancePhase). `targetCardId` solo per le magie con un effetto in TARGET_CARD_EFFECT_TYPES (es. 'boost_card_mana'). */
+  /** Fase Azione (5.2): lancia una carta incantesimo dalla mano, pagando il costo con le carte indicate. L'effetto si risolve più avanti, al passaggio in fase Incantesimo (dentro advancePhase). `targetCardId` solo per le magie con un effetto in TARGET_CARD_EFFECT_TYPES (es. 'boost_card_mana'); `targetCardIds` per quelle in MULTI_TARGET_CARD_EFFECT_TYPES (es. 'consume_discards', "Sciogliere"). */
   async castSpell(
     gameId: string,
     role: PlayerId,
     spellCardId: string,
     paidCardIds: readonly string[],
     targetCardId?: string,
+    targetCardIds?: readonly string[],
   ): Promise<void> {
     await this.mutate(gameId, (state) =>
-      castSpellReducer(state, role, spellCardId, paidCardIds, targetCardId),
+      castSpellReducer(state, role, spellCardId, paidCardIds, targetCardId, targetCardIds),
     );
   }
 

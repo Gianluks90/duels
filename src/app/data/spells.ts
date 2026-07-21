@@ -182,6 +182,39 @@ export const SPELL_CATALOG: Spell[] = [
     manaCost: 4,
     effects: [{ type: 'shield_add', amount: 3 }],
   },
+  // Lava, capacità "consumare" (2.3.3, elements.md: "alleggerire il mazzo") — prima magia con
+  // MULTI_TARGET_CARD_EFFECT_TYPES (spell.model.ts): fino a 2 carte scelte dal giocatore nei
+  // PROPRI scarti, mai obbligatorio (0 sempre valido, a differenza di boost_card_mana/improve_mana
+  // sotto). Formula uguale a 'protection' sopra — non è un problema, il catalogo tollera già
+  // formule ripetute (es. 'wall'/'fracture', entrambe ['lava','lava']): la selezione in Grimorio
+  // avviene per spellId, non per matching automatico di formula. Costo un gradino sopra
+  // 'protection' (stessa formula ma effetto di combattimento diretto): qui è utility/gestione
+  // risorse su un massimo di 2 carte, non danno/scudo immediato.
+  {
+    id: 'dissolve',
+    formula: ['lava', 'earth'],
+    manaCost: 4,
+    effects: [{ type: 'consume_discards', amount: 2 }],
+  },
+  // Versione più forte di 'dissolve' sopra: stesso effetto, stesso tetto (2 carte), ma pool
+  // allargato con consumableCardTiers a incantesimi e carte effetto (oggi solo Congelamento — il
+  // pool è già generico per tier, un domani un nuovo tier "effetto" ci rientrerebbe aggiungendolo
+  // lì, senza toccare il motore). Incantesimi/Congelamento non hanno un mazzo comune/avanzato a cui
+  // tornare: consumarli li fa sparire dal gioco (vedi applyConsumeDiscards in turn-engine.ts). Un
+  // ingrediente Lava in più rispetto a 'dissolve' (Difficoltà 5 invece di 3, mana 5 invece di 4),
+  // stesso passo di costo di wall→aegis.
+  {
+    id: 'destroy',
+    formula: ['lava', 'lava', 'earth'],
+    manaCost: 5,
+    effects: [
+      {
+        type: 'consume_discards',
+        amount: 2,
+        consumableCardTiers: ['base', 'advanced', 'superior', 'spell', 'freeze'],
+      },
+    ],
+  },
   {
     id: 'aegis',
     formula: ['lava', 'lava', 'light'],
