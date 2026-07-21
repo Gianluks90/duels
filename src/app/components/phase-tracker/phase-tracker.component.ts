@@ -1,6 +1,5 @@
 import { Component, ChangeDetectionStrategy, computed, inject, input, output } from '@angular/core';
 import { TURN_PHASES, type TurnPhase } from '../../models/turn-phase.model';
-import { firstNameOf } from '../../models/player.model';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TooltipDirective } from '../ui/tooltip/tooltip.directive';
@@ -18,8 +17,8 @@ type StepState = 'done' | 'active' | 'future';
 export class PhaseTrackerComponent {
   protected readonly i18n = inject(TranslationService);
 
-  /** Name of whichever player's turn it currently is — the label itself ("Turno di: {name}") is composed here. */
-  readonly turnPlayerName = input.required<string>();
+  /** Numero di turno progressivo (GameState.turnNumber, parte da 1) — la label ("Turno {number}") è composta qui. */
+  readonly turnNumber = input.required<number>();
   readonly phase = input.required<TurnPhase>();
   /** Whether the manual "Prosegui" action is currently valid — disables (not hides) the button otherwise, since most phases will end up auto-advancing on their own. */
   readonly canAdvance = input<boolean>(false);
@@ -35,7 +34,7 @@ export class PhaseTrackerComponent {
    *  il turno mostrato parte da Preparazione. Resta comunque il primo valore in TURN_PHASES lato logica. */
   protected readonly phases: readonly TurnPhase[] = TURN_PHASES.filter(p => p !== 'attesa');
   protected readonly turnLabel = computed(() =>
-    this.i18n.t('phaseTracker.turnLabel', { name: firstNameOf(this.turnPlayerName()) }),
+    this.i18n.t('phaseTracker.turnLabel', { number: this.turnNumber() }),
   );
   private readonly currentIndex = computed(() => this.phases.indexOf(this.phase()));
 

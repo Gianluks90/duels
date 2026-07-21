@@ -42,6 +42,8 @@ export class PlayerHudComponent {
   readonly name = input.required<string>();
   readonly health = input.required<Health>();
   readonly mirrored = input<boolean>(false);
+  /** true se è il turno di questo giocatore — mostra un bordo dorato acceso sul pannello (unico indicatore di turno rimasto, dopo la rimozione del nome dal phase-tracker). */
+  readonly active = input<boolean>(false);
   readonly width = input<number>(264);
   /** Google account photo (GameDoc.hostPhoto/guestPhoto) — null shows the name's initial instead, same fallback as the home page avatar. */
   readonly photoUrl = input<string | null>(null);

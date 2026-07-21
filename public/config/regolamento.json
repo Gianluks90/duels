@@ -33,5 +33,15 @@
     "id": "spells",
     "title": "Incantesimi",
     "contentUrl": "/config/rulebook/it/spells.md"
+  },
+  {
+    "id": "glossary",
+    "title": "Glossario",
+    "contentUrl": "/config/rulebook/it/glossary.md"
+  },
+  {
+    "id": "icon-glossary",
+    "title": "Glossario Icone",
+    "contentUrl": "/config/rulebook/it/icon-glossary.md"
   }
 ]

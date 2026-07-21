@@ -87,7 +87,7 @@
 
   "phaseTracker": {
     "stepsAria": "Fasi del turno",
-    "turnLabel": "Turno di: {name}",
+    "turnLabel": "Turno {number}",
     "pendingSpellsAria": "{count} incantesimi in coda"
   },
 
@@ -195,7 +195,7 @@
   },
 
   "login": {
-    "subtitle": "Un duello tra gentilmaghi",
+    "subtitle": "Sfida chi osa incantare",
     "signIn": "Entra con Google",
     "signingIn": "Accesso in corso...",
     "error": "Accesso non riuscito. Riprova."

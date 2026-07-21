@@ -41,6 +41,14 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   flex-shrink: 0;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+// Unico indicatore di chi ha il turno sul layout compatto (il phase-tracker centrale mostra solo il
+// numero di turno) — stesso trattamento del desktop (player-hud.component.scss .hud--active).
+.board-compact__identity--active {
+  border-color: var(--border-bright);
+  box-shadow: 0 0 12px rgba(200, 164, 90, 0.5);
 }
 
 .board-compact__identity--opponent {

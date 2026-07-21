@@ -131,6 +131,7 @@
     }
 
     h2 {
+      clear: both; // così un'eventuale .rb-figure flottante (vedi sotto) non sconfina nella sezione successiva
       font-family: var(--font-ui);
       font-size: 0.8rem;
       font-weight: 700;
@@ -150,6 +151,14 @@
       color: var(--text-muted);
       margin-top: var(--sp-4);
       margin-bottom: var(--sp-2);
+
+      // Icona del mana speciale davanti al nome (mana.md, "Mana Speciale") — 22px è tarato per le
+      // tabelle del glossario icone, qui accanto a un h3 di 0.75rem andrebbe sproporzionato.
+      .rb-icon-mask {
+        width: 14px;
+        height: 14px;
+        margin-right: 4px;
+      }
     }
 
     p {
@@ -219,6 +228,116 @@
       padding: 1px 6px;
       font-size: 0.8em;
       color: var(--text-heading);
+    }
+
+    // Icona inline nelle tabelle del glossario icone (icon-glossary.md) — le SVG sono già chiare
+    // (E8EAED/E3E3E3), leggibili così come sono sullo sfondo scuro del pannello.
+    img.rb-icon {
+      width: 22px;
+      height: 22px;
+      vertical-align: middle;
+    }
+
+    // Mana speciale (icon-glossary.md): stessa tecnica mask + currentColor di card.component.scss
+    // (.card__badge--special-mana), stessi 3 colori — qui via <span style="mask-image:...">
+    // invece di una classe per variante, dato che la url cambia riga per riga.
+    .rb-icon-mask {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      vertical-align: middle;
+      background-color: currentColor;
+      mask-size: contain;
+      mask-repeat: no-repeat;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+
+      &--gold {
+        color: #d4a847;
+      }
+
+      &--green {
+        color: #4caf50;
+      }
+
+      &--red {
+        color: #d02f2f;
+      }
+
+      &--gray {
+        color: #9aa0a6;
+      }
+    }
+
+    // Miniatura di una carta reale (elements.md/spells.md) — stesso trattamento a riquadro dorato
+    // usato altrove nel design system (card art, hud, ecc.).
+    img.rb-card-art {
+      display: block;
+      width: 110px;
+      border: 1px solid var(--border-gold);
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    // Wrapper della miniatura sopra: affiancata al testo (float), il paragrafo/tabella successivi
+    // gli scorrono attorno finché non arriva l'h2 successivo (clear: both, vedi sopra).
+    figure.rb-figure {
+      float: right;
+      margin: 0 0 var(--sp-4) var(--sp-4);
+      text-align: center;
+
+      figcaption {
+        margin-top: var(--sp-2);
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+    }
+
+    // Riga di carte in rassegna con un'unica didascalia condivisa (elements.md: i 4 elementi base,
+    // i 4 avanzati, i 2 potenti) — a differenza di .rb-card-row sotto, qui le immagini non hanno
+    // testo proprio, solo la didascalia dell'intera riga.
+    .rb-card-gallery {
+      margin: var(--sp-4) 0;
+      text-align: center;
+
+      &__row {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: var(--sp-4);
+      }
+
+      figcaption {
+        margin-top: var(--sp-3);
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        font-style: italic;
+      }
+    }
+
+    // Riga di 2+ carte affiancate, ciascuna con arte + didascalia propria sotto (introduction.md,
+    // "Il tuo mazzo": i 2 incantesimi iniziali).
+    .rb-card-row {
+      display: flex;
+      gap: var(--sp-5);
+      margin: var(--sp-4) 0;
+
+      &__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        text-align: center;
+
+        p {
+          margin-top: var(--sp-2);
+          margin-bottom: 0;
+          font-size: 0.8rem;
+        }
+      }
     }
   }
 }

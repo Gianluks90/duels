@@ -84,7 +84,7 @@
 
   "phaseTracker": {
     "stepsAria": "Turn phases",
-    "turnLabel": "Turn: {name}",
+    "turnLabel": "Turn {number}",
     "pendingSpellsAria": "{count} spells queued"
   },
 
@@ -192,7 +192,7 @@
   },
 
   "login": {
-    "subtitle": "A duel between gentle-wizards",
+    "subtitle": "Challenge those who dare to enchant",
     "signIn": "Sign in with Google",
     "signingIn": "Signing in...",
     "error": "Sign in failed. Please try again."

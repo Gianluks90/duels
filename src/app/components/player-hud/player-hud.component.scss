@@ -15,6 +15,14 @@
   border: 1px solid var(--border-subtle);
   border-radius: 12px 12px 0 0;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+  // Unico indicatore di chi ha il turno (il phase-tracker centrale mostra solo il numero di turno,
+  // non più il nome) — bordo dorato acceso + bagliore, stessa tinta di --border-bright.
+  &--active {
+    border-color: var(--border-bright);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4), 0 0 12px rgba(200, 164, 90, 0.5);
+  }
 
   &--mirrored {
     justify-content: flex-end;

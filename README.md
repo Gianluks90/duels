@@ -11,13 +11,12 @@ Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [docume
 
 - [x] Loader alla board per il refresh.
 - [x] Log eventi (azioni/danni/scarti consultabile a schermo).
-- [ ] Rivedere opzioni profilo utente — la dialog profilo è ferma alla v1 (nome, foto, dorso, elimina account); da rivedere/espandere.
-- [ ] Sfondo app e duello personalizzabili — permettere all'utente di scegliere/personalizzare lo sfondo dell'applicazione e quello della board di duello.
+- [x] Rivedere opzioni profilo utente — la dialog profilo è ferma alla v1 (nome, foto, dorso, elimina account); da rivedere/espandere.
+- [x] Sfondo app e duello personalizzabili — permettere all'utente di scegliere/personalizzare lo sfondo dell'applicazione e quello della board di duello.
+- [x] Conteggio turno anzichè "Turno di: nome-giocatore";
 - [ ] Magie preferite — un modo per il giocatore di segnare alcuni incantesimi come preferiti (Grimorio?).
 - [ ] Magie pinnabili con tooltip in duel UI — poter "appuntare" un incantesimo durante il duello con un tooltip a schermo, per riferimento rapido senza dover riaprire il Grimorio.
-- [ ] Tooltip Giocatore con preview del profilo in Duello.
-- [ ] Regolamento — manca una pagina di glossario e una di glossario icone. Inoltre va controllato che tutto sia in linea con quanto sviluppato. Potrebbe essere anche bello includere le immagini di qualche carta per essere più esplicativi.
-- [ ] Conteggio turno anzichè "Turno di: nome-giocatore";
+- [x] Regolamento — manca una pagina di glossario e una di glossario icone. Inoltre va controllato che tutto sia in linea con quanto sviluppato. Potrebbe essere anche bello includere le immagini di qualche carta per essere più esplicativi.
 
 ## Future espansioni (idee da valutare)
 
@@ -31,3 +30,4 @@ Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [docume
 
 - Valutare "scarta invece di subire danno" come alternativa al danno automatico dell'esplosione elementale, se il playtest lo suggerisce.
 - Tematizzare meglio `damage_self` (oggi usato solo da `black_flame`) quando arriveranno le scuole di magia come categoria narrativa.
+- [ ] Tooltip Giocatore con preview del profilo in Duello. Da implementare quando avremo elementi di personalizzazione del profilo più ricchi (es. sfondo, dorso, ecc.).

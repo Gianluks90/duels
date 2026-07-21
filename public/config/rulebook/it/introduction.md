@@ -1,6 +1,6 @@
 # Duels
 
-Duels è un duello tra **gentilmaghi e maghe**: due giocatori si affrontano usando gli elementi magici per creare e lanciare incantesimi, fino a ridurre a zero i **Punti Salute** dell'avversario.
+Duels è un duello di magia: due giocatori si affrontano usando gli elementi magici per creare e lanciare incantesimi, fino a ridurre a zero i **Punti Salute** dell'avversario.
 
 ## Obiettivo
 
@@ -20,7 +20,18 @@ Il mazzo coperto e le 4 carte rivelate formano insieme la **Fonte Arcana** (vedi
 
 ## Il tuo mazzo
 
-Il mazzo iniziale di un giocatore è composto dalle **carte iniziali**: 2 carte per ciascun elemento base (Fuoco, Acqua, Aria, Terra) — 8 carte in totale, mescolate e tenute coperte nella tua area. Luce e Tenebra non ne fanno parte: si ottengono solo combinando nella Fonte Arcana, come ogni altro elemento potente.
+Il mazzo iniziale di un giocatore è composto dalle **carte iniziali**: 2 carte per ciascun elemento base (Fuoco, Acqua, Aria, Terra) — 8 carte — più 2 incantesimi già pronti, per un totale di 10 carte, mescolate e tenute coperte nella tua area. Luce e Tenebra non ne fanno parte: si ottengono solo combinando nella Fonte Arcana, come ogni altro elemento potente.
+
+<div class="rb-card-row">
+  <div class="rb-card-row__item">
+    <img class="rb-card-art" src="/cards-spell/starter_bolt.webp" alt="Dardo Incantato" />
+    <p><strong>Dardo Incantato</strong><br>Costo 3 mana — infligge 1 danno.</p>
+  </div>
+  <div class="rb-card-row__item">
+    <img class="rb-card-art" src="/cards-spell/starter_balm.webp" alt="Guarigione Leggera" />
+    <p><strong>Guarigione Leggera</strong><br>Costo 3 mana — cura 1 Punto Salute.</p>
+  </div>
+</div>
 
 Subito dopo peschi 5 carte dal tuo mazzo: questa è la tua **mano iniziale**.
 

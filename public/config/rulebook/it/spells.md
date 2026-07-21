@@ -4,7 +4,14 @@ Gli incantesimi sono l'unico modo, o il più sicuro, per sconfiggere l'avversari
 
 ## Creare un Incantesimo
 
-Durante la fase Azione puoi accedere al Grimorio e scegliere un incantesimo da produrre, se possiedi gli elementi previsti dalla sua formula. Puoi scegliere se consumare uno degli elementi usati o scartarli tutti. L'incantesimo creato va nella tua pila degli scarti.
+<figure class="rb-figure">
+  <img class="rb-card-art" src="/cards-spell/aegis.webp" alt="Esempio di carta incantesimo: Egida" />
+  <figcaption>Un incantesimo — qui Egida.</figcaption>
+</figure>
+
+Durante la fase Azione puoi accedere al Grimorio e scegliere un incantesimo da produrre, se possiedi gli elementi previsti dalla sua formula. Tutti gli elementi usati per la formula vengono scartati. L'incantesimo creato va nella tua pila degli scarti.
+
+> In futuro, in base al bilanciamento, si valuterà se introdurre la possibilità di consumare uno degli elementi della formula invece di scartarlo — non ancora implementata.
 
 ## Lanciare un Incantesimo
 

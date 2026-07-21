@@ -392,10 +392,8 @@ export class BoardComponent implements OnInit {
   protected readonly opponentFrozen = computed(() => this.hasFreezeCards(this.opponentState()));
 
   protected readonly isPlayerTurn = computed(() => this.state()?.currentTurn === this.myRole());
-  /** Nome di chi ha il turno in corso — mostrato dal tracker di fase centrale (unico, non duplicato per pannello). */
-  protected readonly turnPlayerName = computed(() =>
-    this.isPlayerTurn() ? this.playerName() : this.opponentName(),
-  );
+  /** Numero di turno progressivo (parte da 1) — mostrato dal tracker di fase centrale. */
+  protected readonly turnNumber = computed(() => this.state()?.turnNumber ?? 1);
   /** Azione è l'unica fase che non si auto-avanza mai da sola (l'effect nel costruttore gestisce le altre 4) — richiede sempre un input reale del giocatore. */
   protected readonly canAdvancePhase = computed(
     () => this.isPlayerTurn() && this.state()?.phase === 'azione',

@@ -22,6 +22,7 @@
           [health]="opponentHealth()"
           [poisonLevel]="opponentPoisonLevel()"
           [frozen]="opponentFrozen()"
+          [active]="!isPlayerTurn()"
           [damageEvent]="opponentDamageEvent()"
           [healEvent]="opponentHealEvent()"
           [shieldEvent]="opponentShieldEvent()"
@@ -490,7 +491,7 @@
         <!-- Tracker di fase: unico e condiviso (non duplicato per pannello) — mostra le 6 fasi in linea
          e il bottone di avanzamento manuale, abilitato solo quando è davvero possibile farlo. -->
         <app-phase-tracker
-          [turnPlayerName]="turnPlayerName()"
+          [turnNumber]="turnNumber()"
           [phase]="state()!.phase"
           [canAdvance]="canAdvancePhase()"
           [pendingSpellsCount]="currentTurnPendingSpellsCount()"
@@ -610,6 +611,7 @@
           [health]="playerHealth()"
           [poisonLevel]="playerPoisonLevel()"
           [frozen]="playerFrozen()"
+          [active]="isPlayerTurn()"
           [damageEvent]="playerDamageEvent()"
           [healEvent]="playerHealEvent()"
           [shieldEvent]="playerShieldEvent()"
@@ -972,6 +974,7 @@
       <!-- OPPONENT -->
       <header
         class="board-compact__identity board-compact__identity--opponent"
+        [class.board-compact__identity--active]="!isPlayerTurn()"
         [attr.aria-label]="'board.opponentZoneAria' | translate"
       >
         <span class="board-compact__hp-value">{{ compactDisplayedHp(opponentHealth()) }}</span>
@@ -1837,6 +1840,7 @@
 
       <footer
         class="board-compact__identity board-compact__identity--player"
+        [class.board-compact__identity--active]="isPlayerTurn()"
         [attr.aria-label]="'board.playerZoneAria' | translate"
       >
         <span class="board-compact__hp-value">{{ compactDisplayedHp(playerHealth()) }}</span>
