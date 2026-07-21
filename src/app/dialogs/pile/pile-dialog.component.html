@@ -34,7 +34,7 @@
                 <ng-template #spellTip>
                   <strong>{{ spellName(card) }}</strong>
                   <hr class="rich-tooltip__rule" />
-                  <p class="rich-tooltip__effect">{{ spellEffectLabel(card) }}</p>
+                  <p class="rich-tooltip__effect" [innerHTML]="spellEffectLabel(card)"></p>
                   @if (spellFlavor(card); as flavor) {
                     <p class="rich-tooltip__flavor">
                       <em>{{ flavor }}</em>

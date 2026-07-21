@@ -142,7 +142,12 @@ export class PileDialogComponent {
           case 'damage_ignore_shields':
             return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
           case 'damage_self':
-            return this.i18n.t('grimoire.effects.damageSelf', { amount });
+            return spell.element
+              ? this.i18n.t('grimoire.effects.damageSelfElement', {
+                  amount,
+                  element: this.i18n.elementLabel(spell.element),
+                })
+              : this.i18n.t('grimoire.effects.damageSelf', { amount });
           case 'damage_halve_opponent':
             return this.i18n.t('grimoire.effects.damageHalveOpponent');
           case 'damage_from_fonte':

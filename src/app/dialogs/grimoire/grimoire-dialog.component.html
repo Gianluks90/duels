@@ -136,7 +136,7 @@
 
             <div class="grimoire__rule" aria-hidden="true"></div>
 
-            <p class="grimoire__effect">{{ effectLabel(spell) }}</p>
+            <p class="grimoire__effect" [innerHTML]="effectLabel(spell)"></p>
 
             @if (spellFlavorText(spell); as flavor) {
               <blockquote class="grimoire__flavor">{{ flavor }}</blockquote>
