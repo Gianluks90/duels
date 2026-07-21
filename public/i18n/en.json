@@ -129,7 +129,9 @@
       "grimoireAria": "Open the Grimoire",
       "grimoireTooltip": "Grimoire",
       "rulebookAria": "Open the rulebook",
-      "rulebookTooltip": "Rulebook"
+      "rulebookTooltip": "Rulebook",
+      "gameLogAria": "Open the game events",
+      "gameLogTooltip": "Events"
     },
     "turn": {
       "advance": "Continue"
@@ -292,6 +294,51 @@
     "deckSpells": "Deck: Spells",
     "discard": "Discard pile",
     "empty": "No cards."
+  },
+
+  "gameLogDialog": {
+    "dialogAria": "Game events",
+    "closeAria": "Close",
+    "title": "Game events",
+    "empty": "No events yet.",
+    "entries": {
+      "damageSpellSelf": "You took {amount} damage from {spell}.",
+      "damageSpellOther": "{name} took {amount} damage from {spell}.",
+      "damageExplosionSelf": "You took {amount} damage from an Elemental Explosion.",
+      "damageExplosionOther": "{name} took {amount} damage from an Elemental Explosion.",
+      "damagePoisonSelf": "You took {amount} damage from Poison.",
+      "damagePoisonOther": "{name} took {amount} damage from Poison.",
+      "healedSelf": "You recovered {amount} HP with {spell}.",
+      "healedOther": "{name} recovered {amount} HP with {spell}.",
+      "shieldGainedSelf": "You gained {amount} shield.",
+      "shieldGainedOther": "{name} gained {amount} shield.",
+      "freezeResolvedSelf": "{count} Freeze card(s) melted away from your hand.",
+      "freezeResolvedOther": "{count} Freeze card(s) melted away from {name}'s hand.",
+      "spellCastSelf": "You cast {spell}.",
+      "spellCastOther": "{name} cast {spell}.",
+      "spellCreatedSelf": "You created the spell {spell}.",
+      "spellCreatedOther": "{name} created the spell {spell}.",
+      "combinedSelf": "You combined {element}.",
+      "combinedOther": "{name} combined {element}.",
+      "combinedResidueSelf": "You obtained an Arcane Residuum.",
+      "combinedResidueOther": "{name} obtained an Arcane Residuum.",
+      "wandTipHeldSelf": "You held {element} at the wand's tip.",
+      "wandTipHeldOther": "{name} held {element} at the wand's tip.",
+      "wandSocketedBodySelf": "You socketed {element} into the wand's body.",
+      "wandSocketedBodyOther": "{name} socketed {element} into the wand's body.",
+      "wandSocketedHandleSelf": "You socketed {element} into the wand's handle.",
+      "wandSocketedHandleOther": "{name} socketed {element} into the wand's handle.",
+      "handRevealedFullSelf": "You revealed the opponent's entire hand.",
+      "handRevealedFullOther": "{name} revealed your entire hand.",
+      "handRevealedPartialSelf": "You revealed a card from the opponent's hand.",
+      "handRevealedPartialOther": "{name} revealed a card from your hand.",
+      "forcedDiscardCountSelf": "You forced the opponent to discard {count} card(s).",
+      "forcedDiscardCountOther": "{name} forced you to discard {count} card(s).",
+      "forcedDiscardFullSelf": "You forced the opponent to discard their entire hand.",
+      "forcedDiscardFullOther": "{name} forced you to discard your entire hand.",
+      "fonteResetSelf": "You reset the Arcane Source.",
+      "fonteResetOther": "{name} reset the Arcane Source."
+    }
   },
 
   "castSpell": {

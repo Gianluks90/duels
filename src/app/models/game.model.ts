@@ -1,4 +1,5 @@
 import type { Card } from './card.model';
+import type { GameLogEntry } from './game-log.model';
 import type { PlayerId, PlayerState } from './player.model';
 import type { ActiveTurnPhase } from './turn-phase.model';
 
@@ -48,6 +49,17 @@ export interface GameState {
    */
   poisonDamageBatchId: number;
   lastPoisonDamage: { role: PlayerId; amount: number } | null;
+
+  /**
+   * Log eventi di gioco (danno/cura/scudo, veleno/congelamento risolti, incantesimi lanciati/creati,
+   * combinazioni, bacchetta...) — a differenza di explosionBatchId/lastPoisonDamage sopra, questo È
+   * un log storico vero e proprio (append-only, mai sostituito), condiviso tra i due giocatori: ogni
+   * voce nasce già con `role` (chi ha agito/subito), la traduzione in una frase leggibile ("tu"/nome
+   * avversario) è responsabilità della UI (GameLogDialogComponent), mai del reducer. Tagliato alle
+   * ultime 50 voci (turn-engine.ts, appendLog) per non far crescere il documento Firestore
+   * indefinitamente in una partita molto lunga.
+   */
+  eventLog: readonly GameLogEntry[];
 
   // Risultato
   winner: PlayerId | null;

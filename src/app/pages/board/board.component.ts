@@ -51,6 +51,10 @@ import {
   type SocketTarget,
 } from '../../dialogs/socket/socket-dialog.component';
 import { PileDialogComponent, type PileDialogData } from '../../dialogs/pile/pile-dialog.component';
+import {
+  GameLogDialogComponent,
+  type GameLogDialogData,
+} from '../../dialogs/game-log/game-log-dialog.component';
 import type {
   BaseElement,
   Element,
@@ -238,6 +242,7 @@ export class BoardComponent implements OnInit {
   protected readonly grimoireIcon = '/icons/book_2_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly rulebookIcon =
     '/icons/question_mark_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly gameLogIcon = '/icons/list_alt_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly settingsIcon = '/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   /** Stessa icona teschio usata da player-hud.component per il livello di Avvelenamento (2.3.4) — riusata nel layout compatto, che non passa per PlayerHudComponent. */
   protected readonly poisonIcon = elementIconPath('poison');
@@ -1491,6 +1496,26 @@ export class BoardComponent implements OnInit {
 
   protected openRulebook(): void {
     this.dialog.open(RulebookDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+  }
+
+  /** Log eventi (danno/cura/scudo, veleno/congelamento risolti, incantesimi, combinazioni,
+   * bacchetta...) — condiviso: la stessa lista (GameState.eventLog) letta da entrambi i client, la
+   * dialog decide "tu"/nome dell'avversario confrontando GameLogEntry.role col proprio ruolo. */
+  protected openGameLog(): void {
+    const role = this.myRole();
+    if (!role) return;
+
+    this.dialog.open<void, GameLogDialogData>(GameLogDialogComponent, {
+      data: {
+        entries: this.state()?.eventLog ?? [],
+        myRole: role,
+        opponentName: this.opponentName(),
+      },
       positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       hasBackdrop: true,
       backdropClass: 'dialog-backdrop',

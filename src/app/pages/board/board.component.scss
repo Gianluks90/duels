@@ -45,6 +45,35 @@
     justify-content: center;
   }
 
+  // .panel/.panel--raised (styles.scss) danno sfondo/bordo/ombra — qui solo il layout interno
+  // (spinner + testo, invece del semplice paragrafo scarno di prima) e l'arrotondamento (i pannelli
+  // globali sono squadrati, pensati per stare a contatto con un bordo schermo — questo invece è una
+  // card isolata al centro, coerente con l'arrotondamento pieno di bacchetta/HUD altrove in board).
+  &__loading-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-4);
+    padding: var(--sp-7) var(--sp-8);
+    border-radius: 12px;
+  }
+
+  &__loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--text-heading);
+    border-radius: 50%;
+    animation: board-loading-spin 900ms linear infinite;
+  }
+
+  &__loading-text {
+    font-family: var(--font-ui);
+    color: var(--text-heading);
+    font-size: 1rem;
+    letter-spacing: 0.04em;
+  }
+
   // ── Zones ───────────────────────────────────────────────────────────────────
   &__zone {
     position: relative;
@@ -625,6 +654,12 @@
     text-align: center;
     color: var(--text-muted);
     line-height: 1.35;
+  }
+}
+
+@keyframes board-loading-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 

@@ -2,6 +2,7 @@ import type { Card, CardTier } from '../models/card.model';
 import type { BaseElement, Element } from '../models/element.model';
 import { SUPERIOR_FORMULA } from '../models/element.model';
 import type { ExplosionEvent, GameState } from '../models/game.model';
+import type { DamageLogSource, GameLogEntryData } from '../models/game-log.model';
 import type { PendingSpell, PlayerId, PlayerState } from '../models/player.model';
 import { computePlayerMana } from '../models/player.model';
 import type { SpellEffect } from '../models/spell.model';
@@ -19,6 +20,43 @@ function updatePlayer(state: GameState, role: PlayerId, patch: Partial<PlayerSta
       [role]: { ...state.players[role], ...patch },
     },
   };
+}
+
+/** Voci del log eventi tenute in memoria — oltre questa soglia le più vecchie vengono scartate
+ * (append-only altrimenti, mai un cap avrebbe fatto crescere il documento Firestore indefinitamente
+ * su una partita molto lunga). */
+const MAX_LOG_ENTRIES = 50;
+
+/** Aggiunge una voce al log eventi (GameState.eventLog) — id assegnato qui (crypto.randomUUID(),
+ * stesso schema delle carte generate a runtime come Congelamento), mai dal chiamante. Ogni reducer
+ * che compie un'azione loggabile la aggiunge qui stesso, non un diff a valle: alcuni eventi (quale
+ * combinazione è stata prodotta, quale incantesimo lanciato) non sarebbero comunque ricostruibili
+ * da un semplice confronto prima/dopo dello stato. */
+function appendLog(state: GameState, entry: GameLogEntryData): GameState {
+  return {
+    ...state,
+    eventLog: [
+      ...(state.eventLog ?? []),
+      { ...entry, id: crypto.randomUUID(), timestamp: Date.now() },
+    ].slice(-MAX_LOG_ENTRIES),
+  };
+}
+
+/** Logga un `damage` solo se è stato davvero perso HP (amount > 0) — es. un danno interamente
+ * assorbito dallo scudo non genera una voce, non c'è nulla da raccontare. Condivisa da tutti gli
+ * effetti danno di applySpellEffect, resolveElementalExplosions e resolvePreparation (veleno). */
+function logDamage(
+  state: GameState,
+  role: PlayerId,
+  amount: number,
+  source: DamageLogSource,
+): GameState {
+  return amount > 0 ? appendLog(state, { type: 'damage', role, amount, source }) : state;
+}
+
+/** Come logDamage sopra, ma per la cura — unica fonte oggi è l'effetto 'heal' di un incantesimo. */
+function logHeal(state: GameState, role: PlayerId, amount: number, spellId: string): GameState {
+  return amount > 0 ? appendLog(state, { type: 'healed', role, amount, spellId }) : state;
 }
 
 /** Il controllo sul tier evita che una carta non-base che riusa un elemento base solo per la propria arte (es. una carta incantesimo, vedi Card.spellId) venga scambiata per la base vera in una combinazione. */
@@ -335,11 +373,14 @@ export function createSpell(state: GameState, role: PlayerId, spellId: string): 
     spellId,
   };
 
-  return updatePlayer(state, role, {
-    hand,
-    wand: { ...player.wand, tipSlot },
-    discards: [...player.discards, ...discardedCards, spellCard],
-  });
+  return appendLog(
+    updatePlayer(state, role, {
+      hand,
+      wand: { ...player.wand, tipSlot },
+      discards: [...player.discards, ...discardedCards, spellCard],
+    }),
+    { type: 'spellCreated', role, spellId },
+  );
 }
 
 /** Mana vitale/caotico (3.2.2/3.2.3): PS extra restituiti al lanciatore, o danni extra inflitti all'avversario, per ogni carta di quel tipo spesa in pagamento — calcolati qui (non in resolveSpells) perché le carte di pagamento vengono scartate subito e non sarebbero più consultabili al momento della risoluzione. Si applicano solo se la magia include un effetto rispettivamente 'heal'/'damage' (vedi applySpellEffect) — altrimenti restano inerti, la carta vale come un mana comune. */
@@ -415,14 +456,17 @@ export function castSpell(
     needsTargetCard && resolvedTargetCardId !== undefined
       ? { card: spellCard, vitalBonus, chaoticBonus, targetCardId: resolvedTargetCardId }
       : { card: spellCard, vitalBonus, chaoticBonus };
-  return updatePlayer(state, role, {
-    hand: player.hand.filter((c) => !spentIds.has(c.id)),
-    discards: [...player.discards, ...discardedPaidCards],
-    pendingSpells: [...player.pendingSpells, pendingSpell],
-    spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
-    wand: tipWasSpent ? { ...player.wand, tipSlot: null } : player.wand,
-    tipCardPlacedTurn: tipWasSpent ? null : player.tipCardPlacedTurn,
-  });
+  return appendLog(
+    updatePlayer(state, role, {
+      hand: player.hand.filter((c) => !spentIds.has(c.id)),
+      discards: [...player.discards, ...discardedPaidCards],
+      pendingSpells: [...player.pendingSpells, pendingSpell],
+      spellsPlayedThisTurn: player.spellsPlayedThisTurn + 1,
+      wand: tipWasSpent ? { ...player.wand, tipSlot: null } : player.wand,
+      tipCardPlacedTurn: tipWasSpent ? null : player.tipCardPlacedTurn,
+    }),
+    { type: 'spellCast', role, spellId: spellCard.spellId },
+  );
 }
 
 /**
@@ -445,11 +489,14 @@ export function holdAtTip(state: GameState, role: PlayerId, cardId: string): Gam
   const card = player.hand.find((c) => c.id === cardId && c.tier === 'base');
   if (!card) return state;
 
-  return updatePlayer(state, role, {
-    hand: player.hand.filter((c) => c.id !== cardId),
-    wand: { ...player.wand, tipSlot: card },
-    tipCardPlacedTurn: state.turnNumber,
-  });
+  return appendLog(
+    updatePlayer(state, role, {
+      hand: player.hand.filter((c) => c.id !== cardId),
+      wand: { ...player.wand, tipSlot: card },
+      tipCardPlacedTurn: state.turnNumber,
+    }),
+    { type: 'wandTipHeld', role, element: card.element as BaseElement },
+  );
 }
 
 /**
@@ -476,13 +523,16 @@ export function socketElement(
   const card = player.hand.find((c) => c.id === cardId && c.tier === 'base');
   if (!card) return state;
 
-  return {
-    ...updatePlayer(state, role, {
-      hand: player.hand.filter((c) => c.id !== cardId),
-      wand: { ...player.wand, [socketField]: card.element },
-    }),
-    commonDiscards: [...state.commonDiscards, card],
-  };
+  return appendLog(
+    {
+      ...updatePlayer(state, role, {
+        hand: player.hand.filter((c) => c.id !== cardId),
+        wand: { ...player.wand, [socketField]: card.element },
+      }),
+      commonDiscards: [...state.commonDiscards, card],
+    },
+    { type: 'wandSocketed', role, slot: target, element: card.element as BaseElement },
+  );
 }
 
 /**
@@ -563,10 +613,16 @@ export function combineElements(
     discards: [...player.discards, taken.obtained],
     wand: { ...player.wand, tipSlot: tipAfterB },
   });
+  const logged = appendLog(withHand, {
+    type: 'combined',
+    role,
+    kind: 'advanced',
+    element: taken.obtained.element,
+  });
 
   // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
   // essere Luce o Tenebra (la carta ottenuta qui è sempre un avanzato, mai un potente).
-  return resolveElementalExplosions(withHand);
+  return resolveElementalExplosions(logged);
 }
 
 /**
@@ -613,10 +669,16 @@ export function combineSuperior(
     discards: [...player.discards, taken.obtained],
     wand: { ...player.wand, tipSlot },
   });
+  const logged = appendLog(withHand, {
+    type: 'combined',
+    role,
+    kind: 'superior',
+    element: taken.obtained.element,
+  });
 
   // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
   // essere l'elemento potente opposto a quello appena ottenuto qui (che va negli scarti, non in mano).
-  return resolveElementalExplosions(withHand);
+  return resolveElementalExplosions(logged);
 }
 
 /**
@@ -663,11 +725,14 @@ export function combineResidue(
     residiumDeck,
     commonDiscards: [...state.commonDiscards, ...consumedBases],
   };
-  return updatePlayer(withDeck, role, {
-    hand: handAfterB,
-    discards: [...player.discards, obtained],
-    wand: { ...player.wand, tipSlot: tipAfterB },
-  });
+  return appendLog(
+    updatePlayer(withDeck, role, {
+      hand: handAfterB,
+      discards: [...player.discards, obtained],
+      wand: { ...player.wand, tipSlot: tipAfterB },
+    }),
+    { type: 'combined', role, kind: 'residue', element: obtained.element },
+  );
 }
 
 /**
@@ -778,14 +843,20 @@ function resolvePreparation(state: GameState, target: PlayerId): GameState {
   const player = state.players[target];
   const poisonDamage = player.tokens.poison;
   const poison = Math.max(0, player.tokens.poison - 1);
+  const meltedCount = player.hand.filter((c) => c.tier === 'freeze').length;
   const hand = resolveExpiringCards(player.hand, 'preparazione');
 
-  const next = updatePlayer(state, target, {
+  let next = updatePlayer(state, target, {
     hp: player.hp - poisonDamage,
     hand,
     tokens: { ...player.tokens, poison },
     tipHeldAtPreparation: !!player.wand.tipSlot,
   });
+
+  next = logDamage(next, target, poisonDamage, { kind: 'poison' });
+  if (meltedCount > 0) {
+    next = appendLog(next, { type: 'freezeResolved', role: target, count: meltedCount });
+  }
 
   if (poisonDamage === 0) return next;
 
@@ -860,6 +931,7 @@ function applySpellEffect(
   effect: SpellEffect,
   pending: Pick<PendingSpell, 'vitalBonus' | 'chaoticBonus' | 'targetCardId'>,
   spellElement: BaseElement | undefined,
+  spellId: string,
 ): GameState {
   const opponentRole: PlayerId = casterRole === 'host' ? 'guest' : 'host';
   switch (effect.type) {
@@ -869,51 +941,62 @@ function applySpellEffect(
         applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
         pending.chaoticBonus;
       const { hpLoss, shieldLeft } = absorbWithShield(opponent.tokens.shield, amount);
-      return updatePlayer(state, opponentRole, {
+      const next = updatePlayer(state, opponentRole, {
         hp: opponent.hp - hpLoss,
         tokens: { ...opponent.tokens, shield: shieldLeft },
       });
+      return logDamage(next, opponentRole, hpLoss, { kind: 'spell', spellId });
     }
     case 'damage_ignore_shields': {
       const opponent = state.players[opponentRole];
       const amount =
         applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
         pending.chaoticBonus;
-      return updatePlayer(state, opponentRole, { hp: opponent.hp - amount });
+      const next = updatePlayer(state, opponentRole, { hp: opponent.hp - amount });
+      return logDamage(next, opponentRole, amount, { kind: 'spell', spellId });
     }
     case 'damage_self': {
       const caster = state.players[casterRole];
       const amount = applyBodyResistance(effect.amount ?? 0, spellElement, caster.wand.bodySocket);
       const { hpLoss, shieldLeft } = absorbWithShield(caster.tokens.shield, amount);
-      return updatePlayer(state, casterRole, {
+      const next = updatePlayer(state, casterRole, {
         hp: caster.hp - hpLoss,
         tokens: { ...caster.tokens, shield: shieldLeft },
       });
+      return logDamage(next, casterRole, hpLoss, { kind: 'spell', spellId });
     }
     case 'damage_halve_opponent': {
       const opponent = state.players[opponentRole];
-      return updatePlayer(state, opponentRole, { hp: Math.floor(opponent.hp / 2) });
+      const newHp = Math.floor(opponent.hp / 2);
+      const next = updatePlayer(state, opponentRole, { hp: newHp });
+      return logDamage(next, opponentRole, opponent.hp - newHp, { kind: 'spell', spellId });
     }
     case 'damage_from_fonte': {
       const opponent = state.players[opponentRole];
       const pairs = countAdvancedPairsInFonte(state.fonteElementale);
       const amount = pairs * FONTE_PAIR_DAMAGE + pending.chaoticBonus;
       const { hpLoss, shieldLeft } = absorbWithShield(opponent.tokens.shield, amount);
-      return updatePlayer(state, opponentRole, {
+      const next = updatePlayer(state, opponentRole, {
         hp: opponent.hp - hpLoss,
         tokens: { ...opponent.tokens, shield: shieldLeft },
       });
+      return logDamage(next, opponentRole, hpLoss, { kind: 'spell', spellId });
     }
     case 'heal': {
       const caster = state.players[casterRole];
-      return updatePlayer(state, casterRole, {
-        hp: caster.hp + (effect.amount ?? 0) + pending.vitalBonus,
-      });
+      const amount = (effect.amount ?? 0) + pending.vitalBonus;
+      const next = updatePlayer(state, casterRole, { hp: caster.hp + amount });
+      return logHeal(next, casterRole, amount, spellId);
     }
     case 'boost_card_mana':
       return applyBoostCardMana(state, casterRole, pending.targetCardId, effect.amount ?? 1);
-    case 'shield_add':
-      return applyShield(state, casterRole, effect.amount ?? 0);
+    case 'shield_add': {
+      const amount = effect.amount ?? 0;
+      const next = applyShield(state, casterRole, amount);
+      return amount > 0
+        ? appendLog(next, { type: 'shieldGained', role: casterRole, amount })
+        : next;
+    }
     case 'shield_remove_opponent':
       return applyShieldRemove(state, opponentRole, effect.amount);
     case 'poison_add':
@@ -924,14 +1007,46 @@ function applySpellEffect(
       return applyFreeze(state, opponentRole, effect.amount ?? 0);
     case 'ice_clear_self':
       return applyIceClear(state, casterRole);
-    case 'opponent_discard_random':
-      return applyDiscardRandom(state, opponentRole, effect.amount ?? 1);
-    case 'opponent_discard_hand':
-      return applyDiscardHand(state, opponentRole);
-    case 'reveal_opponent_hand':
-      return applyRevealHand(state, opponentRole, effect.amount, effect.cardTierFilter);
+    case 'opponent_discard_random': {
+      const before = state.players[opponentRole].hand.length;
+      const next = applyDiscardRandom(state, opponentRole, effect.amount ?? 1);
+      const discarded = before - next.players[opponentRole].hand.length;
+      return discarded > 0
+        ? appendLog(next, {
+            type: 'opponentForcedDiscard',
+            role: casterRole,
+            count: discarded,
+            full: false,
+          })
+        : next;
+    }
+    case 'opponent_discard_hand': {
+      const next = applyDiscardHand(state, opponentRole);
+      return appendLog(next, {
+        type: 'opponentForcedDiscard',
+        role: casterRole,
+        count: 0,
+        full: true,
+      });
+    }
+    case 'reveal_opponent_hand': {
+      const alreadyRevealed = new Set(
+        state.players[opponentRole].hand.filter((c) => c.revealedToOpponent).map((c) => c.id),
+      );
+      const next = applyRevealHand(state, opponentRole, effect.amount, effect.cardTierFilter);
+      const newlyRevealed = next.players[opponentRole].hand.filter(
+        (c) => c.revealedToOpponent && !alreadyRevealed.has(c.id),
+      ).length;
+      return newlyRevealed > 0
+        ? appendLog(next, {
+            type: 'handRevealed',
+            role: casterRole,
+            full: effect.amount === undefined,
+          })
+        : next;
+    }
     case 'fonte_reset':
-      return applyFonteReset(state);
+      return appendLog(applyFonteReset(state), { type: 'fonteReset', role: casterRole });
     default:
       return state;
   }
@@ -955,7 +1070,7 @@ function resolveSpells(state: GameState, role: PlayerId): GameState {
     const spell = SPELL_CATALOG.find((s) => s.id === pending.card.spellId);
     if (!spell) continue;
     for (const effect of spell.effects)
-      next = applySpellEffect(next, role, effect, pending, spell.element);
+      next = applySpellEffect(next, role, effect, pending, spell.element, spell.id);
   }
 
   const caster = next.players[role];
@@ -1007,6 +1122,7 @@ export function resolveElementalExplosions(state: GameState): GameState {
       const { removed: dark, rest: hand } = extractOneByExactElement(afterLight, 'dark');
       next = updatePlayer(next, role, { hand, hp: player.hp - 1 });
       next = { ...next, advancedDiscards: [...next.advancedDiscards, light!, dark!] };
+      next = logDamage(next, role, 1, { kind: 'explosion' });
       player = next.players[role];
       events.push({ location: 'hand', affectedRoles: [role], cards: [light!, dark!] });
     }
@@ -1042,6 +1158,8 @@ export function resolveElementalExplosions(state: GameState): GameState {
         guest: { ...next.players.guest, hp: next.players.guest.hp - 1 },
       },
     };
+    next = logDamage(next, 'host', 1, { kind: 'explosion' });
+    next = logDamage(next, 'guest', 1, { kind: 'explosion' });
     events.push({ location: 'fonte', affectedRoles: ['host', 'guest'], cards: [light!, dark!] });
   }
 

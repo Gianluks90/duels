@@ -1,0 +1,83 @@
+.game-log-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 92vw);
+  max-height: 82vh;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+  }
+
+  &__body {
+    padding: var(--sp-4) var(--sp-5);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: 2px;
+    }
+  }
+
+  &__empty {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: var(--sp-6) 0;
+  }
+
+  &__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  // Ogni voce ha un bordo leggero proprio (non solo un separatore tra righe) per leggersi come una
+  // scheda a sé, non come una tabella continua.
+  &__entry {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+  }
+
+  // Etichetta oraria volutamente opaca — un ausilio secondario per orientarsi, non un dato rilevante
+  // quanto il testo dell'evento.
+  &__time {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__text {
+    flex: 1;
+  }
+}

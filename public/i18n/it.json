@@ -132,7 +132,9 @@
       "grimoireAria": "Apri il Grimorio",
       "grimoireTooltip": "Grimorio",
       "rulebookAria": "Apri il regolamento",
-      "rulebookTooltip": "Regolamento"
+      "rulebookTooltip": "Regolamento",
+      "gameLogAria": "Apri gli eventi di gioco",
+      "gameLogTooltip": "Eventi"
     },
     "turn": {
       "advance": "Prosegui"
@@ -295,6 +297,51 @@
     "deckSpells": "Mazzo: Incantesimi",
     "discard": "Scarti",
     "empty": "Nessuna carta."
+  },
+
+  "gameLogDialog": {
+    "dialogAria": "Eventi di gioco",
+    "closeAria": "Chiudi",
+    "title": "Eventi di gioco",
+    "empty": "Nessun evento ancora.",
+    "entries": {
+      "damageSpellSelf": "Hai subito {amount} danno/i da {spell}.",
+      "damageSpellOther": "{name} ha subito {amount} danno/i da {spell}.",
+      "damageExplosionSelf": "Hai subito {amount} danno/i da un'Esplosione elementale.",
+      "damageExplosionOther": "{name} ha subito {amount} danno/i da un'Esplosione elementale.",
+      "damagePoisonSelf": "Hai subito {amount} danno/i da Avvelenamento.",
+      "damagePoisonOther": "{name} ha subito {amount} danno/i da Avvelenamento.",
+      "healedSelf": "Hai recuperato {amount} PS con {spell}.",
+      "healedOther": "{name} ha recuperato {amount} PS con {spell}.",
+      "shieldGainedSelf": "Hai guadagnato {amount} scudo.",
+      "shieldGainedOther": "{name} ha guadagnato {amount} scudo.",
+      "freezeResolvedSelf": "Ti si è sciolta {count} carta/e Congelamento.",
+      "freezeResolvedOther": "A {name} si è sciolta {count} carta/e Congelamento.",
+      "spellCastSelf": "Hai lanciato {spell}.",
+      "spellCastOther": "{name} ha lanciato {spell}.",
+      "spellCreatedSelf": "Hai creato l'incantesimo {spell}.",
+      "spellCreatedOther": "{name} ha creato l'incantesimo {spell}.",
+      "combinedSelf": "Hai combinato {element}.",
+      "combinedOther": "{name} ha combinato {element}.",
+      "combinedResidueSelf": "Hai ottenuto un Residuo Arcano.",
+      "combinedResidueOther": "{name} ha ottenuto un Residuo Arcano.",
+      "wandTipHeldSelf": "Hai trattenuto {element} nella punta della bacchetta.",
+      "wandTipHeldOther": "{name} ha trattenuto {element} nella punta della bacchetta.",
+      "wandSocketedBodySelf": "Hai incastonato {element} nell'asta della bacchetta.",
+      "wandSocketedBodyOther": "{name} ha incastonato {element} nell'asta della bacchetta.",
+      "wandSocketedHandleSelf": "Hai incastonato {element} nel manico della bacchetta.",
+      "wandSocketedHandleOther": "{name} ha incastonato {element} nel manico della bacchetta.",
+      "handRevealedFullSelf": "Hai rivelato l'intera mano dell'avversario.",
+      "handRevealedFullOther": "{name} ha rivelato la tua intera mano.",
+      "handRevealedPartialSelf": "Hai rivelato una carta della mano avversaria.",
+      "handRevealedPartialOther": "{name} ha rivelato una carta della tua mano.",
+      "forcedDiscardCountSelf": "Hai costretto l'avversario a scartare {count} carta/e.",
+      "forcedDiscardCountOther": "{name} ti ha costretto a scartare {count} carta/e.",
+      "forcedDiscardFullSelf": "Hai costretto l'avversario a scartare l'intera mano.",
+      "forcedDiscardFullOther": "{name} ti ha costretto a scartare l'intera mano.",
+      "fonteResetSelf": "Hai rigenerato la Fonte Arcana.",
+      "fonteResetOther": "{name} ha rigenerato la Fonte Arcana."
+    }
   },
 
   "castSpell": {

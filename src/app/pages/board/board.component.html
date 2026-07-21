@@ -338,6 +338,13 @@
             [appTooltip]="'board.toolbar.rulebookTooltip' | translate"
             tooltipPosition="right"
           />
+          <app-icon-button
+            [icon]="gameLogIcon"
+            [ariaLabel]="'board.toolbar.gameLogAria' | translate"
+            (iconClick)="openGameLog()"
+            [appTooltip]="'board.toolbar.gameLogTooltip' | translate"
+            tooltipPosition="right"
+          />
         </div>
 
         <div class="board__fonte-container" [style.gap.px]="fonteGroupGap">
@@ -1470,6 +1477,13 @@
             [size]="32"
             (iconClick)="openRulebook()"
           />
+          <app-icon-button
+            [icon]="gameLogIcon"
+            [ariaLabel]="'board.toolbar.gameLogTooltip' | translate"
+            [appTooltip]="'board.toolbar.gameLogTooltip' | translate"
+            [size]="32"
+            (iconClick)="openGameLog()"
+          />
         </div>
         <div class="board-compact__phase">
           <span class="board-compact__phase-line" aria-hidden="true"></span>
@@ -1879,7 +1893,10 @@
     }
   } @else {
     <div class="board__loading">
-      <p class="t-muted">{{ 'board.loadingGame' | translate }}</p>
+      <div class="board__loading-card panel panel--raised" role="status">
+        <div class="board__loading-spinner" aria-hidden="true"></div>
+        <p class="board__loading-text">{{ 'board.loadingGame' | translate }}</p>
+      </div>
     </div>
   }
 </div>

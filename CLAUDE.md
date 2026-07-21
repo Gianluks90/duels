@@ -38,13 +38,25 @@ src/
       firebase.config.ts          # Firebase project config (API keys)
     guards/
       auth.guard.ts               # authGuard / loginGuard route guards
+    game/                         # pure game logic — no Angular, no Firestore I/O
+      deck-builder.ts             # createInitialGameState, drawUpTo, deck/hand setup
+      turn-engine.ts              # reducers: advanceTurnPhase, castSpell, combine*, resolvePreparation...
+      derive-events.ts            # deriveGameEvents(prev, next) — diffs two GameState into GameEvent[]
     services/
-      firebase.service.ts         # singleton wrapping Firestore instance
+      firebase.service.ts         # singleton wrapping Firestore instance (exposes `db: Firestore`)
       auth.service.ts             # Firebase Auth wrapper
-      game.service.ts             # game document CRUD (GameDoc, surrender, etc.)
-    models/                       # card/element/game/player/spell/turn-phase/user/wand types
-    components/                   # reusable presentational components (card, deck, player-hud, ...)
-    dialogs/                      # CDK Dialog components (game-settings, grimoire, options, rulebook)
+      game.service.ts             # game document CRUD (GameDoc, surrender, listenToGame, etc.)
+      game-engine.service.ts      # wraps turn-engine.ts reducers in Firestore runTransaction
+      game-state.service.ts       # component-scoped: holds rawState/gameDoc for BoardComponent
+      animation-queue.service.ts  # component-scoped: GameEvent → animation/flash overlay signals
+      audio.service.ts            # background music + one-shot fx
+      translation.service.ts      # i18n (TranslationService + translate.pipe)
+      board-layout.service.ts     # responsive layout tier (mobile/tablet/desktop)
+    models/                       # card/element/game/game-event/player/spell/turn-phase/user/wand types
+    data/
+      spells.ts                   # SPELL_CATALOG — the spell data (formula, mana cost, effects)
+    components/                   # reusable presentational components (card, deck, player-hud, phase-tracker, ui/...)
+    dialogs/                      # CDK Dialog components (game-settings, grimoire, options, rulebook, cast-spell, combine, socket, pile, profile)
     pages/                        # routed pages (home, login, setup, board, result)
 ```
 
@@ -52,9 +64,11 @@ src/
 - Firestore: primary data store; rules in [firestore.rules](firestore.rules)
 - Hosting: serves `dist/duels/browser/`
 
-**State**: Use signals and `computed()` for all component state. `FirebaseService` exposes `database: Firestore` — build feature services on top of it using the Firestore SDK directly (no AngularFire).
+**State**: Use signals and `computed()` for all component state. `FirebaseService` exposes `db: Firestore` — build feature services on top of it using the Firestore SDK directly (no AngularFire).
 
-**Routing**: Feature routes use lazy loading (`loadComponent`); most are behind `authGuard`. Note: `game/:gameId` currently has no `canActivate` guard — a known temporary/debug state, not yet cleaned up.
+**Animations**: `board.component.ts` never derives animations from Firestore snapshots by hand. Instead: `GameStateService` (component-scoped on `BoardComponent`) holds the raw, always-current `GameState`; on every change, `deriveGameEvents(prev, next)` (`src/app/game/derive-events.ts`) diffs it into a typed `GameEvent[]` (`src/app/models/game-event.model.ts`); `AnimationQueueService` (also component-scoped) consumes those events and owns the ephemeral "overlay" signals (ghosts, flashes, entering/drawing state) that templates read *alongside* the raw state — never a second, delayed copy of it. When adding a new animated transition, add a case to `deriveGameEvents` + a handler in `AnimationQueueService`, don't add another ad-hoc `effect()` in `board.component.ts`.
+
+**Routing**: Feature routes use lazy loading (`loadComponent`); all routes except `login` are behind `authGuard` (`game/:gameId` included).
 
 **Dialogs**: Opened via Angular CDK Dialog (`Dialog`, `DialogRef`, `DIALOG_DATA`) from page components, using the shared `dialog-backdrop` / `dialog-panel` global CSS classes.
 

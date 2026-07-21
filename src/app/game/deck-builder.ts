@@ -221,6 +221,7 @@ export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): G
     lastExplosions: [],
     poisonDamageBatchId: 0,
     lastPoisonDamage: null,
+    eventLog: [],
     winner: null,
     createdAt: Date.now(),
   };
