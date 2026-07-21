@@ -22,10 +22,7 @@ import { GameStateService } from '../../services/game-state.service';
 import { AnimationQueueService, VANISH_DURATION_MS } from '../../services/animation-queue.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
-import {
-  PlayerHudComponent,
-  type DamageEvent,
-} from '../../components/player-hud/player-hud.component';
+import { PlayerHudComponent } from '../../components/player-hud/player-hud.component';
 import { PhaseTrackerComponent } from '../../components/phase-tracker/phase-tracker.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
@@ -314,14 +311,38 @@ export class BoardComponent implements OnInit {
     return s && role ? s.players[role] : null;
   });
 
-  /** Danno subito da mostrare come lampo sulla barra vita — copre qualunque causa (Esplosione
-   * elementale, incantesimo, veleno), derivato da AnimationQueueService confrontando l'HP tra due
-   * GameState consecutivi (vedi deriveGameEvents), non più solo dalle Esplosioni come in passato. */
+  /** Danno subito da mostrare come lampo sulla barra vita — copre qualunque causa TRANNE il veleno
+   * (Esplosione elementale, incantesimo), derivato da AnimationQueueService confrontando l'HP tra due
+   * GameState consecutivi (vedi deriveGameEvents). Il veleno ha un proprio evento dedicato
+   * (playerPoisonDamageEvent/opponentPoisonDamageEvent sotto, icona/colore diversi), scorporato dal
+   * danno generico invece di sommarcisi. */
   protected readonly playerDamageEvent = computed(() =>
     this.animationQueue.damageEventFor(this.myRole()),
   );
   protected readonly opponentDamageEvent = computed(() =>
     this.animationQueue.damageEventFor(this.opponentRole()),
+  );
+  /** Cura ricevuta — stesso schema di playerDamageEvent/opponentDamageEvent. */
+  protected readonly playerHealEvent = computed(() =>
+    this.animationQueue.healEventFor(this.myRole()),
+  );
+  protected readonly opponentHealEvent = computed(() =>
+    this.animationQueue.healEventFor(this.opponentRole()),
+  );
+  /** Scudo guadagnato (2.3.3) — solo gli aumenti, vedi derive-events.ts. */
+  protected readonly playerShieldEvent = computed(() =>
+    this.animationQueue.shieldEventFor(this.myRole()),
+  );
+  protected readonly opponentShieldEvent = computed(() =>
+    this.animationQueue.shieldEventFor(this.opponentRole()),
+  );
+  /** Danno da Avvelenamento (2.3.4, resolvePreparation) — icona/colore propri (teschio verde) invece
+   * del generico lampo rosso, vedi playerDamageEvent sopra sul perché è scorporato. */
+  protected readonly playerPoisonDamageEvent = computed(() =>
+    this.animationQueue.poisonDamageEventFor(this.myRole()),
+  );
+  protected readonly opponentPoisonDamageEvent = computed(() =>
+    this.animationQueue.poisonDamageEventFor(this.opponentRole()),
   );
 
   protected readonly playerHealth = computed(() => ({
@@ -393,6 +414,12 @@ export class BoardComponent implements OnInit {
   protected readonly opponentHandCount = computed(() => this.opponentState()?.hand.length ?? 0);
   protected readonly fonteCards = computed<Element[]>(
     () => this.state()?.fonteElementale.map((c) => c.element) ?? [],
+  );
+  /** Id delle 4 carte della Fonte Arcana, stesso ordine/indice di fonteCards() sopra — serve solo a
+   * risalire all'id reale per cardIsDrawing()/cardDrawDelayMs() nel template (fonteCards() porta solo
+   * l'Element, non l'intera Card, per tutto il resto che già la usa così). */
+  protected readonly fonteCardIds = computed<string[]>(
+    () => this.state()?.fonteElementale.map((c) => c.id) ?? [],
   );
   /** Full Card objects (not just Element) so a card carrying a permanent bonus manico (regolamento 1.4.3) still shows its boosted mana value once drawn into hand. */
   protected readonly playerHand = computed<Card[]>(() => this.me()?.hand ?? []);

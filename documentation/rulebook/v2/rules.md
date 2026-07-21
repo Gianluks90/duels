@@ -61,7 +61,7 @@ Gli incantesimi che includono tuono come componente possono avere la capacità d
 Gli incantesimi che includono lava come componente possono avere la capacità di _consumare_ carte per alleggerire il mazzo. Sono inoltre noti per creare difese più potenti, applicando scudi ai Punti Salute.
 
 **2.3.4 - Veleno e danni nel tempo**
-Gli incantesimi che includono veleno come componente possono applicare _Avvelenamento_ al bersaglio: quando un bersaglio è avvelenato, subisce danni durante la fase di Preparazione in base al livello di avvelenamento raggiunto. Il livello di avvelenamento si riduce nel tempo, di un livello ogni volta che la pila degli scarti del giocatore viene rimescolata nel mazzo.
+Gli incantesimi che includono veleno come componente possono applicare _Avvelenamento_ al bersaglio: quando un bersaglio è avvelenato, subisce danni durante la fase di Preparazione in base al livello di avvelenamento raggiunto, dopodiché il livello si riduce di 1. Il livello di avvelenamento si riduce inoltre di un ulteriore livello ogni volta che la pila degli scarti del giocatore viene rimescolata nel mazzo.
 
 **2.4 - Elemento potente ed Esplosione elementale**
 Ogni elemento potente vale 2 Mana ed è collegato a uno dei seguenti elementi: Luce e Tenebra. Un elemento potente si ottiene combinando gli elementi base necessari, se la combinazione è visibile nella Fonte Arcana durante la fase Azione; la formula richiede Fuoco + Acqua + Aria + Terra. In qualsiasi momento, quando due elementi potenti diversi si trovano nello stesso luogo (mano di un giocatore o Fonte Arcana), si genera un'_esplosione elementale_: viene inferto 1 danno al bersaglio o ai bersagli (se l'esplosione avviene in mano, il danno è inflitto solo al giocatore che possiede le due carte; se avviene nella Fonte Arcana, entrambi i giocatori subiscono il danno) e le 2 carte coinvolte si consumano.
@@ -99,7 +99,7 @@ Il giocatore attende che il turno dell'avversario termini.
 
 **4.2 - Preparazione**
 Prima dell'inizio del turno vengono risolti alcuni effetti. Nello specifico:
-- vengono inflitti i danni da veleno;
+- vengono inflitti i danni da veleno, dopodiché il livello di avvelenamento si riduce di 1 (vedi 2.3.4);
 - si sciolgono le carte congelamento.
 
 **4.3 - Raccolta**

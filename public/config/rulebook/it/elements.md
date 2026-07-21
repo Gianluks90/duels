@@ -29,7 +29,7 @@ Gli elementi avanzati danno accesso a incantesimi più potenti, che tendenzialme
 - **Ghiaccio** — gli incantesimi che lo includono possono applicare **Congelamento**: il bersaglio aggiunge carte Congelamento alla propria pila degli scarti, che occupano spazio e si sciolgono (vengono rimosse dal gioco) durante la fase di Preparazione.
 - **Tuono** — gli incantesimi che lo includono possono non finire mai negli scarti, tornando invece sul fondo del mazzo del giocatore.
 - **Lava** — gli incantesimi che lo includono possono consumare carte per alleggerire il mazzo, e sono noti per creare scudi ai Punti Salute.
-- **Veleno** — gli incantesimi che lo includono possono applicare **Avvelenamento**: il bersaglio subisce danni in fase di Preparazione in base al livello raggiunto; il livello si riduce di 1 ogni volta che il mazzo del giocatore avvelenato viene rimescolato dai propri scarti.
+- **Veleno** — gli incantesimi che lo includono possono applicare **Avvelenamento**: il bersaglio subisce danni in fase di Preparazione in base al livello raggiunto, dopodiché il livello si riduce di 1; si riduce di un ulteriore livello ogni volta che il mazzo del giocatore avvelenato viene rimescolato dai propri scarti.
 
 ## Elementi Potenti ed Esplosione Elementale
 

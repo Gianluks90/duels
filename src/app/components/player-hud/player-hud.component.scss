@@ -198,7 +198,7 @@
     }
 
     // Esplosione elementale (2.4) — "lampo": un impulso bianco/dorato sopra il fill, durata
-    // allineata a DAMAGE_FLASH_DURATION_MS (player-hud.component.ts).
+    // allineata a FLASH_DURATION_MS (player-hud.component.ts).
     &--damage-flash {
       animation: hp-damage-flash 1000ms ease-out;
     }
@@ -217,21 +217,88 @@
       inset 0 -3px 5px rgba(0, 0, 0, 0.55);
   }
 
-  // Esplosione elementale (2.4) — numero fluttuante "-N" che sale e svanisce sopra la barra,
-  // fratello di .hud__hp-track (non figlio: quello ha overflow: hidden e lo taglierebbe).
-  &__damage-flash {
+  // Danno/cura/scudo/veleno — numero fluttuante "±N" (+ icona) che sale e svanisce sopra la barra,
+  // fratello di .hud__hp-track (non figlio: quello ha overflow: hidden e lo taglierebbe). Ognuno il
+  // proprio livello verticale così, nel raro caso in cui più di uno scatti insieme sullo stesso
+  // pannello (es. danno generico + veleno, già scorporati ma dalla stessa transazione — vedi
+  // derive-events.ts), non finiscono esattamente sovrapposti.
+  &__flash {
     position: absolute;
     left: 50%;
     top: 0;
     transform: translate(-50%, 0);
+    display: flex;
+    align-items: center;
+    gap: 2px;
     font-family: var(--font-ui);
     font-size: 1.6rem;
     font-weight: 800;
-    color: #ff5a4a;
     text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
     pointer-events: none;
     z-index: 2;
     animation: hud-damage-number 1000ms ease-out;
+
+    &--damage {
+      color: #ff5a4a;
+    }
+
+    // Stesso verde malato di .hud__hp-fill--poisoned, non il verde della cura (già preso).
+    &--poison {
+      top: -26px;
+      color: #9ccc4f;
+    }
+
+    &--heal {
+      top: -52px;
+      color: #fff;
+    }
+
+    &--shield {
+      top: -78px;
+      color: #fff;
+    }
+  }
+
+  &__flash-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background-color: currentColor;
+
+    // Stesse SVG monocromatiche già usate per il mana speciale caotico/vitale sulle carte
+    // (card.component.ts, SPECIAL_MANA_ICONS) — mask invece di <img> per poterle ricolorare con
+    // currentColor (qui rosso per il danno, bianco per cura/scudo), coerenti col resto del pannello.
+    &--explosion {
+      mask: url('/icons/explosion_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain
+        no-repeat;
+      -webkit-mask: url('/icons/explosion_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center /
+        contain no-repeat;
+    }
+
+    &--heal {
+      mask: url('/icons/favorite_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+        no-repeat;
+      -webkit-mask: url('/icons/favorite_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center /
+        contain no-repeat;
+    }
+
+    &--shield {
+      mask: url('/icons/shield_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+        no-repeat;
+      -webkit-mask: url('/icons/shield_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+        no-repeat;
+    }
+
+    // Stessa SVG del teschio già usata per il livello di Avvelenamento (elementIconPath('poison'),
+    // hud__poison-skull-icon più sotto) — qui mascherata invece che <img>, per lo stesso motivo delle
+    // altre: ricolorata di verde (hud__flash--poison) invece del suo grigio originale.
+    &--poison {
+      mask: url('/icons/skull_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg') center / contain
+        no-repeat;
+      -webkit-mask: url('/icons/skull_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg') center / contain
+        no-repeat;
+    }
   }
 
   // HP value (+ poison skulls, same baseline), protruding above the bar.
@@ -289,7 +356,7 @@
   }
 }
 
-// Esplosione elementale (2.4) — durata di entrambe: 1000ms, in sync con DAMAGE_FLASH_DURATION_MS
+// Esplosione elementale (2.4) — durata di entrambe: 1000ms, in sync con FLASH_DURATION_MS
 // (player-hud.component.ts). Top-level: le @keyframes non possono stare dentro un blocco &.
 @keyframes hp-damage-flash {
   0%,

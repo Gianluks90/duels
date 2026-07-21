@@ -10,7 +10,7 @@ Attendi che il turno dell'avversario termini.
 
 Vengono risolti gli effetti di inizio turno:
 
-- vengono inflitti i danni da veleno;
+- vengono inflitti i danni da veleno, dopodiché il livello di Avvelenamento si riduce di 1;
 - le carte Congelamento pescate si sciolgono (vengono rimosse dal gioco).
 
 ## 3. Raccolta

@@ -219,6 +219,8 @@ export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): G
     residiumDeck,
     explosionBatchId: 0,
     lastExplosions: [],
+    poisonDamageBatchId: 0,
+    lastPoisonDamage: null,
     winner: null,
     createdAt: Date.now(),
   };

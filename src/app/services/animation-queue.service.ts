@@ -5,7 +5,7 @@ import type { Card } from '../models/card.model';
 import type { GameEvent } from '../models/game-event.model';
 import { deriveGameEvents } from '../game/derive-events';
 import { AudioService } from './audio.service';
-import type { DamageEvent } from '../components/player-hud/player-hud.component';
+import type { FlashEvent } from '../components/player-hud/player-hud.component';
 
 /** Durata dell'animazione di sparizione delle carte "temporanee" (Congelamento/Residuo,
  * Card.expiresAt) e della carta appena uscita dalla punta della bacchetta — deve combaciare con
@@ -110,7 +110,14 @@ export class AnimationQueueService {
   private readonly tipVanishingByRole = signal<Record<PlayerId, Card | null>>(roleRecord(null));
   private readonly bodyEnteringByRole = signal<Record<PlayerId, boolean>>(roleRecord(false));
   private readonly handleEnteringByRole = signal<Record<PlayerId, boolean>>(roleRecord(false));
-  private readonly damageEventByRole = signal<Record<PlayerId, DamageEvent | null>>(
+  private readonly damageEventByRole = signal<Record<PlayerId, FlashEvent | null>>(
+    roleRecord(null),
+  );
+  private readonly healEventByRole = signal<Record<PlayerId, FlashEvent | null>>(roleRecord(null));
+  private readonly shieldEventByRole = signal<Record<PlayerId, FlashEvent | null>>(
+    roleRecord(null),
+  );
+  private readonly poisonDamageEventByRole = signal<Record<PlayerId, FlashEvent | null>>(
     roleRecord(null),
   );
 
@@ -140,8 +147,20 @@ export class AnimationQueueService {
     return role ? this.handleEnteringByRole()[role] : false;
   }
 
-  damageEventFor(role: PlayerId | null): DamageEvent | null {
+  damageEventFor(role: PlayerId | null): FlashEvent | null {
     return role ? this.damageEventByRole()[role] : null;
+  }
+
+  healEventFor(role: PlayerId | null): FlashEvent | null {
+    return role ? this.healEventByRole()[role] : null;
+  }
+
+  shieldEventFor(role: PlayerId | null): FlashEvent | null {
+    return role ? this.shieldEventByRole()[role] : null;
+  }
+
+  poisonDamageEventFor(role: PlayerId | null): FlashEvent | null {
+    return role ? this.poisonDamageEventByRole()[role] : null;
   }
 
   drawDelayMsFor(cardId: string): number {
@@ -199,7 +218,7 @@ export class AnimationQueueService {
   private applyEvents(events: readonly GameEvent[], myRole: PlayerId | null): void {
     if (events.length === 0) return;
     this.syncCounter++;
-    const damageId = this.syncCounter;
+    const flashId = this.syncCounter;
 
     // Un solo colpo di lampo+scossa anche quando più coppie esplodono nello stesso batch (2.4) —
     // sostituzione in blocco, non accodamento, stesso schema dell'effect che sostituiva.
@@ -229,6 +248,7 @@ export class AnimationQueueService {
           break;
         case 'fonteRevealed':
           this.audio.playFx('fonteReveal');
+          this.stageDrawingCards(event.cards);
           break;
         case 'wandTipFilled':
           if (event.role === myRole) this.pulseEntering(this.tipEnteringByRole, event.role);
@@ -247,30 +267,49 @@ export class AnimationQueueService {
           this.onCollectBonusRevealed(event.cardIds);
           break;
         case 'damageDealt':
-          this.setDamageEvent(event.role, event.amount, damageId);
+          this.setFlashEvent(this.damageEventByRole, event.role, event.amount, flashId);
           break;
         case 'healed':
-          break; // nessun overlay dedicato oggi (mai stato animato, nemmeno prima di questo refactor)
+          this.setFlashEvent(this.healEventByRole, event.role, event.amount, flashId);
+          break;
+        case 'shieldGained':
+          this.setFlashEvent(this.shieldEventByRole, event.role, event.amount, flashId);
+          break;
+        case 'poisonDamageDealt':
+          this.setFlashEvent(this.poisonDamageEventByRole, event.role, event.amount, flashId);
+          break;
       }
     }
   }
 
   /** Pesca di carte (Fine turno/endTurn, Raccolta/keepCard-keepMana) — un ingresso scaglionato
    * carta-per-carta invece di farle comparire tutte insieme: ogni carta riceve il proprio ritardo
-   * (DRAW_STAGGER_MS * indice nel batch) sia per l'animazione (board__hand-card--drawing, letta da
-   * board.component.html via drawDelayMsFor) sia per il suono (un solo playFx per carta, invece del
-   * precedente burst con `times`), così il "tac" sonoro arriva sincronizzato con l'atterraggio
-   * visivo di QUELLA carta specifica invece che essere scollegato da cosa si vede. */
+   * (DRAW_STAGGER_MS * indice nel batch) sia per l'animazione (stageDrawingCards sotto, condivisa
+   * con onFonteRevealed) sia per il suono (un solo playFx per carta, invece del precedente burst con
+   * `times`), così il "tac" sonoro arriva sincronizzato con l'atterraggio visivo di QUELLA carta
+   * specifica invece che essere scollegato da cosa si vede. */
   private onCardsDrawn(cards: readonly Card[]): void {
+    cards.forEach((card, i) => {
+      const soundTimer = setTimeout(
+        () => this.audio.playFx('handDraw', { times: 1 }),
+        i * DRAW_STAGGER_MS,
+      );
+      this.destroyRef.onDestroy(() => clearTimeout(soundTimer));
+    });
+    this.stageDrawingCards(cards);
+  }
+
+  /** Segnala `cards` come "in ingresso" (board__card--drawing, letto da board.component.html via
+   * cardIsDrawing/cardDrawDelayMs) per la durata scaglionata dell'animazione, poi le ripulisce tutte
+   * insieme — condivisa da onCardsDrawn (pesca in mano) e onFonteRevealed (nuovo slot in Fonte
+   * Arcana): stesso gesto visivo di ingresso, sorgenti dell'evento diverse. Non suona nulla: il
+   * suono, quando previsto, resta responsabilità del chiamante (per carta in onCardsDrawn, un solo
+   * colpo in onFonteRevealed). */
+  private stageDrawingCards(cards: readonly Card[]): void {
     if (cards.length === 0) return;
 
     const delays = new Map(this.drawingCards());
-    cards.forEach((card, i) => {
-      const delay = i * DRAW_STAGGER_MS;
-      delays.set(card.id, delay);
-      const soundTimer = setTimeout(() => this.audio.playFx('handDraw', { times: 1 }), delay);
-      this.destroyRef.onDestroy(() => clearTimeout(soundTimer));
-    });
+    cards.forEach((card, i) => delays.set(card.id, i * DRAW_STAGGER_MS));
     this.drawingCards.set(delays);
 
     const ids = cards.map((c) => c.id);
@@ -369,7 +408,15 @@ export class AnimationQueueService {
     this.destroyRef.onDestroy(() => clearTimeout(timer));
   }
 
-  private setDamageEvent(role: PlayerId, amount: number, id: number): void {
-    this.damageEventByRole.update((rec) => ({ ...rec, [role]: { id, amount } }));
+  /** Condivisa da damageDealt/healed/shieldGained: stesso schema, solo il segnale di destinazione
+   * cambia — ognuno dei tre resta un Record<PlayerId, FlashEvent|null> indipendente (PlayerHudComponent
+   * fa il dedup sull'id per ciascuno dei suoi 3 input separatamente, vedi watchFlashEvent lì). */
+  private setFlashEvent(
+    target: WritableSignal<Record<PlayerId, FlashEvent | null>>,
+    role: PlayerId,
+    amount: number,
+    id: number,
+  ): void {
+    target.update((rec) => ({ ...rec, [role]: { id, amount } }));
   }
 }

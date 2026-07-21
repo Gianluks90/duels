@@ -273,7 +273,7 @@
       "revealOpponentHandRandom": "Rivela {amount} carta casuale dalla mano dell'avversario.",
       "revealOpponentHandSpell": "Rivela tutte le magie nella mano dell'avversario.",
       "revealOpponentHandRandomSpell": "Rivela {amount} magia casuale nella mano dell'avversario (nessun effetto se non ne ha).",
-      "fonteReset": "Resetta la Fonte Arcana.",
+      "fonteReset": "Scarta le carte della Fonte Arcana e ne pesca di nuove.",
       "boostCardMana": "Aumenta permanentemente di {amount} il valore di mana di una carta scelta dai propri scarti. Fallisce se la pila degli scarti è vuota."
     }
   },
@@ -439,7 +439,7 @@
       "flavorText": "Un flusso di magia talmente pura da rinvigorire e chiudere blande ferite."
     },
     "mend": {
-      "name": "Rugiada risanante",
+      "name": "Acqua curativa",
       "flavorText": "Una brezza umida avvolge le ferite, chiudendole come farebbe il tempo, ma molto più in fretta."
     },
     "radiant_heal": {

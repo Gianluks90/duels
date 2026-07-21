@@ -716,7 +716,9 @@ function endTurn(state: GameState, role: PlayerId): GameState {
 
   // Tutte le carte non utilizzate in mano si scartano (vanno negli scarti del proprio mazzo)
   // prima di pescare la mano fresca — se il mazzo si esaurisce, drawUpTo rimescola questi stessi
-  // scarti nel mazzo (regolamento 1.7), il che riduce di 1 il livello di avvelenamento (2.3.4/1.7).
+  // scarti nel mazzo (regolamento 1.7), il che riduce di 1 il livello di avvelenamento (2.3.4/1.7) —
+  // in AGGIUNTA al decadimento di 1 per turno in Preparazione (resolvePreparation, sotto), non al
+  // posto suo.
   const { drawn, deck, discards, reshuffled } = drawUpTo(
     player.deck,
     [...player.discards, ...handAfterExpiry],
@@ -758,22 +760,49 @@ function endTurn(state: GameState, role: PlayerId): GameState {
 }
 
 /**
- * Fase Preparazione (4.2): 1 danno per ogni livello di Avvelenamento accumulato, scioglimento
- * (rimozione dal gioco, non scarto) delle carte Congelamento eventualmente in mano (Card.expiresAt
- * 'preparazione', vedi applyFreeze), e istantanea dello stato della punta della bacchetta
- * (PlayerState.tipHeldAtPreparation, 1.4.1) usata da holdAtTip per limitare il potere a turni
- * alterni.
+ * Fase Preparazione (4.2): 1 danno per ogni livello di Avvelenamento accumulato — poi il livello
+ * stesso si riduce di 1 (floor 0), scioglimento (rimozione dal gioco, non scarto) delle carte
+ * Congelamento eventualmente in mano (Card.expiresAt 'preparazione', vedi applyFreeze), e istantanea
+ * dello stato della punta della bacchetta (PlayerState.tipHeldAtPreparation, 1.4.1) usata da
+ * holdAtTip per limitare il potere a turni alterni. Il decadimento qui è AGGIUNTIVO rispetto a
+ * quello per rimescolamento del mazzo (drawUpTo in endTurn/applyDiscardHand, 2.3.4/1.7 originale) —
+ * bilanciamento: prima si riduceva solo rimescolando, troppo raro perché il livello scendesse mai
+ * sotto il cap (3) con un mazzo da 10+ carte, rendendo l'Avvelenamento pressoché permanente e troppo
+ * forte. Il danno usa il livello PRIMA del decadimento (l'ultimo colpo pieno prima di scendere), non
+ * quello dopo. Incrementa poisonDamageBatchId/lastPoisonDamage (GameState) SOLO se è stato inflitto
+ * davvero un danno — segnale esplicito per il client, vedi il commento su quei campi in
+ * game.model.ts: la stessa transazione di endTurn può risolvere anche un'Esplosione elementale
+ * subito dopo, un semplice diff sull'HP non basterebbe a isolare la sola quota di veleno.
  */
 function resolvePreparation(state: GameState, target: PlayerId): GameState {
   const player = state.players[target];
   const poisonDamage = player.tokens.poison;
+  const poison = Math.max(0, player.tokens.poison - 1);
   const hand = resolveExpiringCards(player.hand, 'preparazione');
 
-  return updatePlayer(state, target, {
+  const next = updatePlayer(state, target, {
     hp: player.hp - poisonDamage,
     hand,
+    tokens: { ...player.tokens, poison },
     tipHeldAtPreparation: !!player.wand.tipSlot,
   });
+
+  if (poisonDamage === 0) return next;
+
+  // Number.isNaN, non solo ?? 0: partite create prima dell'introduzione di questo campo hanno
+  // poisonDamageBatchId undefined sul documento Firestore — undefined + 1 produce NaN, e NaN è
+  // per definizione diverso da se stesso (NaN !== NaN), quindi il confronto "il veleno è appena
+  // cambiato?" in derive-events.ts risulterebbe vero per SEMPRE da quel punto in poi, a ogni
+  // scrittura successiva sul documento, non solo quando il veleno scatta davvero (bug osservato:
+  // +1 cuore fantasma insieme al -1 teschio a ogni aggiornamento). ?? da solo non basta: sostituisce
+  // solo null/undefined, non NaN (che è comunque un "number" valido).
+  const currentBatchId = Number.isNaN(next.poisonDamageBatchId) ? 0 : next.poisonDamageBatchId;
+
+  return {
+    ...next,
+    poisonDamageBatchId: currentBatchId + 1,
+    lastPoisonDamage: { role: target, amount: poisonDamage },
+  };
 }
 
 /**

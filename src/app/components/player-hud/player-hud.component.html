@@ -1,5 +1,9 @@
-<div class="hud" [class.hud--mirrored]="mirrored()" [class.hud--frozen]="frozen()" [style.width.px]="width()">
-
+<div
+  class="hud"
+  [class.hud--mirrored]="mirrored()"
+  [class.hud--frozen]="frozen()"
+  [style.width.px]="width()"
+>
   <!-- Congelamento (2.3.1): texture di ghiaccio in overlay sull'intero box, con un velo azzurro
        (la texture di per sé è quasi bianca). Puramente decorativo — lo stato viene comunicato a
        chi non vede a schermo dallo span sr-only qui sotto, non dal solo overlay visivo. -->
@@ -11,7 +15,6 @@
   <!-- Only this wrapper (sized to the visible slice) is space-between'd —
        the outer .hud stays anchored to the edge like the other two panels. -->
   <div class="hud__content">
-
     <!-- Name (+ settings, only on our own panel) -->
     <div class="hud__name-row">
       <div class="hud__identity">
@@ -25,7 +28,12 @@
         <span class="hud__name t-heading">{{ firstName() }}</span>
       </div>
       @if (!mirrored()) {
-        <button type="button" class="hud__settings" (click)="settingsClick.emit()" [attr.aria-label]="'playerHud.settingsAria' | translate">
+        <button
+          type="button"
+          class="hud__settings"
+          (click)="settingsClick.emit()"
+          [attr.aria-label]="'playerHud.settingsAria' | translate"
+        >
           <span class="hud__settings-icon" aria-hidden="true"></span>
         </button>
       }
@@ -36,20 +44,49 @@
          values protrude above it, side by side on the same baseline -->
     <div class="hud__hp-bar" [attr.aria-label]="hpAria()">
       <div class="hud__hp-track">
-        <div class="hud__hp-fill" [class.hud__hp-fill--poisoned]="isPoisoned()"
-             [class.hud__hp-fill--damage-flash]="activeDamageAmount() !== null"
-             [style.width.%]="hpPercent()" aria-hidden="true"></div>
+        <div
+          class="hud__hp-fill"
+          [class.hud__hp-fill--poisoned]="isPoisoned()"
+          [class.hud__hp-fill--damage-flash]="activeDamageAmount() !== null"
+          [style.width.%]="hpPercent()"
+          aria-hidden="true"
+        ></div>
         @if (hasShield()) {
-          <div class="hud__hp-shield-fill" [style.width.%]="shieldPercent()"
-               [style.left.%]="mirrored() ? null : hpPercent()" [style.right.%]="mirrored() ? hpPercent() : null"
-               aria-hidden="true"></div>
+          <div
+            class="hud__hp-shield-fill"
+            [style.width.%]="shieldPercent()"
+            [style.left.%]="mirrored() ? null : hpPercent()"
+            [style.right.%]="mirrored() ? hpPercent() : null"
+            aria-hidden="true"
+          ></div>
         }
       </div>
-      <!-- Esplosione elementale (2.4, o altre fonti di danno future): numero fluttuante che sale e
-           svanisce — funziona anche quando la causa non è visibile (es. mano coperta dell'avversario).
-           Fuori da .hud__hp-track apposta: quello ha overflow: hidden e lo taglierebbe mentre sale. -->
+      <!-- Danno/cura/scudo/veleno (Esplosione elementale 2.4, incantesimi, Avvelenamento...): numero
+           fluttuante che sale e svanisce — funziona anche quando la causa non è visibile (es. mano
+           coperta dell'avversario). Fuori da .hud__hp-track apposta: quello ha overflow: hidden e lo
+           taglierebbe mentre sale. Possono in teoria comparire più di uno insieme (raro: nessun
+           incantesimo oggi cura e scuda insieme, ma danno generico e veleno sì, sono già scorporati
+           lato AnimationQueueService/derive-events proprio per questo) — tutti tranne --damage si
+           scalano in verticale apposta per non sovrapporsi esattamente. -->
       @if (activeDamageAmount(); as amount) {
-        <span class="hud__damage-flash" aria-hidden="true">-{{ amount }}</span>
+        <span class="hud__flash hud__flash--damage" aria-hidden="true">
+          -{{ amount }}<span class="hud__flash-icon hud__flash-icon--explosion"></span>
+        </span>
+      }
+      @if (activePoisonDamageAmount(); as amount) {
+        <span class="hud__flash hud__flash--poison" aria-hidden="true">
+          -{{ amount }}<span class="hud__flash-icon hud__flash-icon--poison"></span>
+        </span>
+      }
+      @if (activeHealAmount(); as amount) {
+        <span class="hud__flash hud__flash--heal" aria-hidden="true">
+          +{{ amount }}<span class="hud__flash-icon hud__flash-icon--heal"></span>
+        </span>
+      }
+      @if (activeShieldAmount(); as amount) {
+        <span class="hud__flash hud__flash--shield" aria-hidden="true">
+          +{{ amount }}<span class="hud__flash-icon hud__flash-icon--shield"></span>
+        </span>
       }
       <div class="hud__values">
         @if (isPoisoned()) {
@@ -62,13 +99,17 @@
           </span>
         }
         @if (hpTooltip(); as tip) {
-          <span class="hud__hp-value hud__hp-value--interactive" tabindex="0" [appTooltip]="tip" [tooltipPosition]="mirrored() ? 'bottom' : 'top'">{{ displayedHp() }}</span>
+          <span
+            class="hud__hp-value hud__hp-value--interactive"
+            tabindex="0"
+            [appTooltip]="tip"
+            [tooltipPosition]="mirrored() ? 'bottom' : 'top'"
+            >{{ displayedHp() }}</span
+          >
         } @else {
           <span class="hud__hp-value">{{ displayedHp() }}</span>
         }
       </div>
     </div>
-
   </div>
-
 </div>

@@ -23,6 +23,9 @@
           [poisonLevel]="opponentPoisonLevel()"
           [frozen]="opponentFrozen()"
           [damageEvent]="opponentDamageEvent()"
+          [healEvent]="opponentHealEvent()"
+          [shieldEvent]="opponentShieldEvent()"
+          [poisonDamageEvent]="opponentPoisonDamageEvent()"
           [mirrored]="true"
         />
 
@@ -167,7 +170,7 @@
                 </ng-template>
                 <app-card
                   class="board__hand-card board__hand-card--mirrored board__hand-card--revealing"
-                  [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                  [class.board__card--drawing]="cardIsDrawing(card.id)"
                   [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                   [element]="card.element"
                   [spellId]="card.spellId ?? null"
@@ -184,7 +187,7 @@
               } @else {
                 <div
                   class="board__hand-card board__hand-card--back board__hand-card--mirrored"
-                  [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                  [class.board__card--drawing]="cardIsDrawing(card.id)"
                   [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                   [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
                   aria-hidden="true"
@@ -443,6 +446,8 @@
                     (mouseleave)="onFonteHoverEnd()"
                   >
                     <app-card
+                      [class.board__card--drawing]="cardIsDrawing(fonteCardIds()[$index])"
+                      [style.--draw-delay.ms]="cardDrawDelayMs(fonteCardIds()[$index])"
                       [element]="card"
                       [size]="handArcCardWidth"
                       [appTooltip]="recipeTip"
@@ -599,6 +604,9 @@
           [poisonLevel]="playerPoisonLevel()"
           [frozen]="playerFrozen()"
           [damageEvent]="playerDamageEvent()"
+          [healEvent]="playerHealEvent()"
+          [shieldEvent]="playerShieldEvent()"
+          [poisonDamageEvent]="playerPoisonDamageEvent()"
           [mirrored]="false"
           (settingsClick)="openGameSettings()"
         />
@@ -762,7 +770,7 @@
                   [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
                   [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
                   [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
-                  [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                  [class.board__card--drawing]="cardIsDrawing(card.id)"
                   [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                   [appTooltip]="hasCardTooltip(card) ? cardTip : null"
                   tooltipPosition="top"
@@ -1142,7 +1150,7 @@
                   </ng-template>
                   <app-card
                     class="board-compact__hand-card--revealing"
-                    [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                    [class.board__card--drawing]="cardIsDrawing(card.id)"
                     [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                     [element]="card.element"
                     [spellId]="card.spellId ?? null"
@@ -1158,7 +1166,7 @@
                 } @else {
                   <div
                     class="board__hand-card--back board-compact__hand-card-back"
-                    [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                    [class.board__card--drawing]="cardIsDrawing(card.id)"
                     [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                     [style.width.px]="compactOpponentHandArcCardWidth"
                     [style.height.px]="compactOpponentHandArcCardWidth * 1.5"
@@ -1385,7 +1393,12 @@
               <div class="board-compact__fonte-grid">
                 @for (el of fonteCards(); track $index) {
                   <app-action-menu [items]="fonteMenuItems(el, $index)">
-                    <app-card [element]="el" [size]="compactFonteCardWidth()" />
+                    <app-card
+                      [class.board__card--drawing]="cardIsDrawing(fonteCardIds()[$index])"
+                      [style.--draw-delay.ms]="cardDrawDelayMs(fonteCardIds()[$index])"
+                      [element]="el"
+                      [size]="compactFonteCardWidth()"
+                    />
                   </app-action-menu>
                 }
               </div>
@@ -1765,7 +1778,7 @@
                 </ng-template>
                 <app-action-menu [items]="handCardMenuItems(card, i)">
                   <app-card
-                    [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                    [class.board__card--drawing]="cardIsDrawing(card.id)"
                     [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                     [element]="card.element"
                     [spellId]="card.spellId ?? null"

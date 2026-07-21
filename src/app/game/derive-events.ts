@@ -23,6 +23,15 @@ export function deriveGameEvents(prev: GameState | null, next: GameState): GameE
 
   const events: GameEvent[] = [];
 
+  // Danno da Avvelenamento (2.3.4): segnale esplicito (poisonDamageBatchId/lastPoisonDamage), non un
+  // diff — la stessa transazione di endTurn può risolvere anche un'Esplosione elementale sulla mano
+  // appena pescata subito dopo resolvePreparation, quindi un'unica perdita di HP osservata qui
+  // potrebbe sommare veleno + esplosione insieme (vedi il commento su quei campi in game.model.ts).
+  // Scorporata più sotto dal danno/cura generico per quel ruolo, non aggiunta in più.
+  const poisonBatchChanged = next.poisonDamageBatchId !== prev.poisonDamageBatchId;
+  const poisonRole = poisonBatchChanged ? next.lastPoisonDamage?.role : undefined;
+  const poisonAmount = poisonBatchChanged ? (next.lastPoisonDamage?.amount ?? 0) : 0;
+
   for (const role of ROLES) {
     const prevPlayer = prev.players[role];
     const nextPlayer = next.players[role];
@@ -99,12 +108,29 @@ export function deriveGameEvents(prev: GameState | null, next: GameState): GameE
     }
 
     // Danno/cura: diff numerico diretto sull'HP — copre qualunque causa (Esplosione elementale,
-    // incantesimo, veleno in Preparazione), non solo le Esplosioni come faceva il vecchio
-    // damageEventFor in board.component.ts.
-    if (nextPlayer.hp < prevPlayer.hp) {
-      events.push({ type: 'damageDealt', role, amount: prevPlayer.hp - nextPlayer.hp });
-    } else if (nextPlayer.hp > prevPlayer.hp) {
-      events.push({ type: 'healed', role, amount: nextPlayer.hp - prevPlayer.hp });
+    // incantesimo), non solo le Esplosioni come faceva il vecchio damageEventFor in
+    // board.component.ts. La quota di veleno (poisonAmount sopra, se questo è il ruolo colpito) viene
+    // scorporata prima: quel danno ha già il proprio evento dedicato più sotto.
+    const poisonPortion = role === poisonRole ? poisonAmount : 0;
+    const hpDrop = prevPlayer.hp - nextPlayer.hp - poisonPortion;
+    if (hpDrop > 0) {
+      events.push({ type: 'damageDealt', role, amount: hpDrop });
+    } else if (hpDrop < 0) {
+      events.push({ type: 'healed', role, amount: -hpDrop });
+    }
+    if (poisonPortion > 0) {
+      events.push({ type: 'poisonDamageDealt', role, amount: poisonPortion });
+    }
+
+    // Scudo: solo gli AUMENTI (shield_add, 2.3.3) — una diminuzione può venire da un danno appena
+    // assorbito (già raccontato dal flash danno sopra) o da uno scudo rimosso da un incantesimo
+    // avversario, nessuno dei due merita un proprio "+N".
+    if (nextPlayer.tokens.shield > prevPlayer.tokens.shield) {
+      events.push({
+        type: 'shieldGained',
+        role,
+        amount: nextPlayer.tokens.shield - prevPlayer.tokens.shield,
+      });
     }
   }
 
@@ -123,13 +149,15 @@ export function deriveGameEvents(prev: GameState | null, next: GameState): GameE
   }
 
   // Fonte Arcana: confronto posizionale (per indice, non per set — qui la posizione è il significato
-  // stesso di "rivelata in quello slot").
-  const prevFonteIds = prev.fonteElementale.map((c) => c.id);
-  const nextFonteIds = next.fonteElementale.map((c) => c.id);
-  const fonteChanged =
-    nextFonteIds.length !== prevFonteIds.length ||
-    nextFonteIds.some((id, i) => id !== prevFonteIds[i]);
-  if (fonteChanged) events.push({ type: 'fonteRevealed' });
+  // stesso di "rivelata in quello slot"). changedCards porta le carte vere nelle sole posizioni
+  // cambiate, per lo stesso ingresso scaglionato di cardsDrawn (AnimationQueueService) — non tutte
+  // e 4 se ne cambia solo una (es. una singola combinazione), tutte e 4 se le resetta un incantesimo
+  // (fonte_reset in turn-engine.ts).
+  const prevFonte = prev.fonteElementale;
+  const nextFonte = next.fonteElementale;
+  const fonteChangedCards = nextFonte.filter((card, i) => card.id !== prevFonte[i]?.id);
+  const fonteChanged = nextFonte.length !== prevFonte.length || fonteChangedCards.length > 0;
+  if (fonteChanged) events.push({ type: 'fonteRevealed', cards: fonteChangedCards });
 
   return events;
 }

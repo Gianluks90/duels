@@ -35,6 +35,20 @@ export interface GameState {
   explosionBatchId: number;
   lastExplosions: readonly ExplosionEvent[];
 
+  /**
+   * Ultimo danno da Avvelenamento risolto (2.3.4, resolvePreparation) — stesso schema di
+   * explosionBatchId/lastExplosions sopra: pilota solo l'animazione lato client (icona teschio verde
+   * invece del generico lampo rosso), `lastPoisonDamage` viene sostituito non accumulato,
+   * `poisonDamageBatchId` incrementa solo quando è avvenuto DAVVERO un danno (livello di veleno > 0
+   * al momento della risoluzione). Serve un segnale esplicito, non un diff sull'HP: la stessa
+   * transazione di endTurn può anche risolvere un'Esplosione elementale sulla mano appena pescata
+   * (resolveElementalExplosions, chiamata subito dopo), quindi un'unica perdita di HP osservata dal
+   * client potrebbe sommare veleno + esplosione insieme — derive-events.ts usa questo per scorporare
+   * la quota di veleno dal danno generico, non per sostituirlo.
+   */
+  poisonDamageBatchId: number;
+  lastPoisonDamage: { role: PlayerId; amount: number } | null;
+
   // Risultato
   winner: PlayerId | null;
 
