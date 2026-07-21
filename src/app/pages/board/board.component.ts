@@ -601,6 +601,19 @@ export class BoardComponent implements OnInit {
   // restano invariati. tipEntering/tipVanishing/bodyEntering/handleEntering sono filtrati sul
   // proprio ruolo (myRole()): il servizio li tiene per entrambi i giocatori, ma solo il proprio
   // pannello bacchetta li anima, mai quello dell'avversario (vedi board.component.html).
+  /** Pesca di carte (Fine turno, Raccolta) — id in finestra d'ingresso → ritardo ms per lo
+   * scaglionamento (board__hand-card--drawing), sia per la propria mano sia per quella
+   * dell'avversario (dorsi inclusi): a differenza degli overlay bacchetta sopra, qui non c'è
+   * bisogno di filtrare per ruolo, il template legge sempre e solo l'id della carta che sta già
+   * disegnando (cardIsDrawing/cardDrawDelayMs sotto), mai l'intero segnale. */
+  protected cardIsDrawing(cardId: string): boolean {
+    return this.animationQueue.isDrawing(cardId);
+  }
+
+  protected cardDrawDelayMs(cardId: string): number {
+    return this.animationQueue.drawDelayMsFor(cardId);
+  }
+
   protected readonly vanishingCardIds = this.animationQueue.vanishingCardIds;
   protected readonly vanishingGhosts = this.animationQueue.vanishingGhosts;
   protected readonly tipEntering = computed(() =>

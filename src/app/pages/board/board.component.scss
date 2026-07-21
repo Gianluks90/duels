@@ -702,6 +702,46 @@
   }
 }
 
+// Pesca di carte (Fine turno/endTurn, Raccolta/keepCard-keepMana — evento GameEvent 'cardsDrawn',
+// AnimationQueueService.onCardsDrawn) — un "pop" scaglionato carta per carta (animation-delay via
+// --draw-delay, impostato da board.component.ts) quando una carta nuova entra in mano, propria o
+// dell'avversario. Classe STANDALONE (non annidata sotto &__hand-card come --vanishing/--exploding/
+// --revealing sopra): si applica sia a carte vere (app-card, propria mano o avversario rivelato) sia
+// ai semplici dorsi placeholder (div, avversario non rivelato, desktop e compatto) — elementi diversi
+// che non condividono sempre la classe base .board__hand-card, quindi qui non può essere annidata
+// sotto quel selettore. scale/translate standalone (non transform) per lo stesso motivo delle altre:
+// transform è già occupato dal posizionamento del ventaglio (handCardStyle/compactHandCardStyle). Il
+// piccolo scale quasi a zero orizzontale a metà corsa (40%) è la stessa illusione di "taglio di
+// profilo" usata dal flip vero e proprio (card-flip in card.component.scss, CARD_FLIP_DURATION_MS in
+// AnimationQueueService) — qui non c'è un volto da scambiare (la carta mostra sempre lo stesso
+// contenuto, dorso o fronte, dall'inizio alla fine), ma il gesto visivo comunica "sta arrivando/si
+// sta girando in mano" comunque, sia per il ventaglio proprio sia per quello specchiato
+// dell'avversario, senza bisogno di calcolare la direzione reale verso il mazzo (animazione
+// stilizzata, non un volo geometricamente preciso dal pixel del mazzo). `both` cosicché la carta
+// resti invisibile/compressa durante l'attesa del proprio turno nello scaglionamento, invece di
+// lampeggiare già alla dimensione finale prima che scatti il proprio ritardo.
+.board__hand-card--drawing {
+  animation: hand-card-draw 420ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  animation-delay: var(--draw-delay, 0ms);
+}
+
+@keyframes hand-card-draw {
+  0% {
+    translate: 0 14px;
+    scale: 0.7 0.7;
+    opacity: 0;
+  }
+  40% {
+    scale: 0.05 0.78;
+    opacity: 1;
+  }
+  100% {
+    translate: 0 0;
+    scale: 1 1;
+    opacity: 1;
+  }
+}
+
 // Stessa idea semplificata per l'intera riga della Fonte Arcana (non singole carte, vedi nota su
 // .board__fonte-row--exploding). Durata in sync con FONTE_EXPLOSION_DURATION_MS (board.component.ts).
 @keyframes fonte-explode {

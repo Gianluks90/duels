@@ -8,7 +8,12 @@ import type { PlayerId } from './player.model';
  * legge sempre lo stato grezzo più recente, mai questi eventi).
  */
 export type GameEvent =
-  | { type: 'cardsDrawn'; role: PlayerId; source: 'hand' | 'collect' }
+  /** Carte nuove entrate in mano (Fine turno/endTurn = 'hand', keepCard/keepMana in Raccolta =
+   * 'collect') — `cards` derivate da un diff per-id (sicuro solo per le AGGIUNTE, mai per le
+   * rimozioni: vedi il commento in derive-events.ts), usate per lo scaglionamento visivo/sonoro
+   * carta-per-carta in AnimationQueueService, non per decidere SE l'evento è avvenuto (quello lo
+   * fa il batch id, handDrawBatchId/collectDrawBatchId). */
+  | { type: 'cardsDrawn'; role: PlayerId; source: 'hand' | 'collect'; cards: readonly Card[] }
   /** Carta "temporanea" (Congelamento/Residuo, Card.expiresAt) sparita dalla mano. */
   | { type: 'cardVanished'; role: PlayerId; card: Card; index: number; total: number }
   | { type: 'handExploded'; role: PlayerId; cards: readonly Card[] }

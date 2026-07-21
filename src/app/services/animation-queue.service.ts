@@ -36,6 +36,14 @@ const CARD_FLIP_DURATION_MS = 300;
 /** Durata trascurabile per far scattare una transizione CSS (margin-bottom) invece di un salto secco
  * quando una carta arriva nella punta/asta/manico della bacchetta. */
 const WAND_ENTER_TRANSITION_MS = 20;
+/** Intervallo tra una carta e la successiva quando più carte arrivano insieme in mano (Fine turno,
+ * Raccolta) — sia per il suono (stesso valore di AudioService.playFx, PlayFxOptions.intervalMs
+ * default) sia per l'animation-delay CSS di board__hand-card--drawing, così il "colpo" sonoro e
+ * quello visivo di ogni carta restano sincronizzati invece di essere due scaglionamenti indipendenti. */
+const DRAW_STAGGER_MS = 120;
+/** Durata dell'animazione di ingresso di una singola carta pescata — deve combaciare con @keyframes
+ * hand-card-draw in board.component.scss. */
+const DRAW_DURATION_MS = 420;
 
 /** Carta "temporanea" già sparita dallo stato ma ancora mostrata come ghost, nella sua vecchia
  * posizione, finché l'animazione di sparizione non finisce — 'expiry' per Congelamento/Residuo
@@ -83,6 +91,11 @@ export class AnimationQueueService {
    * processato l'ultimo GameState — vedi sync(). */
   private hiddenSincePreviousSync = false;
 
+  /** Id delle carte attualmente nella loro finestra d'ingresso in mano (Fine turno/Raccolta) → ritardo
+   * in ms da applicare come animation-delay per scaglionarle (board__hand-card--drawing, vedi
+   * onCardsDrawn) — copre sia le proprie carte sia quelle dell'avversario (dorsi inclusi, entrambi i
+   * client vedono entrambe le mani rinnovarsi). */
+  readonly drawingCards = signal<ReadonlyMap<string, number>>(new Map());
   readonly vanishingCardIds = signal<ReadonlySet<string>>(new Set());
   readonly vanishingGhosts = signal<readonly VanishingGhost[]>([]);
   readonly handExplosions = signal<readonly HandExplosion[]>([]);
@@ -129,6 +142,14 @@ export class AnimationQueueService {
 
   damageEventFor(role: PlayerId | null): DamageEvent | null {
     return role ? this.damageEventByRole()[role] : null;
+  }
+
+  drawDelayMsFor(cardId: string): number {
+    return this.drawingCards().get(cardId) ?? 0;
+  }
+
+  isDrawing(cardId: string): boolean {
+    return this.drawingCards().has(cardId);
   }
 
   /** Marca proattivamente carte già in mano come "in sparizione imminente" (Residuo in scadenza a
@@ -192,7 +213,7 @@ export class AnimationQueueService {
     for (const event of events) {
       switch (event.type) {
         case 'cardsDrawn':
-          this.audio.playFx('handDraw', { times: event.source === 'hand' ? 5 : 1 });
+          this.onCardsDrawn(event.cards);
           break;
         case 'cardVanished':
           // vanishingGhosts/vanishingCardIds sono renderizzati SOLO nella sezione della propria mano
@@ -232,6 +253,38 @@ export class AnimationQueueService {
           break; // nessun overlay dedicato oggi (mai stato animato, nemmeno prima di questo refactor)
       }
     }
+  }
+
+  /** Pesca di carte (Fine turno/endTurn, Raccolta/keepCard-keepMana) — un ingresso scaglionato
+   * carta-per-carta invece di farle comparire tutte insieme: ogni carta riceve il proprio ritardo
+   * (DRAW_STAGGER_MS * indice nel batch) sia per l'animazione (board__hand-card--drawing, letta da
+   * board.component.html via drawDelayMsFor) sia per il suono (un solo playFx per carta, invece del
+   * precedente burst con `times`), così il "tac" sonoro arriva sincronizzato con l'atterraggio
+   * visivo di QUELLA carta specifica invece che essere scollegato da cosa si vede. */
+  private onCardsDrawn(cards: readonly Card[]): void {
+    if (cards.length === 0) return;
+
+    const delays = new Map(this.drawingCards());
+    cards.forEach((card, i) => {
+      const delay = i * DRAW_STAGGER_MS;
+      delays.set(card.id, delay);
+      const soundTimer = setTimeout(() => this.audio.playFx('handDraw', { times: 1 }), delay);
+      this.destroyRef.onDestroy(() => clearTimeout(soundTimer));
+    });
+    this.drawingCards.set(delays);
+
+    const ids = cards.map((c) => c.id);
+    const clearTimer = setTimeout(
+      () => {
+        this.drawingCards.update((map) => {
+          const next = new Map(map);
+          ids.forEach((id) => next.delete(id));
+          return next;
+        });
+      },
+      (cards.length - 1) * DRAW_STAGGER_MS + DRAW_DURATION_MS,
+    );
+    this.destroyRef.onDestroy(() => clearTimeout(clearTimer));
   }
 
   private onCardVanished(card: Card, index: number, total: number): void {

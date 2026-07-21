@@ -27,11 +27,24 @@ export function deriveGameEvents(prev: GameState | null, next: GameState): GameE
     const prevPlayer = prev.players[role];
     const nextPlayer = next.players[role];
 
-    if (nextPlayer.handDrawBatchId !== prevPlayer.handDrawBatchId) {
-      events.push({ type: 'cardsDrawn', role, source: 'hand' });
-    }
-    if (nextPlayer.collectDrawBatchId !== prevPlayer.collectDrawBatchId) {
-      events.push({ type: 'cardsDrawn', role, source: 'collect' });
+    // Le carte del batch: diff per-id delle sole AGGIUNTE (id in nextPlayer.hand assenti da
+    // prevPlayer.hand) — affidabile qui, a differenza delle rimozioni (vedi il commento in cima al
+    // file): una carta con un id nuovo non può che essere appena arrivata, non c'è un caso di
+    // rimescolamento che la faccia sembrare "nuova" per errore. Il batch id (non questo diff) resta
+    // comunque l'unico segnale che decide SE l'evento è avvenuto.
+    if (
+      nextPlayer.handDrawBatchId !== prevPlayer.handDrawBatchId ||
+      nextPlayer.collectDrawBatchId !== prevPlayer.collectDrawBatchId
+    ) {
+      const prevHandIds = new Set(prevPlayer.hand.map((c) => c.id));
+      const drawnCards = nextPlayer.hand.filter((c) => !prevHandIds.has(c.id));
+
+      if (nextPlayer.handDrawBatchId !== prevPlayer.handDrawBatchId) {
+        events.push({ type: 'cardsDrawn', role, source: 'hand', cards: drawnCards });
+      }
+      if (nextPlayer.collectDrawBatchId !== prevPlayer.collectDrawBatchId) {
+        events.push({ type: 'cardsDrawn', role, source: 'collect', cards: drawnCards });
+      }
     }
 
     const nextHandIds = new Set(nextPlayer.hand.map((c) => c.id));

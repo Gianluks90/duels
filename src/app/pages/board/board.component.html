@@ -167,6 +167,8 @@
                 </ng-template>
                 <app-card
                   class="board__hand-card board__hand-card--mirrored board__hand-card--revealing"
+                  [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                  [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                   [element]="card.element"
                   [spellId]="card.spellId ?? null"
                   [manaBonus]="card.manaBonus ?? 0"
@@ -182,6 +184,8 @@
               } @else {
                 <div
                   class="board__hand-card board__hand-card--back board__hand-card--mirrored"
+                  [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                  [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                   [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
                   aria-hidden="true"
                 ></div>
@@ -758,6 +762,8 @@
                   [class.board__hand-card--gold]="handCardHighlight(card) === 'gold'"
                   [class.board__hand-card--blue]="handCardHighlight(card) === 'blue'"
                   [class.board__hand-card--vanishing]="vanishingCardIds().has(card.id)"
+                  [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                  [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                   [appTooltip]="hasCardTooltip(card) ? cardTip : null"
                   tooltipPosition="top"
                   [style]="
@@ -1136,6 +1142,8 @@
                   </ng-template>
                   <app-card
                     class="board-compact__hand-card--revealing"
+                    [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                    [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                     [element]="card.element"
                     [spellId]="card.spellId ?? null"
                     [manaBonus]="card.manaBonus ?? 0"
@@ -1150,6 +1158,8 @@
                 } @else {
                   <div
                     class="board__hand-card--back board-compact__hand-card-back"
+                    [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                    [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                     [style.width.px]="compactOpponentHandArcCardWidth"
                     [style.height.px]="compactOpponentHandArcCardWidth * 1.5"
                     aria-hidden="true"
@@ -1755,6 +1765,8 @@
                 </ng-template>
                 <app-action-menu [items]="handCardMenuItems(card, i)">
                   <app-card
+                    [class.board__hand-card--drawing]="cardIsDrawing(card.id)"
+                    [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                     [element]="card.element"
                     [spellId]="card.spellId ?? null"
                     [manaBonus]="card.manaBonus ?? 0"
