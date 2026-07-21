@@ -10,7 +10,7 @@ Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [docume
 ## Qualità della vita
 
 - [x] Loader alla board per il refresh.
-- [ ] Log eventi (azioni/danni/scarti consultabile a schermo) — in corso.
+- [x] Log eventi (azioni/danni/scarti consultabile a schermo).
 - [ ] Rivedere opzioni profilo utente — la dialog profilo è ferma alla v1 (nome, foto, dorso, elimina account); da rivedere/espandere.
 - [ ] Sfondo app e duello personalizzabili — permettere all'utente di scegliere/personalizzare lo sfondo dell'applicazione e quello della board di duello.
 - [ ] Magie preferite — un modo per il giocatore di segnare alcuni incantesimi come preferiti (Grimorio?).

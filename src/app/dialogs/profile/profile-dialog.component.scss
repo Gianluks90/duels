@@ -1,8 +1,9 @@
 .profile-dialog {
   display: flex;
   flex-direction: column;
-  width: 460px;
+  width: 760px;
   max-width: 90vw;
+  max-height: 88vh;
   background: var(--bg-panel-raised);
   border: 1px solid var(--border-gold);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
@@ -13,6 +14,7 @@
     justify-content: space-between;
     padding: var(--sp-4) var(--sp-5);
     border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
   }
 
   &__title {
@@ -21,6 +23,23 @@
 
   &__body {
     padding: var(--sp-4);
+    overflow-y: auto;
+  }
+
+  // Due colonne (utente | gioco) da tablet in su; una sola sotto — evita che i due select/bottoni
+  // finiscano schiacciati su viewport stretti (la dialog non ha già un proprio breakpoint tier
+  // come la board, quindi una singola query CSS qui basta).
+  &__columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-4);
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__column {
     display: flex;
     flex-direction: column;
     gap: var(--sp-4);

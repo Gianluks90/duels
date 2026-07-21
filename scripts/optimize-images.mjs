@@ -19,8 +19,19 @@ const SOURCE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg']);
 // board.component.ts, home.component.ts) — 480 lascia margine per schermi ad alta densità (~2.85x)
 // senza portarsi dietro la risoluzione dei master (spesso 900px+), che pesa senza alcun beneficio
 // visivo reale.
-const MAX_WIDTH = 480;
+const DEFAULT_MAX_WIDTH = 480;
 const QUALITY = 82;
+// Sfondi app (_design-system.scss, `body { background-image }`): coprono l'intero viewport, non
+// solo ~170px come le carte — 1920 copre comodamente anche desktop ultrawide/4K in scaling senza
+// portarsi dietro i master originali (fino a 5472px di lato in assets-source/images/backgrounds/).
+const WIDTH_OVERRIDES = {
+  'images/backgrounds': 1920,
+};
+
+function maxWidthFor(relPath) {
+  const dir = dirname(relPath).split(/[\\/]/).join('/');
+  return WIDTH_OVERRIDES[dir] ?? DEFAULT_MAX_WIDTH;
+}
 
 async function findSourceFiles(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -47,7 +58,11 @@ async function isUpToDate(sourcePath, outputPath) {
 
 async function optimizeOne(sourcePath) {
   const relPath = relative(SOURCE_ROOT, sourcePath);
-  const outputPath = join(OUTPUT_ROOT, dirname(relPath), `${basename(relPath, extname(relPath))}.webp`);
+  const outputPath = join(
+    OUTPUT_ROOT,
+    dirname(relPath),
+    `${basename(relPath, extname(relPath))}.webp`,
+  );
 
   if (await isUpToDate(sourcePath, outputPath)) {
     return { relPath, skipped: true };
@@ -56,7 +71,7 @@ async function optimizeOne(sourcePath) {
   await mkdir(dirname(outputPath), { recursive: true });
   const before = (await stat(sourcePath)).size;
   await sharp(sourcePath)
-    .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+    .resize({ width: maxWidthFor(relPath), withoutEnlargement: true })
     .webp({ quality: QUALITY })
     .toFile(outputPath);
   const after = (await stat(outputPath)).size;

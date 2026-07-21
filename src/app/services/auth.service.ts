@@ -1,8 +1,16 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { getAuth, signInWithPopup, signOut, deleteUser, GoogleAuthProvider, onAuthStateChanged, type User } from 'firebase/auth';
+import {
+  getAuth,
+  signInWithPopup,
+  signOut,
+  deleteUser,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  type User,
+} from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
-import type { UserProfile } from '../models/user.model';
+import { DEFAULT_BACKGROUND_ID, type UserProfile } from '../models/user.model';
 
 export const DEBUG_UID = '8AkU1Du8BlNQYDKzH8Icu7lf8Qt2';
 
@@ -20,9 +28,9 @@ export class AuthService {
 
   constructor() {
     let resolve!: () => void;
-    this.ready = new Promise(r => (resolve = r));
+    this.ready = new Promise((r) => (resolve = r));
 
-    onAuthStateChanged(this.auth, async user => {
+    onAuthStateChanged(this.auth, async (user) => {
       this.user.set(user);
       if (user) {
         await this.ensureUserProfile(user);
@@ -42,7 +50,9 @@ export class AuthService {
     await signOut(this.auth);
   }
 
-  async updateProfile(patch: Partial<Pick<UserProfile, 'displayName' | 'photoURL' | 'cardBack'>>): Promise<void> {
+  async updateProfile(
+    patch: Partial<Pick<UserProfile, 'displayName' | 'photoURL' | 'cardBack' | 'background'>>,
+  ): Promise<void> {
     const user = this.auth.currentUser;
     const current = this.profile();
     if (!user || !current) return;
@@ -73,6 +83,7 @@ export class AuthService {
       email: user.email ?? '',
       photoURL: user.photoURL,
       cardBack: 'dark',
+      background: DEFAULT_BACKGROUND_ID,
       createdAt: Date.now(),
     };
 

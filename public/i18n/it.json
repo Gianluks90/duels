@@ -415,6 +415,19 @@
     "cardBack": {
       "title": "Dorso carte"
     },
+    "background": {
+      "title": "Sfondo di gioco",
+      "apply": "Applica",
+      "options": {
+        "dark-wood": "Legno scuro",
+        "light-wood": "Legno chiaro",
+        "burn-wood": "Legno bruciato",
+        "blue-suede": "Camoscio blu",
+        "gold-marble": "Marmo dorato",
+        "white-marble": "Marmo bianco",
+        "slate": "Ardesia"
+      }
+    },
     "danger": {
       "title": "Zona Pericolosa",
       "deleteAccount": "Elimina Account",

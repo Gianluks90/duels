@@ -1,31 +1,35 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { DialogRef } from '@angular/cdk/dialog';
 import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { CardBackService } from '../../services/card-back.service';
 import { TranslationService } from '../../services/translation.service';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { BackgroundPickerComponent } from '../../components/background-picker/background-picker.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import type { CardBackSkin } from '../../models/player.model';
-
-const CARD_BACKS: readonly CardBackSkin[] = ['dark', 'light'];
+import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
 
 @Component({
   selector: 'app-profile-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconButtonComponent, TranslatePipe],
+  imports: [ReactiveFormsModule, IconButtonComponent, BackgroundPickerComponent, TranslatePipe],
   templateUrl: './profile-dialog.component.html',
   styleUrl: './profile-dialog.component.scss',
 })
 export class ProfileDialogComponent {
   private readonly dialogRef = inject(DialogRef);
   private readonly auth = inject(AuthService);
+  private readonly cardBackService = inject(CardBackService);
   private readonly router = inject(Router);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly profile = this.auth.profile;
-  protected readonly cardBacks = CARD_BACKS;
+  protected readonly cardBacks = this.cardBackService.options;
+  protected readonly currentBackground = computed(
+    () => this.profile()?.background ?? DEFAULT_BACKGROUND_ID,
+  );
 
   protected readonly nameControl = new FormControl('', {
     nonNullable: true,
@@ -70,9 +74,14 @@ export class ProfileDialogComponent {
     }
   }
 
-  protected async selectCardBack(skin: CardBackSkin): Promise<void> {
+  protected async selectCardBack(skin: string): Promise<void> {
     if (this.profile()?.cardBack === skin) return;
     await this.auth.updateProfile({ cardBack: skin });
+  }
+
+  protected async applyBackground(id: string): Promise<void> {
+    if (this.currentBackground() === id) return;
+    await this.auth.updateProfile({ background: id });
   }
 
   protected requestConfirm(): void {

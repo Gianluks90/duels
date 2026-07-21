@@ -412,6 +412,19 @@
     "cardBack": {
       "title": "Card back"
     },
+    "background": {
+      "title": "Game background",
+      "apply": "Apply",
+      "options": {
+        "dark-wood": "Dark wood",
+        "light-wood": "Light wood",
+        "burn-wood": "Burnt wood",
+        "blue-suede": "Blue suede",
+        "gold-marble": "Gold marble",
+        "white-marble": "White marble",
+        "slate": "Slate"
+      }
+    },
     "danger": {
       "title": "Danger Zone",
       "deleteAccount": "Delete Account",
