@@ -11,7 +11,7 @@ import {
   type Signal,
 } from '@angular/core';
 import { firstNameOf, type Health } from '../../models/player.model';
-import { elementIconPath } from '../../models/element.model';
+import { elementIconPath, type Element } from '../../models/element.model';
 import { TooltipDirective } from '../ui/tooltip/tooltip.directive';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -26,6 +26,26 @@ const FLASH_DURATION_MS = 1000;
 export interface FlashEvent {
   id: number;
   amount: number;
+}
+
+/** Un elemento della formula di una magia pinnata, già risolto per il tooltip — `available` dice se
+ * QUELL'elemento ha almeno una carta corrispondente in mano+mazzo+scarti (countMatchingCards,
+ * turn-engine.ts), calcolato in board.component.ts. */
+export interface PinnedSpellFormulaItem {
+  element: Element;
+  available: boolean;
+}
+
+/** Una magia "appuntata" già risolta per la UI — vedi board.component.ts, che unisce
+ * PinnedSpellsService con SPELL_CATALOG e countMatchingCards/hasElements (turn-engine.ts) per
+ * costruirla. player-hud resta presentazionale, nessuna di quella logica qui. */
+export interface PinnedSpellInfo {
+  spellId: string;
+  name: string;
+  formula: readonly PinnedSpellFormulaItem[];
+  /** true se l'INTERA formula è ricomponibile da mano+mazzo+scarti insieme (hasElements) — il badge
+   * stesso diventa verde quando true. */
+  available: boolean;
 }
 
 @Component({
@@ -51,6 +71,14 @@ export class PlayerHudComponent {
   readonly poisonLevel = input<number>(0);
   /** true finché il giocatore ha ancora carte Congelamento non sciolte in circolazione (mano, mazzo o scarti — regolamento 2.3.1). */
   readonly frozen = input<boolean>(false);
+  /** Nomi tradotti delle magie preferite di QUESTO giocatore (Qualità della vita) — reciproco: sia il
+   * proprio pannello sia quello dell'avversario lo ricevono, a differenza di pinnedSpells (solo
+   * proprio). Vuoto finché il profilo/GameDoc non è ancora arrivato o l'utente non ha preferiti. */
+  readonly favoriteSpellNames = input<readonly string[]>([]);
+  /** Magie appuntate per QUESTA partita (Qualità della vita) — a differenza di favoriteSpellNames,
+   * solo il pannello PROPRIO le riceve (board.component.html non le passa a quello dell'avversario):
+   * sono un promemoria privato, non visibile all'altro giocatore. */
+  readonly pinnedSpells = input<readonly PinnedSpellInfo[]>([]);
   /** Colpo subito da segnalare (es. Esplosione elementale, 2.4) — funziona anche quando la causa non è visibile a schermo (es. nella mano coperta dell'avversario), dato che qui basta sapere "quanto" e "quando", non "perché". */
   readonly damageEvent = input<FlashEvent | null>(null);
   /** Cura ricevuta da segnalare (es. Rigenerazione) — stesso schema di damageEvent. */
@@ -122,6 +150,13 @@ export class PlayerHudComponent {
     this.i18n.t('playerHud.poisonAria', { level: this.poisonLevel() }),
   );
   protected readonly frozenAria = computed(() => this.i18n.t('playerHud.frozenAria'));
+
+  protected readonly favoritesTooltip = computed<string | null>(() => {
+    const names = this.favoriteSpellNames();
+    return names.length > 0
+      ? this.i18n.t('playerHud.favoritesTooltip', { names: names.join(', ') })
+      : null;
+  });
 
   protected readonly hpTooltip = computed(() => {
     const { current, shield } = this.health();

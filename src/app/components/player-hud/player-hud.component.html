@@ -13,12 +13,57 @@
     <span class="hud__sr-only">{{ frozenAria() }}</span>
   }
 
+  <!-- Magie appuntate (Qualità della vita, "sopra il pannello vita") — sibling assoluto di
+       .hud__content invece di un terzo figlio flex al suo interno: quel contenitore ha un'altezza
+       fissa (--visible-content-height) tarata su esattamente 2 righe (nome + barra vita, vedi sotto),
+       infilarcene una terza romperebbe lo space-between. Solo sul pannello proprio (board.component.html
+       non passa pinnedSpells a quello dell'avversario) — promemoria privato, non un evento animato
+       come i .hud__flash quindi niente overlap con quelli (loro vivono dentro .hud__hp-bar). -->
+  @if (pinnedSpells().length > 0) {
+    <div class="hud__pinned-row" role="list" [attr.aria-label]="'playerHud.pinnedAria' | translate">
+      @for (pin of pinnedSpells(); track pin.spellId) {
+        <!-- Nome + icona bookmark (rossa, decorativa) sulla stessa riga agli estremi, poi la formula
+             incolonnata: verde l'elemento se almeno una carta corrispondente è tra mano+mazzo+scarti
+             (countMatchingCards, board.component.ts). -->
+        <ng-template #pinTip>
+          <div class="hud__pin-tooltip-header">
+            <strong>{{ pin.name }}</strong>
+            <span class="hud__pin-tooltip-bookmark" aria-hidden="true"></span>
+          </div>
+          <hr class="hud__pin-tooltip-rule" />
+          <ul class="hud__pin-tooltip-formula">
+            @for (item of pin.formula; track $index) {
+              <li [class.hud__pin-tooltip-formula-item--available]="item.available">
+                {{ i18n.elementLabel(item.element) }}
+              </li>
+            }
+          </ul>
+        </ng-template>
+        <span
+          class="hud__pinned-icon"
+          [class.hud__pinned-icon--available]="pin.available"
+          role="listitem"
+          tabindex="0"
+          [attr.aria-label]="pin.name"
+          [appTooltip]="pinTip"
+        >
+          <span class="hud__pinned-icon-glyph" aria-hidden="true"></span>
+        </span>
+      }
+    </div>
+  }
+
   <!-- Only this wrapper (sized to the visible slice) is space-between'd —
        the outer .hud stays anchored to the edge like the other two panels. -->
   <div class="hud__content">
     <!-- Name (+ settings, only on our own panel) -->
     <div class="hud__name-row">
-      <div class="hud__identity">
+      <div
+        class="hud__identity"
+        [attr.tabindex]="favoritesTooltip() ? 0 : null"
+        [appTooltip]="favoritesTooltip()"
+        [tooltipPosition]="mirrored() ? 'bottom' : 'top'"
+      >
         <span class="hud__avatar" aria-hidden="true">
           @if (photoUrl(); as url) {
             <img [src]="url" alt="" referrerpolicy="no-referrer" />

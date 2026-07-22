@@ -79,7 +79,9 @@
     "hpAria": "{name}: {value} hp out of {max}",
     "hpTooltip": "Hit points: {current} + {shield} = {total}",
     "poisonAria": "Poisoned: level {level}",
-    "frozenAria": "Frozen: risk of drawing Freeze cards instead of useful ones"
+    "frozenAria": "Frozen: risk of drawing Freeze cards instead of useful ones",
+    "favoritesTooltip": "Favorites: {names}",
+    "pinnedAria": "Pinned spells"
   },
 
   "phaseTracker": {
@@ -243,6 +245,12 @@
     "spellListAria": "Spell list",
     "empty": "No spells.",
     "formulaAria": "Spell formula",
+    "favoriteAddAria": "Add {name} to favorites",
+    "favoriteRemoveAria": "Remove {name} from favorites",
+    "favoriteMaxTooltip": "Maximum 5 favorite spells",
+    "bookmarkAddAria": "Pin {name} for this match",
+    "bookmarkRemoveAria": "Remove {name} from pinned",
+    "bookmarkMaxTooltip": "Maximum 5 pinned spells",
     "baseSpellFormula": "Always-known base spell",
     "manaAria": "{cost} mana",
     "pageNumberAria": "Page {page} of {total}",

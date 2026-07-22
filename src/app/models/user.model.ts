@@ -16,4 +16,10 @@ export interface UserProfile {
    * BackgroundService. */
   background: string;
   createdAt: number;
+  /** Id di Spell.id (SPELL_CATALOG) segnati come preferiti — max 5 (vedi AuthService.toggleFavoriteSpell).
+   * Assente sui profili creati prima di questa feature: va letto con `?? []`. */
+  favoriteSpellIds?: string[];
 }
+
+/** Numero massimo di incantesimi che un utente può segnare come preferiti (globale, account-level). */
+export const MAX_FAVORITE_SPELLS = 5;

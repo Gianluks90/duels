@@ -231,6 +231,36 @@
     white-space: nowrap;
   }
 
+  // Solo indicatore, non interattivo — il toggle vero vive nella pagina di dettaglio (vedi
+  // &__favorite-btn/&__bookmark-btn), per non infilare bottoni dentro role="option" (grimoire__spell-item).
+  // A destra del nome (non a sinistra) per non disallineare la lista. mask-image invece di <img> per
+  // poter tingere l'icona (di per sé grigio chiaro E3E3E3) di un colore preciso via background-color.
+  &__spell-item-favorite,
+  &__spell-item-pinned {
+    flex-shrink: 0;
+    display: block;
+    width: 14px;
+    height: 14px;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+
+  &__spell-item-favorite {
+    background-color: var(--border-bright);
+    mask-image: url('/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+    -webkit-mask-image: url('/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+  }
+
+  &__spell-item-pinned {
+    background-color: crimson;
+    mask-image: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+    -webkit-mask-image: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+  }
+
   &__creatable-tag {
     flex-shrink: 0;
     font-family: var(--font-ui);
@@ -303,6 +333,19 @@
     color: var(--ink-muted);
   }
 
+  // Stella/bookmark spostati qui (footer) invece che accanto al nome — "Crea" resta centrato
+  // sull'intera larghezza del footer indipendentemente da quante icone ci sono a sinistra, stesso
+  // trucco di posizionamento assoluto di &__page-number a destra.
+  &__footer-actions {
+    position: absolute;
+    left: var(--sp-4);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
   &__spell-header {
     display: flex;
     align-items: center;
@@ -317,6 +360,74 @@
     line-height: 1.05;
     margin: 0;
     flex-grow: 1;
+  }
+
+  // Stella preferiti / bookmark pin — bottone rotondo, non il bezel scuro di app-icon-button (pensato
+  // per il frame esterno scuro della dialog, stonerebbe qui sulla pergamena).
+  &__favorite-btn,
+  &__bookmark-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.12s;
+
+    &:hover:not(:disabled) {
+      background: rgba(0, 0, 0, 0.07);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.4;
+    }
+  }
+
+  // Icona sempre "fill" (niente più variante outline), tinta via mask-image invece di un filtro
+  // approssimato su <img> — permette un colore esatto: grigio chiaro a mezza opacità a riposo, colore
+  // pieno (oro per i preferiti, crimson per i pin) da attivi.
+  &__favorite-btn-icon,
+  &__bookmark-btn-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    background-color: #9a9a9a;
+    opacity: 0.5;
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    transition:
+      background-color 0.12s,
+      opacity 0.12s;
+  }
+
+  &__favorite-btn-icon {
+    mask-image: url('/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+    -webkit-mask-image: url('/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+  }
+
+  &__bookmark-btn-icon {
+    mask-image: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+    -webkit-mask-image: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg');
+  }
+
+  &__favorite-btn--active &__favorite-btn-icon {
+    background-color: var(--border-bright);
+    opacity: 1;
+  }
+
+  &__bookmark-btn--active &__bookmark-btn-icon {
+    background-color: crimson;
+    opacity: 1;
   }
 
   // Same dark-circle badge as the corner Mana badge on app-card (card.component.scss),

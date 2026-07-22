@@ -212,6 +212,26 @@ export function hasElements(hand: readonly Card[], elements: readonly Element[])
   return true;
 }
 
+/** Quante carte del pool (tipicamente mano + mazzo + scarti di UN giocatore) sono utili per la
+ * formula indicata — pensata per un tooltip di riferimento rapido (Qualità della vita, magie
+ * pinnate), non per verificare "posso crearla ora" (hasElements sopra fa quello, consumando
+ * esattamente gli ingredienti uno a uno). Ogni carta è contata al più una volta: elemento+tier
+ * esatti richiesti dalla formula, oppure — se la formula contiene almeno un elemento base — un
+ * Residuo Arcano (2.5, jolly valido solo per i base). La chiave `element:tier` esclude le carte
+ * 'spell' (il cui `Card.element` è solo arte/icona, non un ingrediente disponibile, vedi
+ * card.model.ts). */
+export function countMatchingCards(cards: readonly Card[], formula: readonly Element[]): number {
+  const required = new Set(formula.map((el) => `${el}:${elementTier(el)}`));
+  const hasBaseElement = formula.some((el) => elementTier(el) === 'base');
+
+  let count = 0;
+  for (const card of cards) {
+    if (required.has(`${card.element}:${card.tier}`)) count++;
+    else if (hasBaseElement && card.tier === 'residium') count++;
+  }
+  return count;
+}
+
 /** Filtra dalla mano le carte "temporanee" (Card.expiresAt) che scadono alla fase indicata — sciolte o consumate, mai scartate (regolamento 2.3.1, 2.5). */
 function resolveExpiringCards(hand: readonly Card[], phase: ActiveTurnPhase): Card[] {
   return hand.filter((card) => card.expiresAt !== phase);
@@ -449,7 +469,9 @@ export function castSpell(
   // bersagli è SEMPRE valido — non un fallback per scarti vuoti, ma la scelta normale di chi non
   // vuole consumare nulla. Fallisce solo per input scorretto (duplicati, oltre il tetto, o una carta
   // non eleggibile) — mai per assenza di scelta.
-  const multiTargetEffect = spell.effects.find((e) => MULTI_TARGET_CARD_EFFECT_TYPES.includes(e.type));
+  const multiTargetEffect = spell.effects.find((e) =>
+    MULTI_TARGET_CARD_EFFECT_TYPES.includes(e.type),
+  );
   let resolvedTargetCardIds: string[] | undefined;
   if (multiTargetEffect) {
     const eligibleTiers = multiTargetEffect.consumableCardTiers ?? DEFAULT_CONSUMABLE_CARD_TIERS;

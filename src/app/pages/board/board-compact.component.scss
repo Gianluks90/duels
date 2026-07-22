@@ -41,7 +41,9 @@
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);
   flex-shrink: 0;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 // Unico indicatore di chi ha il turno sul layout compatto (il phase-tracker centrale mostra solo il
@@ -717,7 +719,9 @@
   gap: var(--sp-3);
 }
 
+// position: relative per ancorare .board__pinned-badge (board.component.scss, riusato qui).
 .board-compact__collect-card {
+  position: relative;
   background: none;
   border: none;
   padding: 0;

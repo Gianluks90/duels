@@ -27,6 +27,7 @@
           [healEvent]="opponentHealEvent()"
           [shieldEvent]="opponentShieldEvent()"
           [poisonDamageEvent]="opponentPoisonDamageEvent()"
+          [favoriteSpellNames]="opponentFavoriteSpellNames()"
           [mirrored]="true"
         />
 
@@ -448,20 +449,28 @@
                       }}</em>
                     </p>
                   </ng-template>
-                  <app-action-menu
-                    [items]="fonteMenuItems(card, $index)"
-                    (mouseenter)="onFonteHover(card)"
-                    (mouseleave)="onFonteHoverEnd()"
-                  >
-                    <app-card
-                      [class.board__card--drawing]="cardIsDrawing(fonteCardIds()[$index])"
-                      [style.--draw-delay.ms]="cardDrawDelayMs(fonteCardIds()[$index])"
-                      [element]="card"
-                      [size]="handArcCardWidth"
-                      [appTooltip]="recipeTip"
-                      tooltipPosition="top"
-                    />
-                  </app-action-menu>
+                  <div class="board__card-wrap">
+                    <app-action-menu
+                      [items]="fonteMenuItems(card, $index)"
+                      (mouseenter)="onFonteHover(card)"
+                      (mouseleave)="onFonteHoverEnd()"
+                    >
+                      <app-card
+                        [class.board__card--drawing]="cardIsDrawing(fonteCardIds()[$index])"
+                        [style.--draw-delay.ms]="cardDrawDelayMs(fonteCardIds()[$index])"
+                        [element]="card"
+                        [size]="handArcCardWidth"
+                        [appTooltip]="recipeTip"
+                        tooltipPosition="top"
+                      />
+                    </app-action-menu>
+                    <!-- Elemento richiesto da una formula pinnata (Qualità della vita) — solo un
+                         promemoria visivo, nessuna interazione propria (il click resta quello del
+                         menu azioni sotto). -->
+                    @if (pinnedElements().has(card)) {
+                      <span class="board__pinned-badge" aria-hidden="true"></span>
+                    }
+                  </div>
                 }
               </div>
 
@@ -571,6 +580,11 @@
                     "
                     tooltipPosition="top"
                   />
+                  <!-- Elemento richiesto da una formula pinnata (Qualità della vita), vedi anche Fonte
+                       Arcana sopra. -->
+                  @if (pinnedElements().has(card.element)) {
+                    <span class="board__pinned-badge" aria-hidden="true"></span>
+                  }
                 </button>
               }
               <!-- Terza opzione, alternativa a tenere una delle 2 carte: scartale entrambe e ottieni mana accumulato
@@ -616,6 +630,8 @@
           [healEvent]="playerHealEvent()"
           [shieldEvent]="playerShieldEvent()"
           [poisonDamageEvent]="playerPoisonDamageEvent()"
+          [favoriteSpellNames]="playerFavoriteSpellNames()"
+          [pinnedSpells]="playerPinnedSpells()"
           [mirrored]="false"
           (settingsClick)="openGameSettings()"
         />
@@ -1356,6 +1372,9 @@
                           [manaBonus]="collectCardManaBonus(card)"
                           [size]="handArcCardWidth"
                         />
+                        @if (pinnedElements().has(card.element)) {
+                          <span class="board__pinned-badge" aria-hidden="true"></span>
+                        }
                       </button>
                     }
                     <button type="button" class="board-compact__collect-card" (click)="keepMana()">
@@ -1402,14 +1421,19 @@
             <ng-template #fonteGridTpl>
               <div class="board-compact__fonte-grid">
                 @for (el of fonteCards(); track $index) {
-                  <app-action-menu [items]="fonteMenuItems(el, $index)">
-                    <app-card
-                      [class.board__card--drawing]="cardIsDrawing(fonteCardIds()[$index])"
-                      [style.--draw-delay.ms]="cardDrawDelayMs(fonteCardIds()[$index])"
-                      [element]="el"
-                      [size]="compactFonteCardWidth()"
-                    />
-                  </app-action-menu>
+                  <div class="board__card-wrap">
+                    <app-action-menu [items]="fonteMenuItems(el, $index)">
+                      <app-card
+                        [class.board__card--drawing]="cardIsDrawing(fonteCardIds()[$index])"
+                        [style.--draw-delay.ms]="cardDrawDelayMs(fonteCardIds()[$index])"
+                        [element]="el"
+                        [size]="compactFonteCardWidth()"
+                      />
+                    </app-action-menu>
+                    @if (pinnedElements().has(el)) {
+                      <span class="board__pinned-badge" aria-hidden="true"></span>
+                    }
+                  </div>
                 }
               </div>
             </ng-template>

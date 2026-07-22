@@ -429,6 +429,47 @@
     }
   }
 
+  // Wrapper per ancorare il badge bookmark (magia pinnata, Qualità della vita) — app-action-menu non
+  // è position:relative di suo. Riusato anche sulle carte pescate in Raccolta tramite
+  // &__collect-card, che è già position:relative per conto proprio (vedi sotto).
+  &__card-wrap {
+    position: relative;
+  }
+
+  // Grande, senza sfondo, crimson pieno (non più il badge tondo scuro di prima) — in primo piano
+  // sopra la carta (z-index alto, niente più trucco di occlusione: nascondeva il badge per intero
+  // invece di lasciarne visibile solo la parte sporgente). Vicino al bordo destro (non centrato); il
+  // bordo superiore dell'icona coincide col bordo superiore della carta — sembra un segnalibro appeso
+  // dall'alto.
+  //
+  // In % (non px) apposta: la carta a cui è agganciato non ha sempre la stessa dimensione — Fonte
+  // Arcana usa compactFonteCardWidth() in compatto (64/96px) ma le carte pescate in Raccolta restano a
+  // handArcCardWidth (100px, fisso) anche lì, quindi a parità di px il badge finiva sproporzionato
+  // rispetto alla carta in un contesto sì e nell'altro no. width%/right% risolvono in modo affidabile
+  // contro il box di &__card-wrap/&__collect-card (position:relative, larghezza shrink-to-fit sulla
+  // carta) — un'altezza% qui invece NON sarebbe affidabile (l'ancora ha altezza "auto", non esplicita:
+  // dipende dal contenuto, e lo spec CSS lascia il calcolo di un'altezza percentuale indefinito in quel
+  // caso). aspect-ratio deriva l'altezza dalla larghezza (ora certa) senza mai chiedere quella del
+  // contenitore, e il translateY(%) finale si riferisce all'altezza DELL'ICONA STESSA (già definita a
+  // quel punto), non a quella del contenitore — stesso problema, aggirato allo stesso modo. Percentuali
+  // derivate dai px originali (22×30 su una carta 100×150, --card-ratio 2/3, top -8px) così l'aspetto
+  // resta quello già validato visivamente sulla Fonte Arcana.
+  &__pinned-badge {
+    position: absolute;
+    top: 0;
+    right: 6%;
+    z-index: 2;
+    width: 22%;
+    aspect-ratio: 22 / 30;
+    transform: translateY(-26.67%);
+    background-color: crimson;
+    mask: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    -webkit-mask: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    pointer-events: none;
+  }
+
   &__fonte-footer {
     display: flex;
     justify-content: center;
@@ -506,7 +547,11 @@
     gap: var(--sp-4);
   }
 
+  // position: relative (invece del wrapper &__card-wrap usato altrove) per ancorare &__pinned-badge —
+  // qui la carta è già figlia diretta (nessun app-action-menu di mezzo), quindi non serve un div
+  // wrapper apposito.
   &__collect-card {
+    position: relative;
     padding: 0;
     background: none;
     border: none;

@@ -26,11 +26,17 @@ export interface GameDoc {
   hostId: string;
   hostName: string;
   hostPhoto: string | null;
+  /** Snapshot di UserProfile.favoriteSpellIds preso al momento della creazione partita (stesso schema
+   * di hostName/hostPhoto) — se l'host cambia i preferiti a metà partita, l'avversario continua a
+   * vedere lo snapshot preso al join, non l'aggiornamento live. */
+  hostFavoriteSpellIds: string[];
   hostWand: Wand | null;
   hostReady: boolean;
   guestId: string | null;
   guestName: string | null;
   guestPhoto: string | null;
+  /** Vedi hostFavoriteSpellIds — stesso snapshot-al-join, lato guest. */
+  guestFavoriteSpellIds: string[];
   guestWand: Wand | null;
   guestReady: boolean;
   createdAt: number;
@@ -43,7 +49,9 @@ export class GameService {
 
   generateRoomCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join(
+      '',
+    );
   }
 
   async createGame(profile: UserProfile): Promise<string> {
@@ -54,11 +62,13 @@ export class GameService {
       hostId: profile.uid,
       hostName: profile.displayName,
       hostPhoto: profile.photoURL,
+      hostFavoriteSpellIds: profile.favoriteSpellIds ?? [],
       hostWand: null,
       hostReady: false,
       guestId: null,
       guestName: null,
       guestPhoto: null,
+      guestFavoriteSpellIds: [],
       guestWand: null,
       guestReady: false,
       createdAt: Date.now(),
@@ -82,6 +92,7 @@ export class GameService {
       guestId: profile.uid,
       guestName: profile.displayName,
       guestPhoto: profile.photoURL,
+      guestFavoriteSpellIds: profile.favoriteSpellIds ?? [],
       status: 'setup',
     });
   }
@@ -105,20 +116,24 @@ export class GameService {
       hostId: profile.uid,
       hostName,
       hostPhoto: profile.photoURL,
+      hostFavoriteSpellIds: profile.favoriteSpellIds ?? [],
       hostWand: defaultWand,
       hostReady: true,
       guestId: 'debug-guest',
       guestName,
       guestPhoto: null,
+      guestFavoriteSpellIds: [],
       guestWand: defaultWand,
       guestReady: true,
       createdAt: Date.now(),
       // Esplosione elementale (2.4): come in tryStartGame, la mano iniziale o la Fonte Arcana
       // appena rivelata potrebbero già contenere sia Luce che Tenebra fin dal primo istante.
-      state: resolveElementalExplosions(createInitialGameState(
-        { name: hostName, wand: defaultWand },
-        { name: guestName, wand: defaultWand },
-      )),
+      state: resolveElementalExplosions(
+        createInitialGameState(
+          { name: hostName, wand: defaultWand },
+          { name: guestName, wand: defaultWand },
+        ),
+      ),
     };
     await setDoc(doc(this.db, 'games', gameId), data);
     return gameId;
@@ -151,7 +166,7 @@ export class GameService {
   ): Unsubscribe {
     return onSnapshot(
       doc(this.db, 'games', gameId),
-      snapshot => {
+      (snapshot) => {
         callback(snapshot.exists() ? (snapshot.data() as GameDoc) : null);
       },
       () => onError?.(),

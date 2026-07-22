@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
-import { DEFAULT_BACKGROUND_ID, type UserProfile } from '../models/user.model';
+import { DEFAULT_BACKGROUND_ID, MAX_FAVORITE_SPELLS, type UserProfile } from '../models/user.model';
 
 export const DEBUG_UID = '8AkU1Du8BlNQYDKzH8Icu7lf8Qt2';
 
@@ -51,7 +51,9 @@ export class AuthService {
   }
 
   async updateProfile(
-    patch: Partial<Pick<UserProfile, 'displayName' | 'photoURL' | 'cardBack' | 'background'>>,
+    patch: Partial<
+      Pick<UserProfile, 'displayName' | 'photoURL' | 'cardBack' | 'background' | 'favoriteSpellIds'>
+    >,
   ): Promise<void> {
     const user = this.auth.currentUser;
     const current = this.profile();
@@ -59,6 +61,23 @@ export class AuthService {
 
     await updateDoc(doc(this.firebase.db, 'users', user.uid), patch);
     this.profile.set({ ...current, ...patch });
+  }
+
+  /** Regolamento "Qualità della vita" — segna/rimuove una magia dai preferiti dell'account (visibili
+   * all'avversario in partita, vedi GameDoc.hostFavoriteSpellIds/guestFavoriteSpellIds). Cap a
+   * MAX_FAVORITE_SPELLS applicato qui (unico punto di scrittura) invece che nel chiamante, così ogni UI
+   * che lo invoca (oggi solo il Grimorio) eredita lo stesso limite senza doverlo ridichiarare. No-op se
+   * si prova ad aggiungerne una oltre il limite. */
+  async toggleFavoriteSpell(spellId: string): Promise<void> {
+    const current = this.profile();
+    if (!current) return;
+
+    const favorites = current.favoriteSpellIds ?? [];
+    const isFavorite = favorites.includes(spellId);
+    if (!isFavorite && favorites.length >= MAX_FAVORITE_SPELLS) return;
+
+    const next = isFavorite ? favorites.filter((id) => id !== spellId) : [...favorites, spellId];
+    await this.updateProfile({ favoriteSpellIds: next });
   }
 
   async deleteAccount(): Promise<void> {
@@ -85,6 +104,7 @@ export class AuthService {
       cardBack: 'dark',
       background: DEFAULT_BACKGROUND_ID,
       createdAt: Date.now(),
+      favoriteSpellIds: [],
     };
 
     await setDoc(ref, newProfile);

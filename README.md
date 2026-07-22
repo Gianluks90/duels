@@ -1,10 +1,6 @@
 # Duels
 
-## Prossimi passi
-
 Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [documentation/todo-archive-2026-07-21.md](documentation/todo-archive-2026-07-21.md) — qui restano solo i punti ancora aperti.
-
-1. **Debito tecnico**: l'`effect()` di auto-avanzamento per l'avversario di debug in `board.component.ts` va rimosso/sostituito appena esiste un modo vero di testare con un secondo client reale (o un'IA vera).
 
 ## Qualità della vita
 
@@ -13,9 +9,10 @@ Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [docume
 - [x] Rivedere opzioni profilo utente — la dialog profilo è ferma alla v1 (nome, foto, dorso, elimina account); da rivedere/espandere.
 - [x] Sfondo app e duello personalizzabili — permettere all'utente di scegliere/personalizzare lo sfondo dell'applicazione e quello della board di duello.
 - [x] Conteggio turno anzichè "Turno di: nome-giocatore";
-- [ ] Magie preferite — un modo per il giocatore di segnare alcuni incantesimi come preferiti (Grimorio?).
-- [ ] Magie pinnabili con tooltip in duel UI — poter "appuntare" un incantesimo durante il duello con un tooltip a schermo, per riferimento rapido senza dover riaprire il Grimorio.
+- [ ] Magie preferite — un modo per il giocatore di segnare alcuni incantesimi come preferiti.
+- [ ] Magie pinnabili con tooltip in duel UI — poter "appuntare" un incantesimo durante il duello con un tooltip a schermo, per riferimento rapido senza dover riaprire il Grimorio. La stessa icona bookmark compare sugli elementi necessari a queste formule.
 - [x] Regolamento — manca una pagina di glossario e una di glossario icone. Inoltre va controllato che tutto sia in linea con quanto sviluppato. Potrebbe essere anche bello includere le immagini di qualche carta per essere più esplicativi.
+- [ ] Amicizie - implementare aggiunta/rimozione amici.
 
 ## Future espansioni (idee da valutare)
 
@@ -25,8 +22,13 @@ Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [docume
 - **Rituali** - Magie che una volta lanciate hanno effetto ogni turno.
 - **Evocazioni** - Magie più potenti che vanno lanciate e poi potenziate per ottenere un effetto nel futuro.
 
+## Future implementazioni
+
+- **Bot di debug più capace** — l'`effect()` in `board.component.ts` che fa avanzare da solo l'avversario di debug (`guestId 'debug-guest'`) si limita ad attraversare le fasi a raffica: non raccoglie, non combina, non lancia magie. Non è quindi un vero test del turno avversario, ma solo un modo per non restare bloccati sul suo turno mentre si gioca da soli. Rimandato deliberatamente: basterebbe collegare i reducer già esistenti in `turn-engine.ts` (`collectCard`, `combine*`, `castSpell`) con scelte casuali/euristiche (stima: mezza giornata), ma finché è possibile far testare a persone vere non è prioritario. Da riprendere se servirà un secondo attore automatico per test/regressioni ripetibili.
+
 ## Da valutare
 
 - Valutare "scarta invece di subire danno" come alternativa al danno automatico dell'esplosione elementale, se il playtest lo suggerisce.
 - Tematizzare meglio `damage_self` (oggi usato solo da `black_flame`) quando arriveranno le scuole di magia come categoria narrativa.
 - [ ] Tooltip Giocatore con preview del profilo in Duello. Da implementare quando avremo elementi di personalizzazione del profilo più ricchi (es. sfondo, dorso, ecc.).
+- [ ] Raccolta dati per achievements;

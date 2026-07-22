@@ -65,8 +65,12 @@
             />
             {{ 'grimoire.filterCreatableOnly' | translate }}
           </label>
-          <label class="grimoire__checkbox-filter grimoire__checkbox-filter--disabled">
-            <input type="checkbox" disabled />
+          <label class="grimoire__checkbox-filter">
+            <input
+              type="checkbox"
+              [checked]="onlyFavorites()"
+              (change)="setOnlyFavorites($any($event.target).checked)"
+            />
             {{ 'grimoire.filterFavoritesOnly' | translate }}
           </label>
         </div>
@@ -90,6 +94,12 @@
               <span class="grimoire__creatable-tag">{{
                 'grimoire.creatableLabel' | translate
               }}</span>
+            }
+            @if (isFavorite(spell)) {
+              <span class="grimoire__spell-item-favorite" aria-hidden="true"></span>
+            }
+            @if (isPinned(spell)) {
+              <span class="grimoire__spell-item-pinned" aria-hidden="true"></span>
             }
           </li>
         }
@@ -157,6 +167,44 @@
         </div>
 
         <div class="grimoire__detail-footer">
+          <div class="grimoire__footer-actions">
+            <button
+              type="button"
+              class="grimoire__favorite-btn"
+              [class.grimoire__favorite-btn--active]="isFavorite(spell)"
+              [disabled]="!canToggleFavorite(spell)"
+              [attr.aria-pressed]="isFavorite(spell)"
+              [attr.aria-label]="
+                (isFavorite(spell) ? 'grimoire.favoriteRemoveAria' : 'grimoire.favoriteAddAria')
+                  | translate: { name: spellName(spell) }
+              "
+              [appTooltip]="
+                !canToggleFavorite(spell) ? ('grimoire.favoriteMaxTooltip' | translate) : null
+              "
+              (click)="toggleFavorite(spell)"
+            >
+              <span class="grimoire__favorite-btn-icon" aria-hidden="true"></span>
+            </button>
+            @if (inGame()) {
+              <button
+                type="button"
+                class="grimoire__bookmark-btn"
+                [class.grimoire__bookmark-btn--active]="isPinned(spell)"
+                [disabled]="!canTogglePin(spell)"
+                [attr.aria-pressed]="isPinned(spell)"
+                [attr.aria-label]="
+                  (isPinned(spell) ? 'grimoire.bookmarkRemoveAria' : 'grimoire.bookmarkAddAria')
+                    | translate: { name: spellName(spell) }
+                "
+                [appTooltip]="
+                  !canTogglePin(spell) ? ('grimoire.bookmarkMaxTooltip' | translate) : null
+                "
+                (click)="togglePin(spell)"
+              >
+                <span class="grimoire__bookmark-btn-icon" aria-hidden="true"></span>
+              </button>
+            }
+          </div>
           @if (spell.formula.length > 0) {
             <button
               class="btn btn--primary grimoire__create-btn"

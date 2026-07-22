@@ -14,10 +14,14 @@ import type { PlayerId } from '../../models/player.model';
 import { CardComponent } from '../../components/card/card.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { SelectComponent, type SelectOption } from '../../components/ui/select/select.component';
+import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { GameEngineService } from '../../services/game-engine.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
+import { AuthService } from '../../services/auth.service';
+import { MAX_FAVORITE_SPELLS } from '../../models/user.model';
+import { MAX_PINNED_SPELLS, PinnedSpellsService } from '../../services/pinned-spells.service';
 import type { Spell } from '../../models/spell.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { hasElements } from '../../game/turn-engine';
@@ -52,7 +56,7 @@ type SortOption = 'alpha-asc' | 'alpha-desc' | 'cost-asc' | 'cost-desc';
 @Component({
   selector: 'app-grimoire-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CardComponent, IconButtonComponent, SelectComponent, TranslatePipe],
+  imports: [CardComponent, IconButtonComponent, SelectComponent, TooltipDirective, TranslatePipe],
   templateUrl: './grimoire-dialog.component.html',
   styleUrl: './grimoire-dialog.component.scss',
 })
@@ -65,11 +69,16 @@ export class GrimoireDialogComponent {
   private readonly data = inject<GrimoireDialogData | undefined>(DIALOG_DATA) ?? {};
   private readonly gameEngine = inject(GameEngineService);
   private readonly boardLayout = inject(BoardLayoutService);
+  private readonly auth = inject(AuthService);
+  private readonly pinnedSpells = inject(PinnedSpellsService);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly elementIconPath = elementIconPath;
   protected readonly filterElements = FILTER_ELEMENTS;
+  /** true solo quando il Grimorio è aperto da dentro una partita (vedi GrimoireDialogData) — il pin è
+   * legato a una partita specifica, a differenza della stella preferiti che è sempre disponibile. */
+  protected readonly inGame = computed(() => !!this.data.gameId);
 
   /** Sotto i 1024px (stessa soglia di BoardLayoutService) le due pagine affiancate non hanno più
    * spazio per stare fianco a fianco — sotto quella soglia il libro si impila in verticale, pagina
@@ -89,6 +98,19 @@ export class GrimoireDialogComponent {
   protected readonly activeFilters = signal<ReadonlySet<Element>>(new Set());
   protected readonly sortOption = signal<SortOption>('alpha-asc');
   protected readonly onlyCreatable = signal(false);
+  protected readonly onlyFavorites = signal(false);
+
+  /** Id delle magie preferite dell'utente (account-level, non legate a questa partita) — vedi
+   * AuthService.toggleFavoriteSpell. Vuoto finché il profilo non è caricato o non ha preferiti. */
+  protected readonly favoriteSpellIds = computed<ReadonlySet<string>>(
+    () => new Set(this.auth.profile()?.favoriteSpellIds ?? []),
+  );
+
+  /** Vuoto fuori da una partita (data.gameId assente, vedi inGame) — il pin non ha senso lì. */
+  protected readonly pinnedSpellIds = computed<ReadonlySet<string>>(() => {
+    const gameId = this.data.gameId;
+    return gameId ? new Set(this.pinnedSpells.pinned(gameId)()) : new Set();
+  });
 
   protected readonly sortOptions = computed<SelectOption<SortOption>[]>(() => [
     { value: 'alpha-asc', label: this.i18n.t('grimoire.sortAlphaAsc') },
@@ -112,6 +134,7 @@ export class GrimoireDialogComponent {
         : SPELL_CATALOG.filter((s) => s.formula.some((el) => active.has(el)));
 
     if (this.onlyCreatable()) list = list.filter((s) => this.creatable(s));
+    if (this.onlyFavorites()) list = list.filter((s) => this.isFavorite(s));
 
     const sort = this.sortOption();
     list.sort((a, b) => {
@@ -168,6 +191,39 @@ export class GrimoireDialogComponent {
     this.onlyCreatable.set(checked);
   }
 
+  protected setOnlyFavorites(checked: boolean): void {
+    this.onlyFavorites.set(checked);
+  }
+
+  protected isFavorite(spell: Spell): boolean {
+    return this.favoriteSpellIds().has(spell.id);
+  }
+
+  /** false solo quando si è già al limite di MAX_FAVORITE_SPELLS e questa magia non ne fa parte —
+   * il bottone stella resta visibile ma disabilitato, con un tooltip a spiegarne il perché. */
+  protected canToggleFavorite(spell: Spell): boolean {
+    return this.isFavorite(spell) || this.favoriteSpellIds().size < MAX_FAVORITE_SPELLS;
+  }
+
+  protected toggleFavorite(spell: Spell): void {
+    if (!this.canToggleFavorite(spell)) return;
+    void this.auth.toggleFavoriteSpell(spell.id);
+  }
+
+  protected isPinned(spell: Spell): boolean {
+    return this.pinnedSpellIds().has(spell.id);
+  }
+
+  protected canTogglePin(spell: Spell): boolean {
+    return this.isPinned(spell) || this.pinnedSpellIds().size < MAX_PINNED_SPELLS;
+  }
+
+  protected togglePin(spell: Spell): void {
+    const gameId = this.data.gameId;
+    if (!gameId || !this.canTogglePin(spell)) return;
+    this.pinnedSpells.toggle(gameId, spell.id);
+  }
+
   protected selectSpell(id: string): void {
     this.selectedSpellId.set(id);
   }
@@ -196,6 +252,9 @@ export class GrimoireDialogComponent {
     this.creating.set(true);
     try {
       await this.gameEngine.createSpell(this.data.gameId, this.data.role, spell.id);
+      // Qualità della vita: creata, non ha più senso restasse "da ricordarsi di fare" — la rimuove
+      // dai pin di questa partita se c'era (no-op altrimenti).
+      this.pinnedSpells.unpin(this.data.gameId, spell.id);
       this.dialogRef.close();
     } finally {
       this.creating.set(false);
@@ -262,7 +321,9 @@ export class GrimoireDialogComponent {
           case 'reveal_opponent_hand':
             if (e.cardTierFilter === 'spell') {
               return e.amount !== undefined
-                ? this.i18n.t('grimoire.effects.revealOpponentHandRandomSpell', { amount: e.amount })
+                ? this.i18n.t('grimoire.effects.revealOpponentHandRandomSpell', {
+                    amount: e.amount,
+                  })
                 : this.i18n.t('grimoire.effects.revealOpponentHandSpell');
             }
             return e.amount !== undefined

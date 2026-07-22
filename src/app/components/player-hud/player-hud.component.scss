@@ -15,13 +15,17 @@
   border: 1px solid var(--border-subtle);
   border-radius: 12px 12px 0 0;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 
   // Unico indicatore di chi ha il turno (il phase-tracker centrale mostra solo il numero di turno,
   // non più il nome) — bordo dorato acceso + bagliore, stessa tinta di --border-bright.
   &--active {
     border-color: var(--border-bright);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4), 0 0 12px rgba(200, 164, 90, 0.5);
+    box-shadow:
+      0 3px 10px rgba(0, 0, 0, 0.4),
+      0 0 12px rgba(200, 164, 90, 0.5);
   }
 
   &--mirrored {
@@ -345,6 +349,95 @@
     width: 60%;
     height: 60%;
     object-fit: contain;
+  }
+
+  // Magie appuntate (Qualità della vita) — badge assoluti appena SOPRA il pannello (non più a cavallo
+  // del bordo). -32px richiama l'altezza di riferimento di una carta incastonata nelle sezioni di
+  // bacchetta (WAND_PEEK_VISIBLE, board.component.ts): badge da 22px, quindi ~10px di gap visibile
+  // prima del bordo del pannello. Mai nel pannello mirrored (l'avversario non riceve pinnedSpells da
+  // board.component.html), niente variante --mirrored per questo blocco.
+  &__pinned-row {
+    position: absolute;
+    top: -32px;
+    left: var(--sp-3);
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+  }
+
+  &__pinned-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #212121;
+    border: 1px solid var(--border-gold);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    cursor: default;
+  }
+
+  // mask-image (non <img>) per poter tingere l'icona di verde quando l'INTERA formula è già
+  // ricomponibile da mano+mazzo+scarti (PinnedSpellInfo.available, board.component.ts) — stesso verde
+  // di .rich-tooltip__special-icon--vital (board.component.scss) per coerenza cromatica nell'app.
+  &__pinned-icon-glyph {
+    display: block;
+    width: 60%;
+    height: 60%;
+    background-color: #e3e3e3;
+    mask: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    -webkit-mask: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    transition: background-color 0.15s;
+  }
+
+  &__pinned-icon--available &__pinned-icon-glyph {
+    background-color: #4caf50;
+  }
+
+  // Contenuto del tooltip ricco sul badge (nome + icona bookmark rossa, poi la formula incolonnata) —
+  // duplica in piccolo il pattern .rich-tooltip__* di board.component.scss (stesso ragionamento lì
+  // spiegato: componenti diversi, view encapsulation separata, nessun mixin condiviso nel progetto).
+  &__pin-tooltip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-2);
+  }
+
+  &__pin-tooltip-bookmark {
+    display: block;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    background-color: crimson;
+    mask: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    -webkit-mask: url('/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+  }
+
+  &__pin-tooltip-rule {
+    border: 0;
+    border-top: 1px solid var(--border-subtle);
+    margin: var(--sp-1) 0;
+  }
+
+  &__pin-tooltip-formula {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+  }
+
+  &__pin-tooltip-formula-item--available {
+    color: #4caf50;
   }
 
   &__hp-value {

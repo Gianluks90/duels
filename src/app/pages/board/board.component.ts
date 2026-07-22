@@ -20,9 +20,13 @@ import { GameEngineService } from '../../services/game-engine.service';
 import { AuthService } from '../../services/auth.service';
 import { GameStateService } from '../../services/game-state.service';
 import { AnimationQueueService, VANISH_DURATION_MS } from '../../services/animation-queue.service';
+import { PinnedSpellsService } from '../../services/pinned-spells.service';
 import { CardComponent } from '../../components/card/card.component';
 import { DeckComponent } from '../../components/deck/deck.component';
-import { PlayerHudComponent } from '../../components/player-hud/player-hud.component';
+import {
+  PlayerHudComponent,
+  type PinnedSpellInfo,
+} from '../../components/player-hud/player-hud.component';
 import { PhaseTrackerComponent } from '../../components/phase-tracker/phase-tracker.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
@@ -73,9 +77,10 @@ import type { Card, SpecialMana } from '../../models/card.model';
 import { specialManaIconPath, REVEALED_ICON } from '../../models/card.model';
 import type { PlayerId, PlayerState } from '../../models/player.model';
 import { computePlayerMana } from '../../models/player.model';
-import { combineNeedsChoice, hasElements } from '../../game/turn-engine';
+import { combineNeedsChoice, countMatchingCards, hasElements } from '../../game/turn-engine';
 import { TURN_PHASES, type TurnPhase } from '../../models/turn-phase.model';
 import { SPELL_CATALOG } from '../../data/spells';
+import type { Spell } from '../../models/spell.model';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { BoardLayoutService } from '../../services/board-layout.service';
@@ -147,6 +152,7 @@ export class BoardComponent implements OnInit {
   private readonly gameEngine = inject(GameEngineService);
   private readonly gameState = inject(GameStateService);
   private readonly animationQueue = inject(AnimationQueueService);
+  private readonly pinnedSpells = inject(PinnedSpellsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -534,6 +540,71 @@ export class BoardComponent implements OnInit {
     const doc = this.gameDoc();
     if (!doc) return null;
     return this.myRole() === 'host' ? doc.guestPhoto : doc.hostPhoto;
+  });
+
+  /** Snapshot preso al join (GameDoc.hostFavoriteSpellIds/guestFavoriteSpellIds, vedi GameService) —
+   * risolto in nomi tradotti per il tooltip reciproco sul player-hud (Qualità della vita). */
+  protected readonly playerFavoriteSpellNames = computed<readonly string[]>(() => {
+    const doc = this.gameDoc();
+    if (!doc) return [];
+    const ids = this.myRole() === 'host' ? doc.hostFavoriteSpellIds : doc.guestFavoriteSpellIds;
+    return this.resolveSpellNames(ids);
+  });
+
+  protected readonly opponentFavoriteSpellNames = computed<readonly string[]>(() => {
+    const doc = this.gameDoc();
+    if (!doc) return [];
+    const ids = this.myRole() === 'host' ? doc.guestFavoriteSpellIds : doc.hostFavoriteSpellIds;
+    return this.resolveSpellNames(ids);
+  });
+
+  private resolveSpellNames(ids: readonly string[]): string[] {
+    return ids
+      .map((id) => SPELL_CATALOG.find((s) => s.id === id))
+      .filter((s): s is Spell => !!s)
+      .map((s) => this.i18n.t(`spells.${s.id}.name`));
+  }
+
+  /** Id delle magie pinnate per QUESTA partita (localStorage, vedi PinnedSpellsService) — privato,
+   * solo il proprio pannello/badge le mostrano, mai quelli dell'avversario. */
+  private readonly pinnedSpellIds = computed<readonly string[]>(() => {
+    const id = this.gameId();
+    return id ? this.pinnedSpells.pinned(id)() : [];
+  });
+
+  /** Elementi richiesti da ALMENO UNA formula pinnata — badge sulle carte Fonte Arcana che servono a
+   * crearla (Qualità della vita). */
+  protected readonly pinnedElements = computed<ReadonlySet<Element>>(() => {
+    const elements = new Set<Element>();
+    for (const id of this.pinnedSpellIds()) {
+      const spell = SPELL_CATALOG.find((s) => s.id === id);
+      spell?.formula.forEach((el) => elements.add(el));
+    }
+    return elements;
+  });
+
+  /** Nome tradotto + formula (elemento per elemento, ciascuno con disponibilità in mano+mazzo+scarti)
+   * per ciascuna magia pinnata — passato solo all'app-player-hud proprio (board.component.html).
+   * `available` sull'intera magia usa hasElements su quel pool combinato: non "posso lanciarla ORA"
+   * (quello richiederebbe la sola mano), ma "ho da qualche parte tutti i pezzi per rifarla". */
+  protected readonly playerPinnedSpells = computed<PinnedSpellInfo[]>(() => {
+    const ids = this.pinnedSpellIds();
+    const player = this.me();
+    if (ids.length === 0 || !player) return [];
+
+    const pool = [...player.hand, ...player.deck, ...player.discards];
+    return ids
+      .map((id) => SPELL_CATALOG.find((s) => s.id === id))
+      .filter((s): s is Spell => !!s)
+      .map((spell) => ({
+        spellId: spell.id,
+        name: this.i18n.t(`spells.${spell.id}.name`),
+        formula: spell.formula.map((element) => ({
+          element,
+          available: countMatchingCards(pool, [element]) > 0,
+        })),
+        available: hasElements(pool, spell.formula),
+      }));
   });
 
   // Letto da state.players[role].wand (GameState, live), non da GameDoc.hostWand/guestWand — quel
@@ -944,6 +1015,9 @@ export class BoardComponent implements OnInit {
         this.gameDoc.set(doc);
         if (doc?.status === 'finished') {
           unsub();
+          // Magie pinnate (Qualità della vita): promemoria legato a QUESTA partita, non deve
+          // ricomparire alla prossima (vedi PinnedSpellsService.clear).
+          this.pinnedSpells.clear(id);
           this.router.navigate(['/result', id]);
           return;
         }
