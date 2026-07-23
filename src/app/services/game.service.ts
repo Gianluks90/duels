@@ -9,8 +9,10 @@ import {
   query,
   collection,
   where,
+  orderBy,
   getDocs,
   limit,
+  runTransaction,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
@@ -41,6 +43,25 @@ export interface GameDoc {
   guestReady: boolean;
   createdAt: number;
   state: GameState | null;
+  /** Protezione opzionale per la lobby pubblica (Qualità della vita) — "per disattenzione", non un
+   * vero segreto: un documento 'waiting' è già leggibile da chiunque autenticato (vedi la regola su
+   * games/{gameId}), quindi anche questo campo lo è. Basta a scoraggiare un ingresso casuale, non
+   * regge a chi legge il documento direttamente invece che dalla UI — compromesso accettato
+   * consapevolmente, la verifica server-side richiederebbe Cloud Functions. */
+  password: string | null;
+  /** Visibilità in lobby pubblica (Qualità della vita) — preferenza rispettata lato client
+   * (listOpenGames() legge comunque tutte le 'waiting', home.component.ts nasconde quelle 'friends'
+   * a chi non è amico dell'host), non un vero controllo server-side: le regole Firestore non possono
+   * filtrare i risultati di una query (o tutta la query è permessa, o è negata), quindi con la query
+   * unica esistente non è possibile negare la lettura solo per alcuni documenti. Stesso compromesso
+   * già accettato per `password` — indipendente da essa: una partita può avere l'una, l'altra,
+   * entrambe o nessuna delle due. */
+  visibility: 'public' | 'friends';
+}
+
+export interface CreateGameOptions {
+  password?: string;
+  friendsOnly?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -54,7 +75,7 @@ export class GameService {
     );
   }
 
-  async createGame(profile: UserProfile): Promise<string> {
+  async createGame(profile: UserProfile, options?: CreateGameOptions): Promise<string> {
     const gameId = this.generateRoomCode();
     const data: GameDoc = {
       id: gameId,
@@ -73,27 +94,37 @@ export class GameService {
       guestReady: false,
       createdAt: Date.now(),
       state: null,
+      password: options?.password?.trim() || null,
+      visibility: options?.friendsOnly ? 'friends' : 'public',
     };
     await setDoc(doc(this.db, 'games', gameId), data);
     return gameId;
   }
 
-  async joinGame(gameId: string, profile: UserProfile): Promise<void> {
+  /** Transazionale (non un getDoc+updateDoc separati) — con la lobby pubblica più persone possono
+   * cliccare "entra" sulla stessa partita quasi in contemporanea: senza atomicità il secondo write
+   * silenziosamente sovrascriverebbe il primo (stesso bug già risolto altrove nel progetto per lo
+   * stesso motivo, vedi GameEngineService.mutate). Con la transazione, chi arriva secondo riceve
+   * pulito 'game-full-or-started' invece di soppiantare il primo guest. */
+  async joinGame(gameId: string, profile: UserProfile, password?: string): Promise<void> {
     const ref = doc(this.db, 'games', gameId);
-    const snapshot = await getDoc(ref);
 
-    if (!snapshot.exists()) throw new Error('game-not-found');
+    await runTransaction(this.db, async (tx) => {
+      const snapshot = await tx.get(ref);
+      if (!snapshot.exists()) throw new Error('game-not-found');
 
-    const data = snapshot.data() as GameDoc;
-    if (data.status !== 'waiting') throw new Error('game-full-or-started');
-    if (data.hostId === profile.uid) throw new Error('already-host');
+      const data = snapshot.data() as GameDoc;
+      if (data.status !== 'waiting') throw new Error('game-full-or-started');
+      if (data.hostId === profile.uid) throw new Error('already-host');
+      if (data.password && data.password !== password) throw new Error('wrong-password');
 
-    await updateDoc(ref, {
-      guestId: profile.uid,
-      guestName: profile.displayName,
-      guestPhoto: profile.photoURL,
-      guestFavoriteSpellIds: profile.favoriteSpellIds ?? [],
-      status: 'setup',
+      tx.update(ref, {
+        guestId: profile.uid,
+        guestName: profile.displayName,
+        guestPhoto: profile.photoURL,
+        guestFavoriteSpellIds: profile.favoriteSpellIds ?? [],
+        status: 'setup',
+      });
     });
   }
 
@@ -126,6 +157,8 @@ export class GameService {
       guestWand: defaultWand,
       guestReady: true,
       createdAt: Date.now(),
+      password: null,
+      visibility: 'public',
       // Esplosione elementale (2.4): come in tryStartGame, la mano iniziale o la Fonte Arcana
       // appena rivelata potrebbero già contenere sia Luce che Tenebra fin dal primo istante.
       state: resolveElementalExplosions(
@@ -156,6 +189,21 @@ export class GameService {
     );
     const snapshot = await getDocs(q);
     return snapshot.empty ? null : snapshot.docs[0].id;
+  }
+
+  /** Lobby pubblica (Qualità della vita): ogni partita 'waiting' è già leggibile da chiunque
+   * autenticato (vedi la regola su games/{gameId}, pensata originariamente solo per joinGame() sul
+   * singolo ID) — questa query sfrutta la stessa regola senza bisogno di modificarla. Nessun filtro
+   * hostId (a differenza di findMyWaitingGame sopra): qui servono le partite di TUTTI. */
+  async listOpenGames(): Promise<GameDoc[]> {
+    const q = query(
+      collection(this.db, 'games'),
+      where('status', '==', 'waiting'),
+      orderBy('createdAt', 'desc'),
+      limit(30),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => d.data() as GameDoc);
   }
 
   /** `onError`: le regole Firestore negano la lettura a chi non è host/guest della partita — senza un handler l'errore resterebbe silenzioso e `callback` non verrebbe più richiamato. */

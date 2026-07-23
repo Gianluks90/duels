@@ -47,6 +47,15 @@ Il **Congelamento** non ha un'icona propria: sulla carta usa l'arte di Ghiaccio 
 | <span class="rb-mana-digit rb-mana-digit--element">1</span> | valore in mana di un elemento |
 | <span class="rb-mana-digit rb-mana-digit--spell">3</span> | costo in mana di un incantesimo |
 
+## Preferiti e magie appuntate (Grimorio)
+
+| Icona | Significato |
+|---|---|
+| <span class="rb-icon-mask rb-icon-mask--gray" style="mask-image:url(/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Non preferita"></span> → <span class="rb-icon-mask rb-icon-mask--gold" style="mask-image:url(/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/star_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Preferita"></span> | stella nel Grimorio: segna un incantesimo come preferito (fino a 5, legati al tuo account) — visibili all'avversario in partita passando il mouse sul tuo nome, e viceversa |
+| <span class="rb-icon-mask rb-icon-mask--gray" style="mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Non appuntata"></span> → <span class="rb-icon-mask rb-icon-mask--crimson" style="mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Appuntata"></span> | segnalibro nel Grimorio, visibile solo mentre sei in partita: appunta un incantesimo per QUESTA partita (fino a 5) — sparisce quando la partita finisce, o subito se poi lo crei davvero |
+| <span class="rb-icon-mask rb-icon-mask--gray" style="mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Formula incompleta"></span> → <span class="rb-icon-mask rb-icon-mask--green" style="mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Formula pronta"></span> | segnalibro appena sopra il tuo pannello vita, uno per ogni magia appuntata: diventa verde quando hai già, tra mano/mazzo/scarti, tutti gli elementi della formula — al passaggio del mouse mostra il dettaglio elemento per elemento |
+| <span class="rb-icon-mask rb-icon-mask--crimson" style="mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);-webkit-mask-image:url(/icons/bookmark_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg);" role="img" aria-label="Elemento richiesto"></span> | compare sulle carte della Fonte Arcana e su quelle pescate in Raccolta quando quell'elemento serve a una formula appuntata |
+
 ## Barra degli strumenti
 
 | Icona | Significato |

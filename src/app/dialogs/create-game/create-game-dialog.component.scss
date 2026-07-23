@@ -1,0 +1,72 @@
+.create-game-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 92vw);
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+    padding: var(--sp-4) var(--sp-5);
+  }
+
+  &__label {
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: var(--sp-3);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  &__input {
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-gold);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+  }
+
+  &__hint {
+    font-size: 0.7rem;
+    margin: 0;
+  }
+
+  &__checkbox {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    margin-top: var(--sp-4);
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-5) var(--sp-4);
+  }
+}

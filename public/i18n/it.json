@@ -163,36 +163,110 @@
     "grimoire": "Grimorio",
     "rulebook": "Regolamento",
     "options": "Opzioni",
+    "friends": "Amici",
     "avatarAria": "Profilo",
     "menuAria": "Menu",
     "menu": {
       "profile": "Profilo",
       "signOut": "Esci"
     },
-    "newGame": {
-      "title": "Nuova Partita",
-      "copy": "Copia",
-      "copied": "Copiato!",
-      "shareHint": "Condividi il codice con l'avversario",
-      "waiting": "In attesa dell'avversario…",
-      "hint": "Genera un codice e condividilo",
-      "cancel": "Annulla",
-      "cancelling": "Annullamento…",
-      "create": "Crea Partita",
-      "creating": "Creazione…"
+    "friendLink": {
+      "sent": "Richiesta di amicizia inviata.",
+      "error": "Non è stato possibile inviare la richiesta di amicizia."
     },
-    "join": {
-      "title": "Unisciti",
-      "hint": "Inserisci il codice ricevuto",
-      "placeholder": "CODICE",
-      "connect": "Entra",
-      "connecting": "Connessione…",
-      "unknownError": "Errore sconosciuto.",
+    "newGame": {
+      "create": "Crea Partita"
+    },
+    "devNotes": {
+      "title": "Note di sviluppo",
+      "placeholder": "Presto qui trovi gli ultimi aggiornamenti sullo sviluppo del gioco."
+    },
+    "duels": {
+      "title": "Duelli",
+      "yourGame": "La tua partita",
+      "waiting": "In attesa di uno sfidante…",
+      "cancelAria": "Annulla partita",
+      "listTitle": "In attesa di sfidante",
+      "refresh": "Aggiorna",
+      "empty": "Nessuna partita in attesa al momento.",
+      "friendsSection": "Amici",
+      "publicSection": "Pubbliche",
+      "locked": "Password"
+    }
+  },
+
+  "createGame": {
+    "dialogAria": "Crea partita",
+    "title": "Crea partita",
+    "closeAria": "Chiudi",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Opzionale",
+    "passwordHint": "Chi entra dovrà inserirla — protezione onesta, non un vero segreto.",
+    "friendsOnlyLabel": "Visibile solo agli amici",
+    "friendsOnlyHint": "Non comparirà nell'elenco pubblico di chi non è tuo amico.",
+    "cancel": "Annulla",
+    "create": "Crea",
+    "creating": "Creazione…"
+  },
+
+  "joinGame": {
+    "dialogAria": "Unisciti alla partita",
+    "title": "Unisciti alla partita",
+    "closeAria": "Chiudi",
+    "prompt": "Vuoi unirti alla partita di {name}?",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Richiesta per entrare",
+    "cancel": "Annulla",
+    "join": "Entra",
+    "joining": "Ingresso…",
+    "unknownError": "Errore sconosciuto.",
+    "errors": {
+      "game-not-found": "Partita non trovata.",
+      "game-full-or-started": "La partita è già al completo o iniziata.",
+      "already-host": "Sei già l'host di questa partita.",
+      "wrong-password": "Password errata."
+    }
+  },
+
+  "friends": {
+    "dialogAria": "Amici",
+    "title": "Amici",
+    "closeAria": "Chiudi",
+    "code": {
+      "title": "Il tuo link amico",
+      "hint": "Condividilo — chi lo apre da loggato ti manda subito una richiesta di amicizia.",
+      "copyLink": "Copia link",
+      "copied": "Copiato!"
+    },
+    "add": {
+      "title": "Aggiungi amico",
+      "placeholder": "Incolla un codice o un link amico",
+      "send": "Invia richiesta",
+      "sending": "Invio…",
+      "success": "Richiesta inviata.",
+      "unknownError": "Non è stato possibile inviare la richiesta.",
       "errors": {
-        "game-not-found": "Partita non trovata.",
-        "game-full-or-started": "La partita è già al completo o iniziata.",
-        "already-host": "Sei già l'host di questa partita."
+        "cannot-friend-self": "Non puoi aggiungere te stesso."
       }
+    },
+    "incoming": {
+      "title": "Richieste ricevute",
+      "accept": "Accetta",
+      "decline": "Rifiuta"
+    },
+    "outgoing": {
+      "title": "Richieste inviate",
+      "pending": "In attesa",
+      "declined": "Rifiutata",
+      "resend": "Rimanda",
+      "cancel": "Annulla"
+    },
+    "list": {
+      "title": "I tuoi amici",
+      "empty": "Nessun amico ancora — condividi il tuo codice per iniziare.",
+      "favorites": "Magie preferite",
+      "noFavorites": "Nessuna magia preferita.",
+      "remove": "Rimuovi"
     }
   },
 

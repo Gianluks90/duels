@@ -7,12 +7,12 @@ import {
   DestroyRef,
   OnInit,
 } from '@angular/core';
-import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
 import { AuthService } from '../../services/auth.service';
-import { GameService } from '../../services/game.service';
+import { GameService, type GameDoc } from '../../services/game.service';
+import { FriendsService } from '../../services/friends.service';
 import { TranslationService } from '../../services/translation.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -20,6 +20,12 @@ import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.
 import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
+import { FriendsDialogComponent } from '../../dialogs/friends/friends-dialog.component';
+import { CreateGameDialogComponent } from '../../dialogs/create-game/create-game-dialog.component';
+import {
+  JoinGameDialogComponent,
+  type JoinGameDialogData,
+} from '../../dialogs/join-game/join-game-dialog.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { CardComponent } from '../../components/card/card.component';
 import type { Element } from '../../models/element.model';
@@ -87,20 +93,16 @@ function randomPointAwayFrom(other: BackgroundPoint): BackgroundPoint {
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [
-    ReactiveFormsModule,
-    ActionMenuComponent,
-    IconButtonComponent,
-    CardComponent,
-    TranslatePipe,
-  ],
+  imports: [ActionMenuComponent, IconButtonComponent, CardComponent, TranslatePipe],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss', './home-compact.component.scss'],
 })
 export class HomeComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly game = inject(GameService);
+  private readonly friendsService = inject(FriendsService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);
@@ -111,6 +113,7 @@ export class HomeComponent implements OnInit {
   protected readonly isDebugUser = this.auth.isDebugUser;
 
   protected readonly menuIcon = '/icons/menu_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly cancelIcon = '/icons/delete_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg';
   /** 2 carte per ciascuno dei 10 elementi (20 totali) — con solo 10 restavano troppi vuoti visibili
    * sullo sfondo. La seconda copia di ogni elemento ripesca la posizione finché non è a
    * MIN_SAME_ELEMENT_DISTANCE dalla prima (randomPointAwayFrom) — solo questo vincolo, nessuno tra
@@ -155,32 +158,42 @@ export class HomeComponent implements OnInit {
     }
     items.push({ label: this.i18n.t('home.grimoire'), action: () => this.openGrimoire() });
     items.push({ label: this.i18n.t('home.rulebook'), action: () => this.openRulebook() });
+    items.push({ label: this.i18n.t('home.friends'), action: () => this.openFriends() });
     items.push({ label: this.i18n.t('home.options'), action: () => this.openOptions() });
     return items;
   });
 
+  /** Id della MIA partita in attesa, se ne ho una — determina se il box mostra la riga "la tua
+   * partita" + Annulla, oppure il bottone "Crea partita" (home.component.html). */
   protected readonly roomCode = signal<string | null>(null);
-  protected readonly creating = signal(false);
   protected readonly cancelling = signal(false);
-  protected readonly joining = signal(false);
-  protected readonly joinError = signal<string | null>(null);
-  protected readonly copied = signal(false);
   protected readonly debugLoading = signal(false);
 
-  protected readonly codeControl = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.minLength(6), Validators.maxLength(6)],
-  });
+  // ── Duelli in attesa di sfidante (Qualità della vita) ──────────────────────────
+  /** Nessun onSnapshot: solo un fetch on-demand (al caricamento + bottone refresh manuale), coerente
+   * con la scelta di non avere stato "online" nell'app. */
+  protected readonly publicGames = signal<readonly GameDoc[]>([]);
+  protected readonly publicGamesLoading = signal(false);
+  /** uid degli amici (accettati) — per segnalare/separare le partite in cima alla lista, caricato una
+   * volta insieme all'elenco partite. */
+  protected readonly friendUids = signal<ReadonlySet<string>>(new Set());
+  /** Esito dell'invio automatico della richiesta di amicizia via link (?friend=, vedi
+   * handleFriendLink) — null finché non c'è nulla da segnalare. */
+  protected readonly friendLinkResult = signal<'sent' | 'error' | null>(null);
+
+  /** Sezione "Amici" — vuota il più delle volte, quindi la UI mostra le due sezioni con sottotitolo +
+   * riga divisoria solo quando c'è almeno una partita qui, altrimenti resta una lista piatta unica
+   * (solo otherGames). */
+  protected readonly friendGames = computed(() =>
+    this.publicGames().filter((g) => this.friendUids().has(g.hostId)),
+  );
+  protected readonly otherGames = computed(() =>
+    this.publicGames().filter((g) => !this.friendUids().has(g.hostId)),
+  );
 
   private waitingUnsub: (() => void) | null = null;
 
   ngOnInit(): void {
-    this.codeControl.valueChanges.subscribe((v) => {
-      this.codeControl.setValue(v.toUpperCase(), { emitEvent: false });
-    });
-
-    const sub = this.codeControl.valueChanges.subscribe(() => this.joinError.set(null));
-    this.destroyRef.onDestroy(() => sub.unsubscribe());
     this.destroyRef.onDestroy(() => this.stopWaitingListener());
 
     const uid = this.auth.user()?.uid;
@@ -192,6 +205,26 @@ export class HomeComponent implements OnInit {
         }
       });
     }
+
+    void this.loadPublicGames();
+    void this.handleFriendLink();
+  }
+
+  /** Link amico (?friend=<uid>, vedi FriendsDialogComponent.myLink) — se presente, invia subito la
+   * richiesta e ripulisce l'URL, così un refresh della pagina non la rimanda una seconda volta. */
+  private async handleFriendLink(): Promise<void> {
+    const targetUid = this.route.snapshot.queryParamMap.get('friend');
+    const profile = this.auth.profile();
+    if (!targetUid || !profile || targetUid === profile.uid) return;
+
+    await this.router.navigate([], { queryParams: {}, replaceUrl: true });
+    try {
+      await this.friendsService.sendRequest(profile, targetUid);
+      this.friendLinkResult.set('sent');
+    } catch {
+      this.friendLinkResult.set('error');
+    }
+    setTimeout(() => this.friendLinkResult.set(null), 4000);
   }
 
   protected openGrimoire(): void {
@@ -230,23 +263,79 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  protected async createGame(): Promise<void> {
-    const profile = this.auth.profile();
-    if (!profile) return;
+  protected openFriends(): void {
+    const ref = this.dialog.open(FriendsDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+    // La lista amici appena chiusa la dialog potrebbe essere cambiata (nuove accettazioni) — riflette
+    // subito l'ordinamento "amici in cima" nella lobby pubblica senza dover ricaricare la pagina.
+    ref.closed.subscribe(() => void this.loadPublicGames());
+  }
 
-    this.creating.set(true);
+  /** Duelli in attesa di sfidante (Qualità della vita): elenco partite 'waiting' + set di amici.
+   * Rispetta subito `visibility` qui (non solo per l'ordinamento): una partita 'friends' di cui non
+   * sono amico viene tolta dall'elenco stesso, così friendGames/otherGames non devono più saperlo —
+   * stesso compromesso di password (vedi GameDoc.visibility), rispettato lato client. Nessun
+   * listener — solo un fetch on-demand (al caricamento + refresh manuale). */
+  protected async loadPublicGames(): Promise<void> {
+    const uid = this.auth.user()?.uid;
+    if (!uid) return;
+
+    this.publicGamesLoading.set(true);
     try {
-      const gameId = await this.game.createGame(profile);
+      const [games, friends] = await Promise.all([
+        this.game.listOpenGames(),
+        this.friendsService.listFriends(uid),
+      ]);
+      const friendSet = new Set(friends.map((r) => this.friendsService.otherUid(r, uid)));
+      this.publicGames.set(
+        games.filter(
+          (g) => g.hostId !== uid && (g.visibility !== 'friends' || friendSet.has(g.hostId)),
+        ),
+      );
+      this.friendUids.set(friendSet);
+    } finally {
+      this.publicGamesLoading.set(false);
+    }
+  }
+
+  protected openCreateGameDialog(): void {
+    const ref = this.dialog.open<string | null>(CreateGameDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+    ref.closed.subscribe((gameId) => {
+      if (!gameId) return;
       this.roomCode.set(gameId);
       this.startWaitingListener(gameId);
-    } catch {
-      this.creating.set(false);
-    }
+      void this.loadPublicGames();
+    });
+  }
+
+  protected openJoinGameDialog(gameDoc: GameDoc): void {
+    const ref = this.dialog.open<boolean>(JoinGameDialogComponent, {
+      data: { gameDoc } satisfies JoinGameDialogData,
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+    ref.closed.subscribe((joined) => {
+      if (joined) this.router.navigate(['/setup', gameDoc.id]);
+    });
   }
 
   protected async cancelGame(): Promise<void> {
     const code = this.roomCode();
-    if (!code) return;
+    // app-icon-button non ha uno stato disabled proprio (icon-button.component.ts) — questo guard
+    // sostituisce il [disabled]="cancelling()" che avevamo col vecchio bottone testuale, evitando un
+    // doppio cancelGame() se si clicca due volte mentre la prima chiamata è ancora in corso.
+    if (!code || this.cancelling()) return;
 
     this.cancelling.set(true);
     this.stopWaitingListener();
@@ -254,8 +343,8 @@ export class HomeComponent implements OnInit {
       await this.game.cancelGame(code);
     } finally {
       this.roomCode.set(null);
-      this.creating.set(false);
       this.cancelling.set(false);
+      void this.loadPublicGames();
     }
   }
 
@@ -271,38 +360,6 @@ export class HomeComponent implements OnInit {
   private stopWaitingListener(): void {
     this.waitingUnsub?.();
     this.waitingUnsub = null;
-  }
-
-  protected async joinGame(): Promise<void> {
-    const profile = this.auth.profile();
-    const code = this.codeControl.value.trim();
-    if (!profile || code.length !== 6) return;
-
-    this.joining.set(true);
-    this.joinError.set(null);
-    try {
-      await this.game.joinGame(code, profile);
-      this.router.navigate(['/setup', code]);
-    } catch (err) {
-      this.joinError.set(this.joinErrorMessage(err));
-      this.joining.set(false);
-    }
-  }
-
-  /** GameService throws stable error codes (not messages) — translated here, at the presentation layer. */
-  private joinErrorMessage(err: unknown): string {
-    const code = err instanceof Error ? err.message : '';
-    const key = `home.join.errors.${code}`;
-    const translated = this.i18n.t(key);
-    return translated === key ? this.i18n.t('home.join.unknownError') : translated;
-  }
-
-  protected async copyCode(): Promise<void> {
-    const code = this.roomCode();
-    if (!code) return;
-    await navigator.clipboard.writeText(code);
-    this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 2000);
   }
 
   protected async startDebugGame(): Promise<void> {

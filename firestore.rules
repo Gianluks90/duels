@@ -3,14 +3,62 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Amicizie (Qualità della vita): unica fonte di verità per "siamo amici" è l'esistenza di un
+    // documento friendRequests/{a}_{b} con status=='accepted' — MAI un campo scrivibile sul profilo
+    // stesso (es. un array friendIds), altrimenti chiunque potrebbe scriversi da solo l'accesso al
+    // profilo di un altro senza che quello abbia mai accettato nulla. Le due direzioni (a_b e b_a)
+    // vanno controllate entrambe: chi chiede la lettura potrebbe essere stato fromUid O toUid della
+    // richiesta originale.
+    function isAcceptedFriendRequest(a, b) {
+      return exists(/databases/$(database)/documents/friendRequests/$(a + '_' + b)) &&
+        get(/databases/$(database)/documents/friendRequests/$(a + '_' + b)).data.status == 'accepted';
+    }
+    function isFriend(otherUid) {
+      return isAcceptedFriendRequest(request.auth.uid, otherUid) ||
+        isAcceptedFriendRequest(otherUid, request.auth.uid);
+    }
+
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId || isFriend(userId));
       // Preferiti (Qualità della vita): il cap a 5 è già applicato client-side in
       // AuthService.toggleFavoriteSpell — questa guardia è solo difesa in profondità contro un client
       // manomesso che scrivesse direttamente su Firestore.
       allow write: if request.auth != null && request.auth.uid == userId &&
         (!('favoriteSpellIds' in request.resource.data) ||
          request.resource.data.favoriteSpellIds.size() <= 5);
+    }
+
+    // Amicizie: richiesta/accettazione. requestId deterministico "{fromUid}_{toUid}" — vedi
+    // FriendsService.sendRequest per il perché (dedup naturale, doppio-check facile sull'ID diretto).
+    match /friendRequests/{requestId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.fromUid || request.auth.uid == resource.data.toUid);
+
+      allow create: if request.auth != null &&
+        requestId == request.resource.data.fromUid + '_' + request.resource.data.toUid &&
+        request.resource.data.fromUid == request.auth.uid &&
+        request.resource.data.toUid != request.auth.uid &&
+        request.resource.data.status == 'pending';
+
+      // Due transizioni permesse: il destinatario accetta/rifiuta una richiesta pending; il mittente
+      // può rimandarla dopo un rifiuto (declined -> pending). Un set() su un doc ESISTENTE è "update"
+      // per le regole, non "create" — senza questa clausola un secondo tentativo dopo un rifiuto
+      // sarebbe bloccato. fromUid/toUid restano sempre immutabili.
+      allow update: if request.auth != null &&
+        request.resource.data.fromUid == resource.data.fromUid &&
+        request.resource.data.toUid == resource.data.toUid &&
+        (
+          (request.auth.uid == resource.data.toUid && resource.data.status == 'pending' &&
+           request.resource.data.status in ['accepted', 'declined']) ||
+          (request.auth.uid == resource.data.fromUid && resource.data.status == 'declined' &&
+           request.resource.data.status == 'pending')
+        );
+
+      // Cancellare il documento disamicizia entrambi insieme (un solo doc, non una entry per parte) —
+      // sia mittente che destinatario possono farlo, sia per annullare una richiesta pending sia per
+      // rimuovere un'amicizia accepted.
+      allow delete: if request.auth != null &&
+        (request.auth.uid == resource.data.fromUid || request.auth.uid == resource.data.toUid);
     }
 
     match /games/{gameId} {

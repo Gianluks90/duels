@@ -65,7 +65,9 @@
     font-size: 0.75rem;
     text-align: left;
     cursor: pointer;
-    transition: background var(--transition), color var(--transition);
+    transition:
+      background var(--transition),
+      color var(--transition);
     letter-spacing: 0.04em;
 
     &:hover {
@@ -101,14 +103,23 @@
     background: var(--text-muted);
     animation: blink 1.2s ease-in-out infinite;
 
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
   }
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 0.2; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 // Markdown prose — ::ng-deep necessario perché [innerHTML] bypassa l'encapsulation
@@ -122,7 +133,14 @@
     h1 {
       font-family: var(--font-display);
       font-size: 1.8rem;
-      background: linear-gradient(160deg, #f5d980 0%, #d4a847 25%, #f0c84a 55%, #a07020 80%, #d4a847 100%);
+      background: linear-gradient(
+        160deg,
+        #f5d980 0%,
+        #d4a847 25%,
+        #f0c84a 55%,
+        #a07020 80%,
+        #d4a847 100%
+      );
       background-clip: text;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -175,7 +193,8 @@
       font-style: italic;
     }
 
-    ul, ol {
+    ul,
+    ol {
       padding-left: var(--sp-5);
       margin-bottom: var(--sp-4);
 
@@ -268,6 +287,12 @@
 
       &--gray {
         color: #9aa0a6;
+      }
+
+      // Magie appuntate (icon-glossary.md, "Preferiti e magie appuntate") — crimson esatto (non il
+      // rosso --red sopra, leggermente diverso), stesso colore usato in gioco per il bookmark attivo.
+      &--crimson {
+        color: crimson;
       }
     }
 

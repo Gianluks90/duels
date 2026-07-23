@@ -160,36 +160,110 @@
     "grimoire": "Grimoire",
     "rulebook": "Rulebook",
     "options": "Options",
+    "friends": "Friends",
     "avatarAria": "Profile",
     "menuAria": "Menu",
     "menu": {
       "profile": "Profile",
       "signOut": "Sign out"
     },
-    "newGame": {
-      "title": "New Game",
-      "copy": "Copy",
-      "copied": "Copied!",
-      "shareHint": "Share the code with your opponent",
-      "waiting": "Waiting for opponent…",
-      "hint": "Generate a code and share it",
-      "cancel": "Cancel",
-      "cancelling": "Cancelling…",
-      "create": "Create Game",
-      "creating": "Creating…"
+    "friendLink": {
+      "sent": "Friend request sent.",
+      "error": "Could not send the friend request."
     },
-    "join": {
-      "title": "Join",
-      "hint": "Enter the code you received",
-      "placeholder": "CODE",
-      "connect": "Join",
-      "connecting": "Connecting…",
-      "unknownError": "Unknown error.",
+    "newGame": {
+      "create": "Create Game"
+    },
+    "devNotes": {
+      "title": "Dev notes",
+      "placeholder": "Soon you'll find the latest development updates here."
+    },
+    "duels": {
+      "title": "Duels",
+      "yourGame": "Your game",
+      "waiting": "Waiting for a challenger…",
+      "cancelAria": "Cancel game",
+      "listTitle": "Waiting for a challenger",
+      "refresh": "Refresh",
+      "empty": "No games waiting right now.",
+      "friendsSection": "Friends",
+      "publicSection": "Public",
+      "locked": "Password"
+    }
+  },
+
+  "createGame": {
+    "dialogAria": "Create game",
+    "title": "Create game",
+    "closeAria": "Close",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Optional",
+    "passwordHint": "Whoever joins will need to enter it — an honest deterrent, not a real secret.",
+    "friendsOnlyLabel": "Visible to friends only",
+    "friendsOnlyHint": "Won't show up in the public list for anyone who isn't your friend.",
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating…"
+  },
+
+  "joinGame": {
+    "dialogAria": "Join game",
+    "title": "Join game",
+    "closeAria": "Close",
+    "prompt": "Join {name}'s game?",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Required to join",
+    "cancel": "Cancel",
+    "join": "Join",
+    "joining": "Joining…",
+    "unknownError": "Unknown error.",
+    "errors": {
+      "game-not-found": "Game not found.",
+      "game-full-or-started": "The game is already full or has started.",
+      "already-host": "You're already the host of this game.",
+      "wrong-password": "Wrong password."
+    }
+  },
+
+  "friends": {
+    "dialogAria": "Friends",
+    "title": "Friends",
+    "closeAria": "Close",
+    "code": {
+      "title": "Your friend link",
+      "hint": "Share it — whoever opens it while signed in immediately sends you a friend request.",
+      "copyLink": "Copy link",
+      "copied": "Copied!"
+    },
+    "add": {
+      "title": "Add a friend",
+      "placeholder": "Paste a friend code or link",
+      "send": "Send request",
+      "sending": "Sending…",
+      "success": "Request sent.",
+      "unknownError": "Could not send the request.",
       "errors": {
-        "game-not-found": "Game not found.",
-        "game-full-or-started": "The game is already full or has started.",
-        "already-host": "You're already the host of this game."
+        "cannot-friend-self": "You can't add yourself."
       }
+    },
+    "incoming": {
+      "title": "Received requests",
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "outgoing": {
+      "title": "Sent requests",
+      "pending": "Pending",
+      "declined": "Declined",
+      "resend": "Resend",
+      "cancel": "Cancel"
+    },
+    "list": {
+      "title": "Your friends",
+      "empty": "No friends yet — share your code to get started.",
+      "favorites": "Favorite spells",
+      "noFavorites": "No favorite spells.",
+      "remove": "Remove"
     }
   },
 

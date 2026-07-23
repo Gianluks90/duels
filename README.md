@@ -9,10 +9,11 @@ Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [docume
 - [x] Rivedere opzioni profilo utente — la dialog profilo è ferma alla v1 (nome, foto, dorso, elimina account); da rivedere/espandere.
 - [x] Sfondo app e duello personalizzabili — permettere all'utente di scegliere/personalizzare lo sfondo dell'applicazione e quello della board di duello.
 - [x] Conteggio turno anzichè "Turno di: nome-giocatore";
-- [ ] Magie preferite — un modo per il giocatore di segnare alcuni incantesimi come preferiti.
-- [ ] Magie pinnabili con tooltip in duel UI — poter "appuntare" un incantesimo durante il duello con un tooltip a schermo, per riferimento rapido senza dover riaprire il Grimorio. La stessa icona bookmark compare sugli elementi necessari a queste formule.
+- [x] Magie preferite — un modo per il giocatore di segnare alcuni incantesimi come preferiti.
+- [x] Magie pinnabili con tooltip in duel UI — poter "appuntare" un incantesimo durante il duello con un tooltip a schermo, per riferimento rapido senza dover riaprire il Grimorio. La stessa icona bookmark compare sugli elementi necessari a queste formule.
 - [x] Regolamento — manca una pagina di glossario e una di glossario icone. Inoltre va controllato che tutto sia in linea con quanto sviluppato. Potrebbe essere anche bello includere le immagini di qualche carta per essere più esplicativi.
-- [ ] Amicizie - implementare aggiunta/rimozione amici.
+- [x] Amicizie - implementare aggiunta/rimozione amici.
+- [ ] Mana, seleziona tutto quando lanci una magia.
 
 ## Future espansioni (idee da valutare)
 

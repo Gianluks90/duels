@@ -1,0 +1,51 @@
+<div
+  class="create-game-dialog"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'createGame.dialogAria' | translate"
+>
+  <header class="create-game-dialog__header">
+    <h2 class="t-heading create-game-dialog__title">{{ 'createGame.title' | translate }}</h2>
+    <app-icon-button
+      [icon]="closeIcon"
+      [ariaLabel]="'createGame.closeAria' | translate"
+      [size]="32"
+      (iconClick)="close()"
+    />
+  </header>
+
+  <div class="create-game-dialog__body">
+    <label class="create-game-dialog__label" for="create-game-password">
+      {{ 'createGame.passwordLabel' | translate }}
+    </label>
+    <input
+      id="create-game-password"
+      class="create-game-dialog__input"
+      type="text"
+      [value]="password()"
+      (input)="password.set($any($event.target).value)"
+      [placeholder]="'createGame.passwordPlaceholder' | translate"
+      autocomplete="off"
+    />
+    <p class="t-muted create-game-dialog__hint">{{ 'createGame.passwordHint' | translate }}</p>
+
+    <label class="create-game-dialog__checkbox">
+      <input
+        type="checkbox"
+        [checked]="friendsOnly()"
+        (change)="friendsOnly.set($any($event.target).checked)"
+      />
+      {{ 'createGame.friendsOnlyLabel' | translate }}
+    </label>
+    <p class="t-muted create-game-dialog__hint">{{ 'createGame.friendsOnlyHint' | translate }}</p>
+  </div>
+
+  <div class="create-game-dialog__footer">
+    <button class="btn btn--secondary" [disabled]="creating()" (click)="close()">
+      {{ 'createGame.cancel' | translate }}
+    </button>
+    <button class="btn btn--primary" [disabled]="creating()" (click)="create()">
+      {{ (creating() ? 'createGame.creating' : 'createGame.create') | translate }}
+    </button>
+  </div>
+</div>

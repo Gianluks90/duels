@@ -37,6 +37,9 @@
         <button class="btn btn--secondary" (click)="openRulebook()">
           {{ 'home.rulebook' | translate }}
         </button>
+        <button class="btn btn--secondary" (click)="openFriends()">
+          {{ 'home.friends' | translate }}
+        </button>
         <button class="btn btn--secondary" (click)="openOptions()">
           {{ 'home.options' | translate }}
         </button>
@@ -59,70 +62,110 @@
   </header>
 
   <main class="home__main">
+    @if (friendLinkResult(); as result) {
+      <p
+        class="home__friend-link-toast"
+        [class.home__friend-link-toast--error]="result === 'error'"
+      >
+        {{ (result === 'sent' ? 'home.friendLink.sent' : 'home.friendLink.error') | translate }}
+      </p>
+    }
     <div class="home__panels">
-      <!-- Crea partita -->
+      <!-- Placeholder: qui in futuro note di sviluppo/aggiornamenti, non ancora costruito — la
+           colonna resta per non sbilanciare il layout mentre decidiamo i contenuti. -->
       <div class="panel panel--raised home__panel">
-        <h2 class="t-heading home__panel-title">{{ 'home.newGame.title' | translate }}</h2>
-
+        <h2 class="t-heading home__panel-title">{{ 'home.devNotes.title' | translate }}</h2>
         <div class="home__panel-body">
-          @if (roomCode(); as code) {
-            <div class="home__code">
-              <span class="home__code-value t-heading">{{ code }}</span>
-              <button class="btn btn--secondary home__copy-btn" (click)="copyCode()">
-                {{ (copied() ? 'home.newGame.copied' : 'home.newGame.copy') | translate }}
-              </button>
-            </div>
-            <p class="t-muted home__hint">{{ 'home.newGame.shareHint' | translate }}</p>
-            <div class="home__waiting">
-              <span class="home__dot"></span>
-              <span class="t-muted">{{ 'home.newGame.waiting' | translate }}</span>
-            </div>
-          } @else {
-            <p class="t-muted home__hint">{{ 'home.newGame.hint' | translate }}</p>
-          }
-        </div>
-
-        <div class="home__panel-actions">
-          @if (roomCode()) {
-            <button class="btn btn--secondary" [disabled]="cancelling()" (click)="cancelGame()">
-              {{ (cancelling() ? 'home.newGame.cancelling' : 'home.newGame.cancel') | translate }}
-            </button>
-          } @else {
-            <button class="btn btn--primary" [disabled]="creating()" (click)="createGame()">
-              {{ (creating() ? 'home.newGame.creating' : 'home.newGame.create') | translate }}
-            </button>
-          }
+          <p class="t-muted home__hint">{{ 'home.devNotes.placeholder' | translate }}</p>
         </div>
       </div>
 
-      <!-- Unisciti -->
+      <!-- Duelli: pannello unico che sostituisce i vecchi "Crea partita"/"Unisciti" — click su una
+           riga apre JoinGameDialogComponent, niente più codice a 6 caratteri. -->
       <div class="panel panel--raised home__panel">
-        <h2 class="t-heading home__panel-title">{{ 'home.join.title' | translate }}</h2>
+        <h2 class="t-heading home__panel-title">{{ 'home.duels.title' | translate }}</h2>
 
         <div class="home__panel-body">
-          <p class="t-muted home__hint">{{ 'home.join.hint' | translate }}</p>
-          <input
-            class="home__input"
-            [formControl]="codeControl"
-            [placeholder]="'home.join.placeholder' | translate"
-            maxlength="6"
-            autocomplete="off"
-            (keydown.enter)="joinGame()"
-          />
-          @if (joinError()) {
-            <p class="home__error">{{ joinError() }}</p>
+          @if (roomCode()) {
+            <div class="home__own-game">
+              <div class="home__own-game-info">
+                <span class="t-heading">{{ 'home.duels.yourGame' | translate }}</span>
+                <div class="home__waiting">
+                  <span class="home__dot"></span>
+                  <span class="t-muted">{{ 'home.duels.waiting' | translate }}</span>
+                </div>
+              </div>
+              <app-icon-button
+                [icon]="cancelIcon"
+                [ariaLabel]="'home.duels.cancelAria' | translate"
+                [size]="32"
+                (iconClick)="cancelGame()"
+              />
+            </div>
+          }
+
+          <div class="home__duels-header">
+            <span class="home__duels-title">{{ 'home.duels.listTitle' | translate }}</span>
+            <button
+              type="button"
+              class="home__duels-refresh"
+              [disabled]="publicGamesLoading()"
+              (click)="loadPublicGames()"
+            >
+              {{ 'home.duels.refresh' | translate }}
+            </button>
+          </div>
+
+          @if (friendGames().length === 0 && otherGames().length === 0) {
+            <p class="t-muted home__duels-empty">{{ 'home.duels.empty' | translate }}</p>
+          } @else {
+            @if (friendGames().length > 0) {
+              <p class="home__duels-subtitle">{{ 'home.duels.friendsSection' | translate }}</p>
+              <ul class="home__duels-list">
+                @for (openGame of friendGames(); track openGame.id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="home__duel-row"
+                      (click)="openJoinGameDialog(openGame)"
+                    >
+                      <span class="home__duel-host">{{ openGame.hostName }}</span>
+                      @if (openGame.password) {
+                        <span class="home__duel-locked">{{ 'home.duels.locked' | translate }}</span>
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+              <div class="home__duels-divider" aria-hidden="true"></div>
+              <p class="home__duels-subtitle">{{ 'home.duels.publicSection' | translate }}</p>
+            }
+            <ul class="home__duels-list">
+              @for (openGame of otherGames(); track openGame.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="home__duel-row"
+                    (click)="openJoinGameDialog(openGame)"
+                  >
+                    <span class="home__duel-host">{{ openGame.hostName }}</span>
+                    @if (openGame.password) {
+                      <span class="home__duel-locked">{{ 'home.duels.locked' | translate }}</span>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
           }
         </div>
 
-        <div class="home__panel-actions">
-          <button
-            class="btn btn--primary"
-            [disabled]="joining() || codeControl.value.length < 6"
-            (click)="joinGame()"
-          >
-            {{ (joining() ? 'home.join.connecting' : 'home.join.connect') | translate }}
-          </button>
-        </div>
+        @if (!roomCode()) {
+          <div class="home__panel-actions">
+            <button class="btn btn--primary" (click)="openCreateGameDialog()">
+              {{ 'home.newGame.create' | translate }}
+            </button>
+          </div>
+        }
       </div>
     </div>
   </main>

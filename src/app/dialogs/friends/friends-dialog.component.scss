@@ -1,0 +1,231 @@
+.friends-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 92vw);
+  max-height: 86vh;
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-gold);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 0.85rem;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    padding: var(--sp-4);
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: 2px;
+    }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+    border: 1px solid var(--border-subtle);
+  }
+
+  &__section-title {
+    font-size: 0.7rem;
+    color: var(--accent-hover);
+  }
+
+  &__hint {
+    font-size: 0.78rem;
+  }
+
+  // ── Codice/link amico ────────────────────────────────────────────────────────
+  &__code-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+
+  // Un link intero (?friend=<uid>), non più il solo uid grezzo — va a capo invece di scorrere in
+  // orizzontale, più leggibile per una stringa così lunga.
+  &__code-value {
+    flex: 1;
+    min-width: 0;
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+  }
+
+  // ── Aggiungi amico ───────────────────────────────────────────────────────────
+  &__add-row {
+    display: flex;
+    gap: var(--sp-3);
+  }
+
+  &__input {
+    flex: 1;
+    min-width: 0;
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-gold);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+  }
+
+  &__error {
+    font-size: 0.75rem;
+    color: var(--accent-hover);
+  }
+
+  &__success {
+    font-size: 0.75rem;
+    color: var(--text-heading);
+  }
+
+  // ── Liste (richieste / amici) ────────────────────────────────────────────────
+  &__empty {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
+  &__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+
+    // Gli amici (a differenza delle richieste) possono espandersi in dettaglio sotto — colonna
+    // invece della sola riga orizzontale delle richieste.
+    &--friend {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+
+  &__row-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+  }
+
+  &__row-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-width: 0;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+
+    &--button {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+  }
+
+  &__row-actions {
+    display: flex;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+  }
+
+  &__avatar {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-gold);
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // Stesso linguaggio del tag "Creabile" nel Grimorio (grimoire-dialog.component.scss) — pillola di
+  // testo colorata invece di un'icona, per non dover aggiungere nuovi asset SVG solo per questo.
+  &__status-tag {
+    flex-shrink: 0;
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    padding: 1px 5px;
+
+    &--declined {
+      color: #d02f2f;
+      background: rgba(208, 47, 47, 0.12);
+      border-color: rgba(208, 47, 47, 0.4);
+    }
+  }
+
+  &__detail {
+    padding-top: var(--sp-2);
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.8rem;
+    color: var(--text-primary);
+  }
+
+  &__detail-label {
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+}

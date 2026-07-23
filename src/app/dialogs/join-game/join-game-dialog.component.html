@@ -1,0 +1,51 @@
+<div
+  class="join-game-dialog"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'joinGame.dialogAria' | translate"
+>
+  <header class="join-game-dialog__header">
+    <h2 class="t-heading join-game-dialog__title">{{ 'joinGame.title' | translate }}</h2>
+    <app-icon-button
+      [icon]="closeIcon"
+      [ariaLabel]="'joinGame.closeAria' | translate"
+      [size]="32"
+      (iconClick)="close()"
+    />
+  </header>
+
+  <div class="join-game-dialog__body">
+    <p class="join-game-dialog__prompt">
+      {{ 'joinGame.prompt' | translate: { name: gameDoc.hostName } }}
+    </p>
+
+    @if (gameDoc.password) {
+      <label class="join-game-dialog__label" for="join-game-password">
+        {{ 'joinGame.passwordLabel' | translate }}
+      </label>
+      <input
+        id="join-game-password"
+        class="join-game-dialog__input"
+        type="password"
+        [value]="password()"
+        (input)="password.set($any($event.target).value)"
+        [placeholder]="'joinGame.passwordPlaceholder' | translate"
+        autocomplete="off"
+        (keydown.enter)="join()"
+      />
+    }
+
+    @if (error()) {
+      <p class="join-game-dialog__error">{{ error() }}</p>
+    }
+  </div>
+
+  <div class="join-game-dialog__footer">
+    <button class="btn btn--secondary" [disabled]="joining()" (click)="close()">
+      {{ 'joinGame.cancel' | translate }}
+    </button>
+    <button class="btn btn--primary" [disabled]="joining()" (click)="join()">
+      {{ (joining() ? 'joinGame.joining' : 'joinGame.join') | translate }}
+    </button>
+  </div>
+</div>
