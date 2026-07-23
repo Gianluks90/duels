@@ -6,7 +6,7 @@ Un rimando rapido ai termini del regolamento, in ordine alfabetico. Per la spieg
 
 **Attesa** — la fase in cui aspetti che il turno dell'avversario termini.
 
-**Avvelenamento** — l'effetto applicato da Veleno: in Preparazione infligge danni pari al livello raggiunto, poi il livello si riduce di 1 (e di un ulteriore livello ogni volta che il tuo mazzo si rimescola dai propri scarti).
+**Avvelenamento** — l'effetto applicato da Veleno: in Preparazione infligge danni pari al livello raggiunto, poi il livello si riduce di 1.
 
 **Azione** — la fase in cui puoi combinare elementi, creare o scegliere incantesimi da lanciare, e usare la punta della bacchetta.
 

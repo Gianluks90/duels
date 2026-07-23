@@ -833,15 +833,12 @@ function endTurn(state: GameState, role: PlayerId): GameState {
 
   // Tutte le carte non utilizzate in mano si scartano (vanno negli scarti del proprio mazzo)
   // prima di pescare la mano fresca — se il mazzo si esaurisce, drawUpTo rimescola questi stessi
-  // scarti nel mazzo (regolamento 1.7), il che riduce di 1 il livello di avvelenamento (2.3.4/1.7) —
-  // in AGGIUNTA al decadimento di 1 per turno in Preparazione (resolvePreparation, sotto), non al
-  // posto suo.
-  const { drawn, deck, discards, reshuffled } = drawUpTo(
+  // scarti nel mazzo (regolamento 1.7).
+  const { drawn, deck, discards } = drawUpTo(
     player.deck,
     [...player.discards, ...handAfterExpiry],
     HAND_SIZE,
   );
-  const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
 
   const stateWithCommonDiscards: GameState = {
     ...state,
@@ -851,7 +848,6 @@ function endTurn(state: GameState, role: PlayerId): GameState {
     hand: drawn,
     deck,
     discards,
-    tokens: { ...player.tokens, poison },
     hasCollectedThisTurn: false,
     spellsPlayedThisTurn: 0,
     wand,
@@ -1329,26 +1325,23 @@ export function applyDiscardRandom(state: GameState, target: PlayerId, count: nu
  * Colpo basso: scarta l'intera mano del bersaglio e ne pesca subito 5 fresche — stessa identica
  * meccanica del ciclo mano di endTurn (resolveExpiringCards 'fine' PRIMA dello scarto, altrimenti un
  * Residuo Arcano/mana accumulato ancora in mano finirebbe negli scarti come una carta qualunque
- * invece di consumarsi; poi drawUpTo, che rimescola gli scarti nel mazzo se necessario, il che riduce
- * di 1 il livello di avvelenamento del bersaglio come qualunque altro rimescolamento del suo mazzo,
- * 2.3.4/1.7), applicata però solo alla mano e al veleno — non tocca wand/flag di turno del bersaglio,
- * a differenza di endTurn. Chiamata da applySpellEffect per il tipo 'opponent_discard_hand', sempre
- * col bersaglio l'avversario del lanciatore.
+ * invece di consumarsi; poi drawUpTo, che rimescola gli scarti nel mazzo se necessario), applicata
+ * però solo alla mano — non tocca wand/flag di turno del bersaglio, a differenza di endTurn. Chiamata
+ * da applySpellEffect per il tipo 'opponent_discard_hand', sempre col bersaglio l'avversario del
+ * lanciatore.
  */
 export function applyDiscardHand(state: GameState, target: PlayerId): GameState {
   const player = state.players[target];
   const handAfterExpiry = resolveExpiringCards(player.hand, 'fine');
-  const { drawn, deck, discards, reshuffled } = drawUpTo(
+  const { drawn, deck, discards } = drawUpTo(
     player.deck,
     [...player.discards, ...handAfterExpiry],
     HAND_SIZE,
   );
-  const poison = reshuffled ? Math.max(0, player.tokens.poison - 1) : player.tokens.poison;
   return updatePlayer(state, target, {
     hand: drawn,
     deck,
     discards,
-    tokens: { ...player.tokens, poison },
     handDrawBatchId: player.handDrawBatchId + 1,
   });
 }

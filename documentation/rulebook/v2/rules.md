@@ -38,7 +38,7 @@ Il giocatore iniziale è scelto casualmente. Se, al termine della partita, i gio
 Ogni giocatore pesca 5 carte dal proprio mazzo e le aggiunge alla propria mano. Questa è la _mano iniziale_.
 
 **1.7 - Rimescolamento dei mazzi**
-Quando un mazzo si esaurisce, viene ricomposto rimescolando la propria pila degli scarti, che ne diventa il nuovo mazzo coperto. Questa regola vale per qualsiasi mazzo (mazzo comune, mazzo avanzato, mazzo di un giocatore) e riguarda esclusivamente gli scarti dello stesso mazzo. Il rimescolamento del mazzo di un giocatore avvelenato ne riduce il livello di avvelenamento (vedi 2.3.4); il rimescolamento dei mazzi dell'area comune non ha invece alcun effetto sull'avvelenamento.
+Quando un mazzo si esaurisce, viene ricomposto rimescolando la propria pila degli scarti, che ne diventa il nuovo mazzo coperto. Questa regola vale per qualsiasi mazzo (mazzo comune, mazzo avanzato, mazzo di un giocatore) e riguarda esclusivamente gli scarti dello stesso mazzo.
 
 ## 2. Tipi di carte
 
@@ -61,7 +61,7 @@ Gli incantesimi che includono tuono come componente possono avere la capacità d
 Gli incantesimi che includono lava come componente possono avere la capacità di _consumare_ carte per alleggerire il mazzo. Sono inoltre noti per creare difese più potenti, applicando scudi ai Punti Salute.
 
 **2.3.4 - Veleno e danni nel tempo**
-Gli incantesimi che includono veleno come componente possono applicare _Avvelenamento_ al bersaglio: quando un bersaglio è avvelenato, subisce danni durante la fase di Preparazione in base al livello di avvelenamento raggiunto, dopodiché il livello si riduce di 1. Il livello di avvelenamento si riduce inoltre di un ulteriore livello ogni volta che la pila degli scarti del giocatore viene rimescolata nel mazzo.
+Gli incantesimi che includono veleno come componente possono applicare _Avvelenamento_ al bersaglio: quando un bersaglio è avvelenato, subisce danni durante la fase di Preparazione in base al livello di avvelenamento raggiunto, dopodiché il livello si riduce di 1.
 
 **2.4 - Elemento potente ed Esplosione elementale**
 Ogni elemento potente vale 2 Mana ed è collegato a uno dei seguenti elementi: Luce e Tenebra. Un elemento potente si ottiene combinando gli elementi base necessari, se la combinazione è visibile nella Fonte Arcana durante la fase Azione; la formula richiede Fuoco + Acqua + Aria + Terra. In qualsiasi momento, quando due elementi potenti diversi si trovano nello stesso luogo (mano di un giocatore o Fonte Arcana), si genera un'_esplosione elementale_: viene inferto 1 danno al bersaglio o ai bersagli (se l'esplosione avviene in mano, il danno è inflitto solo al giocatore che possiede le due carte; se avviene nella Fonte Arcana, entrambi i giocatori subiscono il danno) e le 2 carte coinvolte si consumano.
