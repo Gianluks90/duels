@@ -6,7 +6,7 @@ import type {
 } from '../models/element.model';
 import type { Card, CardTier, SpecialMana } from '../models/card.model';
 import type { GameState } from '../models/game.model';
-import type { PlayerId, PlayerState } from '../models/player.model';
+import type { CardBackSkin, PlayerId, PlayerState } from '../models/player.model';
 import type { Wand } from '../models/wand.model';
 
 const BASE_ELEMENTS: readonly BaseElement[] = ['fire', 'water', 'air', 'earth'];
@@ -151,6 +151,9 @@ export function drawUpTo(deck: readonly Card[], discards: readonly Card[], n: nu
 export interface PlayerSetup {
   name: string;
   wand: Wand;
+  /** GameDoc.hostCardBack/guestCardBack (snapshot di UserProfile.cardBack al momento della
+   * partita) — 'dark' se assente, stesso fallback del profilo. */
+  cardBack?: CardBackSkin;
 }
 
 function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactory): PlayerState {
@@ -168,7 +171,7 @@ function buildPlayerState(id: PlayerId, setup: PlayerSetup, makeCard: CardFactor
     pendingCollect: null,
     pendingSpells: [],
     tokens: { shield: 0, poison: 0 },
-    cardBack: 'dark',
+    cardBack: setup.cardBack ?? 'dark',
     hasCollectedThisTurn: false,
     spellsPlayedThisTurn: 0,
     tipCardPlacedTurn: null,

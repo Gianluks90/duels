@@ -19,6 +19,7 @@ import { FirebaseService } from './firebase.service';
 import type { Wand } from '../models/wand.model';
 import type { GameState } from '../models/game.model';
 import type { UserProfile } from '../models/user.model';
+import type { CardBackSkin } from '../models/player.model';
 import { createInitialGameState } from '../game/deck-builder';
 import { resolveElementalExplosions } from '../game/turn-engine';
 
@@ -32,6 +33,11 @@ export interface GameDoc {
    * di hostName/hostPhoto) — se l'host cambia i preferiti a metà partita, l'avversario continua a
    * vedere lo snapshot preso al join, non l'aggiornamento live. */
   hostFavoriteSpellIds: string[];
+  /** Snapshot di UserProfile.cardBack preso al momento della creazione partita — stesso schema di
+   * hostFavoriteSpellIds sopra. Letto da GameEngineService.tryStartGame() per popolare
+   * PlayerState.cardBack (deck-builder.ts), l'unico punto che alimenta davvero il rendering del
+   * dorso in game (CardComponent/DeckComponent). */
+  hostCardBack: CardBackSkin;
   hostWand: Wand | null;
   hostReady: boolean;
   guestId: string | null;
@@ -39,6 +45,8 @@ export interface GameDoc {
   guestPhoto: string | null;
   /** Vedi hostFavoriteSpellIds — stesso snapshot-al-join, lato guest. */
   guestFavoriteSpellIds: string[];
+  /** Vedi hostCardBack sopra — stesso snapshot-al-join, lato guest. */
+  guestCardBack: CardBackSkin;
   guestWand: Wand | null;
   guestReady: boolean;
   createdAt: number;
@@ -84,12 +92,14 @@ export class GameService {
       hostName: profile.displayName,
       hostPhoto: profile.photoURL,
       hostFavoriteSpellIds: profile.favoriteSpellIds ?? [],
+      hostCardBack: profile.cardBack,
       hostWand: null,
       hostReady: false,
       guestId: null,
       guestName: null,
       guestPhoto: null,
       guestFavoriteSpellIds: [],
+      guestCardBack: 'dark',
       guestWand: null,
       guestReady: false,
       createdAt: Date.now(),
@@ -123,6 +133,7 @@ export class GameService {
         guestName: profile.displayName,
         guestPhoto: profile.photoURL,
         guestFavoriteSpellIds: profile.favoriteSpellIds ?? [],
+        guestCardBack: profile.cardBack,
         status: 'setup',
       });
     });
@@ -148,12 +159,14 @@ export class GameService {
       hostName,
       hostPhoto: profile.photoURL,
       hostFavoriteSpellIds: profile.favoriteSpellIds ?? [],
+      hostCardBack: profile.cardBack,
       hostWand: defaultWand,
       hostReady: true,
       guestId: 'debug-guest',
       guestName,
       guestPhoto: null,
       guestFavoriteSpellIds: [],
+      guestCardBack: 'dark',
       guestWand: defaultWand,
       guestReady: true,
       createdAt: Date.now(),
@@ -163,8 +176,8 @@ export class GameService {
       // appena rivelata potrebbero già contenere sia Luce che Tenebra fin dal primo istante.
       state: resolveElementalExplosions(
         createInitialGameState(
-          { name: hostName, wand: defaultWand },
-          { name: guestName, wand: defaultWand },
+          { name: hostName, wand: defaultWand, cardBack: profile.cardBack },
+          { name: guestName, wand: defaultWand, cardBack: 'dark' },
         ),
       ),
     };

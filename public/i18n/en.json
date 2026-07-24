@@ -166,6 +166,7 @@
     "menuAria": "Menu",
     "menu": {
       "profile": "Profile",
+      "redeemCode": "Redeem code",
       "signOut": "Sign out"
     },
     "friendLink": {
@@ -223,6 +224,28 @@
       "game-full-or-started": "The game is already full or has started.",
       "already-host": "You're already the host of this game.",
       "wrong-password": "Wrong password."
+    }
+  },
+
+  "redeem": {
+    "dialogAria": "Redeem code",
+    "title": "Redeem code",
+    "closeAria": "Close",
+    "prompt": "Enter a code to unlock a customization.",
+    "label": "Code",
+    "placeholder": "E.g. MAGI2026",
+    "cancel": "Cancel",
+    "submit": "Redeem",
+    "submitting": "Redeeming…",
+    "success": "Card back unlocked! You'll find it selectable in your profile.",
+    "successCta": "Done",
+    "unknownError": "Unknown error.",
+    "errors": {
+      "code-not-found": "Invalid code.",
+      "already-redeemed": "You've already redeemed this code.",
+      "code-not-started": "This code isn't active yet.",
+      "code-expired": "This code has expired.",
+      "not-signed-in": "You need to be signed in."
     }
   },
 
@@ -518,7 +541,7 @@
       "deleteAccount": "Delete Account",
       "deleteDesc": "Permanently removes your account and all associated data.",
       "delete": "Delete",
-      "confirmText": "Are you sure? This action is irreversible. Your account and all your data will be permanently deleted.",
+      "confirmText": "Are you sure? This action is irreversible. Your account and all your data will be permanently deleted, including any customizations redeemed with a code.",
       "cancel": "Cancel",
       "confirmDelete": "Confirm, delete",
       "deleting": "Deleting…",

@@ -18,14 +18,62 @@ service cloud.firestore {
         isAcceptedFriendRequest(otherUid, request.auth.uid);
     }
 
+    // Dorsi carta (Riscatta codice): quali campi sono cambiati in QUESTA scrittura, per far restare
+    // ogni funzione di validazione sotto un no-op quando non tocca quel campo (stesso spirito
+    // difensivo del vecchio check su favoriteSpellIds, solo scomposto per campo).
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // Deve combaciare con public/config/card-backs.json — dorsi sempre selezionabili anche senza
+    // possederli esplicitamente in unlockedCardBacks (profili creati prima di questa feature, o che
+    // non hanno mai riscattato nulla).
+    function freeCardBacks() {
+      return ['dark', 'light'];
+    }
+
+    function cardBackValid() {
+      return !changedKeys().hasAny(['cardBack']) ||
+        request.resource.data.cardBack in
+          freeCardBacks().toSet().union(resource.data.get('unlockedCardBacks', []).toSet());
+    }
+
+    function favoritesValid() {
+      return !changedKeys().hasAny(['favoriteSpellIds']) ||
+        request.resource.data.favoriteSpellIds.size() <= 5;
+    }
+
+    // Riscatto codice (AuthService.redeemCode): `lastRedeemedCode` è l'unico modo per la regola di
+    // sapere QUALE codes/{CODICE} verificare — le regole non possono risalire al codice da un array
+    // diff su unlockedCardBacks/redeemedCodeIds. Verifica lo stato FINALE del documento (il codice è
+    // scaduto/non iniziato, è già in redeemedCodeIds, il cardBackId che sblocca è in
+    // unlockedCardBacks) invece di provare a isolare "l'elemento appena aggiunto" agli array.
+    function redeemValid() {
+      return !changedKeys().hasAny(['lastRedeemedCode']) || redeemGrantValid();
+    }
+
+    function redeemGrantValid() {
+      let code = request.resource.data.lastRedeemedCode;
+      let codeRef = /databases/$(database)/documents/codes/$(code);
+      return exists(codeRef) &&
+        (get(codeRef).data.startAt == null || request.time >= get(codeRef).data.startAt) &&
+        (get(codeRef).data.endAt == null || request.time <= get(codeRef).data.endAt) &&
+        code in request.resource.data.get('redeemedCodeIds', []) &&
+        get(codeRef).data.cardBackId in request.resource.data.get('unlockedCardBacks', []);
+    }
+
     match /users/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId || isFriend(userId));
-      // Preferiti (Qualità della vita): il cap a 5 è già applicato client-side in
-      // AuthService.toggleFavoriteSpell — questa guardia è solo difesa in profondità contro un client
-      // manomesso che scrivesse direttamente su Firestore.
       allow write: if request.auth != null && request.auth.uid == userId &&
-        (!('favoriteSpellIds' in request.resource.data) ||
-         request.resource.data.favoriteSpellIds.size() <= 5);
+        favoritesValid() && cardBackValid() && redeemValid();
+    }
+
+    // Riscatta codice: catalogo scritto solo manualmente (console/CLI Firebase) — mai dal client,
+    // per questo `allow write: if false`. Solo `get` (non `list`), altrimenti chiunque potrebbe
+    // enumerare l'intera collection e scoprire codici non ancora annunciati.
+    match /codes/{codeId} {
+      allow get: if request.auth != null;
+      allow write: if false;
     }
 
     // Amicizie: richiesta/accettazione. requestId deterministico "{fromUid}_{toUid}" — vedi

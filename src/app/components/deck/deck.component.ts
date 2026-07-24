@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, input, computed } from '@angular/co
 import { CardComponent } from '../card/card.component';
 import type { Element } from '../../models/element.model';
 import type { SpecialMana } from '../../models/card.model';
+import type { CardBackSkin } from '../../models/player.model';
 
 /** Deterministic rotation angles for the messy discard-pile look, cycled by index — not Math.random(), so cards don't jitter on every change-detection run. */
 const MESSY_ROTATIONS = [-7, 5, -4, 6, -3];
@@ -36,6 +37,7 @@ const MESSY_STACK_SIZE = 3;
             [class.deck__back--no-border]="!showBorder()"
             [style.width.px]="size()"
             [style.height.px]="height()"
+            [style.background-image]="backImage()"
             aria-hidden="true"
           ></div>
         }
@@ -45,6 +47,7 @@ const MESSY_STACK_SIZE = 3;
             <div
               class="deck__back deck__back--layer"
               [style.transform]="rotation(i)"
+              [style.background-image]="backImage()"
               aria-hidden="true"
             ></div>
           }
@@ -64,6 +67,7 @@ const MESSY_STACK_SIZE = 3;
             <div
               class="deck__back deck__back--layer"
               [style.transform]="rotation(backSlots().length)"
+              [style.background-image]="backImage()"
               aria-hidden="true"
             ></div>
           }
@@ -145,8 +149,12 @@ export class DeckComponent {
   readonly emptyPlaceholder = input<'boxed' | 'boxed-text' | 'text' | null>(null);
   /** false hides this deck's own static border — for when an external highlight (e.g. a pulsing outline around the whole trigger button) already marks it, so the two don't double up. */
   readonly showBorder = input<boolean>(true);
+  /** Dorso mostrato dai layer coperti (.deck__back--stacked/--layer) quando !faceUp() — PlayerState.cardBack
+   * del proprietario di questo mazzo/pila (v. board.component.ts playerCardBack/opponentCardBack). */
+  readonly cardBack = input<CardBackSkin>('dark');
 
   protected readonly height = computed(() => Math.round(this.size() * 1.5));
+  protected readonly backImage = computed(() => `url(/cards-back/${this.cardBack()}.webp)`);
 
   protected readonly backSlots = computed(() => {
     if (!this.messy() || this.count() <= 0) return [];

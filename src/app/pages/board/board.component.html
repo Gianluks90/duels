@@ -54,6 +54,7 @@
               <app-deck
                 [size]="handCardWidth"
                 [count]="opponentDiscardCount()"
+                [cardBack]="opponentCardBack()"
                 [faceUp]="true"
                 [topElement]="opponentDiscardTop()"
                 [topManaBonus]="opponentDiscardTopManaBonus()"
@@ -191,6 +192,7 @@
                   class="board__hand-card board__hand-card--back board__hand-card--mirrored"
                   [class.board__card--drawing]="cardIsDrawing(card.id)"
                   [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
+                  [style.background-image]="opponentCardBackImage()"
                   [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
                   aria-hidden="true"
                 ></div>
@@ -224,6 +226,7 @@
               <app-deck
                 [size]="handCardWidth"
                 [count]="opponentDeckCount()"
+                [cardBack]="opponentCardBack()"
                 [showLabel]="false"
                 [showCount]="false"
                 [label]="'board.fonte.mazzo' | translate"
@@ -656,6 +659,7 @@
               <app-deck
                 [size]="handCardWidth"
                 [count]="playerDeckCount()"
+                [cardBack]="playerCardBack()"
                 [showLabel]="false"
                 [showCount]="false"
                 [label]="'board.fonte.mazzo' | translate"
@@ -849,6 +853,7 @@
               <app-deck
                 [size]="handCardWidth"
                 [count]="playerDiscardCount()"
+                [cardBack]="playerCardBack()"
                 [faceUp]="true"
                 [topElement]="playerDiscardTop()"
                 [topManaBonus]="playerDiscardTopManaBonus()"
@@ -1052,6 +1057,7 @@
             <app-deck
               [size]="compactOpponentHandCardWidth"
               [count]="opponentDeckCount()"
+              [cardBack]="opponentCardBack()"
               [showLabel]="false"
               [showCount]="false"
               [label]="'board.fonte.mazzo' | translate"
@@ -1194,6 +1200,7 @@
                     class="board__hand-card--back board-compact__hand-card-back"
                     [class.board__card--drawing]="cardIsDrawing(card.id)"
                     [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
+                    [style.background-image]="opponentCardBackImage()"
                     [style.width.px]="compactOpponentHandArcCardWidth"
                     [style.height.px]="compactOpponentHandArcCardWidth * 1.5"
                     aria-hidden="true"
@@ -1210,6 +1217,7 @@
             <app-deck
               [size]="compactOpponentHandCardWidth"
               [count]="opponentDiscardCount()"
+              [cardBack]="opponentCardBack()"
               [faceUp]="true"
               [messy]="true"
               [topElement]="opponentDiscardTop()"
@@ -1699,6 +1707,7 @@
             <app-deck
               [size]="handCardWidth"
               [count]="playerDeckCount()"
+              [cardBack]="playerCardBack()"
               [showLabel]="false"
               [showCount]="false"
               [label]="'board.fonte.mazzo' | translate"
@@ -1844,6 +1853,7 @@
             <app-deck
               [size]="handCardWidth"
               [count]="playerDiscardCount()"
+              [cardBack]="playerCardBack()"
               [faceUp]="true"
               [messy]="true"
               [topElement]="playerDiscardTop()"

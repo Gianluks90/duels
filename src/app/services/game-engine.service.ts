@@ -54,8 +54,12 @@ export class GameEngineService {
     // gli elementi potenti fin dal primo istante.
     const state = resolveElementalExplosions(
       createInitialGameState(
-        { name: data.hostName, wand: data.hostWand },
-        { name: data.guestName ?? data.hostName, wand: data.guestWand },
+        { name: data.hostName, wand: data.hostWand, cardBack: data.hostCardBack },
+        {
+          name: data.guestName ?? data.hostName,
+          wand: data.guestWand,
+          cardBack: data.guestCardBack,
+        },
       ),
     );
 

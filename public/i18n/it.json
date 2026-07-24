@@ -169,6 +169,7 @@
     "menuAria": "Menu",
     "menu": {
       "profile": "Profilo",
+      "redeemCode": "Riscatta codice",
       "signOut": "Esci"
     },
     "friendLink": {
@@ -226,6 +227,28 @@
       "game-full-or-started": "La partita è già al completo o iniziata.",
       "already-host": "Sei già l'host di questa partita.",
       "wrong-password": "Password errata."
+    }
+  },
+
+  "redeem": {
+    "dialogAria": "Riscatta codice",
+    "title": "Riscatta codice",
+    "closeAria": "Chiudi",
+    "prompt": "Inserisci un codice per sbloccare una personalizzazione.",
+    "label": "Codice",
+    "placeholder": "Es. MAGI2026",
+    "cancel": "Annulla",
+    "submit": "Riscatta",
+    "submitting": "Riscatto…",
+    "success": "Dorso sbloccato! Lo trovi già selezionabile nel tuo profilo.",
+    "successCta": "Fatto",
+    "unknownError": "Errore sconosciuto.",
+    "errors": {
+      "code-not-found": "Codice non valido.",
+      "already-redeemed": "Hai già riscattato questo codice.",
+      "code-not-started": "Questo codice non è ancora attivo.",
+      "code-expired": "Questo codice è scaduto.",
+      "not-signed-in": "Devi effettuare l'accesso."
     }
   },
 
@@ -521,7 +544,7 @@
       "deleteAccount": "Elimina Account",
       "deleteDesc": "Rimuove definitivamente il tuo account e tutti i dati associati.",
       "delete": "Elimina",
-      "confirmText": "Sei sicuro? Questa azione è irreversibile. Il tuo account e tutti i tuoi dati verranno eliminati permanentemente.",
+      "confirmText": "Sei sicuro? Questa azione è irreversibile. Il tuo account e tutti i tuoi dati verranno eliminati permanentemente, comprese le personalizzazioni riscattate con un codice.",
       "cancel": "Annulla",
       "confirmDelete": "Confermo, elimina",
       "deleting": "Eliminazione…",

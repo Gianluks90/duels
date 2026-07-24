@@ -26,7 +26,13 @@ export class ProfileDialogComponent {
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly profile = this.auth.profile;
-  protected readonly cardBacks = this.cardBackService.options;
+  /** Unione tra i dorsi gratuiti (public/config/card-backs.json) e quelli sbloccati via "riscatta
+   * codice" (profile.unlockedCardBacks) — un dorso non posseduto semplicemente non compare qui,
+   * niente stato "locked" da mostrare. L'ownership vera è comunque imposta da firestore.rules
+   * (cardBackValid), questo computed è solo cosa mostrare nel picker. */
+  protected readonly ownedCardBacks = computed(() => [
+    ...new Set([...this.cardBackService.options(), ...(this.profile()?.unlockedCardBacks ?? [])]),
+  ]);
   protected readonly currentBackground = computed(
     () => this.profile()?.background ?? DEFAULT_BACKGROUND_ID,
   );

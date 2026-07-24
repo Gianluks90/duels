@@ -11,6 +11,7 @@ import { NgOptimizedImage } from '@angular/common';
 import type { Element } from '../../models/element.model';
 import { elementImagePath, elementIconPath, ELEMENT_MANA } from '../../models/element.model';
 import type { SpecialMana } from '../../models/card.model';
+import type { CardBackSkin } from '../../models/player.model';
 import { specialManaIconPath, REVEALED_ICON } from '../../models/card.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { TranslationService } from '../../services/translation.service';
@@ -145,7 +146,7 @@ const CARD_FLIP_HALF_MS = 150;
         }
       }
     } @else {
-      <img class="card__art card__art--back" ngSrc="/cards-back/dark.webp" alt="" fill />
+      <img class="card__art card__art--back" [ngSrc]="backSrc()" alt="" fill />
     }
   `,
   styleUrl: './card.component.scss',
@@ -186,6 +187,10 @@ export class CardComponent {
   readonly revealedToOpponent = input<boolean>(false);
   /** true se questa carta è quella attualmente trattenuta nella punta della bacchetta (1.4.1) — solo per contesti dove compare mischiata ad altre carte pagabili/scelte senza nessun'altra indicazione visiva che lo distingua (es. cast-spell dialog, dove conta come mano ma non ci sta fisicamente). Badge nell'angolo in basso a sinistra, l'unico ancora libero (mana/mana speciale in alto a sinistra, elemento in basso a destra). */
   readonly heldAtTip = input<boolean>(false);
+  /** Dorso mostrato quando !revealed() — PlayerState.cardBack del proprietario di questa carta (v.
+   * board.component.ts playerCardBack/opponentCardBack), 'dark' per i contesti che non lo passano
+   * (mai una carta coperta reale in game). */
+  readonly cardBack = input<CardBackSkin>('dark');
 
   /** Placeholder temporaneo per tutte le carte incantesimo — nessuna arte dedicata per singola Spell ancora. */
   protected readonly spellIcon = '/icons/wand_stars_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
@@ -200,6 +205,7 @@ export class CardComponent {
   protected readonly height = computed(() => Math.round(this.size() * 1.5));
   protected readonly radius = computed(() => Math.min(Math.round(this.size() * 0.09), 10));
   protected readonly artSrc = computed(() => elementImagePath(this.element()));
+  protected readonly backSrc = computed(() => `/cards-back/${this.cardBack()}.webp`);
   protected readonly iconSrc = computed(() => elementIconPath(this.element()));
   protected readonly spell = computed(() => {
     const id = this.spellId();

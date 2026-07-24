@@ -20,6 +20,7 @@ import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.
 import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
+import { RedeemDialogComponent } from '../../dialogs/redeem/redeem-dialog.component';
 import { FriendsDialogComponent } from '../../dialogs/friends/friends-dialog.component';
 import { CreateGameDialogComponent } from '../../dialogs/create-game/create-game-dialog.component';
 import {
@@ -143,6 +144,7 @@ export class HomeComponent implements OnInit {
 
   protected readonly avatarMenuItems = computed<ActionMenuItem[]>(() => [
     { label: this.i18n.t('home.menu.profile'), action: () => this.openProfile() },
+    { label: this.i18n.t('home.menu.redeemCode'), action: () => this.openRedeemDialog() },
     { label: this.i18n.t('home.menu.signOut'), action: () => this.signOut() },
   ]);
 
@@ -256,6 +258,15 @@ export class HomeComponent implements OnInit {
 
   protected openProfile(): void {
     this.dialog.open(ProfileDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
+  }
+
+  protected openRedeemDialog(): void {
+    this.dialog.open(RedeemDialogComponent, {
       positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       hasBackdrop: true,
       backdropClass: 'dialog-backdrop',

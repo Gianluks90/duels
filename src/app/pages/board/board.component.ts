@@ -461,6 +461,10 @@ export class BoardComponent implements OnInit {
     () => this.commonDiscardTopCard()?.specialMana ?? null,
   );
 
+  /** Dorso da mostrare sulle carte coperte del proprio lato (mazzo/mano) — PlayerState.cardBack,
+   * popolato in game da GameDoc.hostCardBack/guestCardBack via deck-builder.ts (v. quel file per il
+   * perché era hardcoded a 'dark' prima di questa feature). */
+  protected readonly playerCardBack = computed(() => this.me()?.cardBack ?? 'dark');
   protected readonly playerDeckCount = computed(() => this.me()?.deck.length ?? 0);
   protected readonly playerDiscardCount = computed(() => this.me()?.discards.length ?? 0);
   private readonly playerDiscardTopCard = computed(() => this.topOf(this.me()?.discards));
@@ -481,6 +485,13 @@ export class BoardComponent implements OnInit {
     () => this.playerDiscardTopCard()?.revealedToOpponent ?? false,
   );
 
+  /** Vedi playerCardBack sopra — stesso schema, lato avversario. */
+  protected readonly opponentCardBack = computed(() => this.opponentState()?.cardBack ?? 'dark');
+  /** .board__hand-card--back (mano coperta dell'avversario, board.component.html) è un div grezzo,
+   * non un app-card/app-deck — niente [cardBack] input lì, serve l'url CSS già pronto. */
+  protected readonly opponentCardBackImage = computed(
+    () => `url(/cards-back/${this.opponentCardBack()}.webp)`,
+  );
   protected readonly opponentDeckCount = computed(() => this.opponentState()?.deck.length ?? 0);
   protected readonly opponentDiscardCount = computed(
     () => this.opponentState()?.discards.length ?? 0,

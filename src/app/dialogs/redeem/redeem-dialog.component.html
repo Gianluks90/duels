@@ -1,0 +1,59 @@
+<div
+  class="redeem-dialog"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-label]="'redeem.dialogAria' | translate"
+>
+  <header class="redeem-dialog__header">
+    <h2 class="t-heading redeem-dialog__title">{{ 'redeem.title' | translate }}</h2>
+    <app-icon-button
+      [icon]="closeIcon"
+      [ariaLabel]="'redeem.closeAria' | translate"
+      [size]="32"
+      (iconClick)="close()"
+    />
+  </header>
+
+  @if (unlockedCardBackId(); as skin) {
+    <div class="redeem-dialog__body">
+      <p class="redeem-dialog__success">{{ 'redeem.success' | translate }}</p>
+      <img class="redeem-dialog__preview" [src]="'/cards-back/' + skin + '.webp'" alt="" />
+    </div>
+    <div class="redeem-dialog__footer">
+      <button class="btn btn--primary" (click)="close()">
+        {{ 'redeem.successCta' | translate }}
+      </button>
+    </div>
+  } @else {
+    <div class="redeem-dialog__body">
+      <p class="redeem-dialog__prompt">{{ 'redeem.prompt' | translate }}</p>
+
+      <label class="redeem-dialog__label" for="redeem-code">
+        {{ 'redeem.label' | translate }}
+      </label>
+      <input
+        id="redeem-code"
+        class="redeem-dialog__input"
+        type="text"
+        [value]="code()"
+        (input)="code.set($any($event.target).value)"
+        [placeholder]="'redeem.placeholder' | translate"
+        autocomplete="off"
+        (keydown.enter)="redeem()"
+      />
+
+      @if (error()) {
+        <p class="redeem-dialog__error">{{ error() }}</p>
+      }
+    </div>
+
+    <div class="redeem-dialog__footer">
+      <button class="btn btn--secondary" [disabled]="redeeming()" (click)="close()">
+        {{ 'redeem.cancel' | translate }}
+      </button>
+      <button class="btn btn--primary" [disabled]="redeeming() || !code().trim()" (click)="redeem()">
+        {{ (redeeming() ? 'redeem.submitting' : 'redeem.submit') | translate }}
+      </button>
+    </div>
+  }
+</div>

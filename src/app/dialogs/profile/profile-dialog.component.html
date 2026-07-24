@@ -116,7 +116,7 @@
         <section class="profile-dialog__section">
           <h3 class="profile-dialog__section-title">{{ 'profile.cardBack.title' | translate }}</h3>
           <div class="profile-dialog__card-backs">
-            @for (skin of cardBacks(); track skin) {
+            @for (skin of ownedCardBacks(); track skin) {
               <button
                 type="button"
                 class="profile-dialog__card-back"
