@@ -34,6 +34,7 @@
             [element]="card.element"
             [manaBonus]="card.manaBonus ?? 0"
             [specialMana]="card.specialMana ?? null"
+            [heldAtTip]="card.id === tipCardId"
             [size]="56"
           />
         </li>
@@ -123,8 +124,8 @@
         'castSpell.manaCounter' | translate: { paid: totalPaid(), cost: spell()?.manaCost ?? 0 }
       }}</span>
       <div class="cast-spell-dialog__actions">
-        <button class="btn btn--secondary" (click)="cancel()">
-          {{ 'castSpell.cancel' | translate }}
+        <button class="btn btn--secondary" (click)="autoSelect()">
+          {{ 'castSpell.auto' | translate }}
         </button>
         <button class="btn btn--primary" [disabled]="!canConfirm()" (click)="confirm()">
           {{ 'castSpell.confirm' | translate }}

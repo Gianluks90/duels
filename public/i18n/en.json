@@ -52,6 +52,7 @@
   "card": {
     "manaAria": "{value} mana",
     "specialManaAria": "{name} mana",
+    "heldAtTipAria": "Held at the wand tip",
     "revealed": {
       "title": "Visible",
       "effect": "This card is visible to the opponent."
@@ -437,7 +438,7 @@
     "multiTargetListAria": "Cards available as target in your discards",
     "multiTargetCounter": "{selected} / {max} chosen",
     "manaCounter": "{paid} / {cost} mana",
-    "cancel": "Cancel",
+    "auto": "Auto",
     "confirm": "Confirm cast"
   },
 

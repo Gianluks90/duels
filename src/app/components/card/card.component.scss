@@ -196,6 +196,18 @@
   }
 }
 
+// Punta della bacchetta (1.4.1) — angolo in basso a sinistra, l'unico dei 4 rimasto libero (mana/mana
+// speciale in alto a sinistra, elemento in basso a destra). Stessa dimensione/trattamento (object-fit
+// + padding) del badge incantesimo (.card__badge--spell), qui però sempre da solo: mai insieme a un
+// altro badge nella stessa carta, quindi nessuna colonna da condividere.
+.card__badge--tip {
+  width: 24%;
+  bottom: 3%;
+  left: 3%;
+  object-fit: contain;
+  padding: 5%;
+}
+
 .card__badge--element {
   // Bigger than the shared 30% — the element icon is the one we want to read
   // clearly at a glance, badge circle grows with it.

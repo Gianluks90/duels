@@ -135,6 +135,13 @@ const CARD_FLIP_HALF_MS = 150;
               aria-hidden="true"
             />
           }
+          @if (heldAtTip()) {
+            <img
+              class="card__badge card__badge--tip"
+              [src]="spellIcon"
+              [attr.aria-label]="heldAtTipAria()"
+            />
+          }
         }
       }
     } @else {
@@ -177,6 +184,8 @@ export class CardComponent {
   readonly freeze = input<boolean>(false);
   /** Card.revealedToOpponent (5.x, Terzo occhio/Occhio supremo) — questa carta è stata rivelata permanentemente all'avversario del suo proprietario. Chi la vede così è appunto l'avversario: sul proprio pannello del giocatore questo input non viene mai passato true (non ha senso rivelarsi da soli qualcosa che già si vede). */
   readonly revealedToOpponent = input<boolean>(false);
+  /** true se questa carta è quella attualmente trattenuta nella punta della bacchetta (1.4.1) — solo per contesti dove compare mischiata ad altre carte pagabili/scelte senza nessun'altra indicazione visiva che lo distingua (es. cast-spell dialog, dove conta come mano ma non ci sta fisicamente). Badge nell'angolo in basso a sinistra, l'unico ancora libero (mana/mana speciale in alto a sinistra, elemento in basso a destra). */
+  readonly heldAtTip = input<boolean>(false);
 
   /** Placeholder temporaneo per tutte le carte incantesimo — nessuna arte dedicata per singola Spell ancora. */
   protected readonly spellIcon = '/icons/wand_stars_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
@@ -233,6 +242,7 @@ export class CardComponent {
       : '';
   });
   protected readonly revealedAria = computed(() => this.i18n.t('card.revealed.title'));
+  protected readonly heldAtTipAria = computed(() => this.i18n.t('card.heldAtTipAria'));
 
   protected onSpellArtError(): void {
     this.spellArtFailed.set(true);

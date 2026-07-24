@@ -55,6 +55,7 @@
   "card": {
     "manaAria": "{value} mana",
     "specialManaAria": "Mana {name}",
+    "heldAtTipAria": "Trattenuta alla punta della bacchetta",
     "revealed": {
       "title": "Visibile",
       "effect": "Questa carta è visibile all'avversario."
@@ -440,7 +441,7 @@
     "multiTargetListAria": "Carte disponibili come bersaglio nei tuoi scarti",
     "multiTargetCounter": "{selected} / {max} scelte",
     "manaCounter": "{paid} / {cost} mana",
-    "cancel": "Annulla",
+    "auto": "Auto",
     "confirm": "Conferma lancio"
   },
 

@@ -32,6 +32,10 @@
     gap: var(--sp-3);
     max-height: 45vh;
     overflow-y: auto;
+    // Padding pari a outline-width + outline-offset di &__hand-item: altrimenti l'overflow-y
+    // (che forza anche overflow-x a "auto" per via delle regole CSS su overflow-x/y misti)
+    // ritaglia il bordo di selezione delle carte a ridosso dei margini del contenitore.
+    padding: 4px;
     // Un <ul> mostra comunque il marker (bullet) di ogni <li> anche dentro un contenitore flex —
     // non viene soppresso automaticamente come ci si aspetterebbe, va tolto esplicitamente.
     list-style: none;

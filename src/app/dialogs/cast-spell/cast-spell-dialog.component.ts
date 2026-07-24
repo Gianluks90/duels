@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import type { Card } from '../../models/card.model';
+import { ELEMENT_MANA } from '../../models/element.model';
 import { computePlayerMana } from '../../models/player.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import {
@@ -18,6 +19,8 @@ export interface CastSpellDialogData {
   spellCard: Card;
   /** Il resto della mano, già filtrato dal chiamante (esclusi tier 'spell'/'freeze' — non pagabili, 3.1). Include l'eventuale carta nella punta della bacchetta (1.4.1), pagabile anche lei. */
   payableHand: Card[];
+  /** Card.id della carta in payableHand che è in realtà trattenuta alla punta della bacchetta (1.4.1), non fisicamente in mano — null se la punta è vuota. Serve solo per mostrare il badge CardComponent.heldAtTip: senza, questa carta non si distinguerebbe in nessun modo dalle altre pagabili. */
+  tipCardId: string | null;
   /** Scarti del giocatore. Letti solo se la magia richiede una carta bersaglio (TARGET_CARD_EFFECT_TYPES, es. 'boost_card_mana'): il bersaglio si sceglie tra le proprie carte già scartate, non in mano (turn-engine.ts, castSpell/applyBoostCardMana). */
   discards: Card[];
 }
@@ -45,6 +48,7 @@ export class CastSpellDialogComponent {
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly payableHand = this.data.payableHand;
+  protected readonly tipCardId = this.data.tipCardId;
 
   protected readonly spell = computed(
     () => SPELL_CATALOG.find((s) => s.id === this.data.spellCard.spellId) ?? null,
@@ -105,6 +109,32 @@ export class CastSpellDialogComponent {
     // esattamente 2) — l'unico vincolo (il tetto) è già imposto da toggleMultiTarget, non da un guard qui.
     return true;
   });
+
+  /** Valore in mana di una singola carta pagabile — stessa formula di computePlayerMana ma per una sola carta, serve per ordinare payableHand in autoSelect. */
+  private cardManaValue(card: Card): number {
+    const prismaticBonus = card.specialMana === 'prismatic' ? 1 : 0;
+    return ELEMENT_MANA[card.element] + (card.manaBonus ?? 0) + prismaticBonus;
+  }
+
+  /** Seleziona in automatico le carte di pagamento necessarie a coprire il costo, riducendo i click ma senza lanciare l'incantesimo: prima il mana accumulato (tier 'mana', si perde comunque a fine turno se non speso), poi le carte di valore maggiore (il mana prismatico rientra già nel valore), infine le base da 1 — si ferma appena il totale copre il costo. */
+  protected autoSelect(): void {
+    const cost = this.spell()?.manaCost ?? 0;
+    const sorted = [...this.payableHand].sort((a, b) => {
+      const aAccumulated = a.element === 'mana' ? 1 : 0;
+      const bAccumulated = b.element === 'mana' ? 1 : 0;
+      if (aAccumulated !== bAccumulated) return bAccumulated - aAccumulated;
+      return this.cardManaValue(b) - this.cardManaValue(a);
+    });
+
+    const selected = new Set<string>();
+    let paid = 0;
+    for (const card of sorted) {
+      if (paid >= cost) break;
+      selected.add(card.id);
+      paid += this.cardManaValue(card);
+    }
+    this.selectedIds.set(selected);
+  }
 
   protected toggle(cardId: string): void {
     this.selectedIds.update((prev) => {

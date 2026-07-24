@@ -1122,7 +1122,7 @@ export class BoardComponent implements OnInit {
           label: this.i18n.t('board.hand.castAction', {
             name: this.i18n.t(`spells.${spell.id}.name`),
           }),
-          action: () => this.openCastSpellDialog(card, payableHand),
+          action: () => this.openCastSpellDialog(card, payableHand, tip?.id ?? null),
           disabled: computePlayerMana(payableHand) < spell.manaCost,
         },
       ];
@@ -1147,7 +1147,7 @@ export class BoardComponent implements OnInit {
   }
 
   /** Apre il dialog di pagamento (ed eventuale scelta del bersaglio, es. Migliora mana) e lancia davvero l'incantesimo solo se il giocatore conferma (annullare chiude senza risultato, vedi CastSpellDialogComponent). */
-  protected openCastSpellDialog(card: Card, payableHand: Card[]): void {
+  protected openCastSpellDialog(card: Card, payableHand: Card[], tipCardId: string | null): void {
     const role = this.myRole();
     if (!role) return;
 
@@ -1156,6 +1156,7 @@ export class BoardComponent implements OnInit {
         data: {
           spellCard: card,
           payableHand,
+          tipCardId,
           discards: this.me()?.discards ?? [],
         },
         positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
