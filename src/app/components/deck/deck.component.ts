@@ -35,6 +35,7 @@ const MESSY_STACK_SIZE = 3;
           <div
             class="deck__back deck__back--stacked"
             [class.deck__back--no-border]="!showBorder()"
+            [class.deck__back--mirrored]="mirrored()"
             [style.width.px]="size()"
             [style.height.px]="height()"
             [style.background-image]="backImage()"
@@ -46,7 +47,7 @@ const MESSY_STACK_SIZE = 3;
           @for (i of backSlots(); track i) {
             <div
               class="deck__back deck__back--layer"
-              [style.transform]="rotation(i)"
+              [style.transform]="rotation(i, mirrored())"
               [style.background-image]="backImage()"
               aria-hidden="true"
             ></div>
@@ -66,7 +67,7 @@ const MESSY_STACK_SIZE = 3;
           } @else {
             <div
               class="deck__back deck__back--layer"
-              [style.transform]="rotation(backSlots().length)"
+              [style.transform]="rotation(backSlots().length, mirrored())"
               [style.background-image]="backImage()"
               aria-hidden="true"
             ></div>
@@ -152,6 +153,10 @@ export class DeckComponent {
   /** Dorso mostrato dai layer coperti (.deck__back--stacked/--layer) quando !faceUp() — PlayerState.cardBack
    * del proprietario di questo mazzo/pila (v. board.component.ts playerCardBack/opponentCardBack). */
   readonly cardBack = input<CardBackSkin>('dark');
+  /** Capovolge (180°) solo l'immagine del dorso (.deck__back*), mai una carta scoperta vera
+   * (.deck__top) — per i mazzi/scarti dell'avversario, che devono apparire come rivolti verso di
+   * lui, seduto di fronte al giocatore locale. */
+  readonly mirrored = input<boolean>(false);
 
   protected readonly height = computed(() => Math.round(this.size() * 1.5));
   protected readonly backImage = computed(() => `url(/cards-back/${this.cardBack()}.webp)`);
@@ -162,7 +167,8 @@ export class DeckComponent {
     return Array.from({ length: Math.max(behindTop, 0) }, (_, i) => i);
   });
 
-  protected rotation(index: number): string {
-    return `rotate(${MESSY_ROTATIONS[index % MESSY_ROTATIONS.length]}deg)`;
+  protected rotation(index: number, flip = false): string {
+    const deg = MESSY_ROTATIONS[index % MESSY_ROTATIONS.length] + (flip ? 180 : 0);
+    return `rotate(${deg}deg)`;
   }
 }

@@ -111,23 +111,15 @@
         </section>
       </div>
 
-      <!-- Colonna gioco: dorso carte + sfondo -->
-      <div class="profile-dialog__column">
+      <!-- Colonna gioco: dorso carte + sfondo — scorre in autonomia (profile-dialog.component.scss)
+           così una lista di dorsi lunga non spinge in basso la colonna utente accanto. -->
+      <div class="profile-dialog__column profile-dialog__column--game">
         <section class="profile-dialog__section">
           <h3 class="profile-dialog__section-title">{{ 'profile.cardBack.title' | translate }}</h3>
-          <div class="profile-dialog__card-backs">
-            @for (skin of ownedCardBacks(); track skin) {
-              <button
-                type="button"
-                class="profile-dialog__card-back"
-                [class.profile-dialog__card-back--active]="profile()?.cardBack === skin"
-                [attr.aria-pressed]="profile()?.cardBack === skin"
-                (click)="selectCardBack(skin)"
-              >
-                <img [src]="'/cards-back/' + skin + '.webp'" alt="" />
-              </button>
-            }
-          </div>
+          <app-card-back-picker
+            [current]="profile()?.cardBack ?? 'dark'"
+            (applied)="applyCardBack($event)"
+          />
         </section>
 
         <section class="profile-dialog__section">

@@ -13,7 +13,11 @@ Changelog dettagliato (tutto ciò che è già stato fatto) archiviato in [docume
 - [x] Magie pinnabili con tooltip in duel UI — poter "appuntare" un incantesimo durante il duello con un tooltip a schermo, per riferimento rapido senza dover riaprire il Grimorio. La stessa icona bookmark compare sugli elementi necessari a queste formule.
 - [x] Regolamento — manca una pagina di glossario e una di glossario icone. Inoltre va controllato che tutto sia in linea con quanto sviluppato. Potrebbe essere anche bello includere le immagini di qualche carta per essere più esplicativi.
 - [x] Amicizie - implementare aggiunta/rimozione amici.
+- [x] Codici riscatto — dorsi carta sbloccabili tramite codice (`codes/{CODICE}` su Firestore, scrivibile solo da console/CLI, mai dal client), dialog "Riscatta codice" con anteprima del dorso sbloccato. Nella dialog profilo, il picker dorso è ora un componente a sé (`CardBackPickerComponent`, stesso schema selezione+Applica di `BackgroundPickerComponent` — niente più scritture su Firestore a ogni click), con griglia che va a capo e scorrimento indipendente per liste lunghe di dorsi. Corretto anche il dorso dell'avversario in game (mazzo, scarti, mano coperta): appariva identico al proprio invece che capovolto come se rivolto verso di lui.
 - [ ] Mana, seleziona tutto quando lanci una magia.
+- [ ] Varianti carte — l'utente potrà scegliere le varianti delle carte in gioco. Abbiamo due set completi di elementi: permettiamo all'utente di usare il suo preferito.
+- [ ] Collezione — nuova pagina con la collezione di varianti, dorsi e sfondi accumulati dall'utente; da valutare se associarla a un futuro sistema di achievement che sblocca questi elementi (v. "Raccolta dati per achievements" sotto).
+- [ ] Correggere il modo in cui si svuotano le barre della vita: da invertire per giocatore e avversario.
 
 ## Future espansioni (idee da valutare)
 

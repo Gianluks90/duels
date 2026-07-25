@@ -65,7 +65,8 @@
 
   &__preview {
     display: block;
-    width: 96px;
+    width: 192px;
+    max-width: 100%;
     aspect-ratio: 2 / 3;
     object-fit: cover;
     margin: 0 auto;

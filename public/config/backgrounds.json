@@ -2,8 +2,5 @@
   { "id": "dark-wood", "file": "/images/backgrounds/dark-wood.webp" },
   { "id": "light-wood", "file": "/images/backgrounds/light-wood.webp" },
   { "id": "burn-wood", "file": "/images/backgrounds/burn-wood.webp" },
-  { "id": "blue-suede", "file": "/images/backgrounds/blue-suede.webp" },
-  { "id": "gold-marble", "file": "/images/backgrounds/gold-marble.webp" },
-  { "id": "white-marble", "file": "/images/backgrounds/white-marble.webp" },
   { "id": "slate", "file": "/images/backgrounds/slate.webp" }
 ]

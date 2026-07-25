@@ -3,36 +3,34 @@ import { DialogRef } from '@angular/cdk/dialog';
 import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { CardBackService } from '../../services/card-back.service';
 import { TranslationService } from '../../services/translation.service';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { BackgroundPickerComponent } from '../../components/background-picker/background-picker.component';
+import { CardBackPickerComponent } from '../../components/card-back-picker/card-back-picker.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
 
 @Component({
   selector: 'app-profile-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, IconButtonComponent, BackgroundPickerComponent, TranslatePipe],
+  imports: [
+    ReactiveFormsModule,
+    IconButtonComponent,
+    BackgroundPickerComponent,
+    CardBackPickerComponent,
+    TranslatePipe,
+  ],
   templateUrl: './profile-dialog.component.html',
   styleUrl: './profile-dialog.component.scss',
 })
 export class ProfileDialogComponent {
   private readonly dialogRef = inject(DialogRef);
   private readonly auth = inject(AuthService);
-  private readonly cardBackService = inject(CardBackService);
   private readonly router = inject(Router);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly profile = this.auth.profile;
-  /** Unione tra i dorsi gratuiti (public/config/card-backs.json) e quelli sbloccati via "riscatta
-   * codice" (profile.unlockedCardBacks) — un dorso non posseduto semplicemente non compare qui,
-   * niente stato "locked" da mostrare. L'ownership vera è comunque imposta da firestore.rules
-   * (cardBackValid), questo computed è solo cosa mostrare nel picker. */
-  protected readonly ownedCardBacks = computed(() => [
-    ...new Set([...this.cardBackService.options(), ...(this.profile()?.unlockedCardBacks ?? [])]),
-  ]);
   protected readonly currentBackground = computed(
     () => this.profile()?.background ?? DEFAULT_BACKGROUND_ID,
   );
@@ -80,7 +78,7 @@ export class ProfileDialogComponent {
     }
   }
 
-  protected async selectCardBack(skin: string): Promise<void> {
+  protected async applyCardBack(skin: string): Promise<void> {
     if (this.profile()?.cardBack === skin) return;
     await this.auth.updateProfile({ cardBack: skin });
   }

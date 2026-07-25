@@ -306,6 +306,28 @@
       border-radius: 6px;
     }
 
+    // Dorso della mano coperta dell'avversario (desktop): un elemento figlio dedicato, non
+    // `transform` su --back/--mirrored stessi — quel div porta già translateY/rotate per il
+    // ventaglio con transform-origin: top center (--mirrored sopra), quindi un rotate(180deg)
+    // sommato lì ruoterebbe l'intera carta attorno a quel perno in alto invece che in place,
+    // scaraventandola fuori dallo schermo. Qui invece l'origine di trasformazione resta quella di
+    // default (il proprio centro), quindi ruota solo l'arte, sul posto.
+    &-back-face {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      border-radius: inherit;
+      transform: rotate(180deg);
+    }
+
+    // Stessa idea di &-back-face sopra, ma per il layout compatto: lì il div non porta alcun
+    // transform inline in conflitto (compactHandCardStyle non ne imposta uno), quindi il flip può
+    // stare direttamente su --back senza bisogno di un figlio dedicato.
+    &--flipped {
+      transform: rotate(180deg);
+    }
+
     // Hovering a Fonte Arcana card (or Residuo) highlights the hand cards it needs —
     // gold if the combo is completable right now, blue if only part of it is in hand.
     &--gold {

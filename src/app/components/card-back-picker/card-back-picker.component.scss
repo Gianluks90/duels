@@ -1,0 +1,39 @@
+.card-back-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sp-3);
+  }
+
+  &__skin {
+    padding: 4px;
+    background: var(--bg-panel);
+    border: 2px solid var(--border-subtle);
+    cursor: pointer;
+    transition: border-color var(--transition);
+
+    img {
+      display: block;
+      width: 64px;
+      aspect-ratio: 2 / 3;
+      object-fit: cover;
+    }
+
+    &:hover {
+      border-color: var(--border-gold);
+    }
+
+    &--active {
+      border-color: var(--border-bright);
+      box-shadow: 0 0 10px rgba(212, 168, 71, 0.4);
+    }
+  }
+
+  &__apply {
+    align-self: flex-end;
+  }
+}

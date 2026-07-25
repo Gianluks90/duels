@@ -45,6 +45,15 @@
     gap: var(--sp-4);
   }
 
+  // Colonna dorsi+sfondo: cresce a piacere in larghezza (wrap dei dorsi) ma non in altezza — oltre
+  // una soglia scorre per conto proprio, così una lista di dorsi lunga non spinge in basso la
+  // colonna utente accanto né gonfia la dialog intera.
+  &__column--game {
+    max-height: min(60vh, 480px);
+    overflow-y: auto;
+    padding-right: var(--sp-1);
+  }
+
   &__section {
     display: flex;
     flex-direction: column;
@@ -132,36 +141,6 @@
   &__saved {
     font-size: 0.75rem;
     color: var(--text-heading);
-  }
-
-  // ── Card back picker ─────────────────────────────────────────────────────────
-  &__card-backs {
-    display: flex;
-    gap: var(--sp-3);
-  }
-
-  &__card-back {
-    padding: 4px;
-    background: var(--bg-panel);
-    border: 2px solid var(--border-subtle);
-    cursor: pointer;
-    transition: border-color var(--transition);
-
-    img {
-      display: block;
-      width: 64px;
-      aspect-ratio: 2 / 3;
-      object-fit: cover;
-    }
-
-    &:hover {
-      border-color: var(--border-gold);
-    }
-
-    &--active {
-      border-color: var(--border-bright);
-      box-shadow: 0 0 10px rgba(212, 168, 71, 0.4);
-    }
   }
 
   // ── Danger zone (moved here from Opzioni — account management belongs together) ─

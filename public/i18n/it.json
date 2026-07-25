@@ -236,7 +236,7 @@
     "closeAria": "Chiudi",
     "prompt": "Inserisci un codice per sbloccare una personalizzazione.",
     "label": "Codice",
-    "placeholder": "Es. MAGI2026",
+    "placeholder": "Es. DUELS-2026",
     "cancel": "Annulla",
     "submit": "Riscatta",
     "submitting": "Riscatto…",
@@ -524,7 +524,8 @@
       "saved": "Salvato!"
     },
     "cardBack": {
-      "title": "Dorso carte"
+      "title": "Dorso carte",
+      "apply": "Applica"
     },
     "background": {
       "title": "Sfondo di gioco",
@@ -533,9 +534,6 @@
         "dark-wood": "Legno scuro",
         "light-wood": "Legno chiaro",
         "burn-wood": "Legno bruciato",
-        "blue-suede": "Camoscio blu",
-        "gold-marble": "Marmo dorato",
-        "white-marble": "Marmo bianco",
         "slate": "Ardesia"
       }
     },

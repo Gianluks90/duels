@@ -233,7 +233,7 @@
     "closeAria": "Close",
     "prompt": "Enter a code to unlock a customization.",
     "label": "Code",
-    "placeholder": "E.g. MAGI2026",
+    "placeholder": "E.g. DUELS-2026",
     "cancel": "Cancel",
     "submit": "Redeem",
     "submitting": "Redeeming…",
@@ -521,7 +521,8 @@
       "saved": "Saved!"
     },
     "cardBack": {
-      "title": "Card back"
+      "title": "Card back",
+      "apply": "Apply"
     },
     "background": {
       "title": "Game background",
@@ -530,9 +531,6 @@
         "dark-wood": "Dark wood",
         "light-wood": "Light wood",
         "burn-wood": "Burnt wood",
-        "blue-suede": "Blue suede",
-        "gold-marble": "Gold marble",
-        "white-marble": "White marble",
         "slate": "Slate"
       }
     },

@@ -20,6 +20,13 @@
       -6px 6px 0 -1px rgba(122, 92, 30, 0.2);
   }
 
+  // Opponent's deck/discard: the back art is flipped 180° so it reads as facing them, seated
+  // across from the local player — same treatment as board__hand-card--back/--flipped for their
+  // covered hand (board.component.html/.scss). --layer's own rotation() already folds this in.
+  &--mirrored {
+    transform: rotate(180deg);
+  }
+
   // Messy pile: layered directly on top of each other, only rotation tells them apart.
   &--layer {
     position: absolute;

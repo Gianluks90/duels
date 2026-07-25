@@ -55,6 +55,7 @@
                 [size]="handCardWidth"
                 [count]="opponentDiscardCount()"
                 [cardBack]="opponentCardBack()"
+                [mirrored]="true"
                 [faceUp]="true"
                 [topElement]="opponentDiscardTop()"
                 [topManaBonus]="opponentDiscardTopManaBonus()"
@@ -192,10 +193,14 @@
                   class="board__hand-card board__hand-card--back board__hand-card--mirrored"
                   [class.board__card--drawing]="cardIsDrawing(card.id)"
                   [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
-                  [style.background-image]="opponentCardBackImage()"
                   [style]="handCardStyle(i, opponentHandCount(), opponentHandTrackWidth(), true)"
                   aria-hidden="true"
-                ></div>
+                >
+                  <div
+                    class="board__hand-card-back-face"
+                    [style.background-image]="opponentCardBackImage()"
+                  ></div>
+                </div>
               }
             }
 
@@ -227,6 +232,7 @@
                 [size]="handCardWidth"
                 [count]="opponentDeckCount()"
                 [cardBack]="opponentCardBack()"
+                [mirrored]="true"
                 [showLabel]="false"
                 [showCount]="false"
                 [label]="'board.fonte.mazzo' | translate"
@@ -1058,6 +1064,7 @@
               [size]="compactOpponentHandCardWidth"
               [count]="opponentDeckCount()"
               [cardBack]="opponentCardBack()"
+              [mirrored]="true"
               [showLabel]="false"
               [showCount]="false"
               [label]="'board.fonte.mazzo' | translate"
@@ -1197,7 +1204,7 @@
                   />
                 } @else {
                   <div
-                    class="board__hand-card--back board-compact__hand-card-back"
+                    class="board__hand-card--back board__hand-card--flipped board-compact__hand-card-back"
                     [class.board__card--drawing]="cardIsDrawing(card.id)"
                     [style.--draw-delay.ms]="cardDrawDelayMs(card.id)"
                     [style.background-image]="opponentCardBackImage()"
@@ -1218,6 +1225,7 @@
               [size]="compactOpponentHandCardWidth"
               [count]="opponentDiscardCount()"
               [cardBack]="opponentCardBack()"
+              [mirrored]="true"
               [faceUp]="true"
               [messy]="true"
               [topElement]="opponentDiscardTop()"
