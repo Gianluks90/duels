@@ -189,10 +189,6 @@ export class GameService {
     await deleteDoc(doc(this.db, 'games', gameId));
   }
 
-  async surrender(gameId: string): Promise<void> {
-    await updateDoc(doc(this.db, 'games', gameId), { status: 'finished' });
-  }
-
   async findMyWaitingGame(uid: string): Promise<string | null> {
     const q = query(
       collection(this.db, 'games'),

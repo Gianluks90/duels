@@ -14,9 +14,11 @@ import {
   combineResidue as combineResidueReducer,
   createSpell as createSpellReducer,
   holdAtTip as holdAtTipReducer,
+  isGameOver,
   keepCard as keepCardReducer,
   keepMana as keepManaReducer,
   resolveElementalExplosions,
+  resolveVictory,
   socketElement as socketElementReducer,
   startCollect as startCollectReducer,
 } from '../game/turn-engine';
@@ -157,6 +159,29 @@ export class GameEngineService {
     await this.mutate(gameId, (state) => socketElementReducer(state, role, cardId, target));
   }
 
+  /** Ti arrendi: l'altro giocatore vince a prescindere dai Punti Salute correnti — non passa da
+   * `mutate()`/resolveVictory (quello scatta solo a hp <= 0) perché qui la partita finisce per una
+   * ragione che il motore di gioco puro non conosce affatto. Stessa transazione di mutate() per lo
+   * stesso motivo (evitare un read-modify-write che perda scritture concorrenti), ma non un reducer:
+   * non c'è stato da trasformare, solo winner + status da fissare. No-op se la partita è già finita. */
+  async surrender(gameId: string, role: PlayerId): Promise<void> {
+    const ref = doc(this.db, 'games', gameId);
+    await runTransaction(this.db, async (tx) => {
+      const snapshot = await tx.get(ref);
+      if (!snapshot.exists()) return;
+
+      const data = snapshot.data() as GameDoc;
+      if (!data.state || data.status === 'finished') return;
+
+      const winner: PlayerId = role === 'host' ? 'guest' : 'host';
+      tx.update(ref, { state: { ...data.state, winner }, status: 'finished' });
+    });
+  }
+
+  /** Unico varco per cui passa OGNI azione di gioco (v. commento in testa alla classe) — dopo aver
+   * applicato il reducer, risolve anche la condizione di vittoria (resolveVictory/isGameOver,
+   * turn-engine.ts) sullo stato risultante: un solo checkpoint per qualunque reducer, invece di
+   * doverla richiamare in ciascuno dei metodi sopra. */
   private async mutate(gameId: string, transform: (state: GameState) => GameState): Promise<void> {
     const ref = doc(this.db, 'games', gameId);
     await runTransaction(this.db, async (tx) => {
@@ -166,8 +191,10 @@ export class GameEngineService {
       const data = snapshot.data() as GameDoc;
       if (!data.state) return;
 
-      const state = transform(data.state);
-      tx.update(ref, { state });
+      const state = resolveVictory(transform(data.state));
+      const patch: { state: GameState; status?: GameDoc['status'] } = { state };
+      if (data.status !== 'finished' && isGameOver(state)) patch.status = 'finished';
+      tx.update(ref, patch);
     });
   }
 }

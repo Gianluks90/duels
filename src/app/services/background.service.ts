@@ -5,6 +5,11 @@ import { DEFAULT_BACKGROUND_ID } from '../models/user.model';
 export interface BackgroundOption {
   id: string;
   file: string;
+  /** true per gli sfondi sempre selezionabili (deve combaciare con freeBackgrounds() in
+   * firestore.rules) — gli sfondi sbloccabili come ricompensa obiettivo (OBJECTIVE_CATALOG) avranno
+   * `free: false` e richiedono di comparire in UserProfile.unlockedBackgrounds (v.
+   * BackgroundPickerComponent.ownedBackgrounds). */
+  free: boolean;
 }
 
 const STORAGE_KEY = 'duels.background';

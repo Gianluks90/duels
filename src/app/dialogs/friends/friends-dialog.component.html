@@ -170,6 +170,9 @@
                     <span>{{ row.profile?.displayName ?? row.uid }}</span>
                   </button>
                   <div class="friends-dialog__row-actions">
+                    <button class="btn btn--secondary" (click)="viewProfile(row.uid)">
+                      {{ 'friends.list.viewProfile' | translate }}
+                    </button>
                     <button
                       class="btn btn--secondary"
                       [disabled]="busyRequestId() === row.request.id"

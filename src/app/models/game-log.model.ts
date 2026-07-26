@@ -21,6 +21,11 @@ export type GameLogEntryData =
   /** Congelamento (2.3.1) sciolto in Preparazione — `count` carte, mai i dettagli delle singole
    * carte (sono "non-carte" senza identità rilevante per il log). */
   | { type: 'freezeResolved'; role: PlayerId; count: number }
+  /** Carta tenuta in fase Raccolta (4.3, keepCard) — non emessa da keepMana (nessuna carta vera
+   * entra nel mazzo in quel caso, v. turn-engine.ts). Serve solo a derivare `UserStats.cardsCollected`
+   * a fine partita (AchievementsService), non è pensata per comparire nel dialog del log (troppo
+   * frequente, una volta a turno) — GameLogDialogComponent la filtra esplicitamente dalla vista. */
+  | { type: 'cardCollected'; role: PlayerId }
   | { type: 'spellCast'; role: PlayerId; spellId: string }
   | { type: 'spellCreated'; role: PlayerId; spellId: string }
   | {

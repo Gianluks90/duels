@@ -143,6 +143,7 @@ export class HomeComponent implements OnInit {
   protected readonly isCompact = computed(() => this.layoutTier() !== 'desktop');
 
   protected readonly avatarMenuItems = computed<ActionMenuItem[]>(() => [
+    { label: this.i18n.t('home.menu.myProfile'), action: () => this.openMyProfile() },
     { label: this.i18n.t('home.menu.profile'), action: () => this.openProfile() },
     { label: this.i18n.t('home.menu.redeemCode'), action: () => this.openRedeemDialog() },
     { label: this.i18n.t('home.menu.signOut'), action: () => this.signOut() },
@@ -159,6 +160,8 @@ export class HomeComponent implements OnInit {
       });
     }
     items.push({ label: this.i18n.t('home.grimoire'), action: () => this.openGrimoire() });
+    items.push({ label: this.i18n.t('home.collection'), action: () => this.openCollection() });
+    items.push({ label: this.i18n.t('home.objectives'), action: () => this.openObjectives() });
     items.push({ label: this.i18n.t('home.rulebook'), action: () => this.openRulebook() });
     items.push({ label: this.i18n.t('home.friends'), action: () => this.openFriends() });
     items.push({ label: this.i18n.t('home.options'), action: () => this.openOptions() });
@@ -263,6 +266,21 @@ export class HomeComponent implements OnInit {
       backdropClass: 'dialog-backdrop',
       panelClass: 'dialog-panel',
     });
+  }
+
+  protected openCollection(): void {
+    this.router.navigate(['/collection']);
+  }
+
+  protected openObjectives(): void {
+    this.router.navigate(['/objectives']);
+  }
+
+  /** Il proprio profilo pubblico (Achievements) — distinto da openProfile() sopra, che apre invece
+   * la dialog di MODIFICA (nome/foto/dorso/...). Questa è la stessa pagina che vedrebbe un amico. */
+  protected openMyProfile(): void {
+    const uid = this.auth.user()?.uid;
+    if (uid) this.router.navigate(['/profile', uid]);
   }
 
   protected openRedeemDialog(): void {

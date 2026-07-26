@@ -1,6 +1,6 @@
 [
-  { "id": "dark-wood", "file": "/images/backgrounds/dark-wood.webp" },
-  { "id": "light-wood", "file": "/images/backgrounds/light-wood.webp" },
-  { "id": "burn-wood", "file": "/images/backgrounds/burn-wood.webp" },
-  { "id": "slate", "file": "/images/backgrounds/slate.webp" }
+  { "id": "dark-wood", "file": "/images/backgrounds/dark-wood.webp", "free": true },
+  { "id": "light-wood", "file": "/images/backgrounds/light-wood.webp", "free": true },
+  { "id": "burn-wood", "file": "/images/backgrounds/burn-wood.webp", "free": true },
+  { "id": "slate", "file": "/images/backgrounds/slate.webp", "free": true }
 ]

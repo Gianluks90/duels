@@ -291,12 +291,13 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
   const rejected = kept === first ? second : first;
 
   const withDiscards: GameState = { ...state, commonDiscards: [...state.commonDiscards, rejected] };
-  return updatePlayer(withDiscards, role, {
+  const next = updatePlayer(withDiscards, role, {
     discards: [...player.discards, kept],
     pendingCollect: null,
     hasCollectedThisTurn: true,
     collectDrawBatchId: player.collectDrawBatchId + 1,
   });
+  return appendLog(next, { type: 'cardCollected', role });
 }
 
 /**
@@ -972,7 +973,7 @@ function countAdvancedPairsInFonte(fonteElementale: readonly Card[]): number {
 
 const FONTE_PAIR_DAMAGE = 3;
 
-/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'damage_halve_opponent'/'damage_from_fonte'/'heal'/'shield_add'/'shield_remove_opponent'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self'/'opponent_discard_random'/'opponent_discard_hand'/'reveal_opponent_hand'/'fonte_reset'/'boost_card_mana'/'consume_discards' per ora; 'element_immunity' resta l'unico SpellEffectType senza risoluzione (no-op, rimandato — vedi spell.model.ts). `pending` porta sia il mana speciale (3.2.2/3.2.3, calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente — vitale→heal, caotico→damage/damage_ignore_shields/damage_from_fonte, tutti e 3 danno all'avversario "nel modo standard", altrimenti resta inerte, gli altri non ne beneficiano di proposito) sia l'eventuale carta/e bersaglio scelte dal giocatore (`targetCardId` per 'boost_card_mana', `targetCardIds` per 'consume_discards' — TARGET_CARD_EFFECT_TYPES/MULTI_TARGET_CARD_EFFECT_TYPES in spell.model.ts). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno "normali" (non 'damage_from_fonte': `element` è sempre assente sulla sua formula, 4 basi miste senza un elemento portante, vedi risk in SPELL_CATALOG), ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — 'damage_halve_opponent' ne resta fuori apposta (dimezza l'hp corrente, un valore già post-asta/scudo di colpi precedenti, non un nuovo danno da filtrare) e gli altri non sono mai elementali. Nessun clamp su hp: né qui né altrove nel motore esiste un pavimento a 0 o un tetto al massimo (la condizione di vittoria non è ancora implementata). */
+/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'damage_halve_opponent'/'damage_from_fonte'/'heal'/'shield_add'/'shield_remove_opponent'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self'/'opponent_discard_random'/'opponent_discard_hand'/'reveal_opponent_hand'/'fonte_reset'/'boost_card_mana'/'consume_discards' per ora; 'element_immunity' resta l'unico SpellEffectType senza risoluzione (no-op, rimandato — vedi spell.model.ts). `pending` porta sia il mana speciale (3.2.2/3.2.3, calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente — vitale→heal, caotico→damage/damage_ignore_shields/damage_from_fonte, tutti e 3 danno all'avversario "nel modo standard", altrimenti resta inerte, gli altri non ne beneficiano di proposito) sia l'eventuale carta/e bersaglio scelte dal giocatore (`targetCardId` per 'boost_card_mana', `targetCardIds` per 'consume_discards' — TARGET_CARD_EFFECT_TYPES/MULTI_TARGET_CARD_EFFECT_TYPES in spell.model.ts). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno "normali" (non 'damage_from_fonte': `element` è sempre assente sulla sua formula, 4 basi miste senza un elemento portante, vedi risk in SPELL_CATALOG), ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — 'damage_halve_opponent' ne resta fuori apposta (dimezza l'hp corrente, un valore già post-asta/scudo di colpi precedenti, non un nuovo danno da filtrare) e gli altri non sono mai elementali. Nessun clamp su hp qui: può scendere sotto 0, la condizione di vittoria (resolveVictory, in fondo al file) se ne accorge comunque con un semplice `<= 0`, applicata centralmente da GameEngineService.mutate() dopo ogni reducer. */
 function applySpellEffect(
   state: GameState,
   casterRole: PlayerId,
@@ -1485,4 +1486,30 @@ function applyConsumeDiscards(
     commonDiscards: [...next.commonDiscards, ...consumedBase],
     advancedDiscards: [...next.advancedDiscards, ...consumedAdvanced],
   };
+}
+
+/**
+ * Condizione di vittoria (1.3, regolamento v2): "Quando i Punti Salute si riducono a 0 o meno, per
+ * qualsiasi motivo, vince la partita il giocatore che ne ha ancora almeno 1". Applicata centralmente
+ * da GameEngineService.mutate() dopo OGNI reducer — non sparsa nei singoli punti del motore che
+ * toccano hp (danno da incantesimo, Avvelenamento in resolvePreparation, Esplosione elementale...),
+ * altrimenti andrebbero enumerati e tenuti aggiornati uno per uno. Pareggio (entrambi <= 0 nello
+ * stesso reducer, es. doppia Esplosione elementale in Fonte quando entrambi sono già quasi a 0): il
+ * regolamento non lo prevede esplicitamente, restiamo senza winner — "comunque finita" lo segnala
+ * GameDoc.status (v. isGameOver sotto), non questo campo. No-op se un winner è già stato assegnato
+ * (es. da un arrendersi, GameEngineService.surrender) o se nessuno dei due è a 0.
+ */
+export function resolveVictory(state: GameState): GameState {
+  if (state.winner) return state;
+  const hostDown = state.players.host.hp <= 0;
+  const guestDown = state.players.guest.hp <= 0;
+  if (hostDown === guestDown) return state;
+  return { ...state, winner: hostDown ? 'guest' : 'host' };
+}
+
+/** true se la partita va considerata conclusa per Punti Salute — usata da GameEngineService.mutate()
+ * per decidere se portare GameDoc.status a 'finished' insieme allo stato, indipendentemente da
+ * `winner` (che resta null nel caso limite di pareggio, v. resolveVictory sopra). */
+export function isGameOver(state: GameState): boolean {
+  return state.players.host.hp <= 0 || state.players.guest.hp <= 0;
 }

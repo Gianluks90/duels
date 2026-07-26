@@ -33,6 +33,23 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'collection',
+    loadComponent: () =>
+      import('./pages/collection/collection.component').then(m => m.CollectionComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'objectives',
+    loadComponent: () =>
+      import('./pages/objectives/objectives.component').then(m => m.ObjectivesComponent),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'profile/:uid',
+    loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: '**',
     redirectTo: 'home',
   },

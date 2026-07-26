@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { DialogRef } from '@angular/cdk/dialog';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FriendsService, type FriendRequest } from '../../services/friends.service';
 import { TranslationService } from '../../services/translation.service';
@@ -26,6 +27,7 @@ export class FriendsDialogComponent {
   private readonly dialogRef = inject(DialogRef);
   private readonly auth = inject(AuthService);
   private readonly friendsService = inject(FriendsService);
+  private readonly router = inject(Router);
   protected readonly i18n = inject(TranslationService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
@@ -177,6 +179,13 @@ export class FriendsDialogComponent {
     this.friends.update((rows) =>
       rows.map((r) => (r === row ? { ...r, expanded: !r.expanded } : r)),
     );
+  }
+
+  /** Profilo pubblico (Achievements) di un amico — chiude la dialog prima di navigare, altrimenti
+   * resterebbe aperta sopra la nuova pagina. */
+  protected viewProfile(uid: string): void {
+    this.dialogRef.close();
+    this.router.navigate(['/profile', uid]);
   }
 
   protected friendSpellNames(row: FriendRow): string[] {

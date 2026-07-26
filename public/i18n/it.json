@@ -162,12 +162,15 @@
   "home": {
     "debug": "Debug",
     "grimoire": "Grimorio",
+    "collection": "Collezione",
+    "objectives": "Obiettivi",
     "rulebook": "Regolamento",
     "options": "Opzioni",
     "friends": "Amici",
     "avatarAria": "Profilo",
     "menuAria": "Menu",
     "menu": {
+      "myProfile": "Il mio profilo",
       "profile": "Profilo",
       "redeemCode": "Riscatta codice",
       "signOut": "Esci"
@@ -290,6 +293,7 @@
       "empty": "Nessun amico ancora — condividi il tuo codice per iniziare.",
       "favorites": "Magie preferite",
       "noFavorites": "Nessuna magia preferita.",
+      "viewProfile": "Vedi profilo",
       "remove": "Rimuovi"
     }
   },
@@ -326,7 +330,48 @@
     "draw": { "title": "Duello concluso", "subtitle": "La partita è terminata." },
     "vs": "vs",
     "opponentFallback": "Avversario",
-    "backHome": "Torna alla Home"
+    "backHome": "Torna alla Home",
+    "achievementsTitle": "Obiettivi"
+  },
+
+  "objectives": {
+    "title": "Obiettivi",
+    "backHome": "Torna alla Home",
+    "claim": "Riscatta",
+    "claimed": "Riscattato",
+    "rewardPending": "Ricompensa da definire",
+    "metricLabels": {
+      "gamesPlayed": "Partite giocate",
+      "wins": "Vittorie",
+      "losses": "Sconfitte",
+      "cardsCollected": "Carte raccolte",
+      "combinationsMade": "Combinazioni",
+      "spellsCast": "Incantesimi lanciati",
+      "damageDealt": "Danno inflitto",
+      "healingDone": "Cura totale"
+    }
+  },
+
+  "collection": {
+    "title": "Collezione",
+    "backHome": "Torna alla Home",
+    "cardBacks": "Dorsi carte",
+    "backgrounds": "Sfondi",
+    "titles": "Titoli",
+    "noTitles": "Nessun titolo sbloccato ancora."
+  },
+
+  "profilePage": {
+    "title": "Profilo",
+    "backHome": "Torna alla Home",
+    "loading": "Caricamento…",
+    "notFound": "Profilo non trovato.",
+    "stats": {
+      "gamesPlayed": "Partite giocate",
+      "wins": "Vittorie",
+      "losses": "Sconfitte",
+      "spellsCast": "Incantesimi lanciati"
+    }
   },
 
   "grimoire": {
@@ -341,7 +386,7 @@
     "sortAlphaDesc": "Nome (Z-A)",
     "sortCostAsc": "Costo (crescente)",
     "sortCostDesc": "Costo (decrescente)",
-    "filterCreatableOnly": "Solo creabili",
+    "filterCreatableOnly": "Solo apprendibili",
     "filterFavoritesOnly": "Preferiti",
     "spellListAria": "Elenco incantesimi",
     "empty": "Nessun incantesimo.",
@@ -355,9 +400,9 @@
     "bookmarkRemoveAria": "Rimuovi {name} dagli appuntati",
     "bookmarkMaxTooltip": "Massimo 5 magie appuntate",
     "pageNumberAria": "Pagina {page} di {total}",
-    "creatableLabel": "Creabile",
-    "createAction": "Crea",
-    "creating": "Creazione…",
+    "creatableLabel": "Apprendibile",
+    "createAction": "Apprendi",
+    "creating": "Apprendimento…",
     "effects": {
       "damage": "Infligge {amount} danno/i all'avversario.",
       "damageElement": "Infligge {amount} danno/i da {element} all'avversario.",
@@ -427,8 +472,8 @@
       "freezeResolvedOther": "A {name} si è sciolta {count} carta/e Congelamento.",
       "spellCastSelf": "Hai lanciato {spell}.",
       "spellCastOther": "{name} ha lanciato {spell}.",
-      "spellCreatedSelf": "Hai creato l'incantesimo {spell}.",
-      "spellCreatedOther": "{name} ha creato l'incantesimo {spell}.",
+      "spellCreatedSelf": "Hai appreso l'incantesimo {spell}.",
+      "spellCreatedOther": "{name} ha appreso l'incantesimo {spell}.",
       "combinedSelf": "Hai combinato {element}.",
       "combinedOther": "{name} ha combinato {element}.",
       "combinedResidueSelf": "Hai ottenuto un Residuo Arcano.",

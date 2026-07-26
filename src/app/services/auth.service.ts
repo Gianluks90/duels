@@ -8,10 +8,14 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 import { DEFAULT_BACKGROUND_ID, MAX_FAVORITE_SPELLS, type UserProfile } from '../models/user.model';
 import type { RedeemCode } from '../models/redeem-code.model';
+import type { GameDoc } from './game.service';
+import type { PlayerId } from '../models/player.model';
+import { OBJECTIVE_CATALOG } from '../data/objectives';
+import { applyGameStatsDelta, newlyCompletedObjectives } from '../game/achievements';
 
 export const DEBUG_UID = '8AkU1Du8BlNQYDKzH8Icu7lf8Qt2';
 
@@ -117,6 +121,83 @@ export class AuthService {
     });
 
     return codeData.cardBackId;
+  }
+
+  /**
+   * Applica al proprio profilo gli stats/obiettivi maturati in UNA partita appena conclusa — da
+   * chiamare una volta a fine partita (ResultComponent.ngOnInit). Sicura da richiamare più volte
+   * (refresh della pagina, doppio mount del componente...): se `users/{uid}/countedGames/{gameId}`
+   * esiste già la partita è stata contata, no-op — questo precheck locale evita solo lo sforzo di un
+   * write che la regola Firestore (statsNotYetCounted, v. firestore.rules) respingerebbe comunque,
+   * che resta l'unica vera fonte di verità (stesso schema difensivo di redeemCode sopra).
+   *
+   * Le due scritture (profilo + marker) vanno in un solo writeBatch: non per atomicità reciproca
+   * (le regole Firestore le valutano comunque in modo indipendente, v. la nota sul rischio accettato
+   * in firestore.rules) ma perché è comunque una sola azione utente, un solo giro di rete.
+   */
+  async applyGameStats(gameDoc: GameDoc, role: PlayerId): Promise<void> {
+    const user = this.auth.currentUser;
+    const current = this.profile();
+    if (!user || !current || !gameDoc.state || gameDoc.status !== 'finished') return;
+
+    const countedRef = doc(this.firebase.db, 'users', user.uid, 'countedGames', gameDoc.id);
+    if ((await getDoc(countedRef)).exists()) return;
+
+    const nextStats = applyGameStatsDelta(
+      current.stats,
+      role,
+      gameDoc.state.winner,
+      gameDoc.state.eventLog,
+    );
+    const completedObjectiveIds = [
+      ...new Set([
+        ...(current.completedObjectiveIds ?? []),
+        ...newlyCompletedObjectives(OBJECTIVE_CATALOG, current.stats, nextStats),
+      ]),
+    ];
+
+    const batch = writeBatch(this.firebase.db);
+    batch.update(doc(this.firebase.db, 'users', user.uid), {
+      stats: nextStats,
+      lastStatsGameId: gameDoc.id,
+      completedObjectiveIds,
+    });
+    batch.set(countedRef, { countedAt: Date.now() });
+    await batch.commit();
+
+    this.profile.set({
+      ...current,
+      stats: nextStats,
+      lastStatsGameId: gameDoc.id,
+      completedObjectiveIds,
+    });
+  }
+
+  /** Riscatta la ricompensa di un obiettivo già completato (v. UserProfile.completedObjectiveIds) —
+   * aggiunge l'id del reward a unlockedBackgrounds/unlockedTitles e l'obiettivo a
+   * claimedObjectiveIds. No-op se l'obiettivo non esiste, non è ancora completato, o è già stato
+   * riscattato (evita un write superfluo, la regola Firestore lo accetterebbe comunque come
+   * no-op: arrayUnion su un id già presente non duplica nulla). */
+  async claimObjective(objectiveId: string): Promise<void> {
+    const user = this.auth.currentUser;
+    const current = this.profile();
+    if (!user || !current) return;
+
+    const objective = OBJECTIVE_CATALOG.find((o) => o.id === objectiveId);
+    if (!objective) return;
+    if (!(current.completedObjectiveIds ?? []).includes(objectiveId)) return;
+    if ((current.claimedObjectiveIds ?? []).includes(objectiveId)) return;
+
+    const rewardField = objective.reward.type === 'background' ? 'unlockedBackgrounds' : 'unlockedTitles';
+    const nextRewards = [...new Set([...(current[rewardField] ?? []), objective.reward.id])];
+    const nextClaimed = [...new Set([...(current.claimedObjectiveIds ?? []), objectiveId])];
+
+    await updateDoc(doc(this.firebase.db, 'users', user.uid), {
+      claimedObjectiveIds: nextClaimed,
+      [rewardField]: nextRewards,
+    });
+
+    this.profile.set({ ...current, claimedObjectiveIds: nextClaimed, [rewardField]: nextRewards });
   }
 
   async deleteAccount(): Promise<void> {

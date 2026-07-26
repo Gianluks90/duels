@@ -159,12 +159,15 @@
   "home": {
     "debug": "Debug",
     "grimoire": "Grimoire",
+    "collection": "Collection",
+    "objectives": "Objectives",
     "rulebook": "Rulebook",
     "options": "Options",
     "friends": "Friends",
     "avatarAria": "Profile",
     "menuAria": "Menu",
     "menu": {
+      "myProfile": "My profile",
       "profile": "Profile",
       "redeemCode": "Redeem code",
       "signOut": "Sign out"
@@ -287,6 +290,7 @@
       "empty": "No friends yet — share your code to get started.",
       "favorites": "Favorite spells",
       "noFavorites": "No favorite spells.",
+      "viewProfile": "View profile",
       "remove": "Remove"
     }
   },
@@ -323,7 +327,48 @@
     "draw": { "title": "Duel over", "subtitle": "The match has ended." },
     "vs": "vs",
     "opponentFallback": "Opponent",
-    "backHome": "Back to Home"
+    "backHome": "Back to Home",
+    "achievementsTitle": "Objectives"
+  },
+
+  "objectives": {
+    "title": "Objectives",
+    "backHome": "Back to Home",
+    "claim": "Claim",
+    "claimed": "Claimed",
+    "rewardPending": "Reward to be defined",
+    "metricLabels": {
+      "gamesPlayed": "Games played",
+      "wins": "Wins",
+      "losses": "Losses",
+      "cardsCollected": "Cards collected",
+      "combinationsMade": "Combinations",
+      "spellsCast": "Spells cast",
+      "damageDealt": "Damage dealt",
+      "healingDone": "Total healing"
+    }
+  },
+
+  "collection": {
+    "title": "Collection",
+    "backHome": "Back to Home",
+    "cardBacks": "Card backs",
+    "backgrounds": "Backgrounds",
+    "titles": "Titles",
+    "noTitles": "No titles unlocked yet."
+  },
+
+  "profilePage": {
+    "title": "Profile",
+    "backHome": "Back to Home",
+    "loading": "Loading…",
+    "notFound": "Profile not found.",
+    "stats": {
+      "gamesPlayed": "Games played",
+      "wins": "Wins",
+      "losses": "Losses",
+      "spellsCast": "Spells cast"
+    }
   },
 
   "grimoire": {
@@ -338,7 +383,7 @@
     "sortAlphaDesc": "Name (Z-A)",
     "sortCostAsc": "Cost (ascending)",
     "sortCostDesc": "Cost (descending)",
-    "filterCreatableOnly": "Creatable only",
+    "filterCreatableOnly": "Learnable only",
     "filterFavoritesOnly": "Favorites only",
     "spellListAria": "Spell list",
     "empty": "No spells.",
@@ -352,9 +397,9 @@
     "baseSpellFormula": "Always-known base spell",
     "manaAria": "{cost} mana",
     "pageNumberAria": "Page {page} of {total}",
-    "creatableLabel": "Creatable",
-    "createAction": "Create",
-    "creating": "Creating…",
+    "creatableLabel": "Learnable",
+    "createAction": "Learn",
+    "creating": "Learning…",
     "effects": {
       "damage": "Deals {amount} damage to the opponent.",
       "damageElement": "Deals {amount} {element} damage to the opponent.",
@@ -424,8 +469,8 @@
       "freezeResolvedOther": "{count} Freeze card(s) melted away from {name}'s hand.",
       "spellCastSelf": "You cast {spell}.",
       "spellCastOther": "{name} cast {spell}.",
-      "spellCreatedSelf": "You created the spell {spell}.",
-      "spellCreatedOther": "{name} created the spell {spell}.",
+      "spellCreatedSelf": "You learned the spell {spell}.",
+      "spellCreatedOther": "{name} learned the spell {spell}.",
       "combinedSelf": "You combined {element}.",
       "combinedOther": "{name} combined {element}.",
       "combinedResidueSelf": "You obtained an Arcane Residuum.",

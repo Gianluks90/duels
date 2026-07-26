@@ -29,4 +29,18 @@
     </button>
 
   </div>
+
+  <aside class="result__achievements panel">
+    <h2 class="t-heading result__achievements-title">{{ 'result.achievementsTitle' | translate }}</h2>
+    <div class="result__achievements-list">
+      @for (item of objectivesProgress(); track item.objective.id) {
+        <app-objective-card
+          [objective]="item.objective"
+          [progress]="item.progress"
+          [claimed]="item.claimed"
+          (claim)="claimObjective($event)"
+        />
+      }
+    </div>
+  </aside>
 </div>

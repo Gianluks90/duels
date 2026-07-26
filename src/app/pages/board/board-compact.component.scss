@@ -83,7 +83,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 0;
+  right: 0;
   background: linear-gradient(180deg, #ff5a4a 0%, #d8281c 32%, #8b1010 68%, #5c0808 100%);
   box-shadow:
     inset 0 2px 2px rgba(255, 255, 255, 0.4),
@@ -96,10 +96,20 @@
   }
 }
 
-// Scudo (bonus vita effettiva dai gettoni scudo) — segmento subito dopo la barra vita (left:
-// compactHpPercent(), vedi board.component.html), stesso trattamento "metallico" argento di
-// .hud__hp-shield-fill sul desktop (player-hud.component.scss), non c'era affatto qui: la barra
-// compatta mostrava solo current/max, ignorando lo scudo del tutto.
+// Specchiato rispetto al numero come sul desktop (.hud--mirrored .hud__hp-fill): il giocatore si
+// svuota da sinistra (ancorato a right, il pezzo mancante cresce da sinistra), l'avversario da
+// destra (ancorato a left, default) — stesso lato di .board-compact__hp-value (l'header opponent
+// ancora già il numero a destra, vedi .board-compact__identity--opponent .board-compact__hp-value
+// più sotto).
+.board-compact__identity--opponent .board-compact__hp-fill {
+  right: auto;
+  left: 0;
+}
+
+// Scudo (bonus vita effettiva dai gettoni scudo) — segmento subito dopo la barra vita (left per il
+// giocatore, right per l'avversario specchiato: vedi board.component.html), stesso trattamento
+// "metallico" argento di .hud__hp-shield-fill sul desktop (player-hud.component.scss), non c'era
+// affatto qui: la barra compatta mostrava solo current/max, ignorando lo scudo del tutto.
 .board-compact__hp-shield-fill {
   position: absolute;
   top: 0;
@@ -110,7 +120,8 @@
     inset 0 -3px 5px rgba(0, 0, 0, 0.55);
   transition:
     width var(--transition),
-    left var(--transition);
+    left var(--transition),
+    right var(--transition);
 }
 
 .board-compact__identity-meta {

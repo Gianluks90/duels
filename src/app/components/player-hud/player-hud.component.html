@@ -101,8 +101,8 @@
           <div
             class="hud__hp-shield-fill"
             [style.width.%]="shieldPercent()"
-            [style.left.%]="mirrored() ? null : hpPercent()"
-            [style.right.%]="mirrored() ? hpPercent() : null"
+            [style.right.%]="mirrored() ? null : hpPercent()"
+            [style.left.%]="mirrored() ? hpPercent() : null"
             aria-hidden="true"
           ></div>
         }

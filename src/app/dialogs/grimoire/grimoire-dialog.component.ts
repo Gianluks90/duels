@@ -26,13 +26,13 @@ import type { Spell } from '../../models/spell.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import { hasElements } from '../../game/turn-engine';
 
-/** Tutti i campi opzionali: il Grimorio si apre anche fuori da una partita (Home, "solo per sfogliare le magie", vedi home.component.ts) — in quel caso non c'è né una mano né un gameId/role a cui agganciare "Crea", e la dialog deve degradare a semplice consultazione invece di lanciare un errore su `undefined`. */
+/** Tutti i campi opzionali: il Grimorio si apre anche fuori da una partita (Home, "solo per sfogliare le magie", vedi home.component.ts) — in quel caso non c'è né una mano né un gameId/role a cui agganciare "Apprendi", e la dialog deve degradare a semplice consultazione invece di lanciare un errore su `undefined`. */
 export interface GrimoireDialogData {
   gameId?: string;
   role?: PlayerId;
   /** Mano del giocatore, comprensiva dell'eventuale carta nella punta della bacchetta (1.4.1) — istantanea presa all'apertura, come per gli altri dialog di azione (es. CastSpellDialogData.payableHand). Assente fuori da una partita: creatable() tratta "nessuna mano" come "nessun elemento", quindi nessuna magia risulta creabile. */
   hand?: readonly Card[];
-  /** true se il giocatore è di turno ed è in fase Azione (5.1) — determina se il bottone "Crea" può essere premuto ora, a prescindere dall'etichetta "creabile" (che riflette solo il possesso degli elementi, vedi creatable()). Assente (quindi mai vero) fuori da una partita. */
+  /** true se il giocatore è di turno ed è in fase Azione (5.1) — determina se il bottone "Apprendi" può essere premuto ora, a prescindere dall'etichetta "apprendibile" (che riflette solo il possesso degli elementi, vedi creatable()). Assente (quindi mai vero) fuori da una partita. */
   canCreate?: boolean;
 }
 
@@ -238,14 +238,14 @@ export class GrimoireDialogComponent {
     return spell.formula.length > 0 && hasElements(this.data.hand ?? [], spell.formula);
   }
 
-  /** Il bottone "Crea" richiede sia gli elementi (creatable) sia di essere di turno in fase Azione (data.canCreate) — a differenza dell'etichetta "creabile" nell'elenco, che mostra solo il primo. Sempre false fuori da una partita (data.canCreate assente). */
+  /** Il bottone "Apprendi" richiede sia gli elementi (creatable) sia di essere di turno in fase Azione (data.canCreate) — a differenza dell'etichetta "apprendibile" nell'elenco, che mostra solo il primo. Sempre false fuori da una partita (data.canCreate assente). */
   protected canCreateSpell(spell: Spell): boolean {
     return !!this.data.canCreate && this.creatable(spell);
   }
 
   protected async createSpell(spell: Spell): Promise<void> {
     // gameId/role sono garantiti presenti qui: canCreateSpell() richiede data.canCreate, mai vero
-    // fuori da una partita (vedi sopra) — quindi il bottone "Crea" che chiama questo metodo non è
+    // fuori da una partita (vedi sopra) — quindi il bottone "Apprendi" che chiama questo metodo non è
     // mai raggiungibile senza di essi.
     if (!this.canCreateSpell(spell) || this.creating() || !this.data.gameId || !this.data.role)
       return;

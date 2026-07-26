@@ -1,0 +1,41 @@
+<div class="collection">
+  <header class="collection__header panel">
+    <h1 class="t-display collection__title">{{ 'collection.title' | translate }}</h1>
+    <button class="btn btn--secondary" (click)="goHome()">{{ 'collection.backHome' | translate }}</button>
+  </header>
+
+  <section class="collection__section panel">
+    <h2 class="t-heading collection__section-title">{{ 'collection.cardBacks' | translate }}</h2>
+    <div class="collection__grid">
+      @for (skin of ownedCardBacks(); track skin) {
+        <div class="collection__item">
+          <img class="collection__card-back" [src]="'/cards-back/' + skin + '.webp'" alt="" />
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="collection__section panel">
+    <h2 class="t-heading collection__section-title">{{ 'collection.backgrounds' | translate }}</h2>
+    <div class="collection__grid">
+      @for (background of ownedBackgrounds(); track background.id) {
+        <div class="collection__item">
+          <img class="collection__background" [src]="background.file" alt="" />
+        </div>
+      }
+    </div>
+  </section>
+
+  <section class="collection__section panel">
+    <h2 class="t-heading collection__section-title">{{ 'collection.titles' | translate }}</h2>
+    @if (unlockedTitles().length === 0) {
+      <p class="t-muted">{{ 'collection.noTitles' | translate }}</p>
+    } @else {
+      <ul class="collection__titles-list">
+        @for (title of unlockedTitles(); track title) {
+          <li class="collection__title-chip">{{ title }}</li>
+        }
+      </ul>
+    }
+  </section>
+</div>

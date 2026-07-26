@@ -9,6 +9,7 @@ import {
   effect,
 } from '@angular/core';
 import { BackgroundService } from '../../services/background.service';
+import { AuthService } from '../../services/auth.service';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -27,6 +28,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 })
 export class BackgroundPickerComponent {
   private readonly backgrounds = inject(BackgroundService);
+  private readonly auth = inject(AuthService);
   protected readonly i18n = inject(TranslationService);
 
   /** Id dello sfondo attualmente persistito sul profilo — la selezione locale si riallinea ogni
@@ -34,7 +36,13 @@ export class BackgroundPickerComponent {
   readonly current = input.required<string>();
   readonly applied = output<string>();
 
-  protected readonly options = this.backgrounds.options;
+  /** Sempre selezionabili (BackgroundOption.free) oppure sbloccati come ricompensa obiettivo — uno
+   * sfondo non posseduto semplicemente non compare qui, stesso schema di
+   * CardBackPickerComponent.ownedCardBacks. */
+  protected readonly options = computed(() => {
+    const unlocked = new Set(this.auth.profile()?.unlockedBackgrounds ?? []);
+    return this.backgrounds.options().filter((o) => o.free || unlocked.has(o.id));
+  });
   protected readonly selectedId = signal('');
 
   protected readonly selectedOption = computed(() =>

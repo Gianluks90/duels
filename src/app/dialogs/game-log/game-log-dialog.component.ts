@@ -37,8 +37,12 @@ export class GameLogDialogComponent {
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
-  /** Più recenti in cima — si legge come un feed, non come una cronaca dall'inizio. */
-  protected readonly entries = computed(() => [...this.data.entries].reverse());
+  /** Più recenti in cima — si legge come un feed, non come una cronaca dall'inizio. `cardCollected`
+   * esclusa di proposito: alimenta solo UserStats.cardsCollected (AchievementsService), è troppo
+   * frequente (una volta a turno) per essere un evento "notevole" da mostrare qui. */
+  protected readonly entries = computed(() =>
+    [...this.data.entries].reverse().filter((entry) => entry.type !== 'cardCollected'),
+  );
 
   protected close(): void {
     this.dialogRef.close();
@@ -119,6 +123,10 @@ export class GameLogDialogComponent {
         });
       case 'fonteReset':
         return this.pick('fonteReset', self, { name });
+      // Filtrata da entries() sopra prima di arrivare qui — il case esiste solo per l'esaustività
+      // dello switch su GameLogEntryData.
+      case 'cardCollected':
+        return '';
     }
   }
 }

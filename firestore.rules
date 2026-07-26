@@ -43,29 +43,220 @@ service cloud.firestore {
         request.resource.data.favoriteSpellIds.size() <= 5;
     }
 
+    // Deve combaciare con public/config/backgrounds.json — i 4 sfondi esistenti oggi restano
+    // sempre gratuiti (nessuno sblocco retroattivo per chi li usa già); solo gli sfondi aggiunti in
+    // futuro come ricompensa (OBJECTIVE_CATALOG, data/objectives.ts) saranno gated da
+    // unlockedBackgrounds. Stesso schema di freeCardBacks()/cardBackValid() sotto.
+    function freeBackgrounds() {
+      return ['dark-wood', 'light-wood', 'burn-wood', 'slate'];
+    }
+
+    function backgroundValid() {
+      return !changedKeys().hasAny(['background']) ||
+        request.resource.data.background in
+          freeBackgrounds().toSet().union(resource.data.get('unlockedBackgrounds', []).toSet());
+    }
+
+    // A differenza di cardBack/background non esiste un titolo gratuito di default: deve sempre
+    // comparire in unlockedTitles (mai un fallback "sempre selezionabile").
+    function titleValid() {
+      return !changedKeys().hasAny(['title']) ||
+        request.resource.data.title in resource.data.get('unlockedTitles', []);
+    }
+
     // Riscatto codice (AuthService.redeemCode): `lastRedeemedCode` è l'unico modo per la regola di
     // sapere QUALE codes/{CODICE} verificare — le regole non possono risalire al codice da un array
     // diff su unlockedCardBacks/redeemedCodeIds. Verifica lo stato FINALE del documento (il codice è
     // scaduto/non iniziato, è già in redeemedCodeIds, il cardBackId che sblocca è in
     // unlockedCardBacks) invece di provare a isolare "l'elemento appena aggiunto" agli array.
+    //
+    // hasAny(['lastRedeemedCode', 'unlockedCardBacks']) invece del solo lastRedeemedCode (fix
+    // dell'audit 2026-07, mentre si chiudeva lo stesso gap per backgrounds/titles sotto): prima
+    // nulla impediva a una scrittura che toccasse SOLO unlockedCardBacks — senza mai passare da
+    // lastRedeemedCode — di infilarci un id arbitrario.
     function redeemValid() {
-      return !changedKeys().hasAny(['lastRedeemedCode']) || redeemGrantValid();
+      return !changedKeys().hasAny(['lastRedeemedCode', 'unlockedCardBacks']) ||
+        (changedKeys().hasAny(['lastRedeemedCode']) && redeemGrantValid());
     }
 
     function redeemGrantValid() {
       let code = request.resource.data.lastRedeemedCode;
       let codeRef = /databases/$(database)/documents/codes/$(code);
+      // size() <= prior + 1 (fix dell'audit 2026-07): senza questo tetto, verificare solo che
+      // l'id sbloccato dal codice SIA in unlockedCardBacks non impedirebbe di infilarcene un
+      // secondo a piacere nella stessa scrittura — lo stesso schema già usato in claimGrantValid().
       return exists(codeRef) &&
         (get(codeRef).data.startAt == null || request.time >= get(codeRef).data.startAt) &&
         (get(codeRef).data.endAt == null || request.time <= get(codeRef).data.endAt) &&
         code in request.resource.data.get('redeemedCodeIds', []) &&
-        get(codeRef).data.cardBackId in request.resource.data.get('unlockedCardBacks', []);
+        get(codeRef).data.cardBackId in request.resource.data.get('unlockedCardBacks', []) &&
+        request.resource.data.get('unlockedCardBacks', []).size() <=
+          resource.data.get('unlockedCardBacks', []).size() + 1;
+    }
+
+    // Statistiche (Achievements): stesso schema del riscatto codice sopra — `lastStatsGameId` è
+    // l'unico modo per la regola di sapere QUALE games/{gameId} verificare quando `stats` cambia.
+    //
+    // ATTENZIONE — rischio accettato consapevolmente (audit del 2026-07, stesso spirito di
+    // password/visibility della lobby più sotto in questo file): `users/{userId}/countedGames/
+    // {gameId}` (marker create-only, sotto) blocca il replay SOLO attraverso il client reale
+    // (AuthService scrive sempre stats+marker insieme, quindi una volta creato il marker un secondo
+    // tentativo dello stesso client viene respinto) — non è una garanzia crittografica: le regole
+    // Firestore valutano ogni documento in modo indipendente, quindi non possono obbligare "questa
+    // scrittura su users/{uid} è valida SOLO SE nella stessa richiesta viene creato anche il
+    // marker". Un client scritto ad hoc potrebbe quindi omettere la creazione del marker e reinviare
+    // l'update di stats per lo stesso gameId senza limite. Confinato al proprio account (nessuna
+    // fuga di dati altrui), ricompense cosmetiche: una vera garanzia richiederebbe una Cloud
+    // Function che aggreghi lo stats server-side quando games/{id} passa a 'finished'.
+    //
+    // Le regole non supportano comunque filtri/lambda su array: possono confrontare uno scalare
+    // letto da games/{id} (qui `state.winner`), ma non contare quante voci di un certo tipo ci sono
+    // in `state.eventLog`. Per questo partite giocate/vittorie/sconfitte sono le uniche validate
+    // ESATTAMENTE; i contatori che nascerebbero contando l'eventLog (incantesimi lanciati,
+    // combinazioni, danno, cura, carte raccolte) sono validati solo per PLAUSIBILITÀ (delta non
+    // negativo, entro un tetto largo a partita, mai raggiungibile in una partita reale).
+    // `spellCastCounts` (mappa libera per-incantesimo) non è validata nei valori, solo nella
+    // dimensione (v. statsPlausible).
+    function statsGameRef() {
+      return /databases/$(database)/documents/games/$(request.resource.data.lastStatsGameId);
+    }
+
+    function statsGameData() {
+      return get(statsGameRef()).data;
+    }
+
+    function statsRole() {
+      return statsGameData().hostId == request.auth.uid ? 'host' : 'guest';
+    }
+
+    function priorStats() {
+      return resource.data.get('stats', {
+        gamesPlayed: 0, wins: 0, losses: 0, cardsCollected: 0, combinationsMade: 0,
+        spellsCast: 0, spellCastCounts: {}, damageDealt: 0, healingDone: 0
+      });
+    }
+
+    function statsDelta(field) {
+      return request.resource.data.stats[field] - priorStats().get(field, 0);
+    }
+
+    // exists() prima di get() (a differenza della prima versione di questa regola): un
+    // lastStatsGameId che punta a un documento inesistente non deve mai far valutare get() a vuoto.
+    // Esclude anche il bot di debug (guestId 'debug-guest', sempre passivo — v. GameService.
+    // createDebugGame): altrimenti si potrebbe farmare "vinci N duelli" battendolo a ripetizione.
+    function isStatsGameParticipant() {
+      return exists(statsGameRef()) &&
+        statsGameData().status == 'finished' &&
+        statsGameData().guestId != 'debug-guest' &&
+        (statsGameData().hostId == request.auth.uid || statsGameData().guestId == request.auth.uid);
+    }
+
+    function statsNotYetCounted() {
+      return !exists(
+        /databases/$(database)/documents/users/$(resource.data.uid)/countedGames/$(request.resource.data.lastStatsGameId)
+      );
+    }
+
+    function statsShapeValid() {
+      return request.resource.data.stats is map &&
+        request.resource.data.stats.gamesPlayed is int &&
+        request.resource.data.stats.wins is int &&
+        request.resource.data.stats.losses is int &&
+        request.resource.data.stats.combinationsMade is int &&
+        request.resource.data.stats.spellsCast is int &&
+        request.resource.data.stats.cardsCollected is int &&
+        request.resource.data.stats.damageDealt is int &&
+        request.resource.data.stats.healingDone is int &&
+        request.resource.data.stats.spellCastCounts is map &&
+        request.resource.data.stats.spellCastCounts.size() <= 100;
+    }
+
+    function statsPlausible() {
+      let winner = statsGameData().state.winner;
+      let role = statsRole();
+      let won = winner == role;
+      let lost = winner != null && winner != role;
+      return statsDelta('gamesPlayed') == 1 &&
+        statsDelta('wins') == (won ? 1 : 0) &&
+        statsDelta('losses') == (lost ? 1 : 0) &&
+        statsDelta('combinationsMade') >= 0 && statsDelta('combinationsMade') <= 50 &&
+        statsDelta('spellsCast') >= 0 && statsDelta('spellsCast') <= 50 &&
+        statsDelta('cardsCollected') >= 0 && statsDelta('cardsCollected') <= 200 &&
+        statsDelta('damageDealt') >= 0 && statsDelta('damageDealt') <= 500 &&
+        statsDelta('healingDone') >= 0 && statsDelta('healingDone') <= 200;
+    }
+
+    // completedObjectiveIds (AuthService.applyGameStats) può cambiare SOLO insieme a stats/
+    // lastStatsGameId — mai da solo — ma a differenza di quei due può anche NON cambiare (una
+    // partita che non completa nessun nuovo obiettivo scrive comunque lo stesso array di prima, non
+    // rientra tra i changedKeys). Solo monotono (mai un id tolto) ed entro un tetto largo per
+    // partita: non verifica che i NUOVI id corrispondano davvero a soglie raggiunte in
+    // OBJECTIVE_CATALOG (richiederebbe incorporare l'intero catalogo nelle regole) — stesso rischio
+    // accettato di statsPlausible() sopra.
+    function completedObjectiveIdsValid() {
+      let prior = resource.data.get('completedObjectiveIds', []);
+      let next = request.resource.data.get('completedObjectiveIds', prior);
+      // size() <= 200 (fix dell'audit 2026-07): il tetto "+20 a partita" da solo limita solo la
+      // CRESCITA per singola scrittura, non impedirebbe all'array di gonfiarsi senza limite nel
+      // tempo ripetendo l'azione su partite reali diverse — 200 è comunque un tetto largo apposta
+      // (il catalogo oggi ne ha 14).
+      return next.hasAll(prior) && next.size() <= prior.size() + 20 && next.size() <= 200;
+    }
+
+    function statsValid() {
+      return !changedKeys().hasAny(['stats', 'lastStatsGameId', 'completedObjectiveIds']) ||
+        (changedKeys().hasAll(['stats', 'lastStatsGameId']) &&
+         statsShapeValid() && isStatsGameParticipant() && statsNotYetCounted() && statsPlausible() &&
+         completedObjectiveIdsValid());
+    }
+
+    // Riscatto ricompensa obiettivo (AuthService.claimObjective): a differenza di stats sopra, qui
+    // NON serve sapere quale partita — solo che l'obiettivo risulti già in completedObjectiveIds.
+    // claimedObjectiveIds ⊆ completedObjectiveIds sempre, e unlockedBackgrounds/unlockedTitles
+    // possono crescere solo insieme a un nuovo riscatto (mai da una scrittura scollegata — chiude,
+    // per queste due ricompense, lo stesso gap appena richiuso su unlockedCardBacks in redeemValid).
+    // Un solo riscatto per scrittura (+1), come fa davvero AuthService.claimObjective. Non verifica
+    // che l'id aggiunto a unlockedBackgrounds/unlockedTitles sia PROPRIO il reward di QUELL'obiettivo
+    // (richiederebbe anche qui il catalogo nelle regole) — stesso rischio accettato di sopra.
+    function claimValid() {
+      return !changedKeys().hasAny(['claimedObjectiveIds', 'unlockedBackgrounds', 'unlockedTitles']) ||
+        claimGrantValid();
+    }
+
+    function claimGrantValid() {
+      let priorClaimed = resource.data.get('claimedObjectiveIds', []);
+      let nextClaimed = request.resource.data.get('claimedObjectiveIds', priorClaimed);
+      let completed = request.resource.data.get('completedObjectiveIds', []);
+      let priorBackgrounds = resource.data.get('unlockedBackgrounds', []);
+      let nextBackgrounds = request.resource.data.get('unlockedBackgrounds', priorBackgrounds);
+      let priorTitles = resource.data.get('unlockedTitles', []);
+      let nextTitles = request.resource.data.get('unlockedTitles', priorTitles);
+      return completed.hasAll(nextClaimed) &&
+        nextClaimed.hasAll(priorClaimed) && nextClaimed.size() <= priorClaimed.size() + 1 &&
+        nextBackgrounds.hasAll(priorBackgrounds) && nextBackgrounds.size() <= priorBackgrounds.size() + 1 &&
+        nextTitles.hasAll(priorTitles) && nextTitles.size() <= priorTitles.size() + 1 &&
+        // una crescita di sfondi/titoli deve sempre accompagnarsi a un riscatto vero e proprio.
+        ((nextBackgrounds.size() == priorBackgrounds.size() && nextTitles.size() == priorTitles.size()) ||
+         nextClaimed.size() > priorClaimed.size());
     }
 
     match /users/{userId} {
       allow read: if request.auth != null && (request.auth.uid == userId || isFriend(userId));
       allow write: if request.auth != null && request.auth.uid == userId &&
-        favoritesValid() && cardBackValid() && redeemValid();
+        favoritesValid() && cardBackValid() && redeemValid() && statsValid() &&
+        backgroundValid() && titleValid() && claimValid();
+    }
+
+    // Achievements: marker create-only "questa partita è già stata conteggiata negli stats
+    // dell'utente" — v. statsValid() sopra, incluso l'avviso sui limiti reali di questo guardiano
+    // (blocca il replay solo attraverso il client reale, non è una garanzia crittografica).
+    match /users/{userId}/countedGames/{gameId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId &&
+        get(/databases/$(database)/documents/games/$(gameId)).data.status == 'finished' &&
+        (get(/databases/$(database)/documents/games/$(gameId)).data.hostId == userId ||
+         get(/databases/$(database)/documents/games/$(gameId)).data.guestId == userId);
+      allow update, delete: if false;
     }
 
     // Riscatta codice: catalogo scritto solo manualmente (console/CLI Firebase) — mai dal client,

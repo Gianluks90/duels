@@ -1,0 +1,28 @@
+.objectives {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--sp-5);
+  height: 100dvh;
+  overflow-y: auto;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-5);
+  }
+
+  &__title {
+    font-size: 1.5rem;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+}

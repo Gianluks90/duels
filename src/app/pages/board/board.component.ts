@@ -1557,8 +1557,10 @@ export class BoardComponent implements OnInit {
   }
 
   protected openGameSettings(): void {
+    const role = this.myRole();
+    if (!role) return; // redirect già gestito in ngOnInit per chi non è host/guest di questa partita
     this.dialog.open(GameSettingsDialogComponent, {
-      data: { gameId: this.gameId() },
+      data: { gameId: this.gameId(), role },
       positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       hasBackdrop: true,
       backdropClass: 'dialog-backdrop',

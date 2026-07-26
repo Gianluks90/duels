@@ -1,0 +1,47 @@
+<div class="profile">
+  <header class="profile__header panel">
+    <h1 class="t-display profile__title">{{ 'profilePage.title' | translate }}</h1>
+    <button class="btn btn--secondary" (click)="goHome()">{{ 'profilePage.backHome' | translate }}</button>
+  </header>
+
+  @if (loading()) {
+    <p class="t-muted">{{ 'profilePage.loading' | translate }}</p>
+  } @else if (notFound()) {
+    <p class="t-muted">{{ 'profilePage.notFound' | translate }}</p>
+  } @else if (profile(); as p) {
+    <section class="profile__card panel panel--raised">
+      <div class="profile__identity">
+        @if (p.photoURL; as photo) {
+          <img class="profile__avatar" [src]="photo" alt="" referrerpolicy="no-referrer" />
+        } @else {
+          <span class="profile__avatar profile__avatar--fallback">{{ p.displayName.charAt(0) }}</span>
+        }
+        <div>
+          <p class="t-heading profile__name">{{ p.displayName }}</p>
+          @if (p.title; as title) {
+            <p class="profile__player-title">{{ title }}</p>
+          }
+        </div>
+      </div>
+
+      <dl class="profile__stats">
+        <div class="profile__stat">
+          <dt class="t-muted">{{ 'profilePage.stats.gamesPlayed' | translate }}</dt>
+          <dd>{{ stats().gamesPlayed }}</dd>
+        </div>
+        <div class="profile__stat">
+          <dt class="t-muted">{{ 'profilePage.stats.wins' | translate }}</dt>
+          <dd>{{ stats().wins }}</dd>
+        </div>
+        <div class="profile__stat">
+          <dt class="t-muted">{{ 'profilePage.stats.losses' | translate }}</dt>
+          <dd>{{ stats().losses }}</dd>
+        </div>
+        <div class="profile__stat">
+          <dt class="t-muted">{{ 'profilePage.stats.spellsCast' | translate }}</dt>
+          <dd>{{ stats().spellsCast }}</dd>
+        </div>
+      </dl>
+    </section>
+  }
+</div>
