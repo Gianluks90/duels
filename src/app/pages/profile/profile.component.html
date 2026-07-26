@@ -18,7 +18,7 @@
         }
         <div>
           <p class="t-heading profile__name">{{ p.displayName }}</p>
-          @if (p.title; as title) {
+          @if (displayTitle(); as title) {
             <p class="profile__player-title">{{ title }}</p>
           }
         </div>

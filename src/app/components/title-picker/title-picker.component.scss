@@ -1,0 +1,21 @@
+.title-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+
+  // Stessi valori di .options-dialog__select/.background-picker__select — un dropdown dell'app
+  // deve leggersi come lo stesso controllo ovunque compaia, non una variante propria per componente.
+  &__select {
+    padding: var(--sp-1) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-gold);
+    color: var(--text-heading);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  &__apply {
+    align-self: flex-end;
+  }
+}

@@ -53,6 +53,11 @@
       left: 6px;
       flex-direction: row-reverse;
     }
+
+    // Titolo allineato come il nome (v. .hud__identity sopra: a destra per l'avversario).
+    .hud__title-row {
+      text-align: right;
+    }
   }
 
   &__content {
@@ -91,6 +96,28 @@
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
+  }
+
+  // Raggruppa name-row + title-row: unico figlio diretto (con hp-bar) di .hud__content, così
+  // justify-content: space-between lì sopra continua a vedere solo 2 elementi (v. .html).
+  &__header {
+    width: 100%;
+  }
+
+  // Titolo equipaggiato (Achievements), subito sotto il bordo del nome — testo piccolo, non deve
+  // competere visivamente col nome sopra o rubare troppo dello spazio libero prima della barra
+  // vita (dove il valore HP sporge, v. .hud__values). Allineato a sinistra di default (stesso lato
+  // di .hud__identity); mirrored lo sposta a destra sopra.
+  &__title-row {
+    margin: 3px 0 0;
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--text-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   // ── Name row ────────────────────────────────────────────────────────────────

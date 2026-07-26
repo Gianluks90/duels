@@ -1,0 +1,129 @@
+// Ogni shape mantiene lo stesso aspect ratio sia posseduta (arte reale) sia da sbloccare
+// (lucchetto) — non deve mai "saltare" nella griglia mescolando dimensioni diverse.
+.collection-tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-gold);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  cursor: default;
+  transition: border-color var(--transition), box-shadow var(--transition);
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--border-bright);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--text-heading);
+  }
+
+  &--card {
+    aspect-ratio: var(--card-ratio);
+  }
+
+  &--background {
+    aspect-ratio: 16 / 9;
+  }
+
+  // Card rettangolare sottile, non un quadrato icona: titoli sono solo testo, deve starci tutto
+  // senza troncare — niente centratura, il testo si allinea a sinistra e va a capo se serve.
+  &--title {
+    justify-content: flex-start;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+    cursor: default;
+  }
+
+  &--locked {
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  // Stesso schema di IconButtonComponent (icon-button.component.scss): background-color +
+  // mask-image invece di un <img>, così l'icona (fill chiaro nell'SVG) si tinge di oro con
+  // --text-heading invece di restare grigia.
+  &__lock {
+    width: 32%;
+    height: 32%;
+    background-color: var(--text-heading);
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+  }
+
+  &__owned-label {
+    padding: var(--sp-2);
+    text-align: center;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-heading);
+  }
+
+  // Lucchetto piccolo (non centrato/dominante come &__lock sopra): un titolo bloccato mostra
+  // comunque nome e condizione per intero, il lucchetto è solo un'icona di stato accanto al testo.
+  &__title-lock {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    background-color: var(--text-heading);
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+
+  &__title-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__title-name {
+    margin: 0;
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-heading);
+  }
+
+  &__title-unlock {
+    margin: 0;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  &__tooltip-name {
+    margin: 0 0 var(--sp-1);
+    font-family: var(--font-ui);
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  &__tooltip-description {
+    margin: 0 0 var(--sp-2);
+    color: var(--text-muted);
+  }
+
+  &__tooltip-unlock {
+    margin: 0;
+  }
+}

@@ -161,6 +161,7 @@
 
   "home": {
     "debug": "Debug",
+    "homeNav": "Home",
     "grimoire": "Grimorio",
     "collection": "Collezione",
     "objectives": "Obiettivi",
@@ -170,9 +171,9 @@
     "avatarAria": "Profilo",
     "menuAria": "Menu",
     "menu": {
-      "myProfile": "Il mio profilo",
-      "profile": "Profilo",
-      "redeemCode": "Riscatta codice",
+      "myProfile": "Profilo pubblico",
+      "profile": "Impostazioni profilo",
+      "redeemCode": "Riscatta un codice",
       "signOut": "Esci"
     },
     "friendLink": {
@@ -336,7 +337,6 @@
 
   "objectives": {
     "title": "Obiettivi",
-    "backHome": "Torna alla Home",
     "claim": "Riscatta",
     "claimed": "Riscattato",
     "rewardPending": "Ricompensa da definire",
@@ -354,11 +354,126 @@
 
   "collection": {
     "title": "Collezione",
-    "backHome": "Torna alla Home",
     "cardBacks": "Dorsi carte",
     "backgrounds": "Sfondi",
     "titles": "Titoli",
-    "noTitles": "Nessun titolo sbloccato ancora."
+    "elements": "Elementi",
+    "spells": "Incantesimi",
+    "noTitles": "Nessun titolo sbloccato ancora.",
+    "descriptionPending": "Descrizione da definire.",
+    "alwaysAvailable": "Sempre disponibile.",
+    "unlockedViaCode": "Sbloccato con un codice riscatto.",
+    "unlockedCondition": "Sbloccato completando: {condition}.",
+    "lockedCondition": "Si sblocca completando: {condition}.",
+    "secretConditionTooltip": "Condizioni di sblocco segrete",
+    "redeemCodeLocked": "Sbloccabile con un codice speciale.",
+    "unlockedPurchase": "Sbloccato come sostenitore.",
+    "purchaseLocked": "Sarà disponibile come acquisto per i sostenitori.",
+    "unlockedSeasonal": "Sbloccato durante un evento stagionale.",
+    "seasonalLocked": "Obiettivo stagionale in arrivo — dettagli non ancora decisi.",
+    "legacyLabel": "{name} (V1)",
+    "unlockedSpellUsage": "Sbloccato lanciando {name} {count} volte.",
+    "lockedSpellUsage": "Si sblocca lanciando {name} {count} volte.",
+    "elementCatalog": {
+      "currentDescription": "L'elemento così come appare oggi in ogni partita.",
+      "legacyDescription": "L'illustrazione originale di questo elemento, sostituita dal nuovo stile artistico — condizione di sblocco ancora da decidere."
+    },
+    "cardBackCatalog": {
+      "dark": {
+        "name": "Scuro",
+        "description": "Il dorso classico e austero, sempre a disposizione di ogni mago."
+      },
+      "light": {
+        "name": "Chiaro",
+        "description": "Il suo contraltare luminoso, sempre a disposizione di ogni mago."
+      },
+      "golden": {
+        "name": "Dorato",
+        "description": "Splende come il metallo più prezioso — riservato a chi ha già dimostrato il proprio valore in duello."
+      },
+      "books": {
+        "name": "Libri",
+        "description": "Una collezione di tomi arcani, legata a un progetto al di fuori di Duels."
+      },
+      "founder": {
+        "name": "Fondatore",
+        "description": "Un omaggio a chi ha sostenuto lo sviluppo di Duels fin dagli inizi."
+      },
+      "summer": {
+        "name": "Estivo",
+        "description": "Un dorso a tema stagionale, disponibile solo per un periodo limitato dell'anno."
+      }
+    },
+    "backgroundCatalog": {
+      "dark-wood": {
+        "name": "Legno scuro",
+        "description": "Il legno scuro e ruvido di un antico circolo di maghi."
+      },
+      "light-wood": {
+        "name": "Legno chiaro",
+        "description": "Un legno chiaro e levigato, per un duello alla luce del giorno."
+      },
+      "burn-wood": {
+        "name": "Legno bruciato",
+        "description": "Legno bruciato dalle fiamme di duelli passati."
+      },
+      "slate": {
+        "name": "Ardesia",
+        "description": "Una lastra d'ardesia fredda e silenziosa."
+      },
+      "golden-fabric": {
+        "name": "Tessuto dorato",
+        "description": "Un tessuto dorato, riservato a chi ha già vinto 50 duelli."
+      },
+      "felt-fabric": {
+        "name": "Feltro consumato",
+        "description": "Un feltro consumato da 50 partite giocate."
+      },
+      "arcane": {
+        "name": "Arcano",
+        "description": "Simboli arcani per chi ha già lanciato 100 incantesimi."
+      },
+      "founder": {
+        "name": "Fondatore",
+        "description": "Un omaggio a chi ha sostenuto lo sviluppo di Duels fin dagli inizi."
+      },
+      "amber": {
+        "name": "Ambra",
+        "description": "Uno sfondo ambrato, in arrivo con la stagione autunnale."
+      }
+    },
+    "titleCatalog": {
+      "novice_m": { "name": "Novizio" },
+      "novice_f": { "name": "Novizia" },
+      "novice_x": { "name": "Novizi*" },
+      "apprentice": { "name": "Apprendista" },
+      "stubborn_m": { "name": "Ostinato" },
+      "stubborn_f": { "name": "Ostinata" },
+      "stubborn_x": { "name": "Ostinat*" },
+      "gatherer_m": { "name": "Raccoglitore" },
+      "gatherer_f": { "name": "Raccoglitrice" },
+      "gatherer_x": { "name": "Raccoglitor*" },
+      "mixologist": { "name": "Mixologista" },
+      "enchanter_m": { "name": "Incantatore" },
+      "enchanter_f": { "name": "Incantatrice" },
+      "enchanter_x": { "name": "Incantator*" },
+      "magical_m": { "name": "Magico" },
+      "magical_f": { "name": "Magica" },
+      "magical_x": { "name": "Magic*" },
+      "dangerous_m": { "name": "Pericoloso" },
+      "dangerous_f": { "name": "Pericolosa" },
+      "dangerous_x": { "name": "Pericolos*" },
+      "resilient": { "name": "Resistente" },
+      "collector": { "name": "Collezionista" },
+      "alchemist": { "name": "Alchimista" },
+      "sorcerer_m": { "name": "Stregone" },
+      "sorcerer_f": { "name": "Strega" },
+      "sorcerer_x": { "name": "Streg*" },
+      "beginner": { "name": "Principiante" },
+      "first_duelist_m": { "name": "Primo duellante" },
+      "first_duelist_f": { "name": "Prima duellante" },
+      "first_duelist_x": { "name": "Prim* duellante" }
+    }
   },
 
   "profilePage": {
@@ -570,7 +685,11 @@
     },
     "cardBack": {
       "title": "Dorso carte",
-      "apply": "Applica"
+      "apply": "Applica",
+      "options": {
+        "dark": "Scuro",
+        "light": "Chiaro"
+      }
     },
     "background": {
       "title": "Sfondo di gioco",
@@ -581,6 +700,10 @@
         "burn-wood": "Legno bruciato",
         "slate": "Ardesia"
       }
+    },
+    "titleEquip": {
+      "title": "Titolo",
+      "apply": "Applica"
     },
     "danger": {
       "title": "Zona Pericolosa",

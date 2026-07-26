@@ -1,0 +1,84 @@
+.app-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-5);
+  border-top: none;
+  border-left: none;
+  border-right: none;
+
+  &--compact {
+    padding: var(--sp-2) var(--sp-3);
+
+    .app-header__logo {
+      font-size: 1.4rem;
+    }
+
+    .app-header__user {
+      gap: var(--sp-2);
+    }
+  }
+
+  // font-family volutamente NON toccato qui: .t-display (globale, _design-system.scss) lo imposta
+  // già al font/gradiente oro del logo — un reset esplicito a `inherit` vincerebbe su di lui (una
+  // regola scoped al componente ha più specificità di una classe globale) facendo perdere lo stile.
+  &__logo {
+    font-size: 1.8rem;
+    line-height: 1;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+
+  &__avatar {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    border: 2px solid var(--border-gold);
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    transition: border-color var(--transition);
+
+    &:hover {
+      border-color: var(--border-bright);
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // Grimorio/Regolamento/Opzioni: colonna fissa in basso a destra, sempre in vista — stesso schema
+  // di .board__toolbar (Fonte Arcana, board.component.scss), solo angolo diverso.
+  &__toolbar {
+    position: fixed;
+    bottom: var(--sp-4);
+    right: var(--sp-4);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+}

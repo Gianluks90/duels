@@ -75,6 +75,12 @@ export class PlayerHudComponent {
    * proprio pannello sia quello dell'avversario lo ricevono, a differenza di pinnedSpells (solo
    * proprio). Vuoto finché il profilo/GameDoc non è ancora arrivato o l'utente non ha preferiti. */
   readonly favoriteSpellNames = input<readonly string[]>([]);
+  /** Titolo equipaggiato di QUESTO giocatore, già risolto in testo (board.component.ts, via
+   * TranslationService.titleLabel — GameDoc.hostTitle/guestTitle sono variant-id, non testo pronto).
+   * Reciproco come favoriteSpellNames sopra. Null finché non equipaggiato (profili creati prima di
+   * questa feature) o non ancora arrivato. Chiamato `equippedTitle`, non `title`: quest'ultimo è già
+   * l'attributo HTML nativo (tooltip), da non confondere con un @Component input. */
+  readonly equippedTitle = input<string | null>(null);
   /** Magie appuntate per QUESTA partita (Qualità della vita) — a differenza di favoriteSpellNames,
    * solo il pannello PROPRIO le riceve (board.component.html non le passa a quello dell'avversario):
    * sono un promemoria privato, non visibile all'altro giocatore. */

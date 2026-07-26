@@ -38,6 +38,15 @@ export class ProfileComponent implements OnInit {
     this.isSelf() ? this.auth.profile() : this.fetchedProfile(),
   );
   protected readonly stats = computed(() => this.profile()?.stats ?? EMPTY_USER_STATS);
+  /** Il titolo da mostrare — risolto in testo (v. TranslationService.titleLabel, `p.title` è una
+   * variant-id, non testo già pronto). Chi può EQUIPAGGIARE un titolo esclusivo (v. TITLE_CATALOG,
+   * es. "Primo duellante") è ristretto altrove (firestore.rules, CollectionComponent) — una volta
+   * equipaggiato resta visibile normalmente a chiunque possa vedere questo profilo, nessuna
+   * restrizione qui. */
+  protected readonly displayTitle = computed(() => {
+    const titleId = this.profile()?.title;
+    return titleId ? this.i18n.titleLabel(titleId) : null;
+  });
 
   async ngOnInit(): Promise<void> {
     const uid = this.route.snapshot.paramMap.get('uid') ?? '';

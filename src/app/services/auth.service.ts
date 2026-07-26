@@ -15,6 +15,7 @@ import type { RedeemCode } from '../models/redeem-code.model';
 import type { GameDoc } from './game.service';
 import type { PlayerId } from '../models/player.model';
 import { OBJECTIVE_CATALOG } from '../data/objectives';
+import { titleRewardVariantIds } from '../data/titles';
 import { applyGameStatsDelta, newlyCompletedObjectives } from '../game/achievements';
 
 export const DEBUG_UID = '8AkU1Du8BlNQYDKzH8Icu7lf8Qt2';
@@ -57,7 +58,10 @@ export class AuthService {
 
   async updateProfile(
     patch: Partial<
-      Pick<UserProfile, 'displayName' | 'photoURL' | 'cardBack' | 'background' | 'favoriteSpellIds'>
+      Pick<
+        UserProfile,
+        'displayName' | 'photoURL' | 'cardBack' | 'background' | 'favoriteSpellIds' | 'title'
+      >
     >,
   ): Promise<void> {
     const user = this.auth.currentUser;
@@ -173,11 +177,12 @@ export class AuthService {
     });
   }
 
-  /** Riscatta la ricompensa di un obiettivo già completato (v. UserProfile.completedObjectiveIds) —
-   * aggiunge l'id del reward a unlockedBackgrounds/unlockedTitles e l'obiettivo a
-   * claimedObjectiveIds. No-op se l'obiettivo non esiste, non è ancora completato, o è già stato
-   * riscattato (evita un write superfluo, la regola Firestore lo accetterebbe comunque come
-   * no-op: arrayUnion su un id già presente non duplica nulla). */
+  /** Riscatta le ricompense di un obiettivo già completato (v. UserProfile.completedObjectiveIds) —
+   * un obiettivo può darne più di una insieme (Objective.rewards), ognuna nel proprio campo
+   * (unlockedCardBacks/unlockedBackgrounds/unlockedTitles), tutte accreditate in una sola
+   * scrittura insieme all'obiettivo aggiunto a claimedObjectiveIds. No-op se l'obiettivo non
+   * esiste, non è ancora completato, o è già stato riscattato (evita un write superfluo, la regola
+   * Firestore lo accetterebbe comunque come no-op). */
   async claimObjective(objectiveId: string): Promise<void> {
     const user = this.auth.currentUser;
     const current = this.profile();
@@ -188,16 +193,25 @@ export class AuthService {
     if (!(current.completedObjectiveIds ?? []).includes(objectiveId)) return;
     if ((current.claimedObjectiveIds ?? []).includes(objectiveId)) return;
 
-    const rewardField = objective.reward.type === 'background' ? 'unlockedBackgrounds' : 'unlockedTitles';
-    const nextRewards = [...new Set([...(current[rewardField] ?? []), objective.reward.id])];
     const nextClaimed = [...new Set([...(current.claimedObjectiveIds ?? []), objectiveId])];
+    const patch: Partial<UserProfile> = { claimedObjectiveIds: nextClaimed };
 
-    await updateDoc(doc(this.firebase.db, 'users', user.uid), {
-      claimedObjectiveIds: nextClaimed,
-      [rewardField]: nextRewards,
-    });
+    for (const reward of objective.rewards) {
+      const field =
+        reward.type === 'cardBack'
+          ? 'unlockedCardBacks'
+          : reward.type === 'background'
+            ? 'unlockedBackgrounds'
+            : 'unlockedTitles';
+      // I titoli possono sbloccare più di un id in un colpo solo: le varianti di genere (v.
+      // data/titles.ts) — dorsi/sfondi restano sempre un solo id per reward.
+      const rewardIds = reward.type === 'title' ? titleRewardVariantIds(reward.id) : [reward.id];
+      const prior = patch[field] ?? current[field] ?? [];
+      patch[field] = [...new Set([...prior, ...rewardIds])];
+    }
 
-    this.profile.set({ ...current, claimedObjectiveIds: nextClaimed, [rewardField]: nextRewards });
+    await updateDoc(doc(this.firebase.db, 'users', user.uid), patch);
+    this.profile.set({ ...current, ...patch });
   }
 
   async deleteAccount(): Promise<void> {
@@ -225,6 +239,11 @@ export class AuthService {
       background: DEFAULT_BACKGROUND_ID,
       createdAt: Date.now(),
       favoriteSpellIds: [],
+      // Unico titolo gratuito per TUTTI fin dall'account (v. TITLE_CATALOG in data/titles.ts) —
+      // già equipaggiabile senza claim, `titleValid()` in firestore.rules lo permette a
+      // prescindere da `unlockedTitles`, stesso motivo per cui cardBack/background sopra non
+      // hanno bisogno di un array "unlocked" per i loro valori di default.
+      title: 'beginner',
     };
 
     await setDoc(ref, newProfile);

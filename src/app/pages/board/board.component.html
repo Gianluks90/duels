@@ -28,6 +28,7 @@
           [shieldEvent]="opponentShieldEvent()"
           [poisonDamageEvent]="opponentPoisonDamageEvent()"
           [favoriteSpellNames]="opponentFavoriteSpellNames()"
+          [equippedTitle]="opponentTitle()"
           [mirrored]="true"
         />
 
@@ -640,6 +641,7 @@
           [shieldEvent]="playerShieldEvent()"
           [poisonDamageEvent]="playerPoisonDamageEvent()"
           [favoriteSpellNames]="playerFavoriteSpellNames()"
+          [equippedTitle]="playerTitle()"
           [pinnedSpells]="playerPinnedSpells()"
           [mirrored]="false"
           (settingsClick)="openGameSettings()"

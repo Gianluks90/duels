@@ -3,7 +3,8 @@
 // organizzazione, il budget anyComponentStyle di angular.json è per singolo file), attivato dalla
 // sola classe .home--compact sull'host (nessun @media qui, la soglia la decide già BreakpointObserver
 // lato TS). A differenza della board, Home non distingue mobile da tablet: un solo interruttore
-// basta per collassare header e pannelli, non serve una fascia intermedia a due colonne.
+// basta per collassare i pannelli, non serve una fascia intermedia a due colonne. L'header vero e
+// proprio è AppHeaderComponent (component/app-header/), con la propria soglia compact identica.
 .home--compact {
   .home__main {
     // .home ha height: 100dvh senza scroll proprio (pensato per il layout desktop, che ci sta
@@ -23,17 +24,5 @@
     // impilati — il contenuto reale (poche righe di testo + un bottone) basta a riempirlo.
     min-height: 0;
     padding: var(--sp-4);
-  }
-
-  .home__header {
-    padding: var(--sp-2) var(--sp-3);
-  }
-
-  .home__logo {
-    font-size: 1.4rem;
-  }
-
-  .home__user {
-    gap: var(--sp-2);
   }
 }

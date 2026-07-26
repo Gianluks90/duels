@@ -16,12 +16,6 @@ import { FriendsService } from '../../services/friends.service';
 import { TranslationService } from '../../services/translation.service';
 import { BoardLayoutService } from '../../services/board-layout.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
-import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.component';
-import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
-import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
-import { RedeemDialogComponent } from '../../dialogs/redeem/redeem-dialog.component';
-import { FriendsDialogComponent } from '../../dialogs/friends/friends-dialog.component';
 import { CreateGameDialogComponent } from '../../dialogs/create-game/create-game-dialog.component';
 import {
   JoinGameDialogComponent,
@@ -29,11 +23,8 @@ import {
 } from '../../dialogs/join-game/join-game-dialog.component';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { CardComponent } from '../../components/card/card.component';
+import { AppHeaderComponent } from '../../components/app-header/app-header.component';
 import type { Element } from '../../models/element.model';
-import {
-  ActionMenuComponent,
-  type ActionMenuItem,
-} from '../../components/ui/action-menu/action-menu.component';
 
 /** I 10 elementi "carta" del mazzo — Residuo Arcano e magie escluse di proposito (regolamento 2.1: non sono elementi veri, non hanno senso come decorazione "elemento" sullo sfondo). */
 const BACKGROUND_ELEMENTS: readonly Element[] = [
@@ -94,7 +85,7 @@ function randomPointAwayFrom(other: BackgroundPoint): BackgroundPoint {
   selector: 'app-home',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [ActionMenuComponent, IconButtonComponent, CardComponent, TranslatePipe],
+  imports: [IconButtonComponent, CardComponent, TranslatePipe, AppHeaderComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss', './home-compact.component.scss'],
 })
@@ -110,10 +101,8 @@ export class HomeComponent implements OnInit {
   private readonly boardLayout = inject(BoardLayoutService);
   protected readonly i18n = inject(TranslationService);
 
-  protected readonly profile = this.auth.profile;
   protected readonly isDebugUser = this.auth.isDebugUser;
 
-  protected readonly menuIcon = '/icons/menu_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly cancelIcon = '/icons/delete_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg';
   /** 2 carte per ciascuno dei 10 elementi (20 totali) — con solo 10 restavano troppi vuoti visibili
    * sullo sfondo. La seconda copia di ogni elemento ripesca la posizione finché non è a
@@ -139,34 +128,8 @@ export class HomeComponent implements OnInit {
   );
   /** Riusa BoardLayoutService (nome storico, ma generico — nessuna logica specifica della board al suo interno) invece di ricreare un secondo BreakpointObserver con soglie proprie: stessa fascia mobile/tablet/desktop in tutta l'app. */
   protected readonly layoutTier = this.boardLayout.tier;
-  /** Home non ha bisogno di distinguere mobile da tablet come la board (nessun layout a due colonne intermedio qui) — un solo interruttore "sotto i 1024px" basta per collassare header e pannelli. */
+  /** Home non ha bisogno di distinguere mobile da tablet come la board (nessun layout a due colonne intermedio qui) — un solo interruttore "sotto i 1024px" basta per collassare i pannelli (l'header vero e proprio, AppHeaderComponent, ha la propria soglia identica). */
   protected readonly isCompact = computed(() => this.layoutTier() !== 'desktop');
-
-  protected readonly avatarMenuItems = computed<ActionMenuItem[]>(() => [
-    { label: this.i18n.t('home.menu.myProfile'), action: () => this.openMyProfile() },
-    { label: this.i18n.t('home.menu.profile'), action: () => this.openProfile() },
-    { label: this.i18n.t('home.menu.redeemCode'), action: () => this.openRedeemDialog() },
-    { label: this.i18n.t('home.menu.signOut'), action: () => this.signOut() },
-  ]);
-
-  /** Stesse azioni dei bottoni dell'header in versione desktop, raccolte in un unico menu a comparsa quando isCompact() — vedi home.component.html. */
-  protected readonly headerMenuItems = computed<ActionMenuItem[]>(() => {
-    const items: ActionMenuItem[] = [];
-    if (this.isDebugUser()) {
-      items.push({
-        label: this.debugLoading() ? '…' : this.i18n.t('home.debug'),
-        action: () => void this.startDebugGame(),
-        disabled: this.debugLoading(),
-      });
-    }
-    items.push({ label: this.i18n.t('home.grimoire'), action: () => this.openGrimoire() });
-    items.push({ label: this.i18n.t('home.collection'), action: () => this.openCollection() });
-    items.push({ label: this.i18n.t('home.objectives'), action: () => this.openObjectives() });
-    items.push({ label: this.i18n.t('home.rulebook'), action: () => this.openRulebook() });
-    items.push({ label: this.i18n.t('home.friends'), action: () => this.openFriends() });
-    items.push({ label: this.i18n.t('home.options'), action: () => this.openOptions() });
-    return items;
-  });
 
   /** Id della MIA partita in attesa, se ne ho una — determina se il box mostra la riga "la tua
    * partita" + Annulla, oppure il bottone "Crea partita" (home.component.html). */
@@ -230,78 +193,6 @@ export class HomeComponent implements OnInit {
       this.friendLinkResult.set('error');
     }
     setTimeout(() => this.friendLinkResult.set(null), 4000);
-  }
-
-  protected openGrimoire(): void {
-    this.dialog.open(GrimoireDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-  }
-
-  protected openRulebook(): void {
-    this.dialog.open(RulebookDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-  }
-
-  protected openOptions(): void {
-    this.dialog.open(OptionsDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-  }
-
-  protected openProfile(): void {
-    this.dialog.open(ProfileDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-  }
-
-  protected openCollection(): void {
-    this.router.navigate(['/collection']);
-  }
-
-  protected openObjectives(): void {
-    this.router.navigate(['/objectives']);
-  }
-
-  /** Il proprio profilo pubblico (Achievements) — distinto da openProfile() sopra, che apre invece
-   * la dialog di MODIFICA (nome/foto/dorso/...). Questa è la stessa pagina che vedrebbe un amico. */
-  protected openMyProfile(): void {
-    const uid = this.auth.user()?.uid;
-    if (uid) this.router.navigate(['/profile', uid]);
-  }
-
-  protected openRedeemDialog(): void {
-    this.dialog.open(RedeemDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-  }
-
-  protected openFriends(): void {
-    const ref = this.dialog.open(FriendsDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-    // La lista amici appena chiusa la dialog potrebbe essere cambiata (nuove accettazioni) — riflette
-    // subito l'ordinamento "amici in cima" nella lobby pubblica senza dover ricaricare la pagina.
-    ref.closed.subscribe(() => void this.loadPublicGames());
   }
 
   /** Duelli in attesa di sfidante (Qualità della vita): elenco partite 'waiting' + set di amici.
@@ -401,10 +292,5 @@ export class HomeComponent implements OnInit {
     } finally {
       this.debugLoading.set(false);
     }
-  }
-
-  protected async signOut(): Promise<void> {
-    await this.auth.signOut();
-    await this.router.navigate(['/login']);
   }
 }

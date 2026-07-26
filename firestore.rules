@@ -57,11 +57,32 @@ service cloud.firestore {
           freeBackgrounds().toSet().union(resource.data.get('unlockedBackgrounds', []).toSet());
     }
 
-    // A differenza di cardBack/background non esiste un titolo gratuito di default: deve sempre
-    // comparire in unlockedTitles (mai un fallback "sempre selezionabile").
+    // Deve combaciare con le entry `unlock.kind === 'free'` di TITLE_CATALOG in data/titles.ts —
+    // stesso schema di freeCardBacks()/freeBackgrounds() sopra. Gli altri titoli restano gated da
+    // unlockedTitles come prima.
+    function freeTitles() {
+      return ['beginner'];
+    }
+
+    // "first_duelist" ("Primo duellante"/"Prima duellante") è `exclusive` a UN account (v.
+    // data/titles.ts, EXCLUSIVE_TITLE_OWNER_UID — mirror manuale, le regole non possono importare
+    // quel modulo): nessun altro uid deve poterselo equipaggiare, nemmeno passando la stessa
+    // stringa letterale in `title`. Restituisce un array vuoto per chiunque altro, così
+    // `in exclusiveTitles()` risulta sempre falso per loro.
+    function exclusiveTitleOwnerUid() {
+      return '8AkU1Du8BlNQYDKzH8Icu7lf8Qt2';
+    }
+    function exclusiveTitles() {
+      return request.auth.uid == exclusiveTitleOwnerUid()
+        ? ['first_duelist_m', 'first_duelist_f', 'first_duelist_x']
+        : [];
+    }
+
     function titleValid() {
       return !changedKeys().hasAny(['title']) ||
-        request.resource.data.title in resource.data.get('unlockedTitles', []);
+        request.resource.data.title in
+          freeTitles().toSet().union(exclusiveTitles().toSet())
+            .union(resource.data.get('unlockedTitles', []).toSet());
     }
 
     // Riscatto codice (AuthService.redeemCode): `lastRedeemedCode` è l'unico modo per la regola di
@@ -74,9 +95,18 @@ service cloud.firestore {
     // dell'audit 2026-07, mentre si chiudeva lo stesso gap per backgrounds/titles sotto): prima
     // nulla impediva a una scrittura che toccasse SOLO unlockedCardBacks — senza mai passare da
     // lastRedeemedCode — di infilarci un id arbitrario.
+    //
+    // Da quando anche i dorsi possono essere reward di obiettivi (ObjectiveRewardType 'cardBack'),
+    // unlockedCardBacks ha DUE fonti legittime di crescita: il riscatto codice qui sotto, oppure un
+    // riscatto obiettivo (claimGrantValid() più sotto, stesso file). Se lastRedeemedCode non è
+    // cambiato, questa funzione si limita a controllare che sia comunque un riscatto obiettivo "in
+    // forma" (claimedObjectiveIds cambiato anch'esso) — la validazione vera del contenuto
+    // (monotonia, tetto di crescita) resta tutta in claimGrantValid(), non duplicata qui.
     function redeemValid() {
       return !changedKeys().hasAny(['lastRedeemedCode', 'unlockedCardBacks']) ||
-        (changedKeys().hasAny(['lastRedeemedCode']) && redeemGrantValid());
+        (changedKeys().hasAny(['lastRedeemedCode'])
+          ? redeemGrantValid()
+          : changedKeys().hasAny(['claimedObjectiveIds']));
     }
 
     function redeemGrantValid() {
@@ -212,32 +242,61 @@ service cloud.firestore {
 
     // Riscatto ricompensa obiettivo (AuthService.claimObjective): a differenza di stats sopra, qui
     // NON serve sapere quale partita — solo che l'obiettivo risulti già in completedObjectiveIds.
-    // claimedObjectiveIds ⊆ completedObjectiveIds sempre, e unlockedBackgrounds/unlockedTitles
-    // possono crescere solo insieme a un nuovo riscatto (mai da una scrittura scollegata — chiude,
-    // per queste due ricompense, lo stesso gap appena richiuso su unlockedCardBacks in redeemValid).
-    // Un solo riscatto per scrittura (+1), come fa davvero AuthService.claimObjective. Non verifica
-    // che l'id aggiunto a unlockedBackgrounds/unlockedTitles sia PROPRIO il reward di QUELL'obiettivo
-    // (richiederebbe anche qui il catalogo nelle regole) — stesso rischio accettato di sopra.
+    // claimedObjectiveIds ⊆ completedObjectiveIds sempre, e unlockedCardBacks/unlockedBackgrounds/
+    // unlockedTitles possono crescere solo insieme a un nuovo riscatto (mai da una scrittura
+    // scollegata — chiude, anche per unlockedCardBacks, lo stesso gap già richiuso in redeemValid
+    // per il riscatto codice). Un solo riscatto per scrittura — ma un obiettivo può dare più
+    // ricompense insieme (Objective.rewards, v. data/objectives.ts), quindi PIÙ di questi tre array
+    // possono crescere nella STESSA scrittura: ognuno è comunque gated indipendentemente da
+    // `claimed` sotto, quindi resta corretto. Dorsi/sfondi ne aggiungono al massimo 1 a testa, i
+    // titoli fino a 3 (le varianti di genere di uno stesso titolo, v. data/titles.ts). Non verifica
+    // che gli id aggiunti siano PROPRIO i reward di QUELL'obiettivo (richiederebbe anche qui il
+    // catalogo nelle regole) — stesso rischio accettato di statsPlausible() sopra.
     function claimValid() {
-      return !changedKeys().hasAny(['claimedObjectiveIds', 'unlockedBackgrounds', 'unlockedTitles']) ||
-        claimGrantValid();
+      return !changedKeys().hasAny([
+        'claimedObjectiveIds', 'unlockedCardBacks', 'unlockedBackgrounds', 'unlockedTitles'
+      ]) || claimGrantValid();
     }
 
     function claimGrantValid() {
       let priorClaimed = resource.data.get('claimedObjectiveIds', []);
       let nextClaimed = request.resource.data.get('claimedObjectiveIds', priorClaimed);
       let completed = request.resource.data.get('completedObjectiveIds', []);
+      let priorCardBacks = resource.data.get('unlockedCardBacks', []);
+      let nextCardBacks = request.resource.data.get('unlockedCardBacks', priorCardBacks);
       let priorBackgrounds = resource.data.get('unlockedBackgrounds', []);
       let nextBackgrounds = request.resource.data.get('unlockedBackgrounds', priorBackgrounds);
       let priorTitles = resource.data.get('unlockedTitles', []);
       let nextTitles = request.resource.data.get('unlockedTitles', priorTitles);
+      let claimed = nextClaimed.size() > priorClaimed.size();
+      // A differenza di sfondi/titoli (una sola fonte legittima: il riscatto obiettivo), i dorsi
+      // possono crescere anche via riscatto CODICE (lastRedeemedCode, v. redeemValid/
+      // redeemGrantValid sopra) — quella scrittura non tocca mai claimedObjectiveIds, quindi qui
+      // basta verificare che sia comunque un riscatto codice "in forma", la validazione vera del
+      // contenuto resta in redeemGrantValid().
+      let redeemedCode = changedKeys().hasAny(['lastRedeemedCode']);
+      // I titoli sono l'unico reward che può aggiungere PIÙ di un id in un solo riscatto: le
+      // varianti di genere (v. data/titles.ts, GENDERED_TITLE_IDS) — al massimo 3 (maschile/
+      // femminile/neutro) per obiettivo. Dorsi/sfondi restano a +1, un solo id per riscatto.
+      // size() <= 200 su tutti e quattro (stesso fix applicato a completedObjectiveIdsValid): il
+      // tetto di crescita per singola scrittura da solo non impedirebbe a nessuno di questi array
+      // di gonfiarsi senza limite ripetendo il riscatto nel tempo (claimedObjectiveIds può persino
+      // contenere duplicati di un id già completato e restare comunque "+1 a scrittura" valido) —
+      // 200 è un tetto largo apposta, ben oltre qualunque catalogo realistico.
       return completed.hasAll(nextClaimed) &&
         nextClaimed.hasAll(priorClaimed) && nextClaimed.size() <= priorClaimed.size() + 1 &&
+        nextClaimed.size() <= 200 &&
+        nextCardBacks.hasAll(priorCardBacks) && nextCardBacks.size() <= priorCardBacks.size() + 1 &&
+        nextCardBacks.size() <= 200 &&
         nextBackgrounds.hasAll(priorBackgrounds) && nextBackgrounds.size() <= priorBackgrounds.size() + 1 &&
-        nextTitles.hasAll(priorTitles) && nextTitles.size() <= priorTitles.size() + 1 &&
-        // una crescita di sfondi/titoli deve sempre accompagnarsi a un riscatto vero e proprio.
-        ((nextBackgrounds.size() == priorBackgrounds.size() && nextTitles.size() == priorTitles.size()) ||
-         nextClaimed.size() > priorClaimed.size());
+        nextBackgrounds.size() <= 200 &&
+        nextTitles.hasAll(priorTitles) && nextTitles.size() <= priorTitles.size() + 3 &&
+        nextTitles.size() <= 200 &&
+        // ogni array può crescere solo insieme al proprio riscatto legittimo — mai da una scrittura
+        // scollegata.
+        (nextCardBacks.size() == priorCardBacks.size() || claimed || redeemedCode) &&
+        (nextBackgrounds.size() == priorBackgrounds.size() || claimed) &&
+        (nextTitles.size() == priorTitles.size() || claimed);
     }
 
     match /users/{userId} {

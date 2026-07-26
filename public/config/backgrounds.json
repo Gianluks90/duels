@@ -2,5 +2,10 @@
   { "id": "dark-wood", "file": "/images/backgrounds/dark-wood.webp", "free": true },
   { "id": "light-wood", "file": "/images/backgrounds/light-wood.webp", "free": true },
   { "id": "burn-wood", "file": "/images/backgrounds/burn-wood.webp", "free": true },
-  { "id": "slate", "file": "/images/backgrounds/slate.webp", "free": true }
+  { "id": "slate", "file": "/images/backgrounds/slate.webp", "free": true },
+  { "id": "golden-fabric", "file": "/images/backgrounds/golden-fabric.webp", "free": false },
+  { "id": "felt-fabric", "file": "/images/backgrounds/felt-fabric.webp", "free": false },
+  { "id": "arcane", "file": "/images/backgrounds/arcane.webp", "free": false },
+  { "id": "founder", "file": "/images/backgrounds/founder.webp", "free": false },
+  { "id": "amber", "file": "/images/backgrounds/amber.webp", "free": false }
 ]

@@ -131,6 +131,15 @@
             (applied)="applyBackground($event)"
           />
         </section>
+
+        @if (hasTitles()) {
+          <section class="profile-dialog__section">
+            <h3 class="profile-dialog__section-title">
+              {{ 'profile.titleEquip.title' | translate }}
+            </h3>
+            <app-title-picker [current]="profile()?.title ?? ''" (applied)="applyTitle($event)" />
+          </section>
+        }
       </div>
     </div>
   </div>

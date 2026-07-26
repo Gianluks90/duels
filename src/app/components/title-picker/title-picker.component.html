@@ -1,0 +1,20 @@
+<div class="title-picker">
+  <select
+    class="title-picker__select"
+    [attr.aria-label]="'profile.titleEquip.title' | translate"
+    (change)="onSelectChange($event)"
+  >
+    @for (id of ownedTitleIds(); track id) {
+      <option [value]="id" [selected]="id === selectedId()">{{ i18n.titleLabel(id) }}</option>
+    }
+  </select>
+
+  <button
+    type="button"
+    class="btn btn--primary title-picker__apply"
+    [disabled]="!isDirty()"
+    (click)="apply()"
+  >
+    {{ 'profile.titleEquip.apply' | translate }}
+  </button>
+</div>

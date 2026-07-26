@@ -7,8 +7,10 @@ import { TranslationService } from '../../services/translation.service';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { BackgroundPickerComponent } from '../../components/background-picker/background-picker.component';
 import { CardBackPickerComponent } from '../../components/card-back-picker/card-back-picker.component';
+import { TitlePickerComponent } from '../../components/title-picker/title-picker.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
+import { freeTitleVariantIdsFor } from '../../data/titles';
 
 @Component({
   selector: 'app-profile-dialog',
@@ -18,6 +20,7 @@ import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
     IconButtonComponent,
     BackgroundPickerComponent,
     CardBackPickerComponent,
+    TitlePickerComponent,
     TranslatePipe,
   ],
   templateUrl: './profile-dialog.component.html',
@@ -33,6 +36,15 @@ export class ProfileDialogComponent {
   protected readonly profile = this.auth.profile;
   protected readonly currentBackground = computed(
     () => this.profile()?.background ?? DEFAULT_BACKGROUND_ID,
+  );
+  /** Sezione titolo nascosta solo se non esiste NESSUN titolo disponibile per QUESTO utente (né
+   * gratuito/esclusivo né sbloccato) — con almeno un titolo gratuito in TITLE_CATALOG (v.
+   * data/titles.ts) è ormai sempre vero, ma resta un guard corretto se in futuro non ce ne fosse
+   * più nessuno. */
+  protected readonly hasTitles = computed(
+    () =>
+      freeTitleVariantIdsFor(this.auth.user()?.uid).length > 0 ||
+      (this.profile()?.unlockedTitles ?? []).length > 0,
   );
 
   protected readonly nameControl = new FormControl('', {
@@ -86,6 +98,11 @@ export class ProfileDialogComponent {
   protected async applyBackground(id: string): Promise<void> {
     if (this.currentBackground() === id) return;
     await this.auth.updateProfile({ background: id });
+  }
+
+  protected async applyTitle(id: string): Promise<void> {
+    if (this.profile()?.title === id) return;
+    await this.auth.updateProfile({ title: id });
   }
 
   protected requestConfirm(): void {

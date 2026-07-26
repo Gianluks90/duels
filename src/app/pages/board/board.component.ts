@@ -553,6 +553,22 @@ export class BoardComponent implements OnInit {
     return this.myRole() === 'host' ? doc.guestPhoto : doc.hostPhoto;
   });
 
+  /** Snapshot preso al join (GameDoc.hostTitle/guestTitle, vedi GameService) — una variant-id (v.
+   * data/titles.ts), risolta in testo per il player-hud (Qualità della vita). */
+  protected readonly playerTitle = computed(() => {
+    const doc = this.gameDoc();
+    if (!doc) return null;
+    const id = this.myRole() === 'host' ? doc.hostTitle : doc.guestTitle;
+    return id ? this.i18n.titleLabel(id) : null;
+  });
+
+  protected readonly opponentTitle = computed(() => {
+    const doc = this.gameDoc();
+    if (!doc) return null;
+    const id = this.myRole() === 'host' ? doc.guestTitle : doc.hostTitle;
+    return id ? this.i18n.titleLabel(id) : null;
+  });
+
   /** Snapshot preso al join (GameDoc.hostFavoriteSpellIds/guestFavoriteSpellIds, vedi GameService) —
    * risolto in nomi tradotti per il tooltip reciproco sul player-hud (Qualità della vita). */
   protected readonly playerFavoriteSpellNames = computed<readonly string[]>(() => {

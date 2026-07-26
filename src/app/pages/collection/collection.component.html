@@ -1,41 +1,68 @@
-<div class="collection">
-  <header class="collection__header panel">
-    <h1 class="t-display collection__title">{{ 'collection.title' | translate }}</h1>
-    <button class="btn btn--secondary" (click)="goHome()">{{ 'collection.backHome' | translate }}</button>
-  </header>
+<div class="collection-page">
+  <app-header />
 
-  <section class="collection__section panel">
-    <h2 class="t-heading collection__section-title">{{ 'collection.cardBacks' | translate }}</h2>
-    <div class="collection__grid">
-      @for (skin of ownedCardBacks(); track skin) {
-        <div class="collection__item">
-          <img class="collection__card-back" [src]="'/cards-back/' + skin + '.webp'" alt="" />
-        </div>
-      }
-    </div>
-  </section>
+  <div class="collection panel panel--raised">
+    <header class="collection__header">
+      <h1 class="t-display collection__title">{{ 'collection.title' | translate }}</h1>
+    </header>
 
-  <section class="collection__section panel">
-    <h2 class="t-heading collection__section-title">{{ 'collection.backgrounds' | translate }}</h2>
-    <div class="collection__grid">
-      @for (background of ownedBackgrounds(); track background.id) {
-        <div class="collection__item">
-          <img class="collection__background" [src]="background.file" alt="" />
-        </div>
-      }
-    </div>
-  </section>
-
-  <section class="collection__section panel">
-    <h2 class="t-heading collection__section-title">{{ 'collection.titles' | translate }}</h2>
-    @if (unlockedTitles().length === 0) {
-      <p class="t-muted">{{ 'collection.noTitles' | translate }}</p>
-    } @else {
-      <ul class="collection__titles-list">
-        @for (title of unlockedTitles(); track title) {
-          <li class="collection__title-chip">{{ title }}</li>
+    <div class="collection__body">
+      <nav class="collection__categories" [attr.aria-label]="'collection.title' | translate">
+        @for (category of categories; track category.id) {
+          <button
+            type="button"
+            class="collection__category"
+            [class.collection__category--active]="selectedCategory() === category.id"
+            (click)="selectCategory(category.id)"
+          >
+            {{ category.labelKey | translate }}
+          </button>
         }
-      </ul>
-    }
-  </section>
+      </nav>
+
+      <div class="collection__content">
+        @switch (selectedCategory()) {
+          @case ('cardBacks') {
+            <div class="collection__grid collection__grid--card-backs">
+              @for (item of cardBackItems(); track item.id) {
+                <app-collection-tile [item]="item" shape="card" />
+              }
+            </div>
+          }
+          @case ('backgrounds') {
+            <div class="collection__grid collection__grid--backgrounds">
+              @for (item of backgroundItems(); track item.id) {
+                <app-collection-tile [item]="item" shape="background" />
+              }
+            </div>
+          }
+          @case ('titles') {
+            @if (titleItems().length === 0) {
+              <p class="t-muted">{{ 'collection.noTitles' | translate }}</p>
+            } @else {
+              <div class="collection__grid collection__grid--titles">
+                @for (item of titleItems(); track item.id) {
+                  <app-collection-tile [item]="item" shape="title" />
+                }
+              </div>
+            }
+          }
+          @case ('elements') {
+            <div class="collection__grid collection__grid--elements">
+              @for (item of elementItems(); track item.id) {
+                <app-collection-tile [item]="item" shape="card" />
+              }
+            </div>
+          }
+          @case ('spells') {
+            <div class="collection__grid collection__grid--spells">
+              @for (item of spellItems(); track item.id) {
+                <app-collection-tile [item]="item" shape="card" />
+              }
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
 </div>

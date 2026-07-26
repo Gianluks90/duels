@@ -56,32 +56,40 @@
   <!-- Only this wrapper (sized to the visible slice) is space-between'd —
        the outer .hud stays anchored to the edge like the other two panels. -->
   <div class="hud__content">
-    <!-- Name (+ settings, only on our own panel) -->
-    <div class="hud__name-row">
-      <div
-        class="hud__identity"
-        [attr.tabindex]="favoritesTooltip() ? 0 : null"
-        [appTooltip]="favoritesTooltip()"
-        [tooltipPosition]="mirrored() ? 'bottom' : 'top'"
-      >
-        <span class="hud__avatar" aria-hidden="true">
-          @if (photoUrl(); as url) {
-            <img [src]="url" alt="" referrerpolicy="no-referrer" />
-          } @else {
-            <span>{{ avatarInitial() }}</span>
-          }
-        </span>
-        <span class="hud__name t-heading">{{ firstName() }}</span>
-      </div>
-      @if (!mirrored()) {
-        <button
-          type="button"
-          class="hud__settings"
-          (click)="settingsClick.emit()"
-          [attr.aria-label]="'playerHud.settingsAria' | translate"
+    <!-- Name (+ settings, only on our own panel) + title (Achievements), stesso allineamento del
+         nome (a sinistra per il proprio pannello, a destra per quello dell'avversario, v. scss) —
+         raggruppati in .hud__header (non due figli diretti di .hud__content) così lo
+         space-between fra header e barra vita resta invariato aggiungendo il titolo. -->
+    <div class="hud__header">
+      <div class="hud__name-row">
+        <div
+          class="hud__identity"
+          [attr.tabindex]="favoritesTooltip() ? 0 : null"
+          [appTooltip]="favoritesTooltip()"
+          [tooltipPosition]="mirrored() ? 'bottom' : 'top'"
         >
-          <span class="hud__settings-icon" aria-hidden="true"></span>
-        </button>
+          <span class="hud__avatar" aria-hidden="true">
+            @if (photoUrl(); as url) {
+              <img [src]="url" alt="" referrerpolicy="no-referrer" />
+            } @else {
+              <span>{{ avatarInitial() }}</span>
+            }
+          </span>
+          <span class="hud__name t-heading">{{ firstName() }}</span>
+        </div>
+        @if (!mirrored()) {
+          <button
+            type="button"
+            class="hud__settings"
+            (click)="settingsClick.emit()"
+            [attr.aria-label]="'playerHud.settingsAria' | translate"
+          >
+            <span class="hud__settings-icon" aria-hidden="true"></span>
+          </button>
+        }
+      </div>
+      @if (equippedTitle(); as t) {
+        <p class="hud__title-row">{{ t }}</p>
       }
     </div>
 

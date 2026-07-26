@@ -3,6 +3,7 @@ import { SUPPORTED_LANGUAGES, type LanguageCode } from '../models/language.model
 import type { Element } from '../models/element.model';
 import type { SpecialMana } from '../models/card.model';
 import type { TurnPhase } from '../models/turn-phase.model';
+import { titleRewardVariantIds } from '../data/titles';
 
 interface DictionaryObject {
   [key: string]: DictionaryNode;
@@ -62,6 +63,28 @@ export class TranslationService {
 
   turnPhaseDescription(phase: TurnPhase): string {
     return this.t(`common.turnPhases.${phase}.description`);
+  }
+
+  /** Le forme tradotte di un titolo (v. data/titles.ts) — una sola per un titolo invariante, fino a
+   * tre (maschile/femminile/neutro) per uno con varianti di genere. Solo le chiavi già tradotte
+   * (v. `resolveTitleForm`) vengono incluse: array vuoto finché il contenuto reale non è deciso. */
+  titleForms(baseId: string): string[] {
+    return titleRewardVariantIds(baseId)
+      .map((variantId) => this.resolveTitleForm(variantId))
+      .filter((form): form is string => form !== null);
+  }
+
+  /** Il testo di UNA specifica variant-id già scelta (v. UserProfile.title/TitlePickerComponent) —
+   * a differenza di `titleForms` (tutte le forme disponibili di un titolo, per l'anteprima), qui
+   * serve la forma esatta equipaggiata. Fallback all'id grezzo se non ancora tradotta. */
+  titleLabel(variantId: string): string {
+    return this.resolveTitleForm(variantId) ?? variantId;
+  }
+
+  private resolveTitleForm(variantId: string): string | null {
+    const key = `collection.titleCatalog.${variantId}.name`;
+    const value = this.t(key);
+    return value === key ? null : value;
   }
 
   private async bootstrap(): Promise<void> {

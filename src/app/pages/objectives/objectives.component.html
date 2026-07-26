@@ -1,17 +1,18 @@
-<div class="objectives">
-  <header class="objectives__header panel">
-    <h1 class="t-display objectives__title">{{ 'objectives.title' | translate }}</h1>
-    <button class="btn btn--secondary" (click)="goHome()">{{ 'objectives.backHome' | translate }}</button>
-  </header>
+<div class="objectives-page">
+  <app-header />
 
-  <div class="objectives__list">
-    @for (item of objectivesProgress(); track item.objective.id) {
-      <app-objective-card
-        [objective]="item.objective"
-        [progress]="item.progress"
-        [claimed]="item.claimed"
-        (claim)="claimObjective($event)"
-      />
-    }
+  <div class="objectives">
+    <h1 class="t-display objectives__title">{{ 'objectives.title' | translate }}</h1>
+
+    <div class="objectives__list">
+      @for (item of objectivesProgress(); track item.objective.id) {
+        <app-objective-card
+          [objective]="item.objective"
+          [progress]="item.progress"
+          [claimed]="item.claimed"
+          (claim)="claimObjective($event)"
+        />
+      }
+    </div>
   </div>
 </div>

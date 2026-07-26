@@ -158,6 +158,7 @@
 
   "home": {
     "debug": "Debug",
+    "homeNav": "Home",
     "grimoire": "Grimoire",
     "collection": "Collection",
     "objectives": "Objectives",
@@ -333,7 +334,6 @@
 
   "objectives": {
     "title": "Objectives",
-    "backHome": "Back to Home",
     "claim": "Claim",
     "claimed": "Claimed",
     "rewardPending": "Reward to be defined",
@@ -351,11 +351,126 @@
 
   "collection": {
     "title": "Collection",
-    "backHome": "Back to Home",
     "cardBacks": "Card backs",
     "backgrounds": "Backgrounds",
     "titles": "Titles",
-    "noTitles": "No titles unlocked yet."
+    "elements": "Elements",
+    "spells": "Spells",
+    "noTitles": "No titles unlocked yet.",
+    "descriptionPending": "Description to be defined.",
+    "alwaysAvailable": "Always available.",
+    "unlockedViaCode": "Unlocked with a redeem code.",
+    "unlockedCondition": "Unlocked by completing: {condition}.",
+    "lockedCondition": "Unlocks by completing: {condition}.",
+    "secretConditionTooltip": "Secret unlock conditions",
+    "redeemCodeLocked": "Unlockable with a special code.",
+    "unlockedPurchase": "Unlocked as a supporter.",
+    "purchaseLocked": "Will be available as a supporter purchase.",
+    "unlockedSeasonal": "Unlocked during a seasonal event.",
+    "seasonalLocked": "Seasonal objective coming soon — details not yet decided.",
+    "legacyLabel": "{name} (V1)",
+    "unlockedSpellUsage": "Unlocked by casting {name} {count} times.",
+    "lockedSpellUsage": "Unlocks by casting {name} {count} times.",
+    "elementCatalog": {
+      "currentDescription": "The element as it appears today in every game.",
+      "legacyDescription": "This element's original artwork, replaced by the new art style — unlock condition still to be decided."
+    },
+    "cardBackCatalog": {
+      "dark": {
+        "name": "Dark",
+        "description": "The classic, austere card back, always available to every mage."
+      },
+      "light": {
+        "name": "Light",
+        "description": "Its luminous counterpart, always available to every mage."
+      },
+      "golden": {
+        "name": "Golden",
+        "description": "Shines like the most precious metal — reserved for those who have already proven their worth in duel."
+      },
+      "books": {
+        "name": "Books",
+        "description": "A collection of arcane tomes, tied to a project outside of Duels."
+      },
+      "founder": {
+        "name": "Founder",
+        "description": "A tribute to those who supported Duels' development from the very beginning."
+      },
+      "summer": {
+        "name": "Summer",
+        "description": "A seasonal card back, available only for a limited time of the year."
+      }
+    },
+    "backgroundCatalog": {
+      "dark-wood": {
+        "name": "Dark wood",
+        "description": "The dark, rough wood of an ancient circle of mages."
+      },
+      "light-wood": {
+        "name": "Light wood",
+        "description": "Its smooth, light-colored counterpart, for a duel by daylight."
+      },
+      "burn-wood": {
+        "name": "Burnt wood",
+        "description": "Wood scorched by the flames of past duels."
+      },
+      "slate": {
+        "name": "Slate",
+        "description": "A cold, silent slab of slate."
+      },
+      "golden-fabric": {
+        "name": "Golden fabric",
+        "description": "A golden fabric, reserved for those who have already won 50 duels."
+      },
+      "felt-fabric": {
+        "name": "Worn felt",
+        "description": "A felt worn down by 50 games played."
+      },
+      "arcane": {
+        "name": "Arcane",
+        "description": "Arcane symbols for those who have already cast 100 spells."
+      },
+      "founder": {
+        "name": "Founder",
+        "description": "A tribute to those who supported Duels' development from the very beginning."
+      },
+      "amber": {
+        "name": "Amber",
+        "description": "An amber backdrop, coming with the autumn season."
+      }
+    },
+    "titleCatalog": {
+      "novice_m": { "name": "Novice" },
+      "novice_f": { "name": "Novice" },
+      "novice_x": { "name": "Novice" },
+      "apprentice": { "name": "Apprentice" },
+      "stubborn_m": { "name": "Stubborn" },
+      "stubborn_f": { "name": "Stubborn" },
+      "stubborn_x": { "name": "Stubborn" },
+      "gatherer_m": { "name": "Gatherer" },
+      "gatherer_f": { "name": "Gatherer" },
+      "gatherer_x": { "name": "Gatherer" },
+      "mixologist": { "name": "Mixologist" },
+      "enchanter_m": { "name": "Enchanter" },
+      "enchanter_f": { "name": "Enchanter" },
+      "enchanter_x": { "name": "Enchanter" },
+      "magical_m": { "name": "Magical" },
+      "magical_f": { "name": "Magical" },
+      "magical_x": { "name": "Magical" },
+      "dangerous_m": { "name": "Dangerous" },
+      "dangerous_f": { "name": "Dangerous" },
+      "dangerous_x": { "name": "Dangerous" },
+      "resilient": { "name": "Resilient" },
+      "collector": { "name": "Collector" },
+      "alchemist": { "name": "Alchemist" },
+      "sorcerer_m": { "name": "Sorcerer" },
+      "sorcerer_f": { "name": "Sorcerer" },
+      "sorcerer_x": { "name": "Sorcerer" },
+      "beginner": { "name": "Beginner" },
+      "first_duelist_m": { "name": "First Duelist" },
+      "first_duelist_f": { "name": "First Duelist" },
+      "first_duelist_x": { "name": "First Duelist" }
+    }
   },
 
   "profilePage": {
@@ -567,7 +682,11 @@
     },
     "cardBack": {
       "title": "Card back",
-      "apply": "Apply"
+      "apply": "Apply",
+      "options": {
+        "dark": "Dark",
+        "light": "Light"
+      }
     },
     "background": {
       "title": "Game background",
@@ -578,6 +697,10 @@
         "burn-wood": "Burnt wood",
         "slate": "Slate"
       }
+    },
+    "titleEquip": {
+      "title": "Title",
+      "apply": "Apply"
     },
     "danger": {
       "title": "Danger Zone",

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import type { Objective } from '../../models/objective.model';
+import type { Objective, ObjectiveReward } from '../../models/objective.model';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * Una riga "obiettivo" (progresso + reward) — usata sia dalla colonna a fine partita
- * (result.component) sia dalla pagina Obiettivi, invece di duplicare il markup. `reward.id` è
- * ancora un placeholder ('TODO_...', v. data/objectives.ts): mostrato con un'etichetta neutra
- * ("ricompensa da definire") finché i contenuti reali non sono decisi, non l'id grezzo.
+ * (result.component) sia dalla pagina Obiettivi, invece di duplicare il markup. Un obiettivo può
+ * dare più ricompense insieme (`Objective.rewards`, v. data/objectives.ts) — mostrate tutte,
+ * separate da "+". `reward.id` ancora un placeholder ('TODO_...') è mostrato con un'etichetta
+ * neutra ("ricompensa da definire"), non l'id grezzo.
  */
 @Component({
   selector: 'app-objective-card',
@@ -66,5 +67,28 @@ export class ObjectiveCardComponent {
   protected readonly metricLabel = computed(
     () => `${this.i18n.t(`objectives.metricLabels.${this.objective().metric}`)} · ${this.objective().threshold}`,
   );
-  protected readonly rewardLabel = computed(() => this.i18n.t('objectives.rewardPending'));
+  /** La maggior parte dei reward sono ancora placeholder ('TODO_...', v. data/objectives.ts) — mai
+   * mostrati grezzi, solo l'etichetta neutra. Dorsi/sfondi con contenuto reale (`golden`,
+   * `golden-fabric`, `felt-fabric`, `arcane`...) risolvono il nome da collection.cardBackCatalog/
+   * backgroundCatalog.*.name — stessa chiave usata dalla pagina Collezione, un solo posto dove
+   * sono definiti questi nomi. I titoli con contenuto reale mostrano tutte le forme disponibili
+   * (v. TranslationService.titleForms) separate da "/": qui è solo un'anteprima della ricompensa,
+   * non una scelta — quale forma equipaggiare si decide nella dialog profilo. Più ricompense sullo
+   * stesso obiettivo sono separate da "+". */
+  protected readonly rewardLabel = computed(() =>
+    this.objective()
+      .rewards.map((reward) => this.singleRewardLabel(reward))
+      .join(' + '),
+  );
+
+  private singleRewardLabel(reward: ObjectiveReward): string {
+    if (reward.id.startsWith('TODO_')) return this.i18n.t('objectives.rewardPending');
+    if (reward.type === 'cardBack') return this.i18n.t(`collection.cardBackCatalog.${reward.id}.name`);
+    if (reward.type === 'background') return this.i18n.t(`collection.backgroundCatalog.${reward.id}.name`);
+    if (reward.type === 'title') {
+      const forms = this.i18n.titleForms(reward.id);
+      if (forms.length > 0) return forms.join(' / ');
+    }
+    return this.i18n.t('objectives.rewardPending');
+  }
 }

@@ -1,0 +1,57 @@
+<header class="app-header panel" [class.app-header--compact]="isCompact()">
+  <button type="button" class="t-display app-header__logo" (click)="goHome()">Duels</button>
+  <div class="app-header__user">
+    @if (isCompact()) {
+      <app-action-menu [items]="navMenuItems()">
+        <app-icon-button [icon]="menuIcon" [ariaLabel]="'home.menuAria' | translate" [size]="34" />
+      </app-action-menu>
+    } @else {
+      <button class="btn btn--secondary" (click)="goHome()">{{ 'home.homeNav' | translate }}</button>
+      <button class="btn btn--secondary" (click)="openCollection()">
+        {{ 'home.collection' | translate }}
+      </button>
+      <button class="btn btn--secondary" (click)="openObjectives()">
+        {{ 'home.objectives' | translate }}
+      </button>
+      <button class="btn btn--secondary" (click)="openFriends()">
+        {{ 'home.friends' | translate }}
+      </button>
+    }
+
+    <app-action-menu [items]="avatarMenuItems()">
+      <button type="button" class="app-header__avatar" [attr.aria-label]="'home.avatarAria' | translate">
+        @if (profile()?.photoURL; as url) {
+          <img [src]="url" alt="" referrerpolicy="no-referrer" />
+        } @else {
+          <span>{{ (profile()?.displayName ?? '?').charAt(0) }}</span>
+        }
+      </button>
+    </app-action-menu>
+  </div>
+</header>
+
+<!-- Stesso schema del board__toolbar nella Fonte Arcana durante il duello — icona sola + tooltip,
+     sempre in vista (position: fixed), invece di altre voci nella barra in alto. -->
+<div class="app-header__toolbar">
+  <app-icon-button
+    [icon]="grimoireIcon"
+    [ariaLabel]="'home.grimoire' | translate"
+    [appTooltip]="'home.grimoire' | translate"
+    tooltipPosition="left"
+    (iconClick)="openGrimoire()"
+  />
+  <app-icon-button
+    [icon]="rulebookIcon"
+    [ariaLabel]="'home.rulebook' | translate"
+    [appTooltip]="'home.rulebook' | translate"
+    tooltipPosition="left"
+    (iconClick)="openRulebook()"
+  />
+  <app-icon-button
+    [icon]="gearIcon"
+    [ariaLabel]="'home.options' | translate"
+    [appTooltip]="'home.options' | translate"
+    tooltipPosition="left"
+    (iconClick)="openOptions()"
+  />
+</div>

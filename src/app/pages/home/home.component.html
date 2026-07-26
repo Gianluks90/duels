@@ -14,58 +14,7 @@
     }
   </div>
 
-  <header class="home__header panel">
-    <span class="t-display home__logo">Duels</span>
-    <div class="home__user">
-      @if (isCompact()) {
-        <app-action-menu [items]="headerMenuItems()">
-          <app-icon-button
-            [icon]="menuIcon"
-            [ariaLabel]="'home.menuAria' | translate"
-            [size]="34"
-          />
-        </app-action-menu>
-      } @else {
-        @if (isDebugUser()) {
-          <button class="btn btn--secondary" [disabled]="debugLoading()" (click)="startDebugGame()">
-            {{ debugLoading() ? '…' : ('home.debug' | translate) }}
-          </button>
-        }
-        <button class="btn btn--secondary" (click)="openGrimoire()">
-          {{ 'home.grimoire' | translate }}
-        </button>
-        <button class="btn btn--secondary" (click)="openCollection()">
-          {{ 'home.collection' | translate }}
-        </button>
-        <button class="btn btn--secondary" (click)="openObjectives()">
-          {{ 'home.objectives' | translate }}
-        </button>
-        <button class="btn btn--secondary" (click)="openRulebook()">
-          {{ 'home.rulebook' | translate }}
-        </button>
-        <button class="btn btn--secondary" (click)="openFriends()">
-          {{ 'home.friends' | translate }}
-        </button>
-        <button class="btn btn--secondary" (click)="openOptions()">
-          {{ 'home.options' | translate }}
-        </button>
-      }
-
-      <app-action-menu [items]="avatarMenuItems()">
-        <button
-          type="button"
-          class="home__avatar"
-          [attr.aria-label]="'home.avatarAria' | translate"
-        >
-          @if (profile()?.photoURL; as url) {
-            <img [src]="url" alt="" referrerpolicy="no-referrer" />
-          } @else {
-            <span>{{ (profile()?.displayName ?? '?').charAt(0) }}</span>
-          }
-        </button>
-      </app-action-menu>
-    </div>
-  </header>
+  <app-header (friendsChanged)="loadPublicGames()" />
 
   <main class="home__main">
     @if (friendLinkResult(); as result) {
@@ -167,6 +116,11 @@
 
         @if (!roomCode()) {
           <div class="home__panel-actions">
+            @if (isDebugUser()) {
+              <button class="btn btn--secondary" [disabled]="debugLoading()" (click)="startDebugGame()">
+                {{ debugLoading() ? '…' : ('home.debug' | translate) }}
+              </button>
+            }
             <button class="btn btn--primary" (click)="openCreateGameDialog()">
               {{ 'home.newGame.create' | translate }}
             </button>

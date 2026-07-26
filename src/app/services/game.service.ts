@@ -38,6 +38,11 @@ export interface GameDoc {
    * PlayerState.cardBack (deck-builder.ts), l'unico punto che alimenta davvero il rendering del
    * dorso in game (CardComponent/DeckComponent). */
   hostCardBack: CardBackSkin;
+  /** Snapshot di UserProfile.title preso al momento della creazione partita — stesso schema di
+   * hostFavoriteSpellIds sopra (una variant-id, v. data/titles.ts, da risolvere in testo con
+   * TranslationService.titleLabel; mai testo già pronto). Mostrato sul player-hud dell'avversario
+   * durante il duello (Qualità della vita). */
+  hostTitle: string | null;
   hostWand: Wand | null;
   hostReady: boolean;
   guestId: string | null;
@@ -47,6 +52,8 @@ export interface GameDoc {
   guestFavoriteSpellIds: string[];
   /** Vedi hostCardBack sopra — stesso snapshot-al-join, lato guest. */
   guestCardBack: CardBackSkin;
+  /** Vedi hostTitle sopra — stesso snapshot-al-join, lato guest. */
+  guestTitle: string | null;
   guestWand: Wand | null;
   guestReady: boolean;
   createdAt: number;
@@ -93,6 +100,7 @@ export class GameService {
       hostPhoto: profile.photoURL,
       hostFavoriteSpellIds: profile.favoriteSpellIds ?? [],
       hostCardBack: profile.cardBack,
+      hostTitle: profile.title ?? null,
       hostWand: null,
       hostReady: false,
       guestId: null,
@@ -100,6 +108,7 @@ export class GameService {
       guestPhoto: null,
       guestFavoriteSpellIds: [],
       guestCardBack: 'dark',
+      guestTitle: null,
       guestWand: null,
       guestReady: false,
       createdAt: Date.now(),
@@ -134,6 +143,7 @@ export class GameService {
         guestPhoto: profile.photoURL,
         guestFavoriteSpellIds: profile.favoriteSpellIds ?? [],
         guestCardBack: profile.cardBack,
+        guestTitle: profile.title ?? null,
         status: 'setup',
       });
     });
@@ -160,6 +170,7 @@ export class GameService {
       hostPhoto: profile.photoURL,
       hostFavoriteSpellIds: profile.favoriteSpellIds ?? [],
       hostCardBack: profile.cardBack,
+      hostTitle: profile.title ?? null,
       hostWand: defaultWand,
       hostReady: true,
       guestId: 'debug-guest',
@@ -167,6 +178,7 @@ export class GameService {
       guestPhoto: null,
       guestFavoriteSpellIds: [],
       guestCardBack: 'dark',
+      guestTitle: null,
       guestWand: defaultWand,
       guestReady: true,
       createdAt: Date.now(),
