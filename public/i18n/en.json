@@ -337,6 +337,22 @@
     "claim": "Claim",
     "claimed": "Claimed",
     "rewardPending": "Reward to be defined",
+    "rewardConjunction": "and",
+    "elementVariantName": "Element {name}",
+    "rewardTypeLabels": {
+      "cardBack": "Card back",
+      "background": "Background",
+      "title": "Title",
+      "elementVariant": "Variant"
+    },
+    "categories": {
+      "activity": "Activity",
+      "duelOutcome": "Duel outcome",
+      "commonActions": "Common actions",
+      "elements": "Elements",
+      "spellsCast": "Spells",
+      "combat": "Combat"
+    },
     "metricLabels": {
       "gamesPlayed": "Games played",
       "wins": "Wins",
@@ -345,7 +361,26 @@
       "combinationsMade": "Combinations",
       "spellsCast": "Spells cast",
       "damageDealt": "Damage dealt",
-      "healingDone": "Total healing"
+      "healingDone": "Total healing",
+      "currentWinStreak": "Consecutive wins",
+      "loginStreak": "Consecutive login days",
+      "rulebookRead": "Rulebook read",
+      "friendsCount": "Friends added",
+      "friendDuelsPlayed": "Duels with a friend",
+      "friendDuelWins": "Wins against a friend",
+      "shieldsGained": "Shield gained",
+      "shieldsRemoved": "Shield removed from opponent",
+      "element_fire": "Fire obtained",
+      "element_water": "Water obtained",
+      "element_air": "Air obtained",
+      "element_earth": "Earth obtained",
+      "element_thunder": "Thunder obtained",
+      "element_poison": "Poison obtained",
+      "element_ice": "Ice obtained",
+      "element_lava": "Lava obtained",
+      "element_light": "Light obtained",
+      "element_dark": "Darkness obtained",
+      "element_residium": "Residuum obtained"
     }
   },
 
@@ -356,7 +391,13 @@
     "titles": "Titles",
     "elements": "Elements",
     "spells": "Spells",
+    "personalize": {
+      "start": "Customize",
+      "apply": "Apply",
+      "cancel": "Cancel"
+    },
     "noTitles": "No titles unlocked yet.",
+    "activeTooltip": "Active",
     "descriptionPending": "Description to be defined.",
     "alwaysAvailable": "Always available.",
     "unlockedViaCode": "Unlocked with a redeem code.",
@@ -372,8 +413,8 @@
     "unlockedSpellUsage": "Unlocked by casting {name} {count} times.",
     "lockedSpellUsage": "Unlocks by casting {name} {count} times.",
     "elementCatalog": {
-      "currentDescription": "The element as it appears today in every game.",
-      "legacyDescription": "This element's original artwork, replaced by the new art style — unlock condition still to be decided."
+      "currentDescription": "The look this element has today — the art you see in every duel.",
+      "legacyDescription": "This element's original artwork, from the game's early development — unlock it to use it in your duels."
     },
     "cardBackCatalog": {
       "dark": {
@@ -447,6 +488,11 @@
       "stubborn_m": { "name": "Stubborn" },
       "stubborn_f": { "name": "Stubborn" },
       "stubborn_x": { "name": "Stubborn" },
+      "unstoppable": { "name": "Unstoppable" },
+      "buddy_m": { "name": "Buddy" },
+      "buddy_f": { "name": "Buddy" },
+      "buddy_x": { "name": "Buddy" },
+      "rival": { "name": "Rival" },
       "gatherer_m": { "name": "Gatherer" },
       "gatherer_f": { "name": "Gatherer" },
       "gatherer_x": { "name": "Gatherer" },
@@ -457,10 +503,35 @@
       "magical_m": { "name": "Magical" },
       "magical_f": { "name": "Magical" },
       "magical_x": { "name": "Magical" },
+      "hostile": { "name": "Hostile" },
       "dangerous_m": { "name": "Dangerous" },
       "dangerous_f": { "name": "Dangerous" },
       "dangerous_x": { "name": "Dangerous" },
+      "black_magic": { "name": "of Black Magic" },
+      "attentive_m": { "name": "Attentive" },
+      "attentive_f": { "name": "Attentive" },
+      "attentive_x": { "name": "Attentive" },
       "resilient": { "name": "Resilient" },
+      "white_magic": { "name": "of White Magic" },
+      "defensive": { "name": "Defensive" },
+      "on_guard": { "name": "On Guard" },
+      "the_wall": { "name": "The Wall" },
+      "shieldbreaker": { "name": "Shieldbreaker" },
+      "destroyer_m": { "name": "Destroyer" },
+      "destroyer_f": { "name": "Destroyer" },
+      "destroyer_x": { "name": "Destroyer" },
+      "educated_m": { "name": "Educated" },
+      "educated_f": { "name": "Educated" },
+      "educated_x": { "name": "Educated" },
+      "omnipresent": { "name": "Omnipresent" },
+      "sociable_duelist": { "name": "Sociable Duelist" },
+      "friendly_duelist": { "name": "Friendly Duelist" },
+      "shadowbound_m": { "name": "Shadowbound" },
+      "shadowbound_f": { "name": "Shadowbound" },
+      "shadowbound_x": { "name": "Shadowbound" },
+      "radiant_m": { "name": "Radiant" },
+      "radiant_f": { "name": "Radiant" },
+      "radiant_x": { "name": "Radiant" },
       "collector": { "name": "Collector" },
       "alchemist": { "name": "Alchemist" },
       "sorcerer_m": { "name": "Sorcerer" },
@@ -580,6 +651,8 @@
       "healedOther": "{name} recovered {amount} HP with {spell}.",
       "shieldGainedSelf": "You gained {amount} shield.",
       "shieldGainedOther": "{name} gained {amount} shield.",
+      "shieldRemovedSelf": "You lost {amount} shield.",
+      "shieldRemovedOther": "{name} lost {amount} shield.",
       "freezeResolvedSelf": "{count} Freeze card(s) melted away from your hand.",
       "freezeResolvedOther": "{count} Freeze card(s) melted away from {name}'s hand.",
       "spellCastSelf": "You cast {spell}.",
@@ -681,26 +754,13 @@
       "saved": "Saved!"
     },
     "cardBack": {
-      "title": "Card back",
-      "apply": "Apply",
       "options": {
         "dark": "Dark",
         "light": "Light"
       }
     },
-    "background": {
-      "title": "Game background",
-      "apply": "Apply",
-      "options": {
-        "dark-wood": "Dark wood",
-        "light-wood": "Light wood",
-        "burn-wood": "Burnt wood",
-        "slate": "Slate"
-      }
-    },
     "titleEquip": {
-      "title": "Title",
-      "apply": "Apply"
+      "title": "Title"
     },
     "danger": {
       "title": "Danger Zone",

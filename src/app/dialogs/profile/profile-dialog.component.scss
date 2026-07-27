@@ -1,7 +1,7 @@
 .profile-dialog {
   display: flex;
   flex-direction: column;
-  width: 760px;
+  width: 480px;
   max-width: 90vw;
   max-height: 88vh;
   background: var(--bg-panel-raised);
@@ -26,32 +26,12 @@
     overflow-y: auto;
   }
 
-  // Due colonne (utente | gioco) da tablet in su; una sola sotto — evita che i due select/bottoni
-  // finiscano schiacciati su viewport stretti (la dialog non ha già un proprio breakpoint tier
-  // come la board, quindi una singola query CSS qui basta).
-  &__columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--sp-4);
-
-    @media (max-width: 640px) {
-      grid-template-columns: 1fr;
-    }
-  }
-
+  // Colonna unica (identità + zona pericolosa) — dorso/sfondo/titolo si personalizzano ora dalla
+  // Collezione (CollectionComponent, "Imposta personalizzazioni"), non più qui.
   &__column {
     display: flex;
     flex-direction: column;
     gap: var(--sp-4);
-  }
-
-  // Colonna dorsi+sfondo: cresce a piacere in larghezza (wrap dei dorsi) ma non in altezza — oltre
-  // una soglia scorre per conto proprio, così una lista di dorsi lunga non spinge in basso la
-  // colonna utente accanto né gonfia la dialog intera.
-  &__column--game {
-    max-height: min(60vh, 480px);
-    overflow-y: auto;
-    padding-right: var(--sp-1);
   }
 
   &__section {

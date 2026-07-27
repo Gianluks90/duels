@@ -8,7 +8,15 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  arrayUnion,
+  writeBatch,
+} from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 import { DEFAULT_BACKGROUND_ID, MAX_FAVORITE_SPELLS, type UserProfile } from '../models/user.model';
 import type { RedeemCode } from '../models/redeem-code.model';
@@ -16,7 +24,14 @@ import type { GameDoc } from './game.service';
 import type { PlayerId } from '../models/player.model';
 import { OBJECTIVE_CATALOG } from '../data/objectives';
 import { titleRewardVariantIds } from '../data/titles';
-import { applyGameStatsDelta, newlyCompletedObjectives } from '../game/achievements';
+import {
+  applyGameStatsDelta,
+  buildProgressSource,
+  newlyCompletedObjectives,
+  nextLoginStreak,
+  todayLocalDate,
+} from '../game/achievements';
+import { OBJECTIVES_TRACKING_ENABLED } from '../environment/feature-flags';
 
 export const DEBUG_UID = '8AkU1Du8BlNQYDKzH8Icu7lf8Qt2';
 
@@ -129,7 +144,9 @@ export class AuthService {
 
   /**
    * Applica al proprio profilo gli stats/obiettivi maturati in UNA partita appena conclusa — da
-   * chiamare una volta a fine partita (ResultComponent.ngOnInit). Sicura da richiamare più volte
+   * chiamare una volta a fine partita (ResultComponent.ngOnInit). No-op finché
+   * OBJECTIVES_TRACKING_ENABLED è `false` (beta): il catalogo resta visibile ovunque, solo il
+   * tracciamento è spento. Sicura da richiamare più volte
    * (refresh della pagina, doppio mount del componente...): se `users/{uid}/countedGames/{gameId}`
    * esiste già la partita è stata contata, no-op — questo precheck locale evita solo lo sforzo di un
    * write che la regola Firestore (statsNotYetCounted, v. firestore.rules) respingerebbe comunque,
@@ -140,6 +157,7 @@ export class AuthService {
    * in firestore.rules) ma perché è comunque una sola azione utente, un solo giro di rete.
    */
   async applyGameStats(gameDoc: GameDoc, role: PlayerId): Promise<void> {
+    if (!OBJECTIVES_TRACKING_ENABLED) return;
     const user = this.auth.currentUser;
     const current = this.profile();
     if (!user || !current || !gameDoc.state || gameDoc.status !== 'finished') return;
@@ -152,11 +170,17 @@ export class AuthService {
       role,
       gameDoc.state.winner,
       gameDoc.state.eventLog,
+      gameDoc.wasFriendDuel,
     );
+    // loginStreak/rulebookRead non cambiano qui (si aggiornano fuori dal flusso di fine partita, v.
+    // ensureUserProfile/markRulebookRead sotto) — passare `current` per prima e dopo li tiene
+    // semplicemente invariati nel confronto.
+    const priorSource = buildProgressSource(current.stats, current);
+    const nextSource = buildProgressSource(nextStats, current);
     const completedObjectiveIds = [
       ...new Set([
         ...(current.completedObjectiveIds ?? []),
-        ...newlyCompletedObjectives(OBJECTIVE_CATALOG, current.stats, nextStats),
+        ...newlyCompletedObjectives(OBJECTIVE_CATALOG, priorSource, nextSource),
       ]),
     ];
 
@@ -202,14 +226,65 @@ export class AuthService {
           ? 'unlockedCardBacks'
           : reward.type === 'background'
             ? 'unlockedBackgrounds'
-            : 'unlockedTitles';
+            : reward.type === 'elementVariant'
+              ? 'unlockedElementVariants'
+              : 'unlockedTitles';
       // I titoli possono sbloccare più di un id in un colpo solo: le varianti di genere (v.
-      // data/titles.ts) — dorsi/sfondi restano sempre un solo id per reward.
+      // data/titles.ts) — dorsi/sfondi/varianti elemento restano sempre un solo id per reward.
       const rewardIds = reward.type === 'title' ? titleRewardVariantIds(reward.id) : [reward.id];
       const prior = patch[field] ?? current[field] ?? [];
       patch[field] = [...new Set([...prior, ...rewardIds])];
     }
 
+    await updateDoc(doc(this.firebase.db, 'users', user.uid), patch);
+    this.profile.set({ ...current, ...patch });
+  }
+
+  /** Achievements "Istruito"/"Istruita" — segna il regolamento come letto per intero. Chiamata da
+   * RulebookDialogComponent ogni volta che finisce di caricare una sezione, no-op oltre la prima
+   * volta (già `rulebookRead`) quindi sicura da richiamare ripetutamente. No-op anche finché
+   * OBJECTIVES_TRACKING_ENABLED è `false` (beta), stesso schema di applyGameStats sopra. */
+  async markRulebookRead(): Promise<void> {
+    if (!OBJECTIVES_TRACKING_ENABLED) return;
+    const user = this.auth.currentUser;
+    const current = this.profile();
+    if (!user || !current || current.rulebookRead) return;
+
+    const priorSource = buildProgressSource(current.stats, current);
+    const nextSource = buildProgressSource(current.stats, { ...current, rulebookRead: true });
+    const completedObjectiveIds = [
+      ...new Set([
+        ...(current.completedObjectiveIds ?? []),
+        ...newlyCompletedObjectives(OBJECTIVE_CATALOG, priorSource, nextSource),
+      ]),
+    ];
+
+    const patch: Partial<UserProfile> = { rulebookRead: true, completedObjectiveIds };
+    await updateDoc(doc(this.firebase.db, 'users', user.uid), patch);
+    this.profile.set({ ...current, ...patch });
+  }
+
+  /** Achievements "Duellante socievole"/"Duellante amichevole" — sincronizza il numero di amicizie
+   * accettate. Chiamata da FriendsDialogComponent ogni volta che carica la lista completa
+   * (FriendsService.listFriends) per disegnarla: quel conteggio va comunque recuperato per la UI,
+   * quindi il costo aggiuntivo di questa sincronizzazione è pari a zero. No-op se il conteggio non è
+   * cambiato dall'ultima sincronizzazione, o finché OBJECTIVES_TRACKING_ENABLED è `false` (beta). */
+  async syncFriendsCount(count: number): Promise<void> {
+    if (!OBJECTIVES_TRACKING_ENABLED) return;
+    const user = this.auth.currentUser;
+    const current = this.profile();
+    if (!user || !current || (current.friendsCount ?? 0) === count) return;
+
+    const priorSource = buildProgressSource(current.stats, current);
+    const nextSource = buildProgressSource(current.stats, { ...current, friendsCount: count });
+    const completedObjectiveIds = [
+      ...new Set([
+        ...(current.completedObjectiveIds ?? []),
+        ...newlyCompletedObjectives(OBJECTIVE_CATALOG, priorSource, nextSource),
+      ]),
+    ];
+
+    const patch: Partial<UserProfile> = { friendsCount: count, completedObjectiveIds };
     await updateDoc(doc(this.firebase.db, 'users', user.uid), patch);
     this.profile.set({ ...current, ...patch });
   }
@@ -226,7 +301,13 @@ export class AuthService {
     const snapshot = await getDoc(ref);
 
     if (snapshot.exists()) {
-      this.profile.set(snapshot.data() as UserProfile);
+      const data = snapshot.data() as UserProfile;
+      const loginPatch = OBJECTIVES_TRACKING_ENABLED ? this.buildLoginStreakPatch(data) : null;
+      this.profile.set(loginPatch ? { ...data, ...loginPatch } : data);
+      // Fire-and-forget: un bookkeeping non critico non deve ritardare l'avvio dell'app in attesa di
+      // un giro di rete in più. Nel peggiore dei casi lo streak non avanza per questa sessione,
+      // nessun altro effetto (v. buildLoginStreakPatch).
+      if (loginPatch) void updateDoc(ref, loginPatch);
       return;
     }
 
@@ -244,9 +325,36 @@ export class AuthService {
       // prescindere da `unlockedTitles`, stesso motivo per cui cardBack/background sopra non
       // hanno bisogno di un array "unlocked" per i loro valori di default.
       title: 'beginner',
+      // Il primo accesso conta come giorno 1 dello streak — solo se il tracciamento è attivo (beta,
+      // v. OBJECTIVES_TRACKING_ENABLED), altrimenti restano assenti finché non lo si riattiva.
+      ...(OBJECTIVES_TRACKING_ENABLED ? { lastLoginDate: todayLocalDate(), loginStreak: 1 } : {}),
     };
 
     await setDoc(ref, newProfile);
     this.profile.set(newProfile);
+  }
+
+  /** Achievements "Login 7 giorni consecutivi" — null se oggi è già stato registrato (nessuna
+   * scrittura necessaria). Stesso schema di applyGameStats/markRulebookRead per il calcolo di
+   * completedObjectiveIds, ma senza alcuna partita coinvolta: nextLoginStreak (game/achievements.ts)
+   * è pura data-math sull'ultimo giorno registrato. */
+  private buildLoginStreakPatch(profile: UserProfile): Partial<UserProfile> | null {
+    const next = nextLoginStreak(profile.lastLoginDate, profile.loginStreak);
+    if (!next) return null;
+
+    const loginFields: Partial<UserProfile> = {
+      lastLoginDate: next.date,
+      loginStreak: next.streak,
+    };
+    const priorSource = buildProgressSource(profile.stats, profile);
+    const nextSource = buildProgressSource(profile.stats, { ...profile, ...loginFields });
+    const completedObjectiveIds = [
+      ...new Set([
+        ...(profile.completedObjectiveIds ?? []),
+        ...newlyCompletedObjectives(OBJECTIVE_CATALOG, priorSource, nextSource),
+      ]),
+    ];
+
+    return { ...loginFields, completedObjectiveIds };
   }
 }

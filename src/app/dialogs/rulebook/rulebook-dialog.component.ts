@@ -12,6 +12,7 @@ import { marked } from 'marked';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { SelectComponent, type SelectOption } from '../../components/ui/select/select.component';
 import { BoardLayoutService } from '../../services/board-layout.service';
+import { AuthService } from '../../services/auth.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 interface RulebookSection {
@@ -31,6 +32,7 @@ export class RulebookDialogComponent implements OnInit {
   private readonly dialogRef = inject(DialogRef);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly boardLayout = inject(BoardLayoutService);
+  private readonly auth = inject(AuthService);
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
@@ -71,7 +73,7 @@ export class RulebookDialogComponent implements OnInit {
     this.loading.set(true);
 
     if (!this.cache.has(id)) {
-      const section = this.sections().find(s => s.id === id);
+      const section = this.sections().find((s) => s.id === id);
       if (section) {
         const res = await fetch(section.contentUrl);
         const markdown = await res.text();
@@ -83,6 +85,14 @@ export class RulebookDialogComponent implements OnInit {
     const html = marked.parse(markdown) as string;
     this.renderedContent.set(this.sanitizer.bypassSecurityTrustHtml(html));
     this.loading.set(false);
+
+    // Achievements "Istruito"/"Istruita" — "letto tutto il regolamento" = ogni sezione aperta
+    // almeno una volta in questa (o una precedente) apertura della dialog: `cache` accumula già le
+    // sezioni visitate, riusarlo evita un secondo set di "visto/non visto" in parallelo.
+    // markRulebookRead() è no-op oltre la prima volta, sicuro da richiamare ad ogni sezione.
+    if (this.sections().length > 0 && this.cache.size >= this.sections().length) {
+      void this.auth.markRulebookRead();
+    }
   }
 
   protected close(): void {

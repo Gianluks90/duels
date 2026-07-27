@@ -39,23 +39,51 @@
     }
   }
 
-  &__categories {
+  // Colonna nav categorie + bottone/i "Imposta personalizzazioni" sotto — un solo blocco per poter
+  // fissare il secondo in fondo (categorie scorrono in autonomia, il resto no) senza che i due si
+  // accavallino.
+  &__sidebar {
     display: flex;
     flex-direction: column;
     width: 220px;
     flex-shrink: 0;
     border-right: 1px solid var(--border-subtle);
+
+    @media (max-width: 720px) {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+  }
+
+  &__categories {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: var(--sp-3) 0;
 
     @media (max-width: 720px) {
-      width: 100%;
       flex-direction: row;
-      border-right: none;
-      border-bottom: 1px solid var(--border-subtle);
       overflow-x: auto;
       overflow-y: visible;
       padding: var(--sp-2);
+    }
+  }
+
+  // Sempre in colonna (Applica sopra, Annulla sotto) anche in mobile — richiesto esplicitamente,
+  // non lo stesso schema riga/colonna di &__categories sopra.
+  &__personalize {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+    padding: var(--sp-3);
+    border-top: 1px solid var(--border-subtle);
+
+    .btn {
+      width: 100%;
     }
   }
 
@@ -74,7 +102,9 @@
     cursor: pointer;
     white-space: nowrap;
     letter-spacing: 0.04em;
-    transition: background var(--transition), color var(--transition);
+    transition:
+      background var(--transition),
+      color var(--transition);
 
     &:hover {
       background: rgba(255, 255, 255, 0.04);
@@ -86,6 +116,19 @@
       background: rgba(212, 168, 71, 0.07);
       border-left: 2px solid var(--text-heading);
       padding-left: calc(var(--sp-5) - 2px);
+    }
+
+    // Titoli, mentre si è in modalità personalizzazione — quel tab non ha più nulla da impostare
+    // qui (v. CollectionComponent, il titolo resta un select in ProfileDialogComponent).
+    &:disabled {
+      color: var(--text-muted);
+      opacity: 0.4;
+      cursor: not-allowed;
+
+      &:hover {
+        background: transparent;
+        color: var(--text-muted);
+      }
     }
   }
 
@@ -135,5 +178,4 @@
       }
     }
   }
-
 }

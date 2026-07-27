@@ -3,9 +3,8 @@ import type { Card } from './card.model';
 import type { Wand } from './wand.model';
 
 export type PlayerId = 'host' | 'guest';
-/** Id libero, non un'unione letterale: il set valido vive in public/config/card-backs.json
- * (CardBackService lo carica a runtime), così aggiungere un dorso nuovo è solo un file immagine +
- * una riga JSON, nessun codice TS da toccare. */
+/** Id libero, non un'unione letterale: il set valido vive in CARD_BACK_CATALOG (data/card-backs.ts),
+ * così aggiungere un dorso nuovo è solo un file immagine + una riga lì, nessun tipo da toccare. */
 export type CardBackSkin = string;
 
 /** Mana speciale (3.2.2/3.2.3): +1 PS/danno extra per ogni carta vitale/caotica usata per pagare, calcolato al momento del pagamento (castSpell) — le carte di pagamento vengono scartate subito, quindi non sarebbero più consultabili al momento della risoluzione in fase Incantesimo (resolveSpells). 0 se la magia non è stata pagata con quel tipo di mana, o se l'effetto corrispondente (heal per vitale, damage per caotico) non è nemmeno presente nella magia. */

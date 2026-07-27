@@ -1,13 +1,23 @@
+import { COLLECTIBLE_ELEMENT_IDS } from '../data/elements';
+import type { CollectibleElement } from '../models/element.model';
 import type { GameLogEntry } from '../models/game-log.model';
-import type { Objective } from '../models/objective.model';
+import type { Objective, ObjectiveMetric } from '../models/objective.model';
 import type { PlayerId } from '../models/player.model';
-import { EMPTY_USER_STATS, type UserStats } from '../models/user.model';
+import { EMPTY_USER_STATS, type UserProfile, type UserStats } from '../models/user.model';
 
 /** Delta di UserStats derivabili dall'eventLog di UNA partita (esclude gamesPlayed/wins/losses:
  * quelli dipendono da GameState.winner, non da conteggi sull'eventLog — v. AuthService.applyGameStats). */
 type EventLogStatsDelta = Pick<
   UserStats,
-  'cardsCollected' | 'combinationsMade' | 'spellsCast' | 'spellCastCounts' | 'damageDealt' | 'healingDone'
+  | 'cardsCollected'
+  | 'combinationsMade'
+  | 'spellsCast'
+  | 'spellCastCounts'
+  | 'damageDealt'
+  | 'healingDone'
+  | 'shieldsGained'
+  | 'shieldsRemoved'
+  | 'elementsObtained'
 >;
 
 /**
@@ -31,15 +41,26 @@ export function computeStatsDelta(
     spellCastCounts: {},
     damageDealt: 0,
     healingDone: 0,
+    shieldsGained: 0,
+    shieldsRemoved: 0,
+    elementsObtained: {},
   };
 
   for (const entry of eventLog) {
     switch (entry.type) {
       case 'cardCollected':
-        if (entry.role === role) delta.cardsCollected += 1;
+        // Sempre un base (l'unico tier che passa dalla Fonte comune, v. UserStats.elementsObtained)
+        // — ma l'evento porta comunque l'Element esatto, niente da assumere qui.
+        if (entry.role === role) {
+          delta.cardsCollected += 1;
+          delta.elementsObtained[entry.element] = (delta.elementsObtained[entry.element] ?? 0) + 1;
+        }
         break;
       case 'combined':
-        if (entry.role === role) delta.combinationsMade += 1;
+        if (entry.role === role) {
+          delta.combinationsMade += 1;
+          delta.elementsObtained[entry.element] = (delta.elementsObtained[entry.element] ?? 0) + 1;
+        }
         break;
       case 'spellCast':
         if (entry.role === role) {
@@ -57,6 +78,16 @@ export function computeStatsDelta(
           delta.damageDealt += entry.amount;
         }
         break;
+      case 'shieldGained':
+        // role è chi ha guadagnato lo scudo (shield_add è sempre self-target, v. turn-engine.ts) —
+        // "attivato da me" è semplicemente quando quel ruolo sono io.
+        if (entry.role === role) delta.shieldsGained += entry.amount;
+        break;
+      case 'shieldRemoved':
+        // role è chi lo ha PERSO (il bersaglio, come damage sopra) — "rimosso da me" è quando il
+        // bersaglio è l'avversario.
+        if (entry.role === opponentRole) delta.shieldsRemoved += entry.amount;
+        break;
       default:
         break;
     }
@@ -65,7 +96,10 @@ export function computeStatsDelta(
   return delta;
 }
 
-function mergeCounts(prior: Record<string, number>, delta: Record<string, number>): Record<string, number> {
+function mergeCounts(
+  prior: Record<string, number>,
+  delta: Record<string, number>,
+): Record<string, number> {
   const merged = { ...prior };
   for (const [key, count] of Object.entries(delta)) merged[key] = (merged[key] ?? 0) + count;
   return merged;
@@ -79,34 +113,90 @@ export function applyGameStatsDelta(
   role: PlayerId,
   winner: PlayerId | null,
   eventLog: readonly GameLogEntry[],
+  wasFriendDuel: boolean,
 ): UserStats {
   const prior = priorStats ?? EMPTY_USER_STATS;
   const delta = computeStatsDelta(eventLog, role);
+  const won = winner === role;
+  const lost = winner !== null && winner !== role;
   return {
     gamesPlayed: prior.gamesPlayed + 1,
-    wins: prior.wins + (winner === role ? 1 : 0),
-    losses: prior.losses + (winner !== null && winner !== role ? 1 : 0),
+    wins: prior.wins + (won ? 1 : 0),
+    losses: prior.losses + (lost ? 1 : 0),
     cardsCollected: prior.cardsCollected + delta.cardsCollected,
     combinationsMade: prior.combinationsMade + delta.combinationsMade,
     spellsCast: prior.spellsCast + delta.spellsCast,
     spellCastCounts: mergeCounts(prior.spellCastCounts, delta.spellCastCounts),
     damageDealt: prior.damageDealt + delta.damageDealt,
     healingDone: prior.healingDone + delta.healingDone,
+    shieldsGained: prior.shieldsGained + delta.shieldsGained,
+    shieldsRemoved: prior.shieldsRemoved + delta.shieldsRemoved,
+    elementsObtained: mergeCounts(prior.elementsObtained, delta.elementsObtained),
+    // "Inarrestabile": +1 su una vittoria, azzerato su una sconfitta, invariato su un pareggio
+    // (winner resta null quando entrambi scendono a 0 hp nello stesso reducer, v. resolveVictory in
+    // turn-engine.ts) — coerente con winStreakValid() in firestore.rules.
+    currentWinStreak: won ? prior.currentWinStreak + 1 : lost ? 0 : prior.currentWinStreak,
+    // "Amichevole"/"Rivale": derivati da GameDoc.wasFriendDuel (snapshot al join, v.
+    // GameService.joinGame), non dall'eventLog — coerente con friendDuelStatsValid() in
+    // firestore.rules.
+    friendDuelsPlayed: prior.friendDuelsPlayed + (wasFriendDuel ? 1 : 0),
+    friendDuelWins: prior.friendDuelWins + (wasFriendDuel && won ? 1 : 0),
   };
 }
 
-/** Obiettivi il cui progresso ha appena raggiunto la soglia — confronta PRIMA/DOPO l'applicazione
- * del delta, non solo "dopo >= soglia": altrimenti un obiettivo già completato in una partita
- * precedente ricomparirebbe come "appena completato" a ogni partita successiva. */
+/** Un numero per ogni ObjectiveMetric — la maggior parte viene da UserStats (aggiornato a fine
+ * partita), `loginStreak`/`rulebookRead`/`friendsCount` sono invece campi indipendenti su
+ * UserProfile, aggiornati fuori dal flusso di fine partita (AuthService.ensureUserProfile/
+ * markRulebookRead/syncFriendsCount). Qui convergono nello stesso formato così
+ * newlyCompletedObjectives/buildObjectiveProgress sotto non devono sapere da dove viene ciascun
+ * numero. */
+export type ObjectiveProgressSource = Record<ObjectiveMetric, number>;
+
+export function buildProgressSource(
+  stats: UserStats | undefined,
+  profile: Pick<UserProfile, 'loginStreak' | 'rulebookRead' | 'friendsCount'> | undefined,
+): ObjectiveProgressSource {
+  const s = stats ?? EMPTY_USER_STATS;
+  // Le 11 proiezioni scalari di elementsObtained (v. ObjectiveMetric) — costruite da
+  // COLLECTIBLE_ELEMENT_IDS invece di elencarle a mano, restano corrette da sole se il catalogo
+  // elementi cambia. Il cast è sicuro: le chiavi generate sono esattamente `element_${CollectibleElement}`.
+  const elementProgress = Object.fromEntries(
+    COLLECTIBLE_ELEMENT_IDS.map((id) => [`element_${id}`, s.elementsObtained[id] ?? 0]),
+  ) as Record<`element_${CollectibleElement}`, number>;
+
+  return {
+    gamesPlayed: s.gamesPlayed,
+    wins: s.wins,
+    losses: s.losses,
+    cardsCollected: s.cardsCollected,
+    combinationsMade: s.combinationsMade,
+    spellsCast: s.spellsCast,
+    damageDealt: s.damageDealt,
+    healingDone: s.healingDone,
+    currentWinStreak: s.currentWinStreak,
+    friendDuelsPlayed: s.friendDuelsPlayed,
+    friendDuelWins: s.friendDuelWins,
+    shieldsGained: s.shieldsGained,
+    shieldsRemoved: s.shieldsRemoved,
+    loginStreak: profile?.loginStreak ?? 0,
+    rulebookRead: profile?.rulebookRead ? 1 : 0,
+    friendsCount: profile?.friendsCount ?? 0,
+    ...elementProgress,
+  };
+}
+
+/** Obiettivi il cui progresso ha appena raggiunto la soglia — confronta PRIMA/DOPO l'aggiornamento
+ * (una partita conclusa, ma anche un accesso che allunga lo streak o la lettura del regolamento,
+ * v. buildProgressSource sopra), non solo "dopo >= soglia": altrimenti un obiettivo già completato
+ * in precedenza ricomparirebbe come "appena completato" ad ogni aggiornamento successivo. */
 export function newlyCompletedObjectives(
   catalog: readonly Objective[],
-  priorStats: UserStats | undefined,
-  nextStats: UserStats,
+  priorSource: ObjectiveProgressSource,
+  nextSource: ObjectiveProgressSource,
 ): string[] {
-  const prior = priorStats ?? EMPTY_USER_STATS;
   return catalog
-    .filter((objective) => nextStats[objective.metric] >= objective.threshold)
-    .filter((objective) => prior[objective.metric] < objective.threshold)
+    .filter((objective) => nextSource[objective.metric] >= objective.threshold)
+    .filter((objective) => priorSource[objective.metric] < objective.threshold)
     .map((objective) => objective.id);
 }
 
@@ -121,14 +211,45 @@ export interface ObjectiveProgress {
  * posti. Non filtra i completati: la UI decide cosa mostrare/nascondere (ObjectiveCardComponent). */
 export function buildObjectiveProgress(
   catalog: readonly Objective[],
-  stats: UserStats | undefined,
+  source: ObjectiveProgressSource,
   claimedObjectiveIds: readonly string[] | undefined,
 ): ObjectiveProgress[] {
-  const s = stats ?? EMPTY_USER_STATS;
   const claimed = new Set(claimedObjectiveIds ?? []);
   return catalog.map((objective) => ({
     objective,
-    progress: s[objective.metric],
+    progress: source[objective.metric],
     claimed: claimed.has(objective.id),
   }));
+}
+
+/** Data odierna in formato 'YYYY-MM-DD', calendario LOCALE del dispositivo (non UTC) — coerente con
+ * "hai aperto l'app oggi" per l'utente, non con un fuso orario arbitrario. */
+export function todayLocalDate(now: Date = new Date()): string {
+  return formatLocalDate(now);
+}
+
+function formatLocalDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Prossimo streak di accessi consecutivi (Achievements, "Login 7 giorni consecutivi") dato l'ultimo
+ * giorno registrato — null se oggi è già stato registrato (nessuna scrittura necessaria, sicuro da
+ * richiamare più volte nella stessa sessione/giornata). +1 se l'ultimo accesso registrato è
+ * esattamente ieri, azzerato a 1 altrimenti (streak interrotto, o primo accesso mai registrato).
+ * Aritmetica sempre su componenti LOCALI di Date (mai un giro per stringa/UTC), per non introdurre
+ * uno sfasamento di un giorno vicino alla mezzanotte in fusi orari diversi da UTC. */
+export function nextLoginStreak(
+  lastLoginDate: string | undefined,
+  priorStreak: number | undefined,
+  now: Date = new Date(),
+): { date: string; streak: number } | null {
+  const today = formatLocalDate(now);
+  if (lastLoginDate === today) return null;
+
+  const yesterday = formatLocalDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
+  const streak = lastLoginDate === yesterday ? (priorStreak ?? 0) + 1 : 1;
+  return { date: today, streak };
 }

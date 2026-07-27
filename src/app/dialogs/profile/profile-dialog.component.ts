@@ -1,28 +1,17 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { DialogRef } from '@angular/cdk/dialog';
 import { ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TranslationService } from '../../services/translation.service';
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
-import { BackgroundPickerComponent } from '../../components/background-picker/background-picker.component';
-import { CardBackPickerComponent } from '../../components/card-back-picker/card-back-picker.component';
-import { TitlePickerComponent } from '../../components/title-picker/title-picker.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
 import { freeTitleVariantIdsFor } from '../../data/titles';
 
 @Component({
   selector: 'app-profile-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ReactiveFormsModule,
-    IconButtonComponent,
-    BackgroundPickerComponent,
-    CardBackPickerComponent,
-    TitlePickerComponent,
-    TranslatePipe,
-  ],
+  imports: [ReactiveFormsModule, IconButtonComponent, TranslatePipe],
   templateUrl: './profile-dialog.component.html',
   styleUrl: './profile-dialog.component.scss',
 })
@@ -34,18 +23,6 @@ export class ProfileDialogComponent {
 
   protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly profile = this.auth.profile;
-  protected readonly currentBackground = computed(
-    () => this.profile()?.background ?? DEFAULT_BACKGROUND_ID,
-  );
-  /** Sezione titolo nascosta solo se non esiste NESSUN titolo disponibile per QUESTO utente (né
-   * gratuito/esclusivo né sbloccato) — con almeno un titolo gratuito in TITLE_CATALOG (v.
-   * data/titles.ts) è ormai sempre vero, ma resta un guard corretto se in futuro non ce ne fosse
-   * più nessuno. */
-  protected readonly hasTitles = computed(
-    () =>
-      freeTitleVariantIdsFor(this.auth.user()?.uid).length > 0 ||
-      (this.profile()?.unlockedTitles ?? []).length > 0,
-  );
 
   protected readonly nameControl = new FormControl('', {
     nonNullable: true,
@@ -58,6 +35,21 @@ export class ProfileDialogComponent {
 
   protected readonly saving = signal(false);
   protected readonly saved = signal(false);
+
+  /** Titolo: identità dell'account tanto quanto nome/foto sopra, quindi resta qui (non più nella
+   * Collezione insieme a dorso/sfondo — v. CollectionComponent, "Imposta personalizzazioni") — un
+   * select che applica subito al cambio, stesso schema del select lingua in OptionsDialogComponent
+   * (nessuno stato "pendente" da confermare a parte, un solo valore scelto tra poche opzioni non ha
+   * bisogno di un'anteprima prima di applicare). `ownedTitleIds` unisce le variant-id equipaggiabili
+   * senza riscatto (titoli gratuiti/esclusivi, v. freeTitleVariantIdsFor) con quelle sbloccate via
+   * obiettivo. */
+  protected readonly ownedTitleIds = computed(() => [
+    ...new Set([
+      ...freeTitleVariantIdsFor(this.auth.user()?.uid),
+      ...(this.profile()?.unlockedTitles ?? []),
+    ]),
+  ]);
+  protected readonly hasTitles = computed(() => this.ownedTitleIds().length > 0);
 
   protected readonly confirmDelete = signal(false);
   protected readonly deleting = signal(false);
@@ -90,19 +82,10 @@ export class ProfileDialogComponent {
     }
   }
 
-  protected async applyCardBack(skin: string): Promise<void> {
-    if (this.profile()?.cardBack === skin) return;
-    await this.auth.updateProfile({ cardBack: skin });
-  }
-
-  protected async applyBackground(id: string): Promise<void> {
-    if (this.currentBackground() === id) return;
-    await this.auth.updateProfile({ background: id });
-  }
-
-  protected async applyTitle(id: string): Promise<void> {
-    if (this.profile()?.title === id) return;
-    await this.auth.updateProfile({ title: id });
+  protected async onTitleChange(event: Event): Promise<void> {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === this.profile()?.title) return;
+    await this.auth.updateProfile({ title: value });
   }
 
   protected requestConfirm(): void {

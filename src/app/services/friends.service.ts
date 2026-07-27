@@ -118,6 +118,21 @@ export class FriendsService {
     return snapshot.exists() ? (snapshot.data() as UserProfile) : null;
   }
 
+  /** Amicizia accettata tra due uid specifici — stesso schema deterministico di isFriend()
+   * (firestore.rules): due get() diretti sulle due direzioni possibili dell'id, invece di una
+   * query. Usata da GameService.joinGame per lo snapshot "wasFriendDuel" (Achievements
+   * "Amichevole"/"Rivale") al momento del join. */
+  async isFriend(a: string, b: string): Promise<boolean> {
+    const [ab, ba] = await Promise.all([
+      getDoc(doc(this.db, 'friendRequests', this.requestId(a, b))),
+      getDoc(doc(this.db, 'friendRequests', this.requestId(b, a))),
+    ]);
+    return (
+      (ab.exists() && (ab.data() as FriendRequest).status === 'accepted') ||
+      (ba.exists() && (ba.data() as FriendRequest).status === 'accepted')
+    );
+  }
+
   private requestId(fromUid: string, toUid: string): string {
     return `${fromUid}_${toUid}`;
   }

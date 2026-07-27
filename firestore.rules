@@ -162,7 +162,8 @@ service cloud.firestore {
     function priorStats() {
       return resource.data.get('stats', {
         gamesPlayed: 0, wins: 0, losses: 0, cardsCollected: 0, combinationsMade: 0,
-        spellsCast: 0, spellCastCounts: {}, damageDealt: 0, healingDone: 0
+        spellsCast: 0, spellCastCounts: {}, damageDealt: 0, healingDone: 0, currentWinStreak: 0,
+        friendDuelsPlayed: 0, friendDuelWins: 0, shieldsGained: 0, shieldsRemoved: 0
       });
     }
 
@@ -197,8 +198,36 @@ service cloud.firestore {
         request.resource.data.stats.cardsCollected is int &&
         request.resource.data.stats.damageDealt is int &&
         request.resource.data.stats.healingDone is int &&
+        request.resource.data.stats.currentWinStreak is int &&
+        request.resource.data.stats.friendDuelsPlayed is int &&
+        request.resource.data.stats.friendDuelWins is int &&
+        request.resource.data.stats.shieldsGained is int &&
+        request.resource.data.stats.shieldsRemoved is int &&
         request.resource.data.stats.spellCastCounts is map &&
         request.resource.data.stats.spellCastCounts.size() <= 100;
+    }
+
+    // currentWinStreak (Achievements, "Inarrestabile"): a differenza degli altri campi qui sotto NON
+    // è monotono (si azzera a una sconfitta) — ma è comunque derivabile ESATTAMENTE da `winner`
+    // (stesso scalare già letto per wins/losses sopra), non da un conteggio sull'eventLog: +1 se
+    // vinta, azzerato se persa, invariato in caso di pareggio (winner resta null, v. turn-engine.ts).
+    function winStreakValid() {
+      let won = statsGameData().state.winner == statsRole();
+      let lost = statsGameData().state.winner != null && statsGameData().state.winner != statsRole();
+      let next = request.resource.data.stats.currentWinStreak;
+      let prior = priorStats().get('currentWinStreak', 0);
+      return won ? next == prior + 1 : (lost ? next == 0 : next == prior);
+    }
+
+    // friendDuelsPlayed/friendDuelWins (Achievements, "Amichevole"/"Rivale"): come currentWinStreak
+    // sopra, derivabili ESATTAMENTE da uno scalare letto da games/{id} — qui wasFriendDuel, lo
+    // snapshot già validato al momento del join (v. "allow update" su games/{gameId} più sotto in
+    // questo file, isFriend()) — non da un conteggio sull'eventLog.
+    function friendDuelStatsValid() {
+      let wasFriendDuel = statsGameData().wasFriendDuel;
+      let won = statsGameData().state.winner == statsRole();
+      return statsDelta('friendDuelsPlayed') == (wasFriendDuel ? 1 : 0) &&
+        statsDelta('friendDuelWins') == (wasFriendDuel && won ? 1 : 0);
     }
 
     function statsPlausible() {
@@ -213,7 +242,11 @@ service cloud.firestore {
         statsDelta('spellsCast') >= 0 && statsDelta('spellsCast') <= 50 &&
         statsDelta('cardsCollected') >= 0 && statsDelta('cardsCollected') <= 200 &&
         statsDelta('damageDealt') >= 0 && statsDelta('damageDealt') <= 500 &&
-        statsDelta('healingDone') >= 0 && statsDelta('healingDone') <= 200;
+        statsDelta('healingDone') >= 0 && statsDelta('healingDone') <= 200 &&
+        statsDelta('shieldsGained') >= 0 && statsDelta('shieldsGained') <= 100 &&
+        statsDelta('shieldsRemoved') >= 0 && statsDelta('shieldsRemoved') <= 200 &&
+        winStreakValid() &&
+        friendDuelStatsValid();
     }
 
     // completedObjectiveIds (AuthService.applyGameStats) può cambiare SOLO insieme a stats/
@@ -233,10 +266,74 @@ service cloud.firestore {
       return next.hasAll(prior) && next.size() <= prior.size() + 20 && next.size() <= 200;
     }
 
+    // Achievements "Login 7 giorni consecutivi": lastLoginDate/loginStreak si aggiornano fuori dal
+    // flusso di fine partita (AuthService.ensureUserProfile, ad ogni avvio app con un profilo già
+    // esistente), quindi non possono passare da statsGameRef()/isStatsGameParticipant() sopra —
+    // nessuna partita è coinvolta. Le regole non hanno un orologio server attendibile da confrontare
+    // al calendario LOCALE del client (lastLoginDate è quello che il client stesso dichiara essere
+    // "oggi") — stesso rischio accettato di statsPlausible() sopra, ricompensa cosmetica. Solo forma:
+    // loginStreak cresce al massimo di 1 a scrittura, o si azzera (streak interrotto).
+    function loginStreakValid() {
+      return request.resource.data.lastLoginDate is string &&
+        request.resource.data.loginStreak is int &&
+        request.resource.data.loginStreak >= 0 &&
+        request.resource.data.loginStreak <= resource.data.get('loginStreak', 0) + 1;
+    }
+
+    // Achievements "Istruito"/"Istruita": rulebookRead passa una sola volta da assente/false a true
+    // (mai il contrario — stesso spirito "mai rimosso" di completedObjectiveIds).
+    function rulebookReadValid() {
+      return request.resource.data.rulebookRead == true;
+    }
+
+    // Achievements "Duellante socievole"/"Duellante amichevole": friendsCount è sincronizzato da
+    // FriendsDialogComponent col numero di amicizie accettate REALMENTE lette in quel momento (v.
+    // AuthService.syncFriendsCount) — a differenza di loginStreak non c'è un "+1 a scrittura" da
+    // imporre (si può scoprire di aver guadagnato più amici insieme tra un'apertura e l'altra della
+    // dialog), né un orologio server con cui confrontarlo: stesso rischio accettato di
+    // statsPlausible() sopra, solo un tetto largo a prova di errori grossolani, non una prova che il
+    // numero dichiarato sia quello vero.
+    function friendsCountValid() {
+      return request.resource.data.friendsCount is int &&
+        request.resource.data.friendsCount >= 0 &&
+        request.resource.data.friendsCount <= 500;
+    }
+
+    // I quattro "trigger" che possono far crescere completedObjectiveIds (partita conclusa, streak
+    // di accessi, regolamento letto, amicizie sincronizzate) restano reciprocamente esclusivi in UNA
+    // scrittura — ognuno richiede che i campi degli ALTRI non cambino nella stessa richiesta:
+    // altrimenti una scrittura mista potrebbe portare con sé, ad esempio, un `loginStreak` arbitrario
+    // "agganciato" a una scrittura di stats altrimenti valida, aggirando loginStreakValid() sopra.
+    function gameStatsWrite() {
+      return changedKeys().hasAll(['stats', 'lastStatsGameId']) &&
+        !changedKeys().hasAny(['loginStreak', 'lastLoginDate', 'rulebookRead', 'friendsCount']) &&
+        statsShapeValid() && isStatsGameParticipant() && statsNotYetCounted() && statsPlausible();
+    }
+
+    function loginStreakWrite() {
+      return changedKeys().hasAll(['lastLoginDate', 'loginStreak']) &&
+        !changedKeys().hasAny(['stats', 'lastStatsGameId', 'rulebookRead', 'friendsCount']) &&
+        loginStreakValid();
+    }
+
+    function rulebookReadWrite() {
+      return changedKeys().hasAny(['rulebookRead']) &&
+        !changedKeys().hasAny(['stats', 'lastStatsGameId', 'loginStreak', 'lastLoginDate', 'friendsCount']) &&
+        rulebookReadValid();
+    }
+
+    function friendsCountWrite() {
+      return changedKeys().hasAny(['friendsCount']) &&
+        !changedKeys().hasAny(['stats', 'lastStatsGameId', 'loginStreak', 'lastLoginDate', 'rulebookRead']) &&
+        friendsCountValid();
+    }
+
     function statsValid() {
-      return !changedKeys().hasAny(['stats', 'lastStatsGameId', 'completedObjectiveIds']) ||
-        (changedKeys().hasAll(['stats', 'lastStatsGameId']) &&
-         statsShapeValid() && isStatsGameParticipant() && statsNotYetCounted() && statsPlausible() &&
+      return !changedKeys().hasAny([
+        'stats', 'lastStatsGameId', 'completedObjectiveIds',
+        'loginStreak', 'lastLoginDate', 'rulebookRead', 'friendsCount'
+      ]) ||
+        ((gameStatsWrite() || loginStreakWrite() || rulebookReadWrite() || friendsCountWrite()) &&
          completedObjectiveIdsValid());
     }
 
@@ -254,7 +351,8 @@ service cloud.firestore {
     // catalogo nelle regole) — stesso rischio accettato di statsPlausible() sopra.
     function claimValid() {
       return !changedKeys().hasAny([
-        'claimedObjectiveIds', 'unlockedCardBacks', 'unlockedBackgrounds', 'unlockedTitles'
+        'claimedObjectiveIds', 'unlockedCardBacks', 'unlockedBackgrounds', 'unlockedTitles',
+        'unlockedElementVariants'
       ]) || claimGrantValid();
     }
 
@@ -268,21 +366,24 @@ service cloud.firestore {
       let nextBackgrounds = request.resource.data.get('unlockedBackgrounds', priorBackgrounds);
       let priorTitles = resource.data.get('unlockedTitles', []);
       let nextTitles = request.resource.data.get('unlockedTitles', priorTitles);
+      let priorElementVariants = resource.data.get('unlockedElementVariants', []);
+      let nextElementVariants = request.resource.data.get('unlockedElementVariants', priorElementVariants);
       let claimed = nextClaimed.size() > priorClaimed.size();
-      // A differenza di sfondi/titoli (una sola fonte legittima: il riscatto obiettivo), i dorsi
-      // possono crescere anche via riscatto CODICE (lastRedeemedCode, v. redeemValid/
+      // A differenza di sfondi/titoli/varianti (una sola fonte legittima: il riscatto obiettivo), i
+      // dorsi possono crescere anche via riscatto CODICE (lastRedeemedCode, v. redeemValid/
       // redeemGrantValid sopra) — quella scrittura non tocca mai claimedObjectiveIds, quindi qui
       // basta verificare che sia comunque un riscatto codice "in forma", la validazione vera del
       // contenuto resta in redeemGrantValid().
       let redeemedCode = changedKeys().hasAny(['lastRedeemedCode']);
       // I titoli sono l'unico reward che può aggiungere PIÙ di un id in un solo riscatto: le
       // varianti di genere (v. data/titles.ts, GENDERED_TITLE_IDS) — al massimo 3 (maschile/
-      // femminile/neutro) per obiettivo. Dorsi/sfondi restano a +1, un solo id per riscatto.
-      // size() <= 200 su tutti e quattro (stesso fix applicato a completedObjectiveIdsValid): il
-      // tetto di crescita per singola scrittura da solo non impedirebbe a nessuno di questi array
-      // di gonfiarsi senza limite ripetendo il riscatto nel tempo (claimedObjectiveIds può persino
-      // contenere duplicati di un id già completato e restare comunque "+1 a scrittura" valido) —
-      // 200 è un tetto largo apposta, ben oltre qualunque catalogo realistico.
+      // femminile/neutro) per obiettivo. Dorsi/sfondi/varianti elemento restano a +1, un solo id per
+      // riscatto. size() <= 200 su tutti e cinque (stesso fix applicato a
+      // completedObjectiveIdsValid): il tetto di crescita per singola scrittura da solo non
+      // impedirebbe a nessuno di questi array di gonfiarsi senza limite ripetendo il riscatto nel
+      // tempo (claimedObjectiveIds può persino contenere duplicati di un id già completato e restare
+      // comunque "+1 a scrittura" valido) — 200 è un tetto largo apposta, ben oltre qualunque
+      // catalogo realistico (11 elementi collezionabili oggi, v. COLLECTIBLE_ELEMENT_IDS).
       return completed.hasAll(nextClaimed) &&
         nextClaimed.hasAll(priorClaimed) && nextClaimed.size() <= priorClaimed.size() + 1 &&
         nextClaimed.size() <= 200 &&
@@ -292,11 +393,15 @@ service cloud.firestore {
         nextBackgrounds.size() <= 200 &&
         nextTitles.hasAll(priorTitles) && nextTitles.size() <= priorTitles.size() + 3 &&
         nextTitles.size() <= 200 &&
+        nextElementVariants.hasAll(priorElementVariants) &&
+        nextElementVariants.size() <= priorElementVariants.size() + 1 &&
+        nextElementVariants.size() <= 200 &&
         // ogni array può crescere solo insieme al proprio riscatto legittimo — mai da una scrittura
         // scollegata.
         (nextCardBacks.size() == priorCardBacks.size() || claimed || redeemedCode) &&
         (nextBackgrounds.size() == priorBackgrounds.size() || claimed) &&
-        (nextTitles.size() == priorTitles.size() || claimed);
+        (nextTitles.size() == priorTitles.size() || claimed) &&
+        (nextElementVariants.size() == priorElementVariants.size() || claimed);
     }
 
     match /users/{userId} {
@@ -375,9 +480,14 @@ service cloud.firestore {
       allow update: if request.auth != null &&
         request.resource.data.hostId == resource.data.hostId && (
           // joinGame(): l'unico caso in cui chi scrive non è ancora host/guest della partita.
+          // wasFriendDuel (Achievements "Amichevole"/"Rivale", v. user.model.ts) è validato QUI,
+          // esattamente, riusando isFriend() sopra — a differenza del resto degli achievements non
+          // c'è bisogno di accontentarsi di "plausibile": la vera fonte di verità (friendRequests)
+          // è già leggibile dalle regole nello stesso momento in cui il join avviene.
           (resource.data.status == 'waiting' &&
            resource.data.guestId == null &&
-           request.resource.data.guestId == request.auth.uid) ||
+           request.resource.data.guestId == request.auth.uid &&
+           request.resource.data.wasFriendDuel == isFriend(resource.data.hostId)) ||
           (resource.data.hostId == request.auth.uid || resource.data.guestId == request.auth.uid)
         );
 

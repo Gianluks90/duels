@@ -7,32 +7,76 @@
     </header>
 
     <div class="collection__body">
-      <nav class="collection__categories" [attr.aria-label]="'collection.title' | translate">
-        @for (category of categories; track category.id) {
-          <button
-            type="button"
-            class="collection__category"
-            [class.collection__category--active]="selectedCategory() === category.id"
-            (click)="selectCategory(category.id)"
-          >
-            {{ category.labelKey | translate }}
-          </button>
-        }
-      </nav>
+      <div class="collection__sidebar">
+        <nav class="collection__categories" [attr.aria-label]="'collection.title' | translate">
+          @for (category of categories; track category.id) {
+            <button
+              type="button"
+              class="collection__category"
+              [class.collection__category--active]="selectedCategory() === category.id"
+              [disabled]="category.id === 'titles' && editMode()"
+              (click)="selectCategory(category.id)"
+            >
+              {{ category.labelKey | translate }}
+            </button>
+          }
+        </nav>
+
+        <div class="collection__personalize">
+          @if (!editMode()) {
+            <button type="button" class="btn btn--secondary" (click)="startPersonalizing()">
+              {{ 'collection.personalize.start' | translate }}
+            </button>
+          } @else {
+            <button type="button" class="btn btn--primary" (click)="applyPersonalizing()">
+              {{ 'collection.personalize.apply' | translate }}
+            </button>
+            <button type="button" class="btn btn--secondary" (click)="cancelPersonalizing()">
+              {{ 'collection.personalize.cancel' | translate }}
+            </button>
+          }
+        </div>
+      </div>
 
       <div class="collection__content">
         @switch (selectedCategory()) {
           @case ('cardBacks') {
-            <div class="collection__grid collection__grid--card-backs">
+            <div
+              class="collection__grid collection__grid--card-backs"
+              [attr.role]="editMode() ? 'radiogroup' : null"
+              [attr.aria-label]="editMode() ? ('collection.cardBacks' | translate) : null"
+            >
               @for (item of cardBackItems(); track item.id) {
-                <app-collection-tile [item]="item" shape="card" />
+                <app-collection-tile
+                  [item]="item"
+                  shape="card"
+                  [selectable]="editMode() && item.owned"
+                  [selected]="
+                    editMode() ? pendingCardBack() === item.id : equippedCardBack() === item.id
+                  "
+                  [activeLabel]="'collection.activeTooltip' | translate"
+                  (select)="selectCardBack(item.id)"
+                />
               }
             </div>
           }
           @case ('backgrounds') {
-            <div class="collection__grid collection__grid--backgrounds">
+            <div
+              class="collection__grid collection__grid--backgrounds"
+              [attr.role]="editMode() ? 'radiogroup' : null"
+              [attr.aria-label]="editMode() ? ('collection.backgrounds' | translate) : null"
+            >
               @for (item of backgroundItems(); track item.id) {
-                <app-collection-tile [item]="item" shape="background" />
+                <app-collection-tile
+                  [item]="item"
+                  shape="background"
+                  [selectable]="editMode() && item.owned"
+                  [selected]="
+                    editMode() ? pendingBackground() === item.id : equippedBackground() === item.id
+                  "
+                  [activeLabel]="'collection.activeTooltip' | translate"
+                  (select)="selectBackground(item.id)"
+                />
               }
             </div>
           }

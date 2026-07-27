@@ -297,7 +297,7 @@ export function keepCard(state: GameState, role: PlayerId, keptId: string): Game
     hasCollectedThisTurn: true,
     collectDrawBatchId: player.collectDrawBatchId + 1,
   });
-  return appendLog(next, { type: 'cardCollected', role });
+  return appendLog(next, { type: 'cardCollected', role, element: kept.element });
 }
 
 /**
@@ -1048,8 +1048,14 @@ function applySpellEffect(
         ? appendLog(next, { type: 'shieldGained', role: casterRole, amount })
         : next;
     }
-    case 'shield_remove_opponent':
-      return applyShieldRemove(state, opponentRole, effect.amount);
+    case 'shield_remove_opponent': {
+      const before = state.players[opponentRole].tokens.shield;
+      const next = applyShieldRemove(state, opponentRole, effect.amount);
+      const removed = before - next.players[opponentRole].tokens.shield;
+      return removed > 0
+        ? appendLog(next, { type: 'shieldRemoved', role: opponentRole, amount: removed })
+        : next;
+    }
     case 'poison_add':
       return applyPoison(state, opponentRole, effect.amount ?? 0);
     case 'poison_clear_self':

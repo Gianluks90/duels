@@ -16,6 +16,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
+import { FriendsService } from './friends.service';
 import type { Wand } from '../models/wand.model';
 import type { GameState } from '../models/game.model';
 import type { UserProfile } from '../models/user.model';
@@ -56,6 +57,12 @@ export interface GameDoc {
   guestTitle: string | null;
   guestWand: Wand | null;
   guestReady: boolean;
+  /** Achievements "Amichevole"/"Rivale" — true se host e guest erano amici al momento del join
+   * (v. FriendsService.isFriend, verificato ESATTAMENTE anche lato regole Firestore riusando
+   * isFriend() lì, non solo "plausibile" come il resto degli achievements). `false` fisso alla
+   * creazione (nessun guest ancora, v. createGame/createDebugGame sotto), scritto per davvero solo
+   * al join (joinGame). Letto da AuthService.applyGameStats a fine partita. */
+  wasFriendDuel: boolean;
   createdAt: number;
   state: GameState | null;
   /** Protezione opzionale per la lobby pubblica (Qualità della vita) — "per disattenzione", non un
@@ -82,6 +89,7 @@ export interface CreateGameOptions {
 @Injectable({ providedIn: 'root' })
 export class GameService {
   private readonly db = inject(FirebaseService).db;
+  private readonly friendsService = inject(FriendsService);
 
   generateRoomCode(): string {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -111,6 +119,8 @@ export class GameService {
       guestTitle: null,
       guestWand: null,
       guestReady: false,
+      // Nessun guest ancora: non c'è coppia da verificare. Il valore vero arriva al join, v. sotto.
+      wasFriendDuel: false,
       createdAt: Date.now(),
       state: null,
       password: options?.password?.trim() || null,
@@ -137,6 +147,12 @@ export class GameService {
       if (data.hostId === profile.uid) throw new Error('already-host');
       if (data.password && data.password !== password) throw new Error('wrong-password');
 
+      // Achievements "Amichevole"/"Rivale" (wasFriendDuel) — una getDoc "normale" dentro la
+      // transazione (non tx.get(), non fa parte del set letto atomicamente): la regola Firestore
+      // rivalida comunque il valore al momento del write con lo stesso isFriend(), quindi non serve
+      // atomicità qui, solo il valore giusto da proporre.
+      const wasFriendDuel = await this.friendsService.isFriend(profile.uid, data.hostId);
+
       tx.update(ref, {
         guestId: profile.uid,
         guestName: profile.displayName,
@@ -144,6 +160,7 @@ export class GameService {
         guestFavoriteSpellIds: profile.favoriteSpellIds ?? [],
         guestCardBack: profile.cardBack,
         guestTitle: profile.title ?? null,
+        wasFriendDuel,
         status: 'setup',
       });
     });
@@ -181,6 +198,9 @@ export class GameService {
       guestTitle: null,
       guestWand: defaultWand,
       guestReady: true,
+      // Il bot di debug non è mai un amico — e comunque escluso da isStatsGameParticipant() in
+      // firestore.rules, come le altre statistiche.
+      wasFriendDuel: false,
       createdAt: Date.now(),
       password: null,
       visibility: 'public',

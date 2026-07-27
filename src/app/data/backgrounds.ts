@@ -4,9 +4,9 @@ import type { RewardUnlock } from '../models/reward-unlock.model';
  * Catalogo completo degli sfondi esistenti (arte reale già in public/images/backgrounds/<id>.webp
  * per tutti, id/file/free in public/config/backgrounds.json), ciascuno col proprio meccanismo di
  * sblocco — stesso schema di data/card-backs.ts. Le 4 voci 'free' devono combaciare con
- * backgrounds.json (BackgroundPickerComponent/BackgroundService leggono da lì, non da qui): due
- * fonti separate perché servono a due cose diverse (qui: cosa mostrare in Collezione e come
- * descriverlo; il json: quali sfondi il picker propone).
+ * backgrounds.json (BackgroundService legge da lì, non da qui): due fonti separate perché servono
+ * a due cose diverse (qui: cosa mostrare in Collezione e come descriverlo; il json: quali sfondi
+ * BackgroundService offre per l'applicazione live).
  */
 export interface BackgroundDefinition {
   id: string;

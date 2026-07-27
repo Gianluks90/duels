@@ -94,6 +94,8 @@ export class GameLogDialogComponent {
         });
       case 'shieldGained':
         return this.pick('shieldGained', self, { amount: entry.amount, name });
+      case 'shieldRemoved':
+        return this.pick('shieldRemoved', self, { amount: entry.amount, name });
       case 'freezeResolved':
         return this.pick('freezeResolved', self, { count: entry.count, name });
       case 'spellCast':

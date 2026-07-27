@@ -4,24 +4,108 @@
   height: 100dvh;
 }
 
+// Stesso schema a due colonne di CollectionComponent (header con bordo sotto + corpo diviso da un
+// bordo verticale) invece della vecchia lista singola centrata — coerenza tra le due pagine del
+// catalogo Achievements.
 .objectives {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-5);
-  max-width: 640px;
+  max-width: 1200px;
   width: 100%;
-  margin: 0 auto;
-  padding: var(--sp-5);
+  margin: var(--sp-5) auto;
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
 
   &__title {
     font-size: 1.5rem;
   }
 
-  &__list {
+  &__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+
+    @media (max-width: 720px) {
+      flex-direction: column;
+    }
+  }
+
+  // Stesso stile di .collection__categories/.rulebook-dialog__nav-item: coerenza tra i tre pannelli
+  // a due colonne già esistenti nell'app.
+  &__categories {
     display: flex;
     flex-direction: column;
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-subtle);
+    overflow-y: auto;
+    padding: var(--sp-3) 0;
+
+    @media (max-width: 720px) {
+      width: 100%;
+      flex-direction: row;
+      border-right: none;
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+      overflow-y: visible;
+      padding: var(--sp-2);
+    }
+  }
+
+  &__category {
+    display: block;
+    width: 100%;
+    padding: var(--sp-2) var(--sp-5);
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+    transition:
+      background var(--transition),
+      color var(--transition);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+
+    &--active {
+      color: var(--text-heading);
+      background: rgba(212, 168, 71, 0.07);
+      border-left: 2px solid var(--text-heading);
+      padding-left: calc(var(--sp-5) - 2px);
+    }
+  }
+
+  &__content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--sp-6);
+  }
+
+  // Card rettangolari (testo, non arte) — 2 colonne, stesso schema di .collection__grid--titles.
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--sp-3);
+
+    @media (max-width: 720px) {
+      grid-template-columns: repeat(1, 1fr);
+    }
   }
 }

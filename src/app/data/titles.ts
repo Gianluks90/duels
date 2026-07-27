@@ -16,12 +16,21 @@ import type { RewardUnlock } from '../models/reward-unlock.model';
  * "Collezionista", "Alchimista", "Principiante"), non hanno bisogno di varianti.
  *
  * Nota sulla forma neutra/inclusiva (`_x`): per le coppie in -o/-a (`novice`, `stubborn`,
- * `dangerous`, `magical`, `first_duelist`) è la sostituzione diretta della vocale finale con
- * l'asterisco ("Novizi*", "Ostinat*"...). Per le coppie agentive in -tore/-trice (`gatherer`,
- * `enchanter`) e per la coppia irregolare `sorcerer` (Stregone/Strega, stesso stem "Streg-") si è
- * scelta la convenzione "-tor*"/"Streg*" già in uso in alcuni contesti (es. "lettor*" per
- * lettore/lettrice) — v. collection.titleCatalog in it.json/en.json, facilmente da rivedere se non
- * convince.
+ * `dangerous`, `magical`, `first_duelist`, `attentive`, `educated`, `buddy`, `shadowbound`,
+ * `radiant`) è la sostituzione diretta della vocale finale con l'asterisco ("Novizi*", "Ostinat*",
+ * "Attent*", "Istruit*", "Soci*", "Oscur*", "Luminos*"...). Per le coppie agentive in -tore/-trice
+ * (`gatherer`, `enchanter`, `destroyer`) e per la coppia irregolare `sorcerer` (Stregone/Strega,
+ * stesso stem "Streg-") si è scelta la convenzione "-tor*"/"Streg*" già in uso in alcuni contesti
+ * (es. "lettor*" per lettore/lettrice) — v. collection.titleCatalog in it.json/en.json, facilmente
+ * da rivedere se non convince.
+ *
+ * `hostile`/`black_magic`/`white_magic`/`unstoppable`/`omnipresent`/`sociable_duelist`/
+ * `friendly_duelist`/`rival`/`defensive`/`on_guard`/`the_wall`/`shieldbreaker` restano invarianti
+ * come `resilient`/`collector`/`alchemist` sopra: aggettivi in -e (stessa forma per m/f in
+ * italiano, incluso "duellante" stesso), frasi descrittive senza accordo di genere sulla persona
+ * ("La muraglia", "In difesa"/"In guardia" — epiteti, non descrivono grammaticalmente CHI li porta),
+ * o composti bahuvrihi già invariabili di loro (`shieldbreaker`, "Spezzadifese", come
+ * "un/una guastafeste").
  */
 export const GENDERED_TITLE_IDS: ReadonlySet<string> = new Set<string>([
   'novice',
@@ -32,6 +41,12 @@ export const GENDERED_TITLE_IDS: ReadonlySet<string> = new Set<string>([
   'dangerous',
   'sorcerer',
   'first_duelist',
+  'attentive',
+  'educated',
+  'buddy',
+  'destroyer',
+  'shadowbound',
+  'radiant',
 ]);
 
 /** Gli id concreti da aggiungere a `unlockedTitles` per il reward titolo di un obiettivo (o per un
@@ -46,7 +61,8 @@ export function titleRewardVariantIds(baseId: string): string[] {
  * flag `private`, v. ProfileComponent) a partire dalla variante concreta scelta dall'utente. */
 export function titleBaseId(variantId: string): string {
   for (const base of GENDERED_TITLE_IDS) {
-    if (variantId === `${base}_m` || variantId === `${base}_f` || variantId === `${base}_x`) return base;
+    if (variantId === `${base}_m` || variantId === `${base}_f` || variantId === `${base}_x`)
+      return base;
   }
   return variantId;
 }
@@ -86,6 +102,9 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'novice', unlock: { kind: 'objective', objectiveId: 'first_duel' } },
   { id: 'apprentice', unlock: { kind: 'objective', objectiveId: 'first_win' } },
   { id: 'stubborn', unlock: { kind: 'objective', objectiveId: 'lose_10' } },
+  { id: 'unstoppable', unlock: { kind: 'objective', objectiveId: 'win_streak_5' } },
+  { id: 'buddy', unlock: { kind: 'objective', objectiveId: 'friend_duel_1' } },
+  { id: 'rival', unlock: { kind: 'objective', objectiveId: 'friend_duel_wins_5' } },
   { id: 'gatherer', unlock: { kind: 'objective', objectiveId: 'collect_100' } },
   { id: 'collector', unlock: { kind: 'objective', objectiveId: 'collect_500' } },
   { id: 'mixologist', unlock: { kind: 'objective', objectiveId: 'combine_10' } },
@@ -93,17 +112,33 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'enchanter', unlock: { kind: 'objective', objectiveId: 'cast_10' } },
   { id: 'magical', unlock: { kind: 'objective', objectiveId: 'cast_50' } },
   { id: 'sorcerer', unlock: { kind: 'objective', objectiveId: 'cast_100' } },
+  { id: 'hostile', unlock: { kind: 'objective', objectiveId: 'damage_50' } },
   { id: 'dangerous', unlock: { kind: 'objective', objectiveId: 'damage_100' } },
+  { id: 'black_magic', unlock: { kind: 'objective', objectiveId: 'damage_500' } },
+  { id: 'attentive', unlock: { kind: 'objective', objectiveId: 'heal_50' } },
   { id: 'resilient', unlock: { kind: 'objective', objectiveId: 'heal_100' } },
+  { id: 'white_magic', unlock: { kind: 'objective', objectiveId: 'heal_500' } },
+  { id: 'defensive', unlock: { kind: 'objective', objectiveId: 'shield_gain_10' } },
+  { id: 'on_guard', unlock: { kind: 'objective', objectiveId: 'shield_gain_50' } },
+  { id: 'the_wall', unlock: { kind: 'objective', objectiveId: 'shield_gain_100' } },
+  { id: 'shieldbreaker', unlock: { kind: 'objective', objectiveId: 'shield_remove_10' } },
+  { id: 'destroyer', unlock: { kind: 'objective', objectiveId: 'shield_remove_50' } },
+  { id: 'educated', unlock: { kind: 'objective', objectiveId: 'rulebook_read' } },
+  { id: 'omnipresent', unlock: { kind: 'objective', objectiveId: 'login_streak_7' } },
+  { id: 'sociable_duelist', unlock: { kind: 'objective', objectiveId: 'friends_1' } },
+  { id: 'friendly_duelist', unlock: { kind: 'objective', objectiveId: 'friends_5' } },
+  { id: 'shadowbound', unlock: { kind: 'objective', objectiveId: 'combine_dark_5' } },
+  { id: 'radiant', unlock: { kind: 'objective', objectiveId: 'combine_light_5' } },
 ];
 
 /** Variant-id EQUIPAGGIABILI senza passare da un riscatto obiettivo, PER UN utente specifico —
  * l'unione dei titoli gratuiti per chiunque (`unlock.kind === 'free'`) e dei titoli esclusivi il
- * cui uid combacia con `uid` (v. TITLE_CATALOG sopra). Usato sia da TitlePickerComponent/
- * ProfileDialogComponent sia — come mirror manuale, le regole non possono importare questo modulo
- * — da freeTitles()/exclusiveTitles() in firestore.rules. */
+ * cui uid combacia con `uid` (v. TITLE_CATALOG sopra). Usato sia da CollectionComponent
+ * ("Imposta personalizzazioni") sia — come mirror manuale, le regole non possono importare questo
+ * modulo — da freeTitles()/exclusiveTitles() in firestore.rules. */
 export function freeTitleVariantIdsFor(uid: string | undefined): string[] {
   return TITLE_CATALOG.filter(
-    (def) => def.unlock.kind === 'free' || (def.unlock.kind === 'exclusive' && def.unlock.uid === uid),
+    (def) =>
+      def.unlock.kind === 'free' || (def.unlock.kind === 'exclusive' && def.unlock.uid === uid),
   ).flatMap((def) => titleRewardVariantIds(def.id));
 }

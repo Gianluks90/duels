@@ -47,20 +47,25 @@ Ordine di sviluppo consigliato (ogni punto dipende dal precedente):
 Effetto collaterale scoperto costruendo il servizio di valutazione: `cardsCollected` (carte raccolte in Raccolta) non aveva NESSUNA voce nell'`eventLog` da cui derivarlo (a differenza di incantesimi/combinazioni/danno/cura, già tutti loggati) — aggiunta una nuova voce `cardCollected` (solo su `keepCard`, non su `keepMana`: nessuna carta vera entra nel mazzo in quel caso) apposta per questo. Esclusa di proposito dalla vista del Log di gioco (`GameLogDialogComponent`, troppo frequente — una volta a turno — per essere un evento "notevole" lì).
 
 Casi limite ancora aperti (non bloccanti):
+
 - `GameState.eventLog` è tagliato alle ultime 50 voci (v. `game.model.ts`) — rischio per obiettivi "dentro una singola partita" (es. "Re di Ghiaccio"/"Regina di Ghiaccio" sotto) se la partita è molto lunga.
 - Reward ancora `TODO_...`: solo lo sfondo di `collect_500`/`combine_50` — tutto il resto (dorsi, sfondi, tutti e 15 i titoli) ha ormai contenuto reale.
-- **Obiettivi ancora da implementare** (nessuna `UserStats`/campo li misura oggi — richiedono nuovi contatori/meccaniche prima di poter entrare in `OBJECTIVE_CATALOG`, elencati insieme ai titoli omonimi in `documentation/titles.md`):
-  - "Inarrestabile" (5 vittorie consecutive) — servirebbe uno streak counter, non una soglia cumulativa come oggi.
-  - "Istruito"/"Istruita" (aver letto tutto il regolamento) — nessun evento registrato all'apertura/lettura di `RulebookDialogComponent`.
-  - "Amichevole"/"Rivale" (duello con un amico, 5 vittorie contro un amico) — `GameDoc` non registra se host e guest erano amici al momento della partita.
-  - "Re di Ghiaccio"/"Regina di Ghiaccio" (congelare l'avversario 10 volte in UN duello) — evento dentro una singola partita, rischio cap 50 voci sull'`eventLog`.
-  - "Oscuro"/"Oscura"/"Luminoso" (combinare un Elemento Potente Oscurità/Luce specifico) — `combinationsMade` è un contatore generico, non per-elemento.
-  - "Che tutto vede" (i 3 incantesimi di rivelazione in mano insieme) — condizione transitoria, non loggata.
-  - "Preparato a tutto"/"Preparata a tutto" (ogni elemento base/avanzato/potente nel mazzo insieme) — istantanea della composizione del mazzo, non tracciata.
-  - "Diabolico"/"Diabolica"/"Infernale" (uso specifico della Fiamma Nera, con/senza Fuoco incastonato) — nessun tracciamento per-incantesimo con questo dettaglio.
-  - "Vipera" (vittoria con ultimo danno da veleno) — il log non attribuisce "danno letale" a una fonte specifica.
-  - "Spezzadifese"/"Distruttore" (scudi rimossi, 1 o 100 totali) — nessuna `UserStats` li conta.
-  - Login 7 giorni consecutivi — meccanismo indipendente dalle partite (streak su data ultimo login), non passa dall'`eventLog`.
+- **Obiettivi ancora da implementare** (nessuna `UserStats`/campo li misura oggi — richiedono nuovi contatori/meccaniche prima di poter entrare in `OBJECTIVE_CATALOG`, elencati insieme ai titoli omonimi in `documentation/titles.md`), ordinati per complessità di implementazione:
+  - Bassa complessità (un solo campo nuovo, nessun tocco al motore di gioco):
+    - [x] Login 7 giorni consecutivi — `UserProfile.lastLoginDate`/`loginStreak` (calendario locale, `nextLoginStreak` in `game/achievements.ts`), aggiornato ad ogni avvio app (`AuthService.ensureUserProfile`) fuori dal flusso di fine partita.
+    - [x] "Inarrestabile" (5 vittorie consecutive) — `UserStats.currentWinStreak`, +1 su vittoria/azzerato su sconfitta/invariato su pareggio, derivabile esattamente da `winner` come wins/losses (v. `winStreakValid()` in `firestore.rules`).
+    - [x] "Istruito"/"Istruita" (aver letto tutto il regolamento) — `UserProfile.rulebookRead`, segnato da `RulebookDialogComponent` quando ogni sezione di `regolamento.json` è stata aperta almeno una volta.
+  - Media complessità (riusano pattern già esistenti nel codebase, ma toccano più file):
+    - [x] "Spezzadifese"/"Distruttore" (scudi rimossi) — soglie riviste a 10/50 (non 1/100: si conta il VALORE rimosso, non i cast, v. sotto). `UserStats.shieldsRemoved`, log esplicito dentro il reducer (`GameLogEntryData.shieldRemoved`, `turn-engine.ts` `case 'shield_remove_opponent'`) con l'`amount` REALE rimosso (Breccia azzera tutto lo scudo presente, un valore variabile), non derivabile a posteriori dal diff di stato. Aggiunti anche "In difesa"/"In guardia"/"La muraglia" (10/50/100 scudo GUADAGNATO, `UserStats.shieldsGained`) riusando `shieldGained`, già loggato.
+    - [x] "Amichevole"/"Rivale" (duello con un amico, 5 vittorie contro un amico) — `GameDoc` non registra se host e guest erano amici al momento della partita.
+    - [x] "Oscuro"/"Oscura"/"Luminoso"/"Luminosa" (combinare 5 volte un Elemento Potente Oscurità/Luce) — nuovo `UserStats.elementsObtained` (contatore unico per elemento, alimentato da `GameLogEntryData.cardCollected`/`combined`: i 4 base si raccolgono in Raccolta, gli altri 7 nascono sempre da una combinazione, mai le due fonti sullo stesso elemento). **Bonus non preventivato**: lo stesso contatore ha sbloccato anche le 11 "Variante 'Elemento X'" (soglia 25, un obiettivo per `COLLECTIBLE_ELEMENT_IDS`) — nuovo `ObjectiveRewardType.elementVariant` + `UserProfile.unlockedElementVariants`, riattivate le tile arte v1 in Collezione (`CollectionComponent.elementItems`, prima sempre bloccate con "nessun meccanismo deciso").
+    - [ ] "Che tutto vede" (i 3 incantesimi di rivelazione in mano insieme) — condizione transitoria, non loggata.
+  - Complessità medio-alta (nuovo stato persistente o logica causale nel motore):
+    - [ ] "Re di Ghiaccio"/"Regina di Ghiaccio" (congelare l'avversario 10 volte in UN duello) — evento dentro una singola partita, rischio cap 50 voci sull'`eventLog`.
+    - [ ] "Vipera" (vittoria con ultimo danno da veleno) — il log non attribuisce "danno letale" a una fonte specifica.
+  - Alta complessità (serve prima una decisione di design, poi codice cross-sistema):
+    - [ ] "Preparato a tutto"/"Preparata a tutto" (ogni elemento base/avanzato/potente nel mazzo insieme) — istantanea della composizione del mazzo, non tracciata.
+    - [ ] "Diabolico"/"Diabolica"/"Infernale" (uso specifico della Fiamma Nera, con/senza Fuoco incastonato) — nessun tracciamento per-incantesimo con questo dettaglio.
 - `completedObjectiveIds`/`claimedObjectiveIds`/`unlockedCardBacks`/`unlockedBackgrounds`/`unlockedTitles` sono validati per struttura/monotonia/tetti di crescita (v. `firestore.rules`), ma NON verificano che gli id riscattati corrispondano davvero ai reward di QUELL'obiettivo in `OBJECTIVE_CATALOG` — richiederebbe incorporare l'intero catalogo nelle regole. Stesso rischio accettato consapevolmente di `statsPlausible()`.
 - Dorso **books** — asset pronto (`public/cards-back/books.webp`), ma il documento `codes/b00ks2024` (cardBackId `books`) non esiste ancora in Firestore: va creato manualmente da console/CLI quando si vuole iniziare a distribuire il codice (stesso schema di ogni altro codice riscatto, `firestore.rules` — mai scrivibile dal client).
 - Acquisto sostenitori (`RewardUnlock` kind `'purchase'`, dorso **founder** + sfondo **founder**) — nessun flusso di pagamento esiste in questo progetto oggi. Mostrati in Collezione come "sarà disponibile", non collegati a nessun meccanismo reale finché non si deciderà come implementarlo.

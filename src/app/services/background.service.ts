@@ -8,7 +8,7 @@ export interface BackgroundOption {
   /** true per gli sfondi sempre selezionabili (deve combaciare con freeBackgrounds() in
    * firestore.rules) — gli sfondi sbloccabili come ricompensa obiettivo (OBJECTIVE_CATALOG) avranno
    * `free: false` e richiedono di comparire in UserProfile.unlockedBackgrounds (v.
-   * BackgroundPickerComponent.ownedBackgrounds). */
+   * CollectionComponent, "Imposta personalizzazioni"). */
   free: boolean;
 }
 

@@ -10,7 +10,9 @@
   overflow: hidden;
   background: var(--bg-surface);
   cursor: default;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 
   &:hover,
   &:focus-visible {
@@ -41,6 +43,10 @@
 
   &--locked {
     background: rgba(0, 0, 0, 0.35);
+  }
+
+  &--selectable {
+    cursor: pointer;
   }
 
   img {
@@ -90,6 +96,38 @@
     -webkit-mask-position: center;
   }
 
+  // Radio "cerchio/cerchio-spunta" per la modalità personalizzazione (CollectionComponent) — grigio
+  // muto finché non è la selezione pendente, dorato una volta selezionato, stesso trattamento
+  // mask-image di __lock/__title-lock per tingere l'SVG (fill chiaro fisso) invece di un <img>.
+  &__radio {
+    position: absolute;
+    top: var(--sp-1);
+    right: var(--sp-1);
+    width: 22px;
+    height: 22px;
+    background-color: var(--text-muted);
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+    transition: background-color var(--transition);
+
+    &--selected {
+      background-color: var(--text-heading);
+    }
+
+    // Badge statico "Attivo" fuori dalla modalità personalizzazione — sempre nello stato "acceso"
+    // quando renderizzato (v. CollectionTileComponent, mostrato solo se selected() è true), niente
+    // hover/cursore interattivo: non è cliccabile.
+    &--active {
+      background-color: var(--text-heading);
+      cursor: default;
+    }
+  }
+
   &__title-text {
     display: flex;
     flex-direction: column;
@@ -125,5 +163,11 @@
 
   &__tooltip-unlock {
     margin: 0;
+  }
+
+  &__tooltip-active {
+    margin: var(--sp-1) 0 0;
+    color: var(--text-heading);
+    font-weight: 600;
   }
 }

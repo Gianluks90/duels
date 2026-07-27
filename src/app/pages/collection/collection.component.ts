@@ -4,13 +4,17 @@ import { BackgroundService } from '../../services/background.service';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { AppHeaderComponent } from '../../components/app-header/app-header.component';
-import { CollectionTileComponent, type CollectionItem } from '../../components/collection-tile/collection-tile.component';
+import {
+  CollectionTileComponent,
+  type CollectionItem,
+} from '../../components/collection-tile/collection-tile.component';
 import { OBJECTIVE_CATALOG } from '../../data/objectives';
 import { CARD_BACK_CATALOG } from '../../data/card-backs';
 import { BACKGROUND_CATALOG } from '../../data/backgrounds';
 import { TITLE_CATALOG, titleRewardVariantIds, type TitleDefinition } from '../../data/titles';
 import { COLLECTIBLE_ELEMENT_IDS } from '../../data/elements';
 import { SPELL_CATALOG } from '../../data/spells';
+import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
 import { elementImagePath } from '../../models/element.model';
 import type { RewardUnlock } from '../../models/reward-unlock.model';
 import type { Objective } from '../../models/objective.model';
@@ -21,8 +25,9 @@ type CollectionCategory = 'cardBacks' | 'backgrounds' | 'titles' | 'elements' | 
  * Collezione (Achievements): dorsi/sfondi/titoli in un'unica griglia per categoria, in ordine
  * alfabetico per id — posseduti (arte reale) e ancora da sbloccare (lucchetto dorato, stessa
  * dimensione che avrebbero da posseduti) mescolati insieme, non due sezioni separate: il giocatore
- * deve vedere subito quanti slot esistono in totale. Le scelte vere e proprie (equip) restano nella
- * dialog profilo (CardBackPickerComponent/BackgroundPickerComponent). Stesso AppHeaderComponent di
+ * deve vedere subito quanti slot esistono in totale. Le scelte vere e proprie (equip) sono qui
+ * stesso, in "modalità personalizzazione" (v. editMode sotto) — non più nella dialog profilo, che
+ * resta solo identità + zona pericolosa (ProfileDialogComponent). Stesso AppHeaderComponent di
  * Home/Obiettivi per la navigazione continua.
  */
 @Component({
@@ -56,6 +61,62 @@ export class CollectionComponent {
     this.selectedCategory.set(category);
   }
 
+  /**
+   * Modalità personalizzazione (dorso/sfondo, un radio per categoria mostrato sui tile — v.
+   * CollectionTileComponent.selectable/selected) — sostituisce i vecchi
+   * CardBackPickerComponent/BackgroundPickerComponent nella dialog profilo: qui i tile ESISTONO
+   * già in griglia, niente select separate da costruire (e in futuro elementi/incantesimi, quando
+   * avranno un vero meccanismo di equip — troppi per un select). Il titolo NON è qui: resta un
+   * select in ProfileDialogComponent, insieme a nome/foto (identità dell'account, non un
+   * "collezionabile" da sfogliare come dorsi/sfondi) — il tab "Titoli" si disabilita mentre si è in
+   * modalità personalizzazione (v. template) proprio perché qui non c'è nulla da impostare per quella
+   * categoria. Le due selezioni pendenti si applicano insieme con un solo `updateProfile()` ad
+   * "Applica" — "Annulla" (o un refresh, stesso identico effetto) le scarta senza chiedere conferma,
+   * nessuna guardia su modifiche non salvate: stesso comportamento già accettato dei picker che
+   * sostituisce.
+   */
+  protected readonly editMode = signal(false);
+  protected readonly pendingCardBack = signal('dark');
+  protected readonly pendingBackground = signal(DEFAULT_BACKGROUND_ID);
+
+  /** Dorso/sfondo REALMENTE equipaggiati in questo momento (non la selezione pendente) — usati per
+   * il badge "Attivo" (v. CollectionTileComponent.selected) quando NON si è in modalità
+   * personalizzazione, così si vede sempre cosa si sta usando senza dover aprire la modifica. */
+  protected readonly equippedCardBack = computed(() => this.auth.profile()?.cardBack ?? 'dark');
+  protected readonly equippedBackground = computed(
+    () => this.auth.profile()?.background ?? DEFAULT_BACKGROUND_ID,
+  );
+
+  protected startPersonalizing(): void {
+    const profile = this.auth.profile();
+    this.pendingCardBack.set(profile?.cardBack ?? 'dark');
+    this.pendingBackground.set(profile?.background ?? DEFAULT_BACKGROUND_ID);
+    // Il tab Titoli si disabilita in modalità personalizzazione (v. template) — se ci si era sopra,
+    // se ne esce, altrimenti resterebbe un tab attivo ma non raggiungibile via click.
+    if (this.selectedCategory() === 'titles') this.selectedCategory.set(this.categories[0].id);
+    this.editMode.set(true);
+  }
+
+  protected cancelPersonalizing(): void {
+    this.editMode.set(false);
+  }
+
+  protected async applyPersonalizing(): Promise<void> {
+    await this.auth.updateProfile({
+      cardBack: this.pendingCardBack(),
+      background: this.pendingBackground(),
+    });
+    this.editMode.set(false);
+  }
+
+  protected selectCardBack(id: string): void {
+    this.pendingCardBack.set(id);
+  }
+
+  protected selectBackground(id: string): void {
+    this.pendingBackground.set(id);
+  }
+
   /** Dorsi carta: guidati da CARD_BACK_CATALOG (arte reale per tutti, v. data/card-backs.ts) —
    * a differenza dei titoli sotto, dorsi e sfondi hanno già contenuto vero, non più placeholder. */
   protected readonly cardBackItems = computed<CollectionItem[]>(() => {
@@ -63,14 +124,27 @@ export class CollectionComponent {
     const catalogIds = new Set(CARD_BACK_CATALOG.map((def) => def.id));
 
     const catalogItems = CARD_BACK_CATALOG.map((def) =>
-      this.catalogItem(def.id, `/cards-back/${def.id}.webp`, 'cardBackCatalog', def.unlock, ownedIds),
+      this.catalogItem(
+        def.id,
+        `/cards-back/${def.id}.webp`,
+        'cardBackCatalog',
+        def.unlock,
+        ownedIds,
+      ),
     );
 
     // Fallback difensivo: un dorso posseduto ma non ancora documentato in CARD_BACK_CATALOG (skin
     // futura non ancora aggiunta lì) — non dovrebbe succedere in pratica, ma non lo si nasconde.
     const extraItems = [...ownedIds]
       .filter((id) => !catalogIds.has(id))
-      .map((id) => this.realItem(id, `/cards-back/${id}.webp`, `profile.cardBack.options.${id}`, 'unlockedViaCode'));
+      .map((id) =>
+        this.realItem(
+          id,
+          `/cards-back/${id}.webp`,
+          `profile.cardBack.options.${id}`,
+          'unlockedViaCode',
+        ),
+      );
 
     return this.sortById([...catalogItems, ...extraItems]);
   });
@@ -82,7 +156,13 @@ export class CollectionComponent {
     return this.sortById(
       BACKGROUND_CATALOG.map((def) => {
         const option = this.backgroundService.options().find((o) => o.id === def.id);
-        return this.catalogItem(def.id, option?.file ?? null, 'backgroundCatalog', def.unlock, ownedIds);
+        return this.catalogItem(
+          def.id,
+          option?.file ?? null,
+          'backgroundCatalog',
+          def.unlock,
+          ownedIds,
+        );
       }),
     );
   });
@@ -103,11 +183,14 @@ export class CollectionComponent {
 
   /** Elementi: a differenza di dorsi/sfondi/titoli, l'arte NUOVA è sempre posseduta (è quella già in
    * uso in ogni partita, v. COLLECTIBLE_ELEMENT_IDS) — accanto, in griglia, la sua arte v1
-   * originale, il cui sblocco è ancora un segreto (nessun meccanismo deciso: placeholder sempre
-   * bloccato). Nessuna coppia esplicita: id (`fire`) e id_v1 (`fire_v1`) finiscono comunque
-   * adiacenti nell'ordine alfabetico di sortById, come per ogni altra categoria della pagina. */
-  protected readonly elementItems = computed<CollectionItem[]>(() =>
-    this.sortById(
+   * originale, sbloccata da `unlockedElementVariants` (Achievements "Variante 'Elemento X'", un
+   * obiettivo `variant_<id>` per elemento in OBJECTIVE_CATALOG — stesso schema di
+   * catalogItem/unlockInfoFor sotto, già usato per dorsi/sfondi). Nessuna coppia esplicita: id
+   * (`fire`) e id_v1 (`fire_v1`) finiscono comunque adiacenti nell'ordine alfabetico di sortById,
+   * come per ogni altra categoria della pagina. */
+  protected readonly elementItems = computed<CollectionItem[]>(() => {
+    const ownedIds = new Set(this.auth.profile()?.unlockedElementVariants ?? []);
+    return this.sortById(
       COLLECTIBLE_ELEMENT_IDS.flatMap((id) => {
         const name = this.i18n.t(`common.elements.${id}`);
         const current: CollectionItem = {
@@ -118,18 +201,22 @@ export class CollectionComponent {
           description: this.i18n.t('collection.elementCatalog.currentDescription'),
           unlockInfo: this.i18n.t('collection.alwaysAvailable'),
         };
+        const owned = ownedIds.has(id);
+        const objective = OBJECTIVE_CATALOG.find((o) => o.id === `variant_${id}`);
         const legacy: CollectionItem = {
           id: `${id}_v1`,
           imageUrl: `/cards/v1/${id}.webp`,
-          owned: false,
+          owned,
           name: this.i18n.t('collection.legacyLabel', { name }),
           description: this.i18n.t('collection.elementCatalog.legacyDescription'),
-          unlockInfo: this.i18n.t('collection.secretConditionTooltip'),
+          unlockInfo: objective
+            ? this.unlockInfoFor(objective, owned)
+            : this.i18n.t('collection.descriptionPending'),
         };
         return [current, legacy];
       }),
-    ),
-  );
+    );
+  });
 
   /** Incantesimi: stesso schema di elementItems sopra (arte nuova sempre posseduta, arte v1 in
    * griglia da sbloccare) ma con una condizione chiara e già misurabile — `spellCastCounts`
@@ -156,10 +243,13 @@ export class CollectionComponent {
           owned,
           name: this.i18n.t('collection.legacyLabel', { name }),
           description,
-          unlockInfo: this.i18n.t(owned ? 'collection.unlockedSpellUsage' : 'collection.lockedSpellUsage', {
-            name,
-            count: CollectionComponent.SPELL_LEGACY_UNLOCK_COUNT,
-          }),
+          unlockInfo: this.i18n.t(
+            owned ? 'collection.unlockedSpellUsage' : 'collection.lockedSpellUsage',
+            {
+              name,
+              count: CollectionComponent.SPELL_LEGACY_UNLOCK_COUNT,
+            },
+          ),
         };
         return [current, legacy];
       }),
@@ -201,7 +291,9 @@ export class CollectionComponent {
         // OBJECTIVE_CATALOG (v. data/card-backs.ts, data/backgrounds.ts) — non dovrebbe mai
         // capitare altrimenti.
         const objective = OBJECTIVE_CATALOG.find((o) => o.id === unlock.objectiveId);
-        return objective ? this.unlockInfoFor(objective, owned) : this.i18n.t('collection.descriptionPending');
+        return objective
+          ? this.unlockInfoFor(objective, owned)
+          : this.i18n.t('collection.descriptionPending');
       }
       case 'redeemCode':
         return this.i18n.t(owned ? 'collection.unlockedViaCode' : 'collection.redeemCodeLocked');
@@ -260,7 +352,9 @@ export class CollectionComponent {
 
   private unlockInfoFor(objective: Objective, owned: boolean): string {
     if (owned) {
-      return this.i18n.t('collection.unlockedCondition', { condition: this.metricLabel(objective) });
+      return this.i18n.t('collection.unlockedCondition', {
+        condition: this.metricLabel(objective),
+      });
     }
     if (objective.hidden) return this.i18n.t('collection.secretConditionTooltip');
     return this.i18n.t('collection.lockedCondition', { condition: this.metricLabel(objective) });

@@ -87,6 +87,9 @@ export class FriendsDialogComponent {
         }),
       );
       this.friends.set(rows);
+      // Achievements "Duellante socievole"/"Duellante amichevole" — il conteggio è comunque già
+      // qui per disegnare la lista, nessun giro di rete in più (v. AuthService.syncFriendsCount).
+      void this.auth.syncFriendsCount(rows.length);
     } finally {
       this.loading.set(false);
     }

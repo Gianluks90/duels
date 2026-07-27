@@ -4,11 +4,18 @@ export type SuperiorElement = 'light' | 'dark';
 /** 'residium' (Residuo Arcano, 2.5) e 'mana' (mana accumulato in Raccolta, non un vero elemento — carta tier 'mana', mai spendibile in una combinazione) sono pseudo-elementi: servono solo perché Card.element richiede comunque un Element valido per arte/icona/valore mana. */
 export type Element = BaseElement | AdvancedElement | SuperiorElement | 'residium' | 'mana';
 
+/** I veri elementi collezionabili (Collezione/Achievements) — tutto `Element` tranne 'mana' (un
+ * pseudo-elemento, mai una vera carta da collezionare, v. sopra). Deve combaciare con
+ * `COLLECTIBLE_ELEMENT_IDS` in data/elements.ts (11 id) — definito qui, non lì, perché
+ * `ObjectiveMetric` (models/objective.model.ts) ne ha bisogno per generare `element_<id>` via tipo
+ * literal template, e i modelli non dipendono da data/*.ts altrove nel progetto. */
+export type CollectibleElement = Exclude<Element, 'mana'>;
+
 export const ADVANCED_RECIPES: Record<AdvancedElement, [BaseElement, BaseElement]> = {
   thunder: ['fire', 'air'],
-  poison:  ['water', 'earth'],
-  ice:     ['water', 'air'],
-  lava:    ['fire', 'earth'],
+  poison: ['water', 'earth'],
+  ice: ['water', 'air'],
+  lava: ['fire', 'earth'],
 };
 
 export const SUPERIOR_FORMULA: BaseElement[] = ['fire', 'water', 'air', 'earth'];
@@ -34,18 +41,18 @@ export function elementImagePath(element: Element): string {
 }
 
 const ELEMENT_ICONS: Record<Element, string> = {
-  fire:    '/icons/local_fire_department_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  water:   '/icons/water_drop_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  air:     '/icons/air_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  earth:   '/icons/eco_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  fire: '/icons/local_fire_department_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  water: '/icons/water_drop_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  air: '/icons/air_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  earth: '/icons/eco_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
   thunder: '/icons/bolt_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  ice:     '/icons/mode_cool_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  poison:  '/icons/skull_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  lava:    '/icons/heat_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  light:   '/icons/sunny_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  dark:    '/icons/dark_mode_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  residium:'/icons/diamond_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
-  mana:    '/icons/diamond_shine_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
+  ice: '/icons/mode_cool_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  poison: '/icons/skull_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  lava: '/icons/heat_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  light: '/icons/sunny_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  dark: '/icons/dark_mode_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  residium: '/icons/diamond_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg',
+  mana: '/icons/diamond_shine_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg',
 };
 
 export function elementIconPath(element: Element): string {

@@ -340,15 +340,50 @@
     "claim": "Riscatta",
     "claimed": "Riscattato",
     "rewardPending": "Ricompensa da definire",
+    "rewardConjunction": "e",
+    "elementVariantName": "Elemento {name}",
+    "rewardTypeLabels": {
+      "cardBack": "Dorso",
+      "background": "Sfondo",
+      "title": "Titolo",
+      "elementVariant": "Variante"
+    },
+    "categories": {
+      "activity": "Attività",
+      "duelOutcome": "Esito duello",
+      "commonActions": "Azioni comuni",
+      "elements": "Elementi",
+      "spellsCast": "Incantesimi",
+      "combat": "Combattimento"
+    },
     "metricLabels": {
-      "gamesPlayed": "Partite giocate",
+      "gamesPlayed": "Duelli giocati",
       "wins": "Vittorie",
       "losses": "Sconfitte",
       "cardsCollected": "Carte raccolte",
       "combinationsMade": "Combinazioni",
       "spellsCast": "Incantesimi lanciati",
       "damageDealt": "Danno inflitto",
-      "healingDone": "Cura totale"
+      "healingDone": "Cura totale",
+      "currentWinStreak": "Vittorie consecutive",
+      "loginStreak": "Giorni di accesso consecutivi",
+      "rulebookRead": "Regolamento letto",
+      "friendsCount": "Amici aggiunti",
+      "friendDuelsPlayed": "Duelli con un amico",
+      "friendDuelWins": "Vittorie contro un amico",
+      "shieldsGained": "Scudo attivato",
+      "shieldsRemoved": "Scudo rimosso all'avversario",
+      "element_fire": "Fuoco ottenuto",
+      "element_water": "Acqua ottenuta",
+      "element_air": "Aria ottenuta",
+      "element_earth": "Terra ottenuta",
+      "element_thunder": "Tuono ottenuto",
+      "element_poison": "Veleno ottenuto",
+      "element_ice": "Ghiaccio ottenuto",
+      "element_lava": "Lava ottenuta",
+      "element_light": "Luce ottenuta",
+      "element_dark": "Oscurità ottenuta",
+      "element_residium": "Residuo ottenuto"
     }
   },
 
@@ -359,7 +394,13 @@
     "titles": "Titoli",
     "elements": "Elementi",
     "spells": "Incantesimi",
+    "personalize": {
+      "start": "Personalizza",
+      "apply": "Applica",
+      "cancel": "Annulla"
+    },
     "noTitles": "Nessun titolo sbloccato ancora.",
+    "activeTooltip": "Attivo",
     "descriptionPending": "Descrizione da definire.",
     "alwaysAvailable": "Sempre disponibile.",
     "unlockedViaCode": "Sbloccato con un codice riscatto.",
@@ -375,8 +416,8 @@
     "unlockedSpellUsage": "Sbloccato lanciando {name} {count} volte.",
     "lockedSpellUsage": "Si sblocca lanciando {name} {count} volte.",
     "elementCatalog": {
-      "currentDescription": "L'elemento così come appare oggi in ogni partita.",
-      "legacyDescription": "L'illustrazione originale di questo elemento, sostituita dal nuovo stile artistico — condizione di sblocco ancora da decidere."
+      "currentDescription": "L'aspetto che l'elemento ha oggi: quello che vedi in ogni duello.",
+      "legacyDescription": "L'illustrazione originale di questo elemento, dai primi tempi di sviluppo del gioco — sbloccala per usarla nei tuoi duelli."
     },
     "cardBackCatalog": {
       "dark": {
@@ -427,7 +468,7 @@
       },
       "felt-fabric": {
         "name": "Feltro consumato",
-        "description": "Un feltro consumato da 50 partite giocate."
+        "description": "Un feltro consumato da 50 duelli giocati."
       },
       "arcane": {
         "name": "Arcano",
@@ -450,6 +491,11 @@
       "stubborn_m": { "name": "Ostinato" },
       "stubborn_f": { "name": "Ostinata" },
       "stubborn_x": { "name": "Ostinat*" },
+      "unstoppable": { "name": "Inarrestabile" },
+      "buddy_m": { "name": "Socio" },
+      "buddy_f": { "name": "Socia" },
+      "buddy_x": { "name": "Soci*" },
+      "rival": { "name": "Rivale" },
       "gatherer_m": { "name": "Raccoglitore" },
       "gatherer_f": { "name": "Raccoglitrice" },
       "gatherer_x": { "name": "Raccoglitor*" },
@@ -460,10 +506,35 @@
       "magical_m": { "name": "Magico" },
       "magical_f": { "name": "Magica" },
       "magical_x": { "name": "Magic*" },
+      "hostile": { "name": "Ostile" },
       "dangerous_m": { "name": "Pericoloso" },
       "dangerous_f": { "name": "Pericolosa" },
       "dangerous_x": { "name": "Pericolos*" },
+      "black_magic": { "name": "della Magia Nera" },
+      "attentive_m": { "name": "Attento" },
+      "attentive_f": { "name": "Attenta" },
+      "attentive_x": { "name": "Attent*" },
       "resilient": { "name": "Resistente" },
+      "white_magic": { "name": "della Magia Bianca" },
+      "defensive": { "name": "In difesa" },
+      "on_guard": { "name": "In guardia" },
+      "the_wall": { "name": "La muraglia" },
+      "shieldbreaker": { "name": "Spezzadifese" },
+      "destroyer_m": { "name": "Distruttore" },
+      "destroyer_f": { "name": "Distruttrice" },
+      "destroyer_x": { "name": "Distruttor*" },
+      "educated_m": { "name": "Istruito" },
+      "educated_f": { "name": "Istruita" },
+      "educated_x": { "name": "Istruit*" },
+      "omnipresent": { "name": "Onnipresente" },
+      "sociable_duelist": { "name": "Duellante socievole" },
+      "friendly_duelist": { "name": "Duellante amichevole" },
+      "shadowbound_m": { "name": "Oscuro" },
+      "shadowbound_f": { "name": "Oscura" },
+      "shadowbound_x": { "name": "Oscur*" },
+      "radiant_m": { "name": "Luminoso" },
+      "radiant_f": { "name": "Luminosa" },
+      "radiant_x": { "name": "Luminos*" },
       "collector": { "name": "Collezionista" },
       "alchemist": { "name": "Alchimista" },
       "sorcerer_m": { "name": "Stregone" },
@@ -482,7 +553,7 @@
     "loading": "Caricamento…",
     "notFound": "Profilo non trovato.",
     "stats": {
-      "gamesPlayed": "Partite giocate",
+      "gamesPlayed": "Duelli giocati",
       "wins": "Vittorie",
       "losses": "Sconfitte",
       "spellsCast": "Incantesimi lanciati"
@@ -583,6 +654,8 @@
       "healedOther": "{name} ha recuperato {amount} PS con {spell}.",
       "shieldGainedSelf": "Hai guadagnato {amount} scudo.",
       "shieldGainedOther": "{name} ha guadagnato {amount} scudo.",
+      "shieldRemovedSelf": "Hai perso {amount} scudo.",
+      "shieldRemovedOther": "{name} ha perso {amount} scudo.",
       "freezeResolvedSelf": "Ti si è sciolta {count} carta/e Congelamento.",
       "freezeResolvedOther": "A {name} si è sciolta {count} carta/e Congelamento.",
       "spellCastSelf": "Hai lanciato {spell}.",
@@ -684,26 +757,13 @@
       "saved": "Salvato!"
     },
     "cardBack": {
-      "title": "Dorso carte",
-      "apply": "Applica",
       "options": {
         "dark": "Scuro",
         "light": "Chiaro"
       }
     },
-    "background": {
-      "title": "Sfondo di gioco",
-      "apply": "Applica",
-      "options": {
-        "dark-wood": "Legno scuro",
-        "light-wood": "Legno chiaro",
-        "burn-wood": "Legno bruciato",
-        "slate": "Ardesia"
-      }
-    },
     "titleEquip": {
-      "title": "Titolo",
-      "apply": "Applica"
+      "title": "Titolo"
     },
     "danger": {
       "title": "Zona Pericolosa",

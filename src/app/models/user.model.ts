@@ -62,6 +62,34 @@ export interface UserProfile {
    * claimedObjectiveIds ⊆ completedObjectiveIds sempre. Un obiettivo "completato ma non riscattato"
    * è quello che la UI (colonna fine partita, pagina Obiettivi) mostra con il bottone "Riscatta". */
   claimedObjectiveIds?: string[];
+  /** Ultimo giorno (calendario LOCALE del dispositivo, 'YYYY-MM-DD') in cui l'accesso è stato
+   * registrato — Achievements "Login 7 giorni consecutivi" (v. game/achievements.ts,
+   * nextLoginStreak). Aggiornato ad ogni avvio app (AuthService.ensureUserProfile), non ad ogni
+   * singolo caricamento di pagina nello stesso giorno. Assente sui profili creati prima di questa
+   * feature. */
+  lastLoginDate?: string;
+  /** Giorni consecutivi di accesso fino a lastLoginDate — si azzera a 1 se un giorno viene saltato
+   * (mai a 0: il giorno in cui si azzera è comunque un accesso). Assente sui profili creati prima di
+   * questa feature, va letto con `?? 0`. */
+  loginStreak?: number;
+  /** Achievements "Istruito"/"Istruita" — true una volta che ogni sezione del regolamento
+   * (public/config/regolamento.json) è stata aperta almeno una volta in RulebookDialogComponent.
+   * Mai true → false. Assente sui profili che non l'hanno ancora letto. */
+  rulebookRead?: boolean;
+  /** Numero di amicizie accettate — Achievements "Duellante socievole"/"Duellante amichevole".
+   * Sincronizzato da AuthService.syncFriendsCount() ogni volta che FriendsDialogComponent carica la
+   * lista completa per intero (FriendsService.listFriends), non un contatore incrementato a ogni
+   * singola accettazione: più semplice, e quel numero va comunque recuperato per disegnare la lista
+   * quindi il costo aggiuntivo è pari a zero. Può scendere (disamicizia) — un obiettivo già
+   * completato resta comunque tale per sempre, stesso spirito di currentWinStreak sopra. Assente sui
+   * profili mai sincronizzati, va letto con `?? 0`. */
+  friendsCount?: number;
+  /** Varianti elemento (arte v1) sbloccate — Achievements "Variante 'Elemento X'" (uno per
+   * `COLLECTIBLE_ELEMENT_IDS`, v. data/elements.ts). Stesso schema equip-meno di unlockedCardBacks/
+   * unlockedBackgrounds (qui non c'è un "equip" — l'arte v1 si vede affiancata alla corrente in
+   * Collezione, non si sceglie in game): letta direttamente da CollectionComponent.elementItems.
+   * Assente sui profili senza sblocchi, va letto con `?? []`. */
+  unlockedElementVariants?: string[];
 }
 
 /** Numero massimo di incantesimi che un utente può segnare come preferiti (globale, account-level). */
@@ -97,6 +125,37 @@ export interface UserStats {
   spellCastCounts: Record<string, number>;
   damageDealt: number;
   healingDone: number;
+  /** Vittorie consecutive (Achievements, "Inarrestabile") — a differenza degli altri campi qui NON
+   * è monotono: si azzera alla prima sconfitta, resta invariato su un pareggio (GameState.winner
+   * null). Derivabile ESATTAMENTE da `winner` come wins/losses sopra (v. winStreakValid() in
+   * firestore.rules), non da un conteggio sull'eventLog. */
+  currentWinStreak: number;
+  /** Partite concluse con un amico come avversario (Achievements, "Amichevole"/"Socio") —
+   * derivabile ESATTAMENTE da GameDoc.wasFriendDuel (uno scalare, non un conteggio sull'eventLog),
+   * stesso principio di wins/losses. */
+  friendDuelsPlayed: number;
+  /** Vittorie contro un amico (Achievements, "Rivale") — sottoinsieme di friendDuelsPlayed sopra,
+   * stesso rapporto di wins verso gamesPlayed. */
+  friendDuelWins: number;
+  /** Scudo totale guadagnato (Achievements, "In difesa"/"In guardia"/"La muraglia") — somma degli
+   * `amount` di ogni evento `shieldGained` nell'eventLog, stesso principio di damageDealt/
+   * healingDone (derivato dal log, non uno scalare esatto come currentWinStreak). */
+  shieldsGained: number;
+  /** Scudo totale rimosso all'avversario (Achievements, "Spezzadifese"/"Distruttore") — somma degli
+   * `amount` EFFETTIVI di ogni evento `shieldRemoved` (v. GameLogEntryData): pochi incantesimi lo
+   * fanno (Frattura toglie un fisso, Breccia azzera tutto lo scudo presente qualunque esso sia), ma
+   * contare il valore rimosso invece delle volte in cui l'incantesimo è stato lanciato resta
+   * comunque possibile perché ogni rimozione logga la quantità reale, non quella nominale. */
+  shieldsRemoved: number;
+  /** Volte in cui ogni elemento è stato ottenuto — chiave `Element` (v. element.model.ts), stesso
+   * schema di `spellCastCounts` sopra (mappa libera, esclusa da `ObjectiveMetric`). Un solo contatore
+   * per DUE fonti diverse a seconda del tier: i base (fuoco/acqua/aria/terra) si raccolgono in
+   * Raccolta (`GameLogEntryData.cardCollected`, mai il risultato di una combinazione), tutto il resto
+   * (avanzati/potenti/residuo) nasce sempre da una combinazione (`GameLogEntryData.combined`, mai
+   * pescato dalla Fonte comune) — le due fonti non si sovrappongono mai per lo stesso elemento, un
+   * solo contatore basta. Alimenta sia "Oscuro"/"Oscura"/"Luminoso"/"Luminosa" (soglia 5 su
+   * dark/light) sia le 11 "Variante 'Elemento X'" (soglia 25, una per `COLLECTIBLE_ELEMENT_IDS`). */
+  elementsObtained: Record<string, number>;
 }
 
 export const EMPTY_USER_STATS: UserStats = {
@@ -109,4 +168,10 @@ export const EMPTY_USER_STATS: UserStats = {
   spellCastCounts: {},
   damageDealt: 0,
   healingDone: 0,
+  currentWinStreak: 0,
+  friendDuelsPlayed: 0,
+  friendDuelWins: 0,
+  shieldsGained: 0,
+  shieldsRemoved: 0,
+  elementsObtained: {},
 };

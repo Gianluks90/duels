@@ -18,14 +18,26 @@ export type GameLogEntryData =
   | { type: 'damage'; role: PlayerId; amount: number; source: DamageLogSource }
   | { type: 'healed'; role: PlayerId; amount: number; spellId: string }
   | { type: 'shieldGained'; role: PlayerId; amount: number }
+  /** Scudo rimosso (shield_remove_opponent, 2.3.3) — `role` è chi lo ha PERSO (il bersaglio), come
+   * `damage` sopra, non il lanciatore (a differenza di `opponentForcedDiscard` sotto). `amount` è la
+   * quantità EFFETTIVAMENTE rimossa (mai più di quanta ne aveva: Breccia "amount assente" azzera
+   * tutto lo scudo presente, Frattura ne toglie fino a un fisso 2 — v. applyShieldRemove in
+   * turn-engine.ts), non il valore nominale dell'incantesimo. Mai loggato se lo scudo era già a 0
+   * (nessuna rimozione reale avvenuta). */
+  | { type: 'shieldRemoved'; role: PlayerId; amount: number }
   /** Congelamento (2.3.1) sciolto in Preparazione — `count` carte, mai i dettagli delle singole
    * carte (sono "non-carte" senza identità rilevante per il log). */
   | { type: 'freezeResolved'; role: PlayerId; count: number }
   /** Carta tenuta in fase Raccolta (4.3, keepCard) — non emessa da keepMana (nessuna carta vera
-   * entra nel mazzo in quel caso, v. turn-engine.ts). Serve solo a derivare `UserStats.cardsCollected`
-   * a fine partita (AchievementsService), non è pensata per comparire nel dialog del log (troppo
-   * frequente, una volta a turno) — GameLogDialogComponent la filtra esplicitamente dalla vista. */
-  | { type: 'cardCollected'; role: PlayerId }
+   * entra nel mazzo in quel caso, v. turn-engine.ts). Serve a derivare `UserStats.cardsCollected` a
+   * fine partita (AchievementsService), non è pensata per comparire nel dialog del log (troppo
+   * frequente, una volta a turno) — GameLogDialogComponent la filtra esplicitamente dalla vista.
+   * `element` è sempre un `BaseElement` in pratica (l'unico tier che passa dalla Fonte comune
+   * condivisa, v. Raccolta) ma tipizzato `Element` per restare coerente con `combined.element` sotto
+   * — insieme alimentano `UserStats.elementsObtained`, un contatore unico per elemento sia che venga
+   * raccolto (base) sia che venga combinato (avanzato/potente/residuo, mai entrambi per lo stesso
+   * elemento). */
+  | { type: 'cardCollected'; role: PlayerId; element: Element }
   | { type: 'spellCast'; role: PlayerId; spellId: string }
   | { type: 'spellCreated'; role: PlayerId; spellId: string }
   | {

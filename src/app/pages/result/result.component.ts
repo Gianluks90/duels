@@ -14,7 +14,7 @@ import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ObjectiveCardComponent } from '../../components/objective-card/objective-card.component';
 import { OBJECTIVE_CATALOG } from '../../data/objectives';
-import { buildObjectiveProgress } from '../../game/achievements';
+import { buildObjectiveProgress, buildProgressSource } from '../../game/achievements';
 import type { PlayerId } from '../../models/player.model';
 
 @Component({
@@ -57,13 +57,14 @@ export class ResultComponent implements OnInit {
   /** Colonna achievement (Qualità della vita/Achievements): progresso di TUTTO il catalogo, non
    * solo quanto appena maturato in questa partita — vedere anche gli obiettivi lontani dalla soglia
    * è parte dell'idea originale ("colonna dedicata agli obiettivi in svolgimento"). */
-  protected readonly objectivesProgress = computed(() =>
-    buildObjectiveProgress(
+  protected readonly objectivesProgress = computed(() => {
+    const profile = this.auth.profile();
+    return buildObjectiveProgress(
       OBJECTIVE_CATALOG,
-      this.auth.profile()?.stats,
-      this.auth.profile()?.claimedObjectiveIds,
-    ),
-  );
+      buildProgressSource(profile?.stats, profile ?? undefined),
+      profile?.claimedObjectiveIds,
+    );
+  });
 
   constructor() {
     // Applica stats/obiettivi una volta che partita+ruolo sono noti — sicuro da rieseguire (ogni
@@ -78,7 +79,7 @@ export class ResultComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('gameId') ?? '';
-    this.game.listenToGame(id, doc => this.gameDoc.set(doc));
+    this.game.listenToGame(id, (doc) => this.gameDoc.set(doc));
   }
 
   protected claimObjective(objectiveId: string): void {

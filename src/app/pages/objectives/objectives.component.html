@@ -1,18 +1,37 @@
 <div class="objectives-page">
   <app-header />
 
-  <div class="objectives">
-    <h1 class="t-display objectives__title">{{ 'objectives.title' | translate }}</h1>
+  <div class="objectives panel panel--raised">
+    <header class="objectives__header">
+      <h1 class="t-display objectives__title">{{ 'objectives.title' | translate }}</h1>
+    </header>
 
-    <div class="objectives__list">
-      @for (item of objectivesProgress(); track item.objective.id) {
-        <app-objective-card
-          [objective]="item.objective"
-          [progress]="item.progress"
-          [claimed]="item.claimed"
-          (claim)="claimObjective($event)"
-        />
-      }
+    <div class="objectives__body">
+      <nav class="objectives__categories" [attr.aria-label]="'objectives.title' | translate">
+        @for (category of categories; track category.id) {
+          <button
+            type="button"
+            class="objectives__category"
+            [class.objectives__category--active]="selectedCategory() === category.id"
+            (click)="selectCategory(category.id)"
+          >
+            {{ category.labelKey | translate }}
+          </button>
+        }
+      </nav>
+
+      <div class="objectives__content">
+        <div class="objectives__grid">
+          @for (item of visibleObjectives(); track item.objective.id) {
+            <app-objective-card
+              [objective]="item.objective"
+              [progress]="item.progress"
+              [claimed]="item.claimed"
+              (claim)="claimObjective($event)"
+            />
+          }
+        </div>
+      </div>
     </div>
   </div>
 </div>

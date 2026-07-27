@@ -1,13 +1,13 @@
-import type { Element } from '../models/element.model';
+import type { CollectibleElement } from '../models/element.model';
 
 /**
- * I veri elementi di gioco mostrabili nella sezione "Elementi" di Collezione — tutti gli `Element`
- * tranne 'mana' (pseudo-elemento, mai un vero ingrediente/combinazione, v. element.model.ts): 4 base
- * + 4 avanzati + 2 superiori + Residuo Arcano = 11. A differenza di dorsi/sfondi/titoli, qui l'arte
- * NUOVA è già sempre posseduta (è quella in uso in ogni partita) — quello che si sblocca è l'arte v1
- * originale accanto (v. CollectionComponent.elementItems), non l'elemento in sé.
+ * I veri elementi di gioco mostrabili nella sezione "Elementi" di Collezione — tutti i
+ * `CollectibleElement` (v. element.model.ts, = Element tranne 'mana'): 4 base + 4 avanzati + 2
+ * superiori + Residuo Arcano = 11. A differenza di dorsi/sfondi/titoli, qui l'arte NUOVA è già
+ * sempre posseduta (è quella in uso in ogni partita) — quello che si sblocca è l'arte v1 originale
+ * accanto (v. CollectionComponent.elementItems), non l'elemento in sé.
  */
-export const COLLECTIBLE_ELEMENT_IDS: readonly Element[] = [
+export const COLLECTIBLE_ELEMENT_IDS: readonly CollectibleElement[] = [
   'fire',
   'water',
   'air',

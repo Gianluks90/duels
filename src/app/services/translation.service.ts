@@ -74,9 +74,9 @@ export class TranslationService {
       .filter((form): form is string => form !== null);
   }
 
-  /** Il testo di UNA specifica variant-id già scelta (v. UserProfile.title/TitlePickerComponent) —
-   * a differenza di `titleForms` (tutte le forme disponibili di un titolo, per l'anteprima), qui
-   * serve la forma esatta equipaggiata. Fallback all'id grezzo se non ancora tradotta. */
+  /** Il testo di UNA specifica variant-id già scelta (v. UserProfile.title) — a differenza di
+   * `titleForms` (tutte le forme disponibili di un titolo, per l'anteprima), qui serve la forma
+   * esatta equipaggiata. Fallback all'id grezzo se non ancora tradotta. */
   titleLabel(variantId: string): string {
     return this.resolveTitleForm(variantId) ?? variantId;
   }
@@ -95,7 +95,9 @@ export class TranslationService {
 
   private async loadDictionary(language: LanguageCode): Promise<Dictionary> {
     try {
-      const response = await fetch(`/i18n/${language}.json`, { headers: { 'Cache-Control': 'no-cache' } });
+      const response = await fetch(`/i18n/${language}.json`, {
+        headers: { 'Cache-Control': 'no-cache' },
+      });
       if (!response.ok) return {};
       const dictionary = (await response.json()) as unknown;
       return dictionary && typeof dictionary === 'object' ? (dictionary as Dictionary) : {};

@@ -10,137 +10,114 @@
   </header>
 
   <div class="profile-dialog__body">
-    <div class="profile-dialog__columns">
-      <!-- Colonna utente: identità + zona pericolosa -->
-      <div class="profile-dialog__column">
-        <section class="profile-dialog__section">
-          <h3 class="profile-dialog__section-title">{{ 'profile.info.title' | translate }}</h3>
+    <div class="profile-dialog__column">
+      <section class="profile-dialog__section">
+        <h3 class="profile-dialog__section-title">{{ 'profile.info.title' | translate }}</h3>
 
-          <div class="profile-dialog__identity">
-            <div class="profile-dialog__avatar">
-              @if (profile()?.photoURL; as url) {
-                <img [src]="url" alt="" />
-              } @else {
-                <span>{{ (profile()?.displayName ?? '?').charAt(0) }}</span>
-              }
-            </div>
-
-            <div class="profile-dialog__fields">
-              <label class="profile-dialog__label" for="profile-name">{{
-                'profile.info.name' | translate
-              }}</label>
-              <input
-                id="profile-name"
-                class="profile-dialog__input"
-                type="text"
-                [formControl]="nameControl"
-                maxlength="24"
-              />
-
-              <label class="profile-dialog__label" for="profile-photo">{{
-                'profile.info.photoUrl' | translate
-              }}</label>
-              <input
-                id="profile-photo"
-                class="profile-dialog__input"
-                type="url"
-                [formControl]="photoUrlControl"
-                placeholder="https://…"
-              />
-            </div>
+        <div class="profile-dialog__identity">
+          <div class="profile-dialog__avatar">
+            @if (profile()?.photoURL; as url) {
+              <img [src]="url" alt="" />
+            } @else {
+              <span>{{ (profile()?.displayName ?? '?').charAt(0) }}</span>
+            }
           </div>
 
-          <div class="profile-dialog__save-row">
-            @if (saved()) {
-              <span class="profile-dialog__saved">{{ 'profile.info.saved' | translate }}</span>
+          <div class="profile-dialog__fields">
+            <label class="profile-dialog__label" for="profile-name">{{
+              'profile.info.name' | translate
+            }}</label>
+            <input
+              id="profile-name"
+              class="profile-dialog__input"
+              type="text"
+              [formControl]="nameControl"
+              maxlength="24"
+            />
+
+            <label class="profile-dialog__label" for="profile-photo">{{
+              'profile.info.photoUrl' | translate
+            }}</label>
+            <input
+              id="profile-photo"
+              class="profile-dialog__input"
+              type="url"
+              [formControl]="photoUrlControl"
+              placeholder="https://…"
+            />
+
+            @if (hasTitles()) {
+              <label class="profile-dialog__label" for="profile-title">{{
+                'profile.titleEquip.title' | translate
+              }}</label>
+              <select
+                id="profile-title"
+                class="profile-dialog__input"
+                (change)="onTitleChange($event)"
+              >
+                @for (id of ownedTitleIds(); track id) {
+                  <option [value]="id" [selected]="id === profile()?.title">
+                    {{ i18n.titleLabel(id) }}
+                  </option>
+                }
+              </select>
             }
-            <button
-              class="btn btn--primary"
-              [disabled]="saving() || nameControl.invalid || photoUrlControl.invalid"
-              (click)="saveProfile()"
-            >
-              {{
-                saving() ? ('profile.info.saving' | translate) : ('profile.info.save' | translate)
-              }}
+          </div>
+        </div>
+
+        <div class="profile-dialog__save-row">
+          @if (saved()) {
+            <span class="profile-dialog__saved">{{ 'profile.info.saved' | translate }}</span>
+          }
+          <button
+            class="btn btn--primary"
+            [disabled]="saving() || nameControl.invalid || photoUrlControl.invalid"
+            (click)="saveProfile()"
+          >
+            {{ saving() ? ('profile.info.saving' | translate) : ('profile.info.save' | translate) }}
+          </button>
+        </div>
+      </section>
+
+      <section class="profile-dialog__section profile-dialog__section--danger">
+        <h3 class="profile-dialog__section-title">{{ 'profile.danger.title' | translate }}</h3>
+
+        @if (!confirmDelete()) {
+          <div class="profile-dialog__danger-row">
+            <div>
+              <p class="profile-dialog__danger-label">
+                {{ 'profile.danger.deleteAccount' | translate }}
+              </p>
+              <p class="t-muted profile-dialog__danger-desc">
+                {{ 'profile.danger.deleteDesc' | translate }}
+              </p>
+            </div>
+            <button class="btn btn--danger" (click)="requestConfirm()">
+              {{ 'profile.danger.delete' | translate }}
             </button>
           </div>
-        </section>
-
-        <section class="profile-dialog__section profile-dialog__section--danger">
-          <h3 class="profile-dialog__section-title">{{ 'profile.danger.title' | translate }}</h3>
-
-          @if (!confirmDelete()) {
-            <div class="profile-dialog__danger-row">
-              <div>
-                <p class="profile-dialog__danger-label">
-                  {{ 'profile.danger.deleteAccount' | translate }}
-                </p>
-                <p class="t-muted profile-dialog__danger-desc">
-                  {{ 'profile.danger.deleteDesc' | translate }}
-                </p>
-              </div>
-              <button class="btn btn--danger" (click)="requestConfirm()">
-                {{ 'profile.danger.delete' | translate }}
+        } @else {
+          <div class="profile-dialog__confirm">
+            <p class="profile-dialog__confirm-text">
+              {{ 'profile.danger.confirmText' | translate }}
+            </p>
+            @if (deleteError()) {
+              <p class="profile-dialog__error">{{ deleteError() }}</p>
+            }
+            <div class="profile-dialog__confirm-actions">
+              <button class="btn btn--secondary" [disabled]="deleting()" (click)="cancelConfirm()">
+                {{ 'profile.danger.cancel' | translate }}
+              </button>
+              <button class="btn btn--danger" [disabled]="deleting()" (click)="deleteAccount()">
+                {{
+                  (deleting() ? 'profile.danger.deleting' : 'profile.danger.confirmDelete')
+                    | translate
+                }}
               </button>
             </div>
-          } @else {
-            <div class="profile-dialog__confirm">
-              <p class="profile-dialog__confirm-text">
-                {{ 'profile.danger.confirmText' | translate }}
-              </p>
-              @if (deleteError()) {
-                <p class="profile-dialog__error">{{ deleteError() }}</p>
-              }
-              <div class="profile-dialog__confirm-actions">
-                <button
-                  class="btn btn--secondary"
-                  [disabled]="deleting()"
-                  (click)="cancelConfirm()"
-                >
-                  {{ 'profile.danger.cancel' | translate }}
-                </button>
-                <button class="btn btn--danger" [disabled]="deleting()" (click)="deleteAccount()">
-                  {{
-                    (deleting() ? 'profile.danger.deleting' : 'profile.danger.confirmDelete')
-                      | translate
-                  }}
-                </button>
-              </div>
-            </div>
-          }
-        </section>
-      </div>
-
-      <!-- Colonna gioco: dorso carte + sfondo — scorre in autonomia (profile-dialog.component.scss)
-           così una lista di dorsi lunga non spinge in basso la colonna utente accanto. -->
-      <div class="profile-dialog__column profile-dialog__column--game">
-        <section class="profile-dialog__section">
-          <h3 class="profile-dialog__section-title">{{ 'profile.cardBack.title' | translate }}</h3>
-          <app-card-back-picker
-            [current]="profile()?.cardBack ?? 'dark'"
-            (applied)="applyCardBack($event)"
-          />
-        </section>
-
-        <section class="profile-dialog__section">
-          <h3 class="profile-dialog__section-title">
-            {{ 'profile.background.title' | translate }}
-          </h3>
-          <app-background-picker
-            [current]="currentBackground()"
-            (applied)="applyBackground($event)"
-          />
-        </section>
-
-        @if (hasTitles()) {
-          <section class="profile-dialog__section">
-            <h3 class="profile-dialog__section-title">
-              {{ 'profile.titleEquip.title' | translate }}
-            </h3>
-            <app-title-picker [current]="profile()?.title ?? ''" (applied)="applyTitle($event)" />
-          </section>
+          </div>
         }
-      </div>
+      </section>
     </div>
   </div>
 </div>

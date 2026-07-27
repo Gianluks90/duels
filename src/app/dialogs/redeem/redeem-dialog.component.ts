@@ -7,7 +7,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /** Nessun valore di ritorno: a differenza di JoinGameDialogComponent non c'è una navigazione da
  * fare dopo la chiusura — lo sblocco è già riflesso live in AuthService.profile (letto ovunque via
- * signal, es. il picker dorsi in ProfileDialogComponent), non serve che il chiamante reagisca. */
+ * signal, es. la griglia dorsi in CollectionComponent), non serve che il chiamante reagisca. */
 @Component({
   selector: 'app-redeem-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
