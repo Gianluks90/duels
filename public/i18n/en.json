@@ -354,6 +354,8 @@
       "combat": "Combat"
     },
     "metricLabels": {
+      "manaConsumed": "Mana spent",
+      "distinctSpellsCast": "Distinct spells cast",
       "gamesPlayed": "Games played",
       "wins": "Wins",
       "losses": "Losses",
@@ -390,6 +392,7 @@
     "backgrounds": "Backgrounds",
     "titles": "Titles",
     "elements": "Elements",
+    "mana": "Mana",
     "spells": "Spells",
     "personalize": {
       "start": "Customize",
@@ -412,6 +415,10 @@
     "legacyLabel": "{name} (V1)",
     "unlockedSpellUsage": "Unlocked by casting {name} {count} times.",
     "lockedSpellUsage": "Unlocks by casting {name} {count} times.",
+    "manaCatalog": {
+      "currentDescription": "The look mana has today — the art you see in every duel.",
+      "legacyDescription": "Mana's original artwork, from the game's early development — unlock it to use it in your duels."
+    },
     "elementCatalog": {
       "currentDescription": "The look this element has today — the art you see in every duel.",
       "legacyDescription": "This element's original artwork, from the game's early development — unlock it to use it in your duels."
@@ -440,6 +447,10 @@
       "summer": {
         "name": "Summer",
         "description": "A seasonal card back, available only for a limited time of the year."
+      },
+      "archmage": {
+        "name": "Archmage",
+        "description": "The mark of one who has learned to cast every spell in the grimoire, at least once."
       }
     },
     "backgroundCatalog": {
@@ -540,7 +551,10 @@
       "beginner": { "name": "Beginner" },
       "first_duelist_m": { "name": "First Duelist" },
       "first_duelist_f": { "name": "First Duelist" },
-      "first_duelist_x": { "name": "First Duelist" }
+      "first_duelist_x": { "name": "First Duelist" },
+      "spendthrift_m": { "name": "Spendthrift" },
+      "spendthrift_f": { "name": "Spendthrift" },
+      "spendthrift_x": { "name": "Spendthrift" }
     }
   },
 

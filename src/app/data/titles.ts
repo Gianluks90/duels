@@ -17,8 +17,9 @@ import type { RewardUnlock } from '../models/reward-unlock.model';
  *
  * Nota sulla forma neutra/inclusiva (`_x`): per le coppie in -o/-a (`novice`, `stubborn`,
  * `dangerous`, `magical`, `first_duelist`, `attentive`, `educated`, `buddy`, `shadowbound`,
- * `radiant`) è la sostituzione diretta della vocale finale con l'asterisco ("Novizi*", "Ostinat*",
- * "Attent*", "Istruit*", "Soci*", "Oscur*", "Luminos*"...). Per le coppie agentive in -tore/-trice
+ * `radiant`, `spendthrift`) è la sostituzione diretta della vocale finale con l'asterisco ("Novizi*",
+ * "Ostinat*", "Attent*", "Istruit*", "Soci*", "Oscur*", "Luminos*", "Spendaccion*"...). Per le
+ * coppie agentive in -tore/-trice
  * (`gatherer`, `enchanter`, `destroyer`) e per la coppia irregolare `sorcerer` (Stregone/Strega,
  * stesso stem "Streg-") si è scelta la convenzione "-tor*"/"Streg*" già in uso in alcuni contesti
  * (es. "lettor*" per lettore/lettrice) — v. collection.titleCatalog in it.json/en.json, facilmente
@@ -47,6 +48,7 @@ export const GENDERED_TITLE_IDS: ReadonlySet<string> = new Set<string>([
   'destroyer',
   'shadowbound',
   'radiant',
+  'spendthrift',
 ]);
 
 /** Gli id concreti da aggiungere a `unlockedTitles` per il reward titolo di un obiettivo (o per un
@@ -109,7 +111,7 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'collector', unlock: { kind: 'objective', objectiveId: 'collect_500' } },
   { id: 'mixologist', unlock: { kind: 'objective', objectiveId: 'combine_10' } },
   { id: 'alchemist', unlock: { kind: 'objective', objectiveId: 'combine_50' } },
-  { id: 'enchanter', unlock: { kind: 'objective', objectiveId: 'cast_10' } },
+  { id: 'enchanter', unlock: { kind: 'objective', objectiveId: 'cast_15' } },
   { id: 'magical', unlock: { kind: 'objective', objectiveId: 'cast_50' } },
   { id: 'sorcerer', unlock: { kind: 'objective', objectiveId: 'cast_100' } },
   { id: 'hostile', unlock: { kind: 'objective', objectiveId: 'damage_50' } },
@@ -129,6 +131,7 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'friendly_duelist', unlock: { kind: 'objective', objectiveId: 'friends_5' } },
   { id: 'shadowbound', unlock: { kind: 'objective', objectiveId: 'combine_dark_5' } },
   { id: 'radiant', unlock: { kind: 'objective', objectiveId: 'combine_light_5' } },
+  { id: 'spendthrift', unlock: { kind: 'objective', objectiveId: 'mana_100' } },
 ];
 
 /** Variant-id EQUIPAGGIABILI senza passare da un riscatto obiettivo, PER UN utente specifico —

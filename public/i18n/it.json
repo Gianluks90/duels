@@ -357,6 +357,8 @@
       "combat": "Combattimento"
     },
     "metricLabels": {
+      "manaConsumed": "Mana consumato",
+      "distinctSpellsCast": "Incantesimi diversi lanciati",
       "gamesPlayed": "Duelli giocati",
       "wins": "Vittorie",
       "losses": "Sconfitte",
@@ -393,6 +395,7 @@
     "backgrounds": "Sfondi",
     "titles": "Titoli",
     "elements": "Elementi",
+    "mana": "Mana",
     "spells": "Incantesimi",
     "personalize": {
       "start": "Personalizza",
@@ -415,6 +418,10 @@
     "legacyLabel": "{name} (V1)",
     "unlockedSpellUsage": "Sbloccato lanciando {name} {count} volte.",
     "lockedSpellUsage": "Si sblocca lanciando {name} {count} volte.",
+    "manaCatalog": {
+      "currentDescription": "L'aspetto che il mana ha oggi: quello che vedi in ogni duello.",
+      "legacyDescription": "L'illustrazione originale del mana, dai primi tempi di sviluppo del gioco — sbloccala per usarla nei tuoi duelli."
+    },
     "elementCatalog": {
       "currentDescription": "L'aspetto che l'elemento ha oggi: quello che vedi in ogni duello.",
       "legacyDescription": "L'illustrazione originale di questo elemento, dai primi tempi di sviluppo del gioco — sbloccala per usarla nei tuoi duelli."
@@ -443,6 +450,10 @@
       "summer": {
         "name": "Estivo",
         "description": "Un dorso a tema stagionale, disponibile solo per un periodo limitato dell'anno."
+      },
+      "archmage": {
+        "name": "Arcimago",
+        "description": "Il segno di chi ha imparato a lanciare ogni incantesimo del grimorio, almeno una volta."
       }
     },
     "backgroundCatalog": {
@@ -543,7 +554,10 @@
       "beginner": { "name": "Principiante" },
       "first_duelist_m": { "name": "Primo duellante" },
       "first_duelist_f": { "name": "Prima duellante" },
-      "first_duelist_x": { "name": "Prim* duellante" }
+      "first_duelist_x": { "name": "Prim* duellante" },
+      "spendthrift_m": { "name": "Spendaccione" },
+      "spendthrift_f": { "name": "Spendacciona" },
+      "spendthrift_x": { "name": "Spendaccion*" }
     }
   },
 

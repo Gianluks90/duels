@@ -163,7 +163,7 @@ service cloud.firestore {
       return resource.data.get('stats', {
         gamesPlayed: 0, wins: 0, losses: 0, cardsCollected: 0, combinationsMade: 0,
         spellsCast: 0, spellCastCounts: {}, damageDealt: 0, healingDone: 0, currentWinStreak: 0,
-        friendDuelsPlayed: 0, friendDuelWins: 0, shieldsGained: 0, shieldsRemoved: 0
+        friendDuelsPlayed: 0, friendDuelWins: 0, shieldsGained: 0, shieldsRemoved: 0, manaConsumed: 0
       });
     }
 
@@ -203,6 +203,7 @@ service cloud.firestore {
         request.resource.data.stats.friendDuelWins is int &&
         request.resource.data.stats.shieldsGained is int &&
         request.resource.data.stats.shieldsRemoved is int &&
+        request.resource.data.stats.manaConsumed is int &&
         request.resource.data.stats.spellCastCounts is map &&
         request.resource.data.stats.spellCastCounts.size() <= 100;
     }
@@ -245,6 +246,9 @@ service cloud.firestore {
         statsDelta('healingDone') >= 0 && statsDelta('healingDone') <= 200 &&
         statsDelta('shieldsGained') >= 0 && statsDelta('shieldsGained') <= 100 &&
         statsDelta('shieldsRemoved') >= 0 && statsDelta('shieldsRemoved') <= 200 &&
+        // Tetto coerente con spellsCast sopra (max 50 lanci/partita) per il manaCost più alto del
+        // catalogo (6, v. SPELL_CATALOG in data/spells.ts): 50 * 6 = 300.
+        statsDelta('manaConsumed') >= 0 && statsDelta('manaConsumed') <= 300 &&
         winStreakValid() &&
         friendDuelStatsValid();
     }

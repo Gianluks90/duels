@@ -1,9 +1,16 @@
 import { COLLECTIBLE_ELEMENT_IDS } from '../data/elements';
+import { SPELL_CATALOG } from '../data/spells';
 import type { CollectibleElement } from '../models/element.model';
 import type { GameLogEntry } from '../models/game-log.model';
 import type { Objective, ObjectiveMetric } from '../models/objective.model';
 import type { PlayerId } from '../models/player.model';
 import { EMPTY_USER_STATS, type UserProfile, type UserStats } from '../models/user.model';
+
+/** Spell.id -> manaCost, costruita una sola volta da SPELL_CATALOG invece di un find() lineare a
+ * ogni evento spellCast in computeStatsDelta sotto. */
+const SPELL_MANA_COST: Record<string, number> = Object.fromEntries(
+  SPELL_CATALOG.map((spell) => [spell.id, spell.manaCost]),
+);
 
 /** Delta di UserStats derivabili dall'eventLog di UNA partita (esclude gamesPlayed/wins/losses:
  * quelli dipendono da GameState.winner, non da conteggi sull'eventLog — v. AuthService.applyGameStats). */
@@ -18,6 +25,7 @@ type EventLogStatsDelta = Pick<
   | 'shieldsGained'
   | 'shieldsRemoved'
   | 'elementsObtained'
+  | 'manaConsumed'
 >;
 
 /**
@@ -44,6 +52,7 @@ export function computeStatsDelta(
     shieldsGained: 0,
     shieldsRemoved: 0,
     elementsObtained: {},
+    manaConsumed: 0,
   };
 
   for (const entry of eventLog) {
@@ -66,6 +75,7 @@ export function computeStatsDelta(
         if (entry.role === role) {
           delta.spellsCast += 1;
           delta.spellCastCounts[entry.spellId] = (delta.spellCastCounts[entry.spellId] ?? 0) + 1;
+          delta.manaConsumed += SPELL_MANA_COST[entry.spellId] ?? 0;
         }
         break;
       case 'healed':
@@ -132,6 +142,7 @@ export function applyGameStatsDelta(
     shieldsGained: prior.shieldsGained + delta.shieldsGained,
     shieldsRemoved: prior.shieldsRemoved + delta.shieldsRemoved,
     elementsObtained: mergeCounts(prior.elementsObtained, delta.elementsObtained),
+    manaConsumed: prior.manaConsumed + delta.manaConsumed,
     // "Inarrestabile": +1 su una vittoria, azzerato su una sconfitta, invariato su un pareggio
     // (winner resta null quando entrambi scendono a 0 hp nello stesso reducer, v. resolveVictory in
     // turn-engine.ts) — coerente con winStreakValid() in firestore.rules.
@@ -178,6 +189,11 @@ export function buildProgressSource(
     friendDuelWins: s.friendDuelWins,
     shieldsGained: s.shieldsGained,
     shieldsRemoved: s.shieldsRemoved,
+    manaConsumed: s.manaConsumed,
+    // "Arcimago": incantesimi DIVERSI lanciati almeno una volta, non il totale (già `spellsCast`) —
+    // proiezione scalare di spellCastCounts, stesso principio di elementProgress sopra ma un solo
+    // numero invece di una proiezione per chiave (v. ObjectiveMetric.distinctSpellsCast).
+    distinctSpellsCast: Object.values(s.spellCastCounts).filter((count) => count >= 1).length,
     loginStreak: profile?.loginStreak ?? 0,
     rulebookRead: profile?.rulebookRead ? 1 : 0,
     friendsCount: profile?.friendsCount ?? 0,

@@ -19,7 +19,7 @@ import { elementImagePath } from '../../models/element.model';
 import type { RewardUnlock } from '../../models/reward-unlock.model';
 import type { Objective } from '../../models/objective.model';
 
-type CollectionCategory = 'cardBacks' | 'backgrounds' | 'titles' | 'elements' | 'spells';
+type CollectionCategory = 'cardBacks' | 'backgrounds' | 'titles' | 'elements' | 'mana' | 'spells';
 
 /**
  * Collezione (Achievements): dorsi/sfondi/titoli in un'unica griglia per categoria, in ordine
@@ -52,6 +52,7 @@ export class CollectionComponent {
     { id: 'backgrounds', labelKey: 'collection.backgrounds' },
     { id: 'titles', labelKey: 'collection.titles' },
     { id: 'elements', labelKey: 'collection.elements' },
+    { id: 'mana', labelKey: 'collection.mana' },
     { id: 'spells', labelKey: 'collection.spells' },
   ];
 
@@ -216,6 +217,37 @@ export class CollectionComponent {
         return [current, legacy];
       }),
     );
+  });
+
+  /** Mana: stesso schema di elementItems sopra (arte v1 sbloccata da `unlockedElementVariants`,
+   * stesso reward type `elementVariant`) ma un solo pseudo-elemento invece di 11 — 'mana' non è un
+   * `CollectibleElement` (v. element.model.ts, resta fuori da COLLECTIBLE_ELEMENT_IDS/elementItems),
+   * quindi una categoria a parte invece di un dodicesimo `flatMap` sopra: l'obiettivo che sblocca la
+   * variante (`mana_200`) si basa su `manaConsumed`, non su `elementsObtained`, un contatore
+   * concettualmente diverso (mana SPESO lanciando, non OTTENUTO raccogliendo/combinando). */
+  protected readonly manaItems = computed<CollectionItem[]>(() => {
+    const owned = (this.auth.profile()?.unlockedElementVariants ?? []).includes('mana');
+    const name = this.i18n.t('common.elements.mana');
+    const objective = OBJECTIVE_CATALOG.find((o) => o.id === 'mana_200');
+    const current: CollectionItem = {
+      id: 'mana',
+      imageUrl: elementImagePath('mana'),
+      owned: true,
+      name,
+      description: this.i18n.t('collection.manaCatalog.currentDescription'),
+      unlockInfo: this.i18n.t('collection.alwaysAvailable'),
+    };
+    const legacy: CollectionItem = {
+      id: 'mana_v1',
+      imageUrl: '/cards/v1/mana.webp',
+      owned,
+      name: this.i18n.t('collection.legacyLabel', { name }),
+      description: this.i18n.t('collection.manaCatalog.legacyDescription'),
+      unlockInfo: objective
+        ? this.unlockInfoFor(objective, owned)
+        : this.i18n.t('collection.descriptionPending'),
+    };
+    return [current, legacy];
   });
 
   /** Incantesimi: stesso schema di elementItems sopra (arte nuova sempre posseduta, arte v1 in

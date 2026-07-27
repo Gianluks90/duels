@@ -20,10 +20,14 @@ export interface ObjectiveCategory {
  * obiettivi: 2 titoli + 11 varianti) e affollerebbero "Azioni comuni"; `damageDealt`/`healingDone`/
  * `shieldsGained`/`shieldsRemoved` condividono "Combattimento" (ex "Cure e Danni" — rinominata
  * quando gli scudi si sono aggiunti a danno/cura, non ci stavano più sotto quel nome; destinata a
- * crescere ancora, v. README); `spellsCast` resta da sola ma con un'etichetta più corta
- * ("Incantesimi") di quella usata sulla singola card (`objectives.metricLabels.spellsCast`,
- * "Incantesimi lanciati · <soglia>"). Per questo ogni categoria ha una propria chiave dedicata
- * (`objectives.categories.<id>`) invece di riusare metricLabels. L'ordine qui è l'ordine della nav.
+ * crescere ancora, v. README); `spellsCast`/`manaConsumed`/`distinctSpellsCast` condividono
+ * "Incantesimi" (etichetta più corta di quella usata sulla singola card,
+ * `objectives.metricLabels.spellsCast`, "Incantesimi lanciati · <soglia>") — `manaConsumed` (mana
+ * speso lanciando, "Spendaccione"/variante "Mana (V1)") e `distinctSpellsCast` (incantesimi diversi
+ * lanciati almeno una volta, "Arcimago") sono entrambi derivati dallo stesso flusso di lancio
+ * incantesimi di `spellsCast`, quindi restano nella stessa categoria invece di averne una propria.
+ * Per questo ogni categoria ha una propria chiave dedicata (`objectives.categories.<id>`) invece di
+ * riusare metricLabels. L'ordine qui è l'ordine della nav.
  */
 export const OBJECTIVE_CATEGORY_CATALOG: readonly ObjectiveCategory[] = [
   {
@@ -53,7 +57,11 @@ export const OBJECTIVE_CATEGORY_CATALOG: readonly ObjectiveCategory[] = [
     labelKey: 'objectives.categories.elements',
     metrics: COLLECTIBLE_ELEMENT_IDS.map((id): ObjectiveMetric => `element_${id}`),
   },
-  { id: 'spellsCast', labelKey: 'objectives.categories.spellsCast', metrics: ['spellsCast'] },
+  {
+    id: 'spellsCast',
+    labelKey: 'objectives.categories.spellsCast',
+    metrics: ['spellsCast', 'manaConsumed', 'distinctSpellsCast'],
+  },
   {
     id: 'combat',
     labelKey: 'objectives.categories.combat',

@@ -98,6 +98,13 @@
               }
             </div>
           }
+          @case ('mana') {
+            <div class="collection__grid collection__grid--mana">
+              @for (item of manaItems(); track item.id) {
+                <app-collection-tile [item]="item" shape="card" />
+              }
+            </div>
+          }
           @case ('spells') {
             <div class="collection__grid collection__grid--spells">
               @for (item of spellItems(); track item.id) {

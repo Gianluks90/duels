@@ -157,10 +157,12 @@
       grid-template-columns: repeat(2, 1fr);
     }
 
-    // Elementi/incantesimi: stessa tile 'card' dei dorsi (elementItems/spellItems intercalano id e
-    // id_v1 in un'unica lista piatta ordinata alfabeticamente, v. CollectionComponent.sortById) —
-    // stesso numero di colonne di --card-backs.
+    // Elementi/mana/incantesimi: stessa tile 'card' dei dorsi (elementItems/manaItems/spellItems
+    // intercalano id e id_v1 in un'unica lista piatta, v. CollectionComponent.sortById) — stesso
+    // numero di colonne di --card-backs anche per --mana (solo 2 tile), per coerenza visiva con le
+    // altre griglie della stessa pagina invece di una griglia dedicata più stretta.
     &--elements,
+    &--mana,
     &--spells {
       grid-template-columns: repeat(6, 1fr);
     }
@@ -168,6 +170,7 @@
     @media (max-width: 720px) {
       &--card-backs,
       &--elements,
+      &--mana,
       &--spells {
         grid-template-columns: repeat(3, 1fr);
       }

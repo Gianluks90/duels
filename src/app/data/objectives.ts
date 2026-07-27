@@ -1,3 +1,4 @@
+import { SPELL_CATALOG } from './spells';
 import type { Objective } from '../models/objective.model';
 
 /**
@@ -38,7 +39,14 @@ import type { Objective } from '../models/objective.model';
  * Fonte comune): le due fonti non si sovrappongono mai per lo stesso elemento. La soglia della
  * variante varia per tier — più raro l'elemento, meno ne servono: 50 per i 4 base (fire/water/air/
  * earth), 25 per i 4 avanzati (thunder/poison/ice/lava) e il Residuo Arcano, 15 per i 2 potenti
- * (light/dark).
+ * (light/dark). `mana_100`/`mana_200`/`cast_all_spells` sono l'ultimo gruppo ad aver ricevuto il
+ * contatore necessario (`UserStats.manaConsumed`, e la proiezione derivata `distinctSpellsCast` — v.
+ * ObjectiveMetric/buildProgressSource). `mana_100`/`mana_200` ("Spendaccione"/"Spendacciona"/
+ * "Spendaccion*", variante "Mana (V1)") condividono lo stesso contatore `manaConsumed`, stesso
+ * rapporto di `combine_dark_5`/`variant_dark` sopra: un titolo a soglia più bassa, la variante v1 a
+ * soglia più alta sullo stesso traguardo. `cast_all_spells` ("Arcimago") usa invece
+ * `distinctSpellsCast`, non `spellsCast`: incantesimi DIVERSI lanciati almeno una volta, non il
+ * totale di lanci.
  */
 export const OBJECTIVE_CATALOG: Objective[] = [
   {
@@ -111,9 +119,13 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     ],
   },
   {
-    id: 'cast_10',
+    // Soglia 15 (non 10 come nella bozza originale): a costo pressoché zero rispetto ad altri
+    // obiettivi "incantesimi" più impegnativi, alzata leggermente per restare un traguardo, non un
+    // gimme dei primi minuti. L'id segue la soglia corrente (come ogni altro obiettivo nel catalogo),
+    // quindi è cambiato insieme — v. TITLE_CATALOG in data/titles.ts, aggiornato di conseguenza.
+    id: 'cast_15',
     metric: 'spellsCast',
-    threshold: 10,
+    threshold: 15,
     rewards: [{ type: 'title', id: 'enchanter' }],
   },
   {
@@ -309,5 +321,35 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     metric: 'element_residium',
     threshold: 25,
     rewards: [{ type: 'elementVariant', id: 'residium' }],
+  },
+  // Le 3 sotto ("Spendaccione"/"Spendacciona"/"Spendaccion*", variante "Mana (V1)", "Arcimago"):
+  // tier alti apposta (v. `manaConsumed` in user.model.ts) perché si spendono minimo 2-6 mana a
+  // lancio, mai 1 alla volta — un "consuma 10 mana" sarebbe stato raggiungibile nel primo duello.
+  {
+    id: 'mana_100',
+    metric: 'manaConsumed',
+    threshold: 100,
+    rewards: [{ type: 'title', id: 'spendthrift' }],
+  },
+  // Stesso contatore di mana_100 sopra, soglia più alta — come `combine_dark_5`/`variant_dark`
+  // condividono `element_dark`, un titolo a soglia bassa e la variante v1 a soglia più alta sullo
+  // stesso traguardo. L'arte v1 (public/cards/v1/mana.webp) usa già lo stesso reward type
+  // `elementVariant`/`unlockedElementVariants` degli 11 elementi veri — 'mana' non è un
+  // `CollectibleElement` (v. element.model.ts, resta fuori da COLLECTIBLE_ELEMENT_IDS/category
+  // "Elementi") ma la meccanica di sblocco/equip sotto è comunque identica, quindi non serve alcun
+  // reward type o campo Firestore nuovo — v. CollectionComponent.manaItems.
+  {
+    id: 'mana_200',
+    metric: 'manaConsumed',
+    threshold: 200,
+    rewards: [{ type: 'elementVariant', id: 'mana' }],
+  },
+  // "Lancia una volta ogni incantesimo" — soglia = l'intero SPELL_CATALOG, non un numero fisso a
+  // mano: resta corretto da solo se si aggiungono nuovi incantesimi in futuro.
+  {
+    id: 'cast_all_spells',
+    metric: 'distinctSpellsCast',
+    threshold: SPELL_CATALOG.length,
+    rewards: [{ type: 'cardBack', id: 'archmage' }],
   },
 ];

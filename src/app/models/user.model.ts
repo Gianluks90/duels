@@ -156,6 +156,13 @@ export interface UserStats {
    * solo contatore basta. Alimenta sia "Oscuro"/"Oscura"/"Luminoso"/"Luminosa" (soglia 5 su
    * dark/light) sia le 11 "Variante 'Elemento X'" (soglia 25, una per `COLLECTIBLE_ELEMENT_IDS`). */
   elementsObtained: Record<string, number>;
+  /** Mana totale speso lanciando incantesimi (Achievements, "Spendaccione"/"Spendacciona"/
+   * "Spendaccion*" e variante "Mana (V1)") — somma del `manaCost` (data/spells.ts) di ogni evento
+   * `spellCast` nell'eventLog, stesso principio di damageDealt/healingDone (derivato dal log, non
+   * uno scalare esatto come currentWinStreak). Diverso da `cardsCollected`: quello conta le carte
+   * mana RACCOLTE in Raccolta, questo il mana SPESO lanciando incantesimi — due direzioni opposte
+   * dello stesso pseudo-elemento (v. Element.mana in element.model.ts). */
+  manaConsumed: number;
 }
 
 export const EMPTY_USER_STATS: UserStats = {
@@ -174,4 +181,5 @@ export const EMPTY_USER_STATS: UserStats = {
   shieldsGained: 0,
   shieldsRemoved: 0,
   elementsObtained: {},
+  manaConsumed: 0,
 };

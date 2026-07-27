@@ -31,13 +31,18 @@ export interface ObjectiveReward {
  * così ObjectiveCardComponent non deve sapere da dove viene ciascuna metrica. `element_<id>` (un
  * literal template type, un membro per ogni `CollectibleElement`) è la stessa idea applicata a
  * `UserStats.elementsObtained`: 11 proiezioni scalari della stessa mappa, una per elemento.
+ * `distinctSpellsCast` applica la stessa idea a `UserStats.spellCastCounts`: non "quante volte in
+ * totale" (quello è già `spellsCast`), ma "quanti incantesimi DIVERSI almeno una volta" — una singola
+ * proiezione scalare (`Object.keys(...).length`, v. buildProgressSource sotto), non una per
+ * incantesimo: a differenza di `element_<id>` serve solo il traguardo "tutti", non uno per incantesimo.
  */
 export type ObjectiveMetric =
   | Exclude<keyof UserStats, 'spellCastCounts' | 'elementsObtained'>
   | 'loginStreak'
   | 'rulebookRead'
   | 'friendsCount'
-  | `element_${CollectibleElement}`;
+  | `element_${CollectibleElement}`
+  | 'distinctSpellsCast';
 
 export interface Objective {
   id: string;
