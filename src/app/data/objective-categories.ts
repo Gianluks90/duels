@@ -1,3 +1,4 @@
+import { CARD_PATTERN_CATALOG } from './card-patterns';
 import { COLLECTIBLE_ELEMENT_IDS } from './elements';
 import type { ObjectiveMetric } from '../models/objective.model';
 
@@ -65,6 +66,22 @@ export const OBJECTIVE_CATEGORY_CATALOG: readonly ObjectiveCategory[] = [
   {
     id: 'combat',
     labelKey: 'objectives.categories.combat',
-    metrics: ['damageDealt', 'healingDone', 'shieldsGained', 'shieldsRemoved'],
+    metrics: [
+      'damageDealt',
+      'healingDone',
+      'shieldsGained',
+      'shieldsRemoved',
+      'freezeApplied',
+      'poisonApplied',
+    ],
+  },
+  // Pattern di composizione mazzo (CARD_PATTERN_CATALOG, data/card-patterns.ts) — a differenza di
+  // ogni categoria sopra, non un ObjectiveMetric fisso ma generato dal catalogo: cresce da solo
+  // quando si aggiunge un pattern nuovo, stesso principio di 'elements' sopra con
+  // COLLECTIBLE_ELEMENT_IDS.
+  {
+    id: 'deck',
+    labelKey: 'objectives.categories.deck',
+    metrics: CARD_PATTERN_CATALOG.map((pattern): ObjectiveMetric => `pattern_${pattern.id}`),
   },
 ];

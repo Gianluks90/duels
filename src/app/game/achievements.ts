@@ -1,9 +1,12 @@
+import { CARD_PATTERN_CATALOG } from '../data/card-patterns';
 import { COLLECTIBLE_ELEMENT_IDS } from '../data/elements';
 import { SPELL_CATALOG } from '../data/spells';
+import type { Card } from '../models/card.model';
+import type { CardPattern } from '../models/card-pattern.model';
 import type { CollectibleElement } from '../models/element.model';
 import type { GameLogEntry } from '../models/game-log.model';
 import type { Objective, ObjectiveMetric } from '../models/objective.model';
-import type { PlayerId } from '../models/player.model';
+import type { PlayerId, PlayerState } from '../models/player.model';
 import { EMPTY_USER_STATS, type UserProfile, type UserStats } from '../models/user.model';
 
 /** Spell.id -> manaCost, costruita una sola volta da SPELL_CATALOG invece di un find() lineare a
@@ -24,6 +27,8 @@ type EventLogStatsDelta = Pick<
   | 'healingDone'
   | 'shieldsGained'
   | 'shieldsRemoved'
+  | 'freezeApplied'
+  | 'poisonApplied'
   | 'elementsObtained'
   | 'manaConsumed'
 >;
@@ -51,6 +56,8 @@ export function computeStatsDelta(
     healingDone: 0,
     shieldsGained: 0,
     shieldsRemoved: 0,
+    freezeApplied: 0,
+    poisonApplied: 0,
     elementsObtained: {},
     manaConsumed: 0,
   };
@@ -98,12 +105,89 @@ export function computeStatsDelta(
         // bersaglio è l'avversario.
         if (entry.role === opponentRole) delta.shieldsRemoved += entry.amount;
         break;
+      case 'freezeApplied':
+        // role è chi lo ha RICEVUTO (il bersaglio) — "applicato da me" è quando il bersaglio è
+        // l'avversario, stesso principio di shieldRemoved sopra.
+        if (entry.role === opponentRole) delta.freezeApplied += entry.amount;
+        break;
+      case 'poisonApplied':
+        if (entry.role === opponentRole) delta.poisonApplied += entry.amount;
+        break;
       default:
         break;
     }
   }
 
   return delta;
+}
+
+/** L'identificativo di una carta ai fini di CARD_PATTERN_CATALOG: lo SpellId se è un incantesimo
+ * (tier 'spell'), altrimenti il suo Element — v. CardPattern.cardKind in card-pattern.model.ts. */
+function cardIdentifier(card: Card): string {
+  return card.spellId ?? card.element;
+}
+
+/** Tutte le carte "vere" (esclude 'freeze'/'mana', non-carte runtime — v. card.model.ts) che un
+ * giocatore ha accumulato durante la partita, ovunque si trovino al momento in cui questa finisce:
+ * mazzo residuo + mano + scarti, più le carte "in transito" (pendingCollect non ancora deciso,
+ * pendingSpells non ancora risolti in fase Incantesimo) — lo stesso "mazzo" nel senso ampio di un
+ * gioco di carte fisico (tutto quello che era mano/scarti/mazzo/pending fino a un istante prima),
+ * non il solo PlayerState.deck. */
+function finalPlayerCards(player: PlayerState): Card[] {
+  return [
+    ...player.deck,
+    ...player.hand,
+    ...player.discards,
+    ...(player.pendingCollect ?? []),
+    ...player.pendingSpells.map((pending) => pending.card),
+  ].filter((card) => card.tier !== 'freeze' && card.tier !== 'mana');
+}
+
+/** Un pattern combacia con l'insieme di carte accumulate? `requireWin` (es. "Fortunato") esce
+ * subito se il giocatore non ha vinto, prima ancora di guardare le carte. Poi filtra per `cardKind`
+ * (le carte dell'altro genere non contano né a favore né dentro le modalità esclusive sotto — es.
+ * le magie create non "rompono" un pattern sugli elementi), infine confronta gli identificativi
+ * presenti con quelli richiesti secondo la modalità (v. CardPatternMode). */
+function matchesPattern(cards: readonly Card[], pattern: CardPattern, won: boolean): boolean {
+  if (pattern.requireWin && !won) return false;
+
+  const relevant = cards.filter((card) =>
+    pattern.cardKind === 'spell' ? card.tier === 'spell' : card.tier !== 'spell',
+  );
+  const present = new Set(relevant.map(cardIdentifier));
+  switch (pattern.mode) {
+    case 'contains':
+      return pattern.identifiers.every((id) => present.has(id));
+    case 'exclusiveAll': {
+      // allowedExtra (es. le magie base tollerate insieme a Reset+Rischio in "Fortunato"): non
+      // richieste, ma se presenti non contano come "qualcos'altro" ai fini dell'esclusività.
+      const allowed = new Set([...pattern.identifiers, ...(pattern.allowedExtra ?? [])]);
+      return (
+        pattern.identifiers.every((id) => present.has(id)) &&
+        [...present].every((id) => allowed.has(id))
+      );
+    }
+    case 'exclusiveAny':
+      return relevant.length > 0 && [...present].every((id) => pattern.identifiers.includes(id));
+    case 'excludes':
+      return pattern.identifiers.every((id) => !present.has(id));
+  }
+}
+
+/** Quali pattern di CARD_PATTERN_CATALOG combaciano con le carte accumulate dal giocatore in UNA
+ * partita appena conclusa — 1 se combacia, la chiave è del tutto assente altrimenti (mai 0: v.
+ * mergeCounts sotto, stesso schema di spellCastCounts/elementsObtained). `won`: se QUESTO giocatore
+ * ha vinto la partita — v. CardPattern.requireWin. */
+export function computeCardPatternMatches(
+  player: PlayerState,
+  won: boolean,
+): Record<string, number> {
+  const cards = finalPlayerCards(player);
+  const matches: Record<string, number> = {};
+  for (const pattern of CARD_PATTERN_CATALOG) {
+    if (matchesPattern(cards, pattern, won)) matches[pattern.id] = 1;
+  }
+  return matches;
 }
 
 function mergeCounts(
@@ -124,11 +208,13 @@ export function applyGameStatsDelta(
   winner: PlayerId | null,
   eventLog: readonly GameLogEntry[],
   wasFriendDuel: boolean,
+  finalPlayer: PlayerState,
 ): UserStats {
   const prior = priorStats ?? EMPTY_USER_STATS;
   const delta = computeStatsDelta(eventLog, role);
   const won = winner === role;
   const lost = winner !== null && winner !== role;
+  const patternMatches = computeCardPatternMatches(finalPlayer, won);
   return {
     gamesPlayed: prior.gamesPlayed + 1,
     wins: prior.wins + (won ? 1 : 0),
@@ -141,8 +227,11 @@ export function applyGameStatsDelta(
     healingDone: prior.healingDone + delta.healingDone,
     shieldsGained: prior.shieldsGained + delta.shieldsGained,
     shieldsRemoved: prior.shieldsRemoved + delta.shieldsRemoved,
+    freezeApplied: prior.freezeApplied + delta.freezeApplied,
+    poisonApplied: prior.poisonApplied + delta.poisonApplied,
     elementsObtained: mergeCounts(prior.elementsObtained, delta.elementsObtained),
     manaConsumed: prior.manaConsumed + delta.manaConsumed,
+    cardPatternMatches: mergeCounts(prior.cardPatternMatches, patternMatches),
     // "Inarrestabile": +1 su una vittoria, azzerato su una sconfitta, invariato su un pareggio
     // (winner resta null quando entrambi scendono a 0 hp nello stesso reducer, v. resolveVictory in
     // turn-engine.ts) — coerente con winStreakValid() in firestore.rules.
@@ -174,6 +263,14 @@ export function buildProgressSource(
   const elementProgress = Object.fromEntries(
     COLLECTIBLE_ELEMENT_IDS.map((id) => [`element_${id}`, s.elementsObtained[id] ?? 0]),
   ) as Record<`element_${CollectibleElement}`, number>;
+  // Stessa idea di elementProgress sopra, applicata a UserStats.cardPatternMatches (v.
+  // CARD_PATTERN_CATALOG) — una proiezione scalare per pattern di composizione mazzo.
+  const patternProgress = Object.fromEntries(
+    CARD_PATTERN_CATALOG.map((pattern) => [
+      `pattern_${pattern.id}`,
+      s.cardPatternMatches[pattern.id] ?? 0,
+    ]),
+  ) as Record<`pattern_${CardPattern['id']}`, number>;
 
   return {
     gamesPlayed: s.gamesPlayed,
@@ -189,6 +286,8 @@ export function buildProgressSource(
     friendDuelWins: s.friendDuelWins,
     shieldsGained: s.shieldsGained,
     shieldsRemoved: s.shieldsRemoved,
+    freezeApplied: s.freezeApplied,
+    poisonApplied: s.poisonApplied,
     manaConsumed: s.manaConsumed,
     // "Arcimago": incantesimi DIVERSI lanciati almeno una volta, non il totale (già `spellsCast`) —
     // proiezione scalare di spellCastCounts, stesso principio di elementProgress sopra ma un solo
@@ -198,6 +297,7 @@ export function buildProgressSource(
     rulebookRead: profile?.rulebookRead ? 1 : 0,
     friendsCount: profile?.friendsCount ?? 0,
     ...elementProgress,
+    ...patternProgress,
   };
 }
 

@@ -33,6 +33,7 @@
   &__header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: var(--sp-4) var(--sp-5);
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
@@ -40,6 +41,14 @@
 
   &__title {
     font-size: 1.5rem;
+  }
+
+  // % di completamento generale — stesso trattamento di ObjectivesComponent (font normale, dorato,
+  // abbastanza grande da bilanciare il titolo nello stesso header space-between).
+  &__completion {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-heading);
   }
 
   &__body {

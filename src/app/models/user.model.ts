@@ -147,6 +147,14 @@ export interface UserStats {
    * contare il valore rimosso invece delle volte in cui l'incantesimo è stato lanciato resta
    * comunque possibile perché ogni rimozione logga la quantità reale, non quella nominale. */
   shieldsRemoved: number;
+  /** Congelamento applicato all'avversario (Achievements, "...della neve"/"...del ghiaccio") — somma
+   * degli `amount` di ogni evento `freezeApplied` nell'eventLog (il valore NOMINALE dell'incantesimo,
+   * v. game-log.model.ts), stesso principio di damageDealt/healingDone sopra. */
+  freezeApplied: number;
+  /** Veleno applicato all'avversario (Achievements, "l'avvelenatore"/"...della Pestilenza") — somma
+   * degli `amount` di ogni evento `poisonApplied` nell'eventLog (il valore NOMINALE dell'incantesimo,
+   * non il livello netto risultante su PlayerTokens.poison che ha un tetto — v. game-log.model.ts). */
+  poisonApplied: number;
   /** Volte in cui ogni elemento è stato ottenuto — chiave `Element` (v. element.model.ts), stesso
    * schema di `spellCastCounts` sopra (mappa libera, esclusa da `ObjectiveMetric`). Un solo contatore
    * per DUE fonti diverse a seconda del tier: i base (fuoco/acqua/aria/terra) si raccolgono in
@@ -163,6 +171,12 @@ export interface UserStats {
    * mana RACCOLTE in Raccolta, questo il mana SPESO lanciando incantesimi — due direzioni opposte
    * dello stesso pseudo-elemento (v. Element.mana in element.model.ts). */
   manaConsumed: number;
+  /** Pattern di composizione mazzo combaciati (Achievements, es. "Che tutto vede") — mappa libera
+   * CardPatternId -> 1, stesso schema di `spellCastCounts`/`elementsObtained` sopra (esclusa da
+   * `ObjectiveMetric`, che espone invece `pattern_<id>` come proiezione scalare). Valutata sullo
+   * stato FINALE della partita (v. game/achievements.ts computeCardPatternMatches), non
+   * sull'eventLog. */
+  cardPatternMatches: Record<string, number>;
 }
 
 export const EMPTY_USER_STATS: UserStats = {
@@ -180,6 +194,9 @@ export const EMPTY_USER_STATS: UserStats = {
   friendDuelWins: 0,
   shieldsGained: 0,
   shieldsRemoved: 0,
+  freezeApplied: 0,
+  poisonApplied: 0,
   elementsObtained: {},
   manaConsumed: 0,
+  cardPatternMatches: {},
 };

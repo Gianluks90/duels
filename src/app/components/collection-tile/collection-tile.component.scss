@@ -33,12 +33,17 @@
   }
 
   // Card rettangolare sottile, non un quadrato icona: titoli sono solo testo, deve starci tutto
-  // senza troncare — niente centratura, il testo si allinea a sinistra e va a capo se serve.
+  // senza troncare — niente centratura, il testo si allinea a sinistra e va a capo se serve. Padding
+  // destro maggiorato per lasciare spazio al badge assoluto (lucchetto/spunta, v. __title-lock).
   &--title {
     justify-content: flex-start;
     gap: var(--sp-2);
-    padding: var(--sp-2) var(--sp-3);
+    padding: var(--sp-2) calc(var(--sp-3) + 26px) var(--sp-2) var(--sp-3);
     cursor: default;
+
+    &.collection-tile--locked {
+      opacity: 0.8;
+    }
   }
 
   &--locked {
@@ -81,10 +86,14 @@
     color: var(--text-heading);
   }
 
-  // Lucchetto piccolo (non centrato/dominante come &__lock sopra): un titolo bloccato mostra
-  // comunque nome e condizione per intero, il lucchetto è solo un'icona di stato accanto al testo.
+  // Badge di stato per i titoli: lucchetto se bloccato, spunta se è il titolo attivo — stessa
+  // posizione/stile di __radio sotto (angolo in alto a destra, drop-shadow), niente più inline
+  // accanto al testo: un titolo bloccato mostra comunque nome e condizione per intero, il badge è
+  // solo un'icona di stato nell'angolo.
   &__title-lock {
-    flex-shrink: 0;
+    position: absolute;
+    top: var(--sp-1);
+    right: var(--sp-1);
     width: 18px;
     height: 18px;
     background-color: var(--text-heading);
@@ -94,6 +103,7 @@
     -webkit-mask-size: contain;
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
   }
 
   // Radio "cerchio/cerchio-spunta" per la modalità personalizzazione (CollectionComponent) — grigio

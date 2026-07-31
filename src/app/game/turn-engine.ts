@@ -1233,9 +1233,11 @@ const MAX_POISON = 3;
  * `PlayerTokens.poison`.
  */
 export function applyPoison(state: GameState, target: PlayerId, amount: number): GameState {
+  if (amount <= 0) return state;
   const player = state.players[target];
   const poison = Math.min(MAX_POISON, player.tokens.poison + amount);
-  return updatePlayer(state, target, { tokens: { ...player.tokens, poison } });
+  const next = updatePlayer(state, target, { tokens: { ...player.tokens, poison } });
+  return appendLog(next, { type: 'poisonApplied', role: target, amount });
 }
 
 /**
@@ -1292,7 +1294,8 @@ export function applyFreeze(state: GameState, target: PlayerId, count: number): 
     element: 'ice',
     expiresAt: 'preparazione',
   }));
-  return updatePlayer(state, target, { discards: [...player.discards, ...freezeCards] });
+  const next = updatePlayer(state, target, { discards: [...player.discards, ...freezeCards] });
+  return appendLog(next, { type: 'freezeApplied', role: target, amount: count });
 }
 
 /**

@@ -28,6 +28,19 @@ export type GameLogEntryData =
   /** Congelamento (2.3.1) sciolto in Preparazione — `count` carte, mai i dettagli delle singole
    * carte (sono "non-carte" senza identità rilevante per il log). */
   | { type: 'freezeResolved'; role: PlayerId; count: number }
+  /** Congelamento APPLICATO all'avversario (applyFreeze, ice_add) — `role` è chi lo ha RICEVUTO (il
+   * bersaglio), come `shieldRemoved` sopra, non il lanciatore. Diverso da `freezeResolved` sopra
+   * (quello è lo scioglimento in Preparazione, un evento successivo e separato). `amount` = carte
+   * Congelamento aggiunte in QUESTO lancio (il valore nominale dell'incantesimo, mai limitato: a
+   * differenza di `poisonApplied` sotto il Congelamento non ha un tetto). */
+  | { type: 'freezeApplied'; role: PlayerId; amount: number }
+  /** Veleno APPLICATO all'avversario (applyPoison, poison_add) — `role` è chi lo ha RICEVUTO, come
+   * `freezeApplied` sopra. `amount` è il valore NOMINALE dell'incantesimo (non limitato da
+   * MAX_POISON, a differenza di `PlayerTokens.poison` stesso): conta "quante volte/quanto hai
+   * applicato veleno", un'azione del giocatore, non il livello netto risultante sull'avversario —
+   * diverso principio da `shieldRemoved` sopra (lì l'ammontare nominale non è nemmeno sempre
+   * definito, es. Breccia rimuove "tutto"). */
+  | { type: 'poisonApplied'; role: PlayerId; amount: number }
   /** Carta tenuta in fase Raccolta (4.3, keepCard) — non emessa da keepMana (nessuna carta vera
    * entra nel mazzo in quel caso, v. turn-engine.ts). Serve a derivare `UserStats.cardsCollected` a
    * fine partita (AchievementsService), non è pensata per comparire nel dialog del log (troppo

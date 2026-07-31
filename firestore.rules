@@ -163,7 +163,8 @@ service cloud.firestore {
       return resource.data.get('stats', {
         gamesPlayed: 0, wins: 0, losses: 0, cardsCollected: 0, combinationsMade: 0,
         spellsCast: 0, spellCastCounts: {}, damageDealt: 0, healingDone: 0, currentWinStreak: 0,
-        friendDuelsPlayed: 0, friendDuelWins: 0, shieldsGained: 0, shieldsRemoved: 0, manaConsumed: 0
+        friendDuelsPlayed: 0, friendDuelWins: 0, shieldsGained: 0, shieldsRemoved: 0, manaConsumed: 0,
+        freezeApplied: 0, poisonApplied: 0, cardPatternMatches: {}
       });
     }
 
@@ -204,8 +205,16 @@ service cloud.firestore {
         request.resource.data.stats.shieldsGained is int &&
         request.resource.data.stats.shieldsRemoved is int &&
         request.resource.data.stats.manaConsumed is int &&
+        request.resource.data.stats.freezeApplied is int &&
+        request.resource.data.stats.poisonApplied is int &&
         request.resource.data.stats.spellCastCounts is map &&
-        request.resource.data.stats.spellCastCounts.size() <= 100;
+        request.resource.data.stats.spellCastCounts.size() <= 100 &&
+        // cardPatternMatches (Achievements, es. "Che tutto vede", v. CARD_PATTERN_CATALOG in
+        // data/card-patterns.ts): come spellCastCounts sopra, mappa libera non validata nei valori
+        // (le regole non possono ricalcolare la composizione del mazzo finale), solo nella
+        // dimensione — tetto largo apposta, il catalogo oggi ne ha 1.
+        request.resource.data.stats.cardPatternMatches is map &&
+        request.resource.data.stats.cardPatternMatches.size() <= 50;
     }
 
     // currentWinStreak (Achievements, "Inarrestabile"): a differenza degli altri campi qui sotto NON
@@ -246,6 +255,8 @@ service cloud.firestore {
         statsDelta('healingDone') >= 0 && statsDelta('healingDone') <= 200 &&
         statsDelta('shieldsGained') >= 0 && statsDelta('shieldsGained') <= 100 &&
         statsDelta('shieldsRemoved') >= 0 && statsDelta('shieldsRemoved') <= 200 &&
+        statsDelta('freezeApplied') >= 0 && statsDelta('freezeApplied') <= 100 &&
+        statsDelta('poisonApplied') >= 0 && statsDelta('poisonApplied') <= 100 &&
         // Tetto coerente con spellsCast sopra (max 50 lanci/partita) per il manaCost più alto del
         // catalogo (6, v. SPELL_CATALOG in data/spells.ts): 50 * 6 = 300.
         statsDelta('manaConsumed') >= 0 && statsDelta('manaConsumed') <= 300 &&

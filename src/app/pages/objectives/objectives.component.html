@@ -4,21 +4,31 @@
   <div class="objectives panel panel--raised">
     <header class="objectives__header">
       <h1 class="t-display objectives__title">{{ 'objectives.title' | translate }}</h1>
+      <span class="objectives__completion">{{ completionPercent() }}%</span>
     </header>
 
     <div class="objectives__body">
-      <nav class="objectives__categories" [attr.aria-label]="'objectives.title' | translate">
-        @for (category of categories; track category.id) {
-          <button
-            type="button"
-            class="objectives__category"
-            [class.objectives__category--active]="selectedCategory() === category.id"
-            (click)="selectCategory(category.id)"
-          >
-            {{ category.labelKey | translate }}
-          </button>
+      <div class="objectives__sidebar">
+        <nav class="objectives__categories" [attr.aria-label]="'objectives.title' | translate">
+          @for (category of categories; track category.id) {
+            <button
+              type="button"
+              class="objectives__category"
+              [class.objectives__category--active]="selectedCategory() === category.id"
+              (click)="selectCategory(category.id)"
+            >
+              {{ category.labelKey | translate }}
+            </button>
+          }
+        </nav>
+
+        @if (!objectivesTrackingEnabled) {
+          <div class="objectives__warning" role="alert">
+            <span class="objectives__warning-icon" aria-hidden="true"></span>
+            <span>{{ 'objectives.trackingDisabledWarning' | translate }}</span>
+          </div>
         }
-      </nav>
+      </div>
 
       <div class="objectives__content">
         <div class="objectives__grid">

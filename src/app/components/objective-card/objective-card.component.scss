@@ -6,7 +6,9 @@
   border: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   border-radius: 6px;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
 
   &--completed {
     border-color: var(--border-gold);
@@ -21,17 +23,32 @@
     opacity: 0.7;
   }
 
-  &__info {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--sp-3);
+  &__name {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-heading);
   }
 
+  &__info {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  // Condizione di sblocco scritta per il giocatore (objectives.descriptions.<id>) — font normale
+  // (eredita --font-body dal body, stesso di __count sotto), non --font-ui/Cinzel come __name: qui
+  // è testo discorsivo da leggere, non un'intestazione. Altezza SEMPRE riservata per 2 righe
+  // (min-height, indipendente dalla lunghezza reale del testo) così le card della stessa griglia
+  // restano tutte alte uguali; line-clamp tronca con "…" nel raro caso superi comunque le 2 righe.
   &__label {
-    font-family: var(--font-ui);
-    font-weight: 600;
+    margin: 0;
     font-size: 0.85rem;
+    line-height: 1.3;
+    min-height: calc(1.3em * 2);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   &__reward {

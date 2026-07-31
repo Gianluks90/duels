@@ -352,4 +352,61 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     threshold: SPELL_CATALOG.length,
     rewards: [{ type: 'cardBack', id: 'archmage' }],
   },
+  // "Che tutto vede": le 3 magie di rivelazione (Terzo occhio/Occhio supremo/Occhio arcano —
+  // third_eye/supreme_eye/spell_glimpse) possedute insieme a fine partita (v. pattern 'reveal_trio'
+  // in CARD_PATTERN_CATALOG, data/card-patterns.ts) — valutato sullo stato finale del mazzo, non
+  // sull'eventLog (v. game/achievements.ts computeCardPatternMatches), a differenza di ogni altro
+  // obiettivo sopra.
+  {
+    id: 'reveal_trio',
+    metric: 'pattern_reveal_trio',
+    threshold: 1,
+    rewards: [{ type: 'title', id: 'all_seeing' }],
+  },
+  // "Preparato a tutto"/"Preparata a tutto" (v. pattern 'all_elements' in CARD_PATTERN_CATALOG,
+  // data/card-patterns.ts) — stesso principio di 'reveal_trio' sopra: valutato sullo stato finale
+  // del mazzo, non sull'eventLog.
+  {
+    id: 'all_elements',
+    metric: 'pattern_all_elements',
+    threshold: 1,
+    rewards: [{ type: 'title', id: 'prepared' }],
+  },
+  // "Fortunato"/"Fortunata"/"Fortunat*" (v. pattern 'lucky_win' in CARD_PATTERN_CATALOG,
+  // data/card-patterns.ts) — stesso principio di 'reveal_trio'/'all_elements' sopra, ma con anche
+  // `requireWin`: vale solo per il duello VINTO in quelle condizioni, non semplicemente giocato.
+  {
+    id: 'lucky_win',
+    metric: 'pattern_lucky_win',
+    threshold: 1,
+    rewards: [{ type: 'title', id: 'lucky' }],
+  },
+  // "...della neve"/"...del ghiaccio"/"l'avvelenatore"/"...della Pestilenza": contatori lifetime
+  // (UserStats.freezeApplied/poisonApplied), non un pattern-mazzo — stesso principio di
+  // shieldsGained/shieldsRemoved sopra, derivati dall'eventLog di ogni partita (v.
+  // game/achievements.ts computeStatsDelta), non dallo stato finale del mazzo.
+  {
+    id: 'freeze_50',
+    metric: 'freezeApplied',
+    threshold: 50,
+    rewards: [{ type: 'title', id: 'snowy' }],
+  },
+  {
+    id: 'freeze_100',
+    metric: 'freezeApplied',
+    threshold: 100,
+    rewards: [{ type: 'title', id: 'icy' }],
+  },
+  {
+    id: 'poison_50',
+    metric: 'poisonApplied',
+    threshold: 50,
+    rewards: [{ type: 'title', id: 'poisoner' }],
+  },
+  {
+    id: 'poison_100',
+    metric: 'poisonApplied',
+    threshold: 100,
+    rewards: [{ type: 'title', id: 'plague' }],
+  },
 ];

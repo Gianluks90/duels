@@ -33,6 +33,7 @@
   &__header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: var(--sp-4) var(--sp-5);
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
@@ -40,6 +41,15 @@
 
   &__title {
     font-size: 1.5rem;
+  }
+
+  // % di completamento generale — stesso font "normale" delle descrizioni in ObjectiveCardComponent
+  // (eredita --font-body, non --font-ui/Cinzel come il titolo a fianco), dorato, abbastanza grande
+  // da bilanciare visivamente il titolo nello stesso header space-between.
+  &__completion {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-heading);
   }
 
   &__body {
@@ -52,26 +62,70 @@
     }
   }
 
-  // Stesso stile di .collection__categories/.rulebook-dialog__nav-item: coerenza tra i tre pannelli
-  // a due colonne già esistenti nell'app.
-  &__categories {
+  // Colonna nav categorie + warning sotto — un solo blocco per poter fissare il secondo in fondo
+  // (categorie scorrono in autonomia, il resto no) senza che i due si accavallino. Stesso schema di
+  // .collection__sidebar/.collection__categories.
+  &__sidebar {
     display: flex;
     flex-direction: column;
     width: 220px;
     flex-shrink: 0;
     border-right: 1px solid var(--border-subtle);
+
+    @media (max-width: 720px) {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+  }
+
+  // Stesso stile di .collection__categories/.rulebook-dialog__nav-item: coerenza tra i tre pannelli
+  // a due colonne già esistenti nell'app.
+  &__categories {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: var(--sp-3) 0;
 
     @media (max-width: 720px) {
-      width: 100%;
       flex-direction: row;
-      border-right: none;
-      border-bottom: 1px solid var(--border-subtle);
       overflow-x: auto;
       overflow-y: visible;
       padding: var(--sp-2);
     }
+  }
+
+  // Avviso "tracciamento disattivato" (v. environment/feature-flags.ts OBJECTIVES_TRACKING_ENABLED)
+  // — stesso rosso di RedeemDialogComponent.__error (--accent-hover), icona tinta con la stessa
+  // tecnica mask-image di CollectionTileComponent invece di un <img> (l'SVG ha il fill chiaro
+  // hardcoded, non si tinge da solo).
+  &__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+    padding: var(--sp-3);
+    border-top: 1px solid var(--border-subtle);
+    color: var(--accent-hover);
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  &__warning-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background-color: var(--accent-hover);
+    mask-image: url('/icons/warning_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-image: url('/icons/warning_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
   }
 
   &__category {

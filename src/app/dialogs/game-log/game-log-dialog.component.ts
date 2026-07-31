@@ -98,6 +98,10 @@ export class GameLogDialogComponent {
         return this.pick('shieldRemoved', self, { amount: entry.amount, name });
       case 'freezeResolved':
         return this.pick('freezeResolved', self, { count: entry.count, name });
+      case 'freezeApplied':
+        return this.pick('freezeApplied', self, { amount: entry.amount, name });
+      case 'poisonApplied':
+        return this.pick('poisonApplied', self, { amount: entry.amount, name });
       case 'spellCast':
         return this.pick('spellCast', self, { spell: this.spellName(entry.spellId), name });
       case 'spellCreated':

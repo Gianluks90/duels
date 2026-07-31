@@ -21,8 +21,9 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
       [class.objective-card--completed]="completed()"
       [class.objective-card--claimed]="claimed()"
     >
+      <span class="objective-card__name">{{ objectiveName() }}</span>
+      <p class="objective-card__label t-muted">{{ objectiveDescription() }}</p>
       <div class="objective-card__info">
-        <span class="objective-card__label">{{ metricLabel() }}</span>
         <span class="objective-card__count t-muted"
           >{{ displayProgress() }} / {{ objective().threshold }}</span
         >
@@ -33,7 +34,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
         [attr.aria-valuenow]="displayProgress()"
         [attr.aria-valuemin]="0"
         [attr.aria-valuemax]="objective().threshold"
-        [attr.aria-label]="metricLabel()"
+        [attr.aria-label]="objectiveDescription()"
       >
         <div class="objective-card__fill" [style.width.%]="percent()"></div>
       </div>
@@ -73,9 +74,20 @@ export class ObjectiveCardComponent {
   protected readonly percent = computed(() =>
     Math.min(100, (this.displayProgress() / this.objective().threshold) * 100),
   );
-  protected readonly metricLabel = computed(
-    () =>
-      `${this.i18n.t(`objectives.metricLabels.${this.objective().metric}`)} · ${this.objective().threshold}`,
+  /** Nome "da trofeo" dell'obiettivo (v. documentation/achievement-titles.md) — chiave separata da
+   * objectiveDescription sotto: qui il titolo, là la condizione scritta per il giocatore, mostrati
+   * entrambi insieme sulla card. */
+  protected readonly objectiveName = computed(() =>
+    this.i18n.t(`objectives.names.${this.objective().id}`),
+  );
+  /** Condizione di sblocco scritta per il giocatore (v. documentation/achievement-titles.md,
+   * colonna "Metrica · Soglia" aggiornata con testo discorsivo) — sostituisce la vecchia
+   * `objectives.metricLabels.<metric> · <soglia>` ("Vittorie · 10"): una chiave per OBIETTIVO, non
+   * per metrica, perché due obiettivi sulla stessa metrica (es. win_10/win_50) hanno soglie e toni
+   * diversi ("Colleziona 10 vittorie" vs "Colleziona 50 vittorie"). Le voci `objectives.
+   * metricLabels.*` restano nei dizionari ma non sono più lette da nessun componente. */
+  protected readonly objectiveDescription = computed(() =>
+    this.i18n.t(`objectives.descriptions.${this.objective().id}`),
   );
   /** La maggior parte dei reward sono ancora placeholder ('TODO_...', v. data/objectives.ts) — mai
    * mostrati grezzi, solo l'etichetta neutra, senza il prefisso di categoria (non c'è ancora un nome

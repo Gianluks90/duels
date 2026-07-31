@@ -1,3 +1,4 @@
+import type { CardPatternId } from './card-pattern.model';
 import type { CollectibleElement } from './element.model';
 import type { UserStats } from './user.model';
 
@@ -35,14 +36,18 @@ export interface ObjectiveReward {
  * totale" (quello è già `spellsCast`), ma "quanti incantesimi DIVERSI almeno una volta" — una singola
  * proiezione scalare (`Object.keys(...).length`, v. buildProgressSource sotto), non una per
  * incantesimo: a differenza di `element_<id>` serve solo il traguardo "tutti", non uno per incantesimo.
+ * `pattern_<id>` applica la stessa idea a `UserStats.cardPatternMatches` (v. CARD_PATTERN_CATALOG,
+ * data/card-patterns.ts): una proiezione scalare per pattern di composizione mazzo (es. "Che tutto
+ * vede"), valutato sullo stato finale della partita invece che sull'eventLog.
  */
 export type ObjectiveMetric =
-  | Exclude<keyof UserStats, 'spellCastCounts' | 'elementsObtained'>
+  | Exclude<keyof UserStats, 'spellCastCounts' | 'elementsObtained' | 'cardPatternMatches'>
   | 'loginStreak'
   | 'rulebookRead'
   | 'friendsCount'
   | `element_${CollectibleElement}`
-  | 'distinctSpellsCast';
+  | 'distinctSpellsCast'
+  | `pattern_${CardPatternId}`;
 
 export interface Objective {
   id: string;

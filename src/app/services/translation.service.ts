@@ -3,7 +3,7 @@ import { SUPPORTED_LANGUAGES, type LanguageCode } from '../models/language.model
 import type { Element } from '../models/element.model';
 import type { SpecialMana } from '../models/card.model';
 import type { TurnPhase } from '../models/turn-phase.model';
-import { titleRewardVariantIds } from '../data/titles';
+import { TITLE_CATALOG, titleBaseId, titleRewardVariantIds } from '../data/titles';
 
 interface DictionaryObject {
   [key: string]: DictionaryNode;
@@ -67,18 +67,40 @@ export class TranslationService {
 
   /** Le forme tradotte di un titolo (v. data/titles.ts) — una sola per un titolo invariante, fino a
    * tre (maschile/femminile/neutro) per uno con varianti di genere. Solo le chiavi già tradotte
-   * (v. `resolveTitleForm`) vengono incluse: array vuoto finché il contenuto reale non è deciso. */
+   * (v. `resolveTitleForm`) vengono incluse: array vuoto finché il contenuto reale non è deciso.
+   * Usata SOLO in contesti "da solo" (anteprima reward in ObjectiveCardComponent, tile Collezione)
+   * — mai accanto al nome del giocatore — quindi antepone sempre l'ellissi ai titoli "suffisso" (v.
+   * `TitleDefinition.suffix`, `titleMarker` sotto). */
   titleForms(baseId: string): string[] {
+    const marker = this.titleMarker(baseId);
     return titleRewardVariantIds(baseId)
       .map((variantId) => this.resolveTitleForm(variantId))
-      .filter((form): form is string => form !== null);
+      .filter((form): form is string => form !== null)
+      .map((form) => `${marker}${form}`);
   }
 
   /** Il testo di UNA specifica variant-id già scelta (v. UserProfile.title) — a differenza di
    * `titleForms` (tutte le forme disponibili di un titolo, per l'anteprima), qui serve la forma
-   * esatta equipaggiata. Fallback all'id grezzo se non ancora tradotta. */
+   * esatta equipaggiata. Fallback all'id grezzo se non ancora tradotta. Mai un'ellissi qui: pensata
+   * per i contesti dove il nome del giocatore è già visibile accanto (PlayerHudComponent,
+   * ProfileComponent) — lì il testo del titolo da solo rende già chiaro il continuo. Per il select
+   * del picker (titolo mostrato SENZA nome accanto) v. `titleLabelStandalone` sotto. */
   titleLabel(variantId: string): string {
     return this.resolveTitleForm(variantId) ?? variantId;
+  }
+
+  /** Come `titleLabel`, ma per i contesti in cui il titolo compare DA SOLO (es. le `<option>` del
+   * select in ProfileDialogComponent) — antepone l'ellissi ai titoli "suffisso", stesso principio di
+   * `titleForms` sopra. */
+  titleLabelStandalone(variantId: string): string {
+    return `${this.titleMarker(titleBaseId(variantId))}${this.titleLabel(variantId)}`;
+  }
+
+  /** "…" se `baseId` è un titolo "suffisso" (v. TitleDefinition.suffix, data/titles.ts) — un
+   * frammento che ha senso solo letto subito dopo il nome del giocatore (es. "della neve"), stringa
+   * vuota altrimenti (un epiteto già completo da solo, es. "La muraglia", "Fortunato"). */
+  private titleMarker(baseId: string): string {
+    return TITLE_CATALOG.find((def) => def.id === baseId)?.suffix ? '…' : '';
   }
 
   private resolveTitleForm(variantId: string): string | null {

@@ -4,6 +4,7 @@
   <div class="collection panel panel--raised">
     <header class="collection__header">
       <h1 class="t-display collection__title">{{ 'collection.title' | translate }}</h1>
+      <span class="collection__completion">{{ completionPercent() }}%</span>
     </header>
 
     <div class="collection__body">
@@ -86,7 +87,11 @@
             } @else {
               <div class="collection__grid collection__grid--titles">
                 @for (item of titleItems(); track item.id) {
-                  <app-collection-tile [item]="item" shape="title" />
+                  <app-collection-tile
+                    [item]="item"
+                    shape="title"
+                    [selected]="equippedTitleBaseId() === item.id"
+                  />
                 }
               </div>
             }

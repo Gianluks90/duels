@@ -57,7 +57,7 @@
               >
                 @for (id of ownedTitleIds(); track id) {
                   <option [value]="id" [selected]="id === profile()?.title">
-                    {{ i18n.titleLabel(id) }}
+                    {{ i18n.titleLabelStandalone(id) }}
                   </option>
                 }
               </select>

@@ -20,7 +20,7 @@ import type { RewardUnlock } from '../models/reward-unlock.model';
  * `radiant`, `spendthrift`) è la sostituzione diretta della vocale finale con l'asterisco ("Novizi*",
  * "Ostinat*", "Attent*", "Istruit*", "Soci*", "Oscur*", "Luminos*", "Spendaccion*"...). Per le
  * coppie agentive in -tore/-trice
- * (`gatherer`, `enchanter`, `destroyer`) e per la coppia irregolare `sorcerer` (Stregone/Strega,
+ * (`gatherer`, `enchanter`, `destroyer`, `poisoner`) e per la coppia irregolare `sorcerer` (Stregone/Strega,
  * stesso stem "Streg-") si è scelta la convenzione "-tor*"/"Streg*" già in uso in alcuni contesti
  * (es. "lettor*" per lettore/lettrice) — v. collection.titleCatalog in it.json/en.json, facilmente
  * da rivedere se non convince.
@@ -49,6 +49,9 @@ export const GENDERED_TITLE_IDS: ReadonlySet<string> = new Set<string>([
   'shadowbound',
   'radiant',
   'spendthrift',
+  'prepared',
+  'lucky',
+  'poisoner',
 ]);
 
 /** Gli id concreti da aggiungere a `unlockedTitles` per il reward titolo di un obiettivo (o per un
@@ -72,6 +75,16 @@ export function titleBaseId(variantId: string): string {
 export interface TitleDefinition {
   id: string;
   unlock: RewardUnlock;
+  /** true = il testo del titolo è un frammento che presuppone il nome PRIMA di sé per avere senso
+   * grammaticale (es. "della neve", "che tutto vede" — leggibile solo come "NomeGiocatore della
+   * neve") — a differenza di un titolo che è già un epiteto completo da solo, con o senza nome
+   * davanti (es. "La muraglia", "l'avvelenatore", "Fortunato"). Usato SOLO per decidere se anteporre
+   * un'ellissi nei contesti dove il titolo compare DA SOLO, senza il nome accanto (v.
+   * TranslationService.titleLabelStandalone/titleForms) — mai dove il nome è già visibile
+   * (PlayerHudComponent, ProfileComponent), lì il testo resta invariato. Assente/false = non è un
+   * frammento (comportamento di default, retrocompatibile con i titoli già scritti prima di questo
+   * campo). */
+  suffix?: boolean;
 }
 
 /** Uid dell'unico account per cui `unlock.kind === 'exclusive'` può risolvere in TITLE_CATALOG —
@@ -116,12 +129,12 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'sorcerer', unlock: { kind: 'objective', objectiveId: 'cast_100' } },
   { id: 'hostile', unlock: { kind: 'objective', objectiveId: 'damage_50' } },
   { id: 'dangerous', unlock: { kind: 'objective', objectiveId: 'damage_100' } },
-  { id: 'black_magic', unlock: { kind: 'objective', objectiveId: 'damage_500' } },
+  { id: 'black_magic', unlock: { kind: 'objective', objectiveId: 'damage_500' }, suffix: true },
   { id: 'attentive', unlock: { kind: 'objective', objectiveId: 'heal_50' } },
   { id: 'resilient', unlock: { kind: 'objective', objectiveId: 'heal_100' } },
-  { id: 'white_magic', unlock: { kind: 'objective', objectiveId: 'heal_500' } },
-  { id: 'defensive', unlock: { kind: 'objective', objectiveId: 'shield_gain_10' } },
-  { id: 'on_guard', unlock: { kind: 'objective', objectiveId: 'shield_gain_50' } },
+  { id: 'white_magic', unlock: { kind: 'objective', objectiveId: 'heal_500' }, suffix: true },
+  { id: 'defensive', unlock: { kind: 'objective', objectiveId: 'shield_gain_10' }, suffix: true },
+  { id: 'on_guard', unlock: { kind: 'objective', objectiveId: 'shield_gain_50' }, suffix: true },
   { id: 'the_wall', unlock: { kind: 'objective', objectiveId: 'shield_gain_100' } },
   { id: 'shieldbreaker', unlock: { kind: 'objective', objectiveId: 'shield_remove_10' } },
   { id: 'destroyer', unlock: { kind: 'objective', objectiveId: 'shield_remove_50' } },
@@ -132,6 +145,16 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'shadowbound', unlock: { kind: 'objective', objectiveId: 'combine_dark_5' } },
   { id: 'radiant', unlock: { kind: 'objective', objectiveId: 'combine_light_5' } },
   { id: 'spendthrift', unlock: { kind: 'objective', objectiveId: 'mana_100' } },
+  // "che tutto vede" (minuscolo apposta, v. collection.titleCatalog.all_seeing in it.json/en.json):
+  // invariante come resilient/collector sopra, "che" + "vede" non concordano per genere in
+  // italiano.
+  { id: 'all_seeing', unlock: { kind: 'objective', objectiveId: 'reveal_trio' }, suffix: true },
+  { id: 'prepared', unlock: { kind: 'objective', objectiveId: 'all_elements' } },
+  { id: 'lucky', unlock: { kind: 'objective', objectiveId: 'lucky_win' } },
+  { id: 'snowy', unlock: { kind: 'objective', objectiveId: 'freeze_50' }, suffix: true },
+  { id: 'icy', unlock: { kind: 'objective', objectiveId: 'freeze_100' }, suffix: true },
+  { id: 'poisoner', unlock: { kind: 'objective', objectiveId: 'poison_50' } },
+  { id: 'plague', unlock: { kind: 'objective', objectiveId: 'poison_100' }, suffix: true },
 ];
 
 /** Variant-id EQUIPAGGIABILI senza passare da un riscatto obiettivo, PER UN utente specifico —

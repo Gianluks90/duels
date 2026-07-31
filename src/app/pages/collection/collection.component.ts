@@ -11,7 +11,12 @@ import {
 import { OBJECTIVE_CATALOG } from '../../data/objectives';
 import { CARD_BACK_CATALOG } from '../../data/card-backs';
 import { BACKGROUND_CATALOG } from '../../data/backgrounds';
-import { TITLE_CATALOG, titleRewardVariantIds, type TitleDefinition } from '../../data/titles';
+import {
+  TITLE_CATALOG,
+  titleBaseId,
+  titleRewardVariantIds,
+  type TitleDefinition,
+} from '../../data/titles';
 import { COLLECTIBLE_ELEMENT_IDS } from '../../data/elements';
 import { SPELL_CATALOG } from '../../data/spells';
 import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
@@ -87,6 +92,15 @@ export class CollectionComponent {
   protected readonly equippedBackground = computed(
     () => this.auth.profile()?.background ?? DEFAULT_BACKGROUND_ID,
   );
+
+  /** Id BASE del titolo equipaggiato in questo momento (v. titleBaseId, risale da una delle
+   * variant-id di genere a `TitleDefinition.id`) — usato per il badge "Attivo" sul tile, stesso
+   * ruolo di equippedCardBack/equippedBackground sopra ma senza modalità personalizzazione (i
+   * titoli restano un select in ProfileDialogComponent, v. titleItem sotto). */
+  protected readonly equippedTitleBaseId = computed(() => {
+    const title = this.auth.profile()?.title;
+    return title ? titleBaseId(title) : null;
+  });
 
   protected startPersonalizing(): void {
     const profile = this.auth.profile();
@@ -288,6 +302,23 @@ export class CollectionComponent {
     );
   });
 
+  /** % di completamento generale su TUTTE le categorie insieme (non solo quella selezionata) —
+   * stesso trattamento di ObjectivesComponent.completionPercent, qui "completato" è semplicemente
+   * CollectionItem.owned. */
+  protected readonly completionPercent = computed(() => {
+    const all = [
+      ...this.cardBackItems(),
+      ...this.backgroundItems(),
+      ...this.titleItems(),
+      ...this.elementItems(),
+      ...this.manaItems(),
+      ...this.spellItems(),
+    ];
+    if (all.length === 0) return 0;
+    const owned = all.filter((item) => item.owned).length;
+    return Math.round((owned / all.length) * 100);
+  });
+
   private sortById(items: CollectionItem[]): CollectionItem[] {
     return [...items].sort((a, b) => a.id.localeCompare(b.id, undefined, { sensitivity: 'base' }));
   }
@@ -383,17 +414,12 @@ export class CollectionComponent {
   }
 
   private unlockInfoFor(objective: Objective, owned: boolean): string {
+    const name = this.i18n.t(`objectives.names.${objective.id}`);
     if (owned) {
-      return this.i18n.t('collection.unlockedCondition', {
-        condition: this.metricLabel(objective),
-      });
+      return this.i18n.t('collection.unlockedCondition', { condition: name });
     }
     if (objective.hidden) return this.i18n.t('collection.secretConditionTooltip');
-    return this.i18n.t('collection.lockedCondition', { condition: this.metricLabel(objective) });
-  }
-
-  private metricLabel(objective: Objective): string {
-    return `${this.i18n.t(`objectives.metricLabels.${objective.metric}`)} · ${objective.threshold}`;
+    return this.i18n.t('collection.lockedCondition', { condition: name });
   }
 
   /** "Chiave non risolta = testo grezzo" (stesso schema di RedeemDialogComponent.errorMessage): se

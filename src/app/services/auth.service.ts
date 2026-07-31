@@ -171,6 +171,7 @@ export class AuthService {
       gameDoc.state.winner,
       gameDoc.state.eventLog,
       gameDoc.wasFriendDuel,
+      gameDoc.state.players[role],
     );
     // loginStreak/rulebookRead non cambiano qui (si aggiornano fuori dal flusso di fine partita, v.
     // ensureUserProfile/markRulebookRead sotto) — passare `current` per prima e dopo li tiene

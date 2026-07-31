@@ -24,12 +24,14 @@ export interface CollectionItem {
  * da posseduta (arte reale), con tooltip al passaggio del mouse/focus per nome/descrizione/
  * condizione — necessario perché l'arte va coperta finché non sbloccata.
  * Titoli (`shape() === 'title'`): niente arte da nascondere, quindi niente tooltip — una card
- * rettangolare sottile con nome ed eventuale condizione di sblocco scritti direttamente, un
- * lucchetto piccolo solo come indicatore se non ancora sbloccato (il testo resta comunque
- * leggibile: per un titolo non c'è nulla da "svelare" con la sorpresa, a differenza dell'arte). Il
- * titolo non partecipa MAI alla modalità personalizzazione sotto (resta un select in
- * ProfileDialogComponent, questione di identità più che di collezione) — `selectable`/`selected`
- * non hanno alcun effetto quando `shape() === 'title'`.
+ * rettangolare sottile con nome ed eventuale condizione di sblocco scritti direttamente, un badge
+ * assoluto in alto a destra (stesso angolo/stile di `__radio` sotto): lucchetto se non ancora
+ * sbloccato, spunta dorata (`activeIconUrl`, `selected()`) se è il titolo equipaggiato in questo
+ * momento, nulla in quello spazio altrimenti. Il tile bloccato è inoltre leggermente attenuato
+ * (`opacity: .8`, v. scss) invece del solo overlay scuro già usato da card/sfondo. Il titolo non
+ * partecipa MAI alla modalità personalizzazione sotto (resta un select in ProfileDialogComponent,
+ * questione di identità più che di collezione) — `selectable` non ha alcun effetto quando
+ * `shape() === 'title'`, `selected()` qui marca solo il badge "Attivo", mai una selezione pendente.
  *
  * Modalità personalizzazione (CollectionComponent.editMode, solo dorso/sfondo): un tile posseduto
  * diventa un radio button travestito da cerchio/cerchio-spunta dorato (`selectable` true, `selected`
@@ -59,6 +61,12 @@ export interface CollectionItem {
             class="collection-tile__title-lock"
             [style.mask-image]="lockIconUrl"
             [style.-webkit-mask-image]="lockIconUrl"
+          ></span>
+        } @else if (selected()) {
+          <span
+            class="collection-tile__title-lock"
+            [style.mask-image]="activeIconUrl"
+            [style.-webkit-mask-image]="activeIconUrl"
           ></span>
         }
         <div class="collection-tile__title-text">
