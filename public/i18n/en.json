@@ -168,8 +168,7 @@
     "avatarAria": "Profile",
     "menuAria": "Menu",
     "menu": {
-      "myProfile": "My profile",
-      "profile": "Profile",
+      "myProfile": "Profile",
       "redeemCode": "Redeem code",
       "signOut": "Sign out"
     },
@@ -696,7 +695,7 @@
 
   "profilePage": {
     "title": "Profile",
-    "backHome": "Back to Home",
+    "settingsAria": "Profile settings",
     "loading": "Loading…",
     "notFound": "Profile not found.",
     "stats": {

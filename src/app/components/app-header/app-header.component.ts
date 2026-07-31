@@ -9,7 +9,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.component';
 import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
-import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
 import { RedeemDialogComponent } from '../../dialogs/redeem/redeem-dialog.component';
 import { FriendsDialogComponent } from '../../dialogs/friends/friends-dialog.component';
 import { IconButtonComponent } from '../ui/icon-button/icon-button.component';
@@ -67,7 +66,6 @@ export class AppHeaderComponent {
 
   protected readonly avatarMenuItems = computed<ActionMenuItem[]>(() => [
     { label: this.i18n.t('home.menu.myProfile'), action: () => this.openMyProfile() },
-    { label: this.i18n.t('home.menu.profile'), action: () => this.openProfile() },
     { label: this.i18n.t('home.menu.redeemCode'), action: () => this.openRedeemDialog() },
     { label: this.i18n.t('home.menu.signOut'), action: () => this.signOut() },
   ]);
@@ -84,8 +82,9 @@ export class AppHeaderComponent {
     this.router.navigate(['/objectives']);
   }
 
-  /** Il proprio profilo pubblico (Achievements) — distinto da openProfile() sotto, che apre invece
-   * la dialog di MODIFICA (nome/foto/dorso/...). Questa è la stessa pagina che vedrebbe un amico. */
+  /** Il proprio profilo pubblico (Achievements) — la dialog di MODIFICA (nome/foto/dorso/...) si
+   * apre da lì (icon button a ingranaggio, solo per il proprietario), non più da qui. Questa è la
+   * stessa pagina che vedrebbe un amico. */
   protected openMyProfile(): void {
     const uid = this.auth.user()?.uid;
     if (uid) this.router.navigate(['/profile', uid]);
@@ -111,15 +110,6 @@ export class AppHeaderComponent {
 
   protected openOptions(): void {
     this.dialog.open(OptionsDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-  }
-
-  protected openProfile(): void {
-    this.dialog.open(ProfileDialogComponent, {
       positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
       hasBackdrop: true,
       backdropClass: 'dialog-backdrop',

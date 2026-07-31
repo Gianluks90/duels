@@ -1,9 +1,22 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Dialog } from '@angular/cdk/dialog';
+import { Overlay } from '@angular/cdk/overlay';
 import { AuthService } from '../../services/auth.service';
 import { FriendsService } from '../../services/friends.service';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { AppHeaderComponent } from '../../components/app-header/app-header.component';
+import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
+import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
+import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
 import { EMPTY_USER_STATS, type UserProfile } from '../../models/user.model';
 
 /**
@@ -17,7 +30,7 @@ import { EMPTY_USER_STATS, type UserProfile } from '../../models/user.model';
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, AppHeaderComponent, IconButtonComponent, TooltipDirective],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
@@ -25,8 +38,11 @@ export class ProfileComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly friendsService = inject(FriendsService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  private readonly dialog = inject(Dialog);
+  private readonly overlay = inject(Overlay);
   protected readonly i18n = inject(TranslationService);
+
+  protected readonly gearIcon = '/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
   private readonly viewedUid = signal('');
   private readonly fetchedProfile = signal<UserProfile | null>(null);
@@ -72,7 +88,15 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  protected goHome(): void {
-    this.router.navigate(['/home']);
+  /** Solo per il proprietario (v. isSelf sopra) — la dialog di MODIFICA (nome/foto/dorso/...), non
+   * più raggiungibile dal menu dell'header (spostata qui: ha senso solo guardando il proprio
+   * profilo, non quello di un amico). */
+  protected openSettings(): void {
+    this.dialog.open(ProfileDialogComponent, {
+      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+      hasBackdrop: true,
+      backdropClass: 'dialog-backdrop',
+      panelClass: 'dialog-panel',
+    });
   }
 }

@@ -171,8 +171,7 @@
     "avatarAria": "Profilo",
     "menuAria": "Menu",
     "menu": {
-      "myProfile": "Profilo pubblico",
-      "profile": "Impostazioni profilo",
+      "myProfile": "Profilo",
       "redeemCode": "Riscatta un codice",
       "signOut": "Esci"
     },
@@ -699,7 +698,7 @@
 
   "profilePage": {
     "title": "Profilo",
-    "backHome": "Torna alla Home",
+    "settingsAria": "Impostazioni profilo",
     "loading": "Caricamento…",
     "notFound": "Profilo non trovato.",
     "stats": {

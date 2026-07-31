@@ -1,29 +1,55 @@
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+
+  // Stacca il pannello dai bordi fisici dello schermo in mobile portrait — stesso schema di
+  // .objectives-page/.collection-page.
+  @media (max-width: 639px) and (orientation: portrait) {
+    padding: 0 var(--sp-2);
+  }
+}
+
+// Stesso schema di .objectives/.collection (header con bordo sotto + un box grande per il
+// contenuto) invece del vecchio pannello a sé con un bottone "Torna alla Home" — AppHeaderComponent
+// copre già la navigazione, non serve un secondo modo per uscire da qui.
 .profile {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-5);
-  max-width: 560px;
-  margin: 0 auto;
-  padding: var(--sp-5);
-  height: 100dvh;
-  overflow-y: auto;
+  max-width: 1200px;
+  width: 100%;
+  margin: var(--sp-5) auto;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+
+  @media (max-width: 639px) and (orientation: portrait) {
+    margin-bottom: 64px;
+  }
 
   &__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--sp-4);
     padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
   }
 
   &__title {
     font-size: 1.5rem;
   }
 
-  &__card {
+  // max-width qui, non sul box esterno sopra: il contenuto oggi (identità + 4 stat) resta quello di
+  // prima, il box grande è pronto per quando ce ne sarà di più.
+  &__body {
     display: flex;
     flex-direction: column;
     gap: var(--sp-5);
+    flex: 1;
+    min-height: 0;
+    max-width: 560px;
+    overflow-y: auto;
     padding: var(--sp-6);
   }
 
