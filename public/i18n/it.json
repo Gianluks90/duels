@@ -533,6 +533,8 @@
     "purchaseLocked": "Sarà disponibile come acquisto per i sostenitori.",
     "unlockedSeasonal": "Sbloccato durante un evento stagionale.",
     "seasonalLocked": "Obiettivo stagionale in arrivo — dettagli non ancora decisi.",
+    "unlockedInviteFriend": "Sbloccato invitando un amico a giocare.",
+    "inviteFriendLocked": "Sarà disponibile invitando un amico a giocare — dettagli in arrivo.",
     "legacyLabel": "{name} (V1)",
     "unlockedSpellUsage": "Sbloccato lanciando {name} {count} volte.",
     "lockedSpellUsage": "Si sblocca lanciando {name} {count} volte.",
@@ -576,6 +578,10 @@
       "de-bug": {
         "name": "de-bug",
         "description": "Coniato per premiare la ricerca di malfunzionamenti e fornire consigli per il futuro. Un ringraziamento per chi ha contribuito!"
+      },
+      "friendship": {
+        "name": "Amicizia",
+        "description": "Due cuori intrecciati per chi condivide la magia di Duels con un amico."
       }
     },
     "backgroundCatalog": {

@@ -21,4 +21,5 @@ export const CARD_BACK_CATALOG: CardBackDefinition[] = [
   { id: 'summer', unlock: { kind: 'seasonal' } },
   { id: 'archmage', unlock: { kind: 'objective', objectiveId: 'cast_all_spells' } },
   { id: 'de-bug', unlock: { kind: 'redeemCode' } },
+  { id: 'friendship', unlock: { kind: 'inviteFriend' } },
 ];

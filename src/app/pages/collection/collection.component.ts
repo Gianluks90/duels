@@ -364,6 +364,10 @@ export class CollectionComponent {
         return this.i18n.t(owned ? 'collection.unlockedPurchase' : 'collection.purchaseLocked');
       case 'seasonal':
         return this.i18n.t(owned ? 'collection.unlockedSeasonal' : 'collection.seasonalLocked');
+      case 'inviteFriend':
+        return this.i18n.t(
+          owned ? 'collection.unlockedInviteFriend' : 'collection.inviteFriendLocked',
+        );
       case 'exclusive':
         // Mostrato solo al proprietario (v. titleItems sopra, filtrato per chiunque altro) —
         // "sempre disponibile" è corretto dal SUO punto di vista, l'unico che possa mai vederlo qui.

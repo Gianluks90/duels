@@ -16,6 +16,11 @@ export type RewardUnlock =
    * v. Objective.metric). Mostrato comunque in Collezione: dettagli da decidere quando si
    * implementerà il meccanismo. */
   | { kind: 'seasonal' }
+  /** Invitare un amico a giocare — meccanismo non ancora implementato (nessun collegamento tra
+   * FriendsService/inviti e le ricompense oggi). Mostrato comunque in Collezione: il giocatore deve
+   * sapere che esiste, dettagli (quale soglia, quale evento la sblocca davvero) da decidere quando
+   * si implementerà il meccanismo. */
+  | { kind: 'inviteFriend' }
   /** Riservato a UN account specifico (uid hardcoded) — non ottenibile in nessun altro modo, MAI
    * mostrato in Collezione a chi non è quello uid (a differenza degli altri kind, sempre visibili
    * come "da sbloccare"). Rimane comunque leggibile/visibile ovunque un titolo già equipaggiato si

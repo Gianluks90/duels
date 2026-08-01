@@ -530,6 +530,8 @@
     "purchaseLocked": "Will be available as a supporter purchase.",
     "unlockedSeasonal": "Unlocked during a seasonal event.",
     "seasonalLocked": "Seasonal objective coming soon — details not yet decided.",
+    "unlockedInviteFriend": "Unlocked by inviting a friend to play.",
+    "inviteFriendLocked": "Will be available by inviting a friend to play — details coming soon.",
     "legacyLabel": "{name} (V1)",
     "unlockedSpellUsage": "Unlocked by casting {name} {count} times.",
     "lockedSpellUsage": "Unlocks by casting {name} {count} times.",
@@ -573,6 +575,10 @@
       "de-bug": {
         "name": "de-bug",
         "description": "Minted for a day of debugging and testing with friends — redeemable only with a code, and only on that date."
+      },
+      "friendship": {
+        "name": "Friendship",
+        "description": "Two intertwined hearts for those who share the magic of Duels with a friend."
       }
     },
     "backgroundCatalog": {

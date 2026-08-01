@@ -9,7 +9,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "images:optimize": "node scripts/optimize-images.mjs",
-    "host": "ng build && firebase deploy --only hosting"
+    "host": "ng build && firebase deploy --only hosting",
+    "rules": "firebase deploy --only firestore:rules"
   },
   "private": true,
   "packageManager": "npm@11.12.1",
