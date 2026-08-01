@@ -696,14 +696,18 @@
   "profilePage": {
     "title": "Profile",
     "settingsAria": "Profile settings",
+    "addFriendAria": "Add friend",
+    "addFriendSent": "Request sent",
     "loading": "Loading…",
     "notFound": "Profile not found.",
-    "stats": {
-      "gamesPlayed": "Games played",
-      "wins": "Wins",
-      "losses": "Losses",
-      "spellsCast": "Spells cast"
-    }
+    "cardBack": "Card back",
+    "sections": {
+      "stats": "Stats",
+      "favoriteSpells": "Favorite spells",
+      "objectives": "Objectives"
+    },
+    "favoriteSpellsEmpty": "No spell set as favorite yet. Open the grimoire and select the star icon on the page of the spell you want to mark as favorite.",
+    "objectivesEmpty": "No objectives achieved yet."
   },
 
   "grimoire": {

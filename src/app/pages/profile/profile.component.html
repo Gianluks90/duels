@@ -12,16 +12,27 @@
           tooltipPosition="left"
           (iconClick)="openSettings()"
         />
+      } @else if (!loading() && !notFound()) {
+        <app-icon-button
+          [icon]="addFriendIcon"
+          [ariaLabel]="'profilePage.addFriendAria' | translate"
+          [appTooltip]="
+            (friendRequestSent() ? 'profilePage.addFriendSent' : 'profilePage.addFriendAria')
+              | translate
+          "
+          tooltipPosition="left"
+          (iconClick)="addFriend()"
+        />
       }
     </header>
 
     <div class="profile__body">
       @if (loading()) {
-        <p class="t-muted">{{ 'profilePage.loading' | translate }}</p>
+        <p class="t-muted profile__empty">{{ 'profilePage.loading' | translate }}</p>
       } @else if (notFound()) {
-        <p class="t-muted">{{ 'profilePage.notFound' | translate }}</p>
+        <p class="t-muted profile__empty">{{ 'profilePage.notFound' | translate }}</p>
       } @else if (profile(); as p) {
-        <div class="profile__identity">
+        <div class="profile__column profile__column--identity">
           @if (p.photoURL; as photo) {
             <img class="profile__avatar" [src]="photo" alt="" referrerpolicy="no-referrer" />
           } @else {
@@ -29,32 +40,117 @@
               p.displayName.charAt(0)
             }}</span>
           }
-          <div>
-            <p class="t-heading profile__name">{{ p.displayName }}</p>
-            @if (displayTitle(); as title) {
-              <p class="profile__player-title">{{ title }}</p>
-            }
+          <p class="t-heading profile__name">{{ p.displayName }}</p>
+          <div class="profile__divider"></div>
+          @if (displayTitle(); as title) {
+            <p class="profile__player-title">{{ title }}</p>
+          }
+
+          <div class="profile__card-back">
+            <p class="t-muted profile__card-back-label">
+              {{ 'profilePage.cardBack' | translate }}
+            </p>
+            <!-- Tooltip nome/descrizione — stesso schema di #spellTip sopra, senza il banner di
+                 categoria (non è un incantesimo). -->
+            <ng-template #cardBackTip>
+              <strong>{{
+                'collection.cardBackCatalog.' + p.cardBack + '.name' | translate
+              }}</strong>
+              <hr class="rich-tooltip__rule" />
+              <p class="rich-tooltip__effect">
+                {{ 'collection.cardBackCatalog.' + p.cardBack + '.description' | translate }}
+              </p>
+            </ng-template>
+            <img
+              class="profile__card-back-img"
+              [src]="cardBackSrc()"
+              alt=""
+              [appTooltip]="cardBackTip"
+              tooltipPosition="top"
+            />
           </div>
         </div>
 
-        <dl class="profile__stats">
-          <div class="profile__stat">
-            <dt class="t-muted">{{ 'profilePage.stats.gamesPlayed' | translate }}</dt>
-            <dd>{{ stats().gamesPlayed }}</dd>
-          </div>
-          <div class="profile__stat">
-            <dt class="t-muted">{{ 'profilePage.stats.wins' | translate }}</dt>
-            <dd>{{ stats().wins }}</dd>
-          </div>
-          <div class="profile__stat">
-            <dt class="t-muted">{{ 'profilePage.stats.losses' | translate }}</dt>
-            <dd>{{ stats().losses }}</dd>
-          </div>
-          <div class="profile__stat">
-            <dt class="t-muted">{{ 'profilePage.stats.spellsCast' | translate }}</dt>
-            <dd>{{ stats().spellsCast }}</dd>
-          </div>
-        </dl>
+        <div class="profile__column profile__column--stats">
+          <section class="profile__section">
+            <h2 class="t-heading profile__section-title">
+              {{ 'profilePage.sections.favoriteSpells' | translate }}
+            </h2>
+            <div class="profile__divider"></div>
+            @if (favoriteSpellIds().length === 0) {
+              <p class="t-muted">{{ 'profilePage.favoriteSpellsEmpty' | translate }}</p>
+            } @else {
+              <div class="profile__spell-grid">
+                @for (spellId of favoriteSpellIds(); track spellId) {
+                  <!-- Tooltip ricco per la carta incantesimo — stesso schema di
+                       BoardComponent.html (#spellTip), adattato al solo id disponibile qui. -->
+                  <ng-template #spellTip>
+                    <div class="rich-tooltip__spell-header">
+                      {{ 'card.spell.category' | translate }}
+                    </div>
+                    <strong>{{ spellName(spellId) }}</strong>
+                    <hr class="rich-tooltip__rule" />
+                    <p class="rich-tooltip__effect">{{ spellEffectSummary(spellId) }}</p>
+                    @if (spellFlavor(spellId); as flavor) {
+                      <p class="rich-tooltip__flavor">
+                        <em>{{ flavor }}</em>
+                      </p>
+                    }
+                  </ng-template>
+                  <img
+                    class="profile__spell-card"
+                    [src]="spellImageSrc(spellId)"
+                    [alt]="spellName(spellId)"
+                    [appTooltip]="spellTip"
+                    tooltipPosition="top"
+                  />
+                }
+              </div>
+            }
+          </section>
+
+          <section class="profile__section">
+            <div class="profile__section-header">
+              <h2 class="t-heading profile__section-title">
+                {{ 'profilePage.sections.objectives' | translate }}
+              </h2>
+              <span class="profile__section-percent">{{ objectivesCompletionPercent() }}%</span>
+            </div>
+            <div class="profile__divider"></div>
+            @if (recentObjectives().length === 0) {
+              <p class="t-muted">{{ 'profilePage.objectivesEmpty' | translate }}</p>
+            } @else {
+              <div class="profile__objectives-grid">
+                @for (item of recentObjectives(); track item.objective.id) {
+                  <!-- claimed forzato a true (non item.claimed): qui è solo una vetrina di
+                       traguardi raggiunti, senza (claim) collegato — un bottone "Riscatta" attivo
+                       in apparenza ma senza effetto sarebbe peggio del badge "Riscattato" mostrato
+                       in anticipo. Chi vuole riscattare per davvero lo fa dalla pagina Obiettivi. -->
+                  <app-objective-card
+                    [objective]="item.objective"
+                    [progress]="item.progress"
+                    [claimed]="true"
+                  />
+                }
+              </div>
+            }
+          </section>
+
+          <section class="profile__section">
+            <h2 class="t-heading profile__section-title">
+              {{ 'profilePage.sections.stats' | translate }}
+            </h2>
+            <div class="profile__divider"></div>
+            <dl class="profile__stats">
+              @for (field of statFields; track field) {
+                <div class="profile__stat">
+                  <dt class="t-muted">{{ 'objectives.metricLabels.' + field | translate }}</dt>
+                  <dd>{{ stats()[field] }}</dd>
+                </div>
+              }
+            </dl>
+          </section>
+        </div>
       }
     </div>
   </div>

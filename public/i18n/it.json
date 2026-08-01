@@ -699,14 +699,18 @@
   "profilePage": {
     "title": "Profilo",
     "settingsAria": "Impostazioni profilo",
+    "addFriendAria": "Aggiungi amico",
+    "addFriendSent": "Richiesta inviata",
     "loading": "Caricamento…",
     "notFound": "Profilo non trovato.",
-    "stats": {
-      "gamesPlayed": "Duelli giocati",
-      "wins": "Vittorie",
-      "losses": "Sconfitte",
-      "spellsCast": "Incantesimi lanciati"
-    }
+    "cardBack": "Dorso carta attuale",
+    "sections": {
+      "stats": "Statistiche",
+      "favoriteSpells": "Incantesimi preferiti",
+      "objectives": "Obiettivi"
+    },
+    "favoriteSpellsEmpty": "Nessun incantesimo impostato come preferito. Apri il grimorio e seleziona l'icona a forma di stella nella pagina dell'incantesimo che vuoi mettere come preferito.",
+    "objectivesEmpty": "Ancora nessun obbiettivo raggiunto."
   },
 
   "grimoire": {

@@ -40,28 +40,91 @@
     font-size: 1.5rem;
   }
 
-  // max-width qui, non sul box esterno sopra: il contenuto oggi (identità + 4 stat) resta quello di
-  // prima, il box grande è pronto per quando ce ne sarà di più.
+  // Stesso schema a due colonne di CollectionComponent/ObjectivesComponent (corpo diviso da un
+  // bordo verticale) invece della vecchia colonna singola centrata — coerenza tra i pannelli
+  // Achievements. A differenza di quelle due, qui entrambe le colonne mostrano contenuto vero
+  // (identità / statistiche), non nav + contenuto.
   &__body {
     display: flex;
-    flex-direction: column;
-    gap: var(--sp-5);
     flex: 1;
     min-height: 0;
-    max-width: 560px;
-    overflow-y: auto;
+
+    @media (max-width: 720px) {
+      flex-direction: column;
+    }
+  }
+
+  // Stato loading/notFound: nessuna colonna, solo un testo — il padding che &__column porta di suo
+  // altrimenti non ci sarebbe (il body ora non ne ha uno proprio, l'ha spostato sulle colonne).
+  &__empty {
     padding: var(--sp-6);
   }
 
-  &__identity {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-4);
+  &__column {
+    &--identity {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 300px;
+      flex-shrink: 0;
+      gap: var(--sp-3);
+      padding: var(--sp-6);
+      overflow-y: auto;
+      border-right: 1px solid var(--border-subtle);
+      text-align: center;
+
+      @media (max-width: 720px) {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+    }
+
+    &--stats {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-6);
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: var(--sp-6);
+    }
   }
 
+  // Blocco titolo + linea + contenuto, ripetuto per ogni sezione della colonna statistiche
+  // (statistiche, incantesimi preferiti, ...) — stesso trattamento per tutte, solo il contenuto sotto
+  // la linea cambia.
+  &__section-title {
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+  }
+
+  // Titolo + percentuale sulla stessa riga (sezione Obiettivi) — solo questa sezione ha un secondo
+  // valore da affiancare al titolo, le altre no.
+  &__section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-2);
+  }
+
+  // Stesso trattamento di .objectives__completion, scalato alla dimensione di un titolo di sezione
+  // invece che di un header di pagina.
+  &__section-percent {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-heading);
+  }
+
+  &__section &__divider {
+    margin: var(--sp-2) 0 var(--sp-4);
+  }
+
+  // Più grande di prima (64px): la colonna identità non ha più altro accanto a bilanciare, l'avatar
+  // è il primo elemento in colonna.
   &__avatar {
-    width: 64px;
-    height: 64px;
+    width: 112px;
+    height: 112px;
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid var(--border-gold);
@@ -71,20 +134,52 @@
       align-items: center;
       justify-content: center;
       background: var(--bg-surface);
-      font-size: 1.5rem;
+      font-size: 2.5rem;
       color: var(--text-heading);
     }
   }
 
   &__name {
-    font-size: 1rem;
+    font-size: 1.1rem;
+  }
+
+  // Separa nome e titolo — richiesto esplicitamente invece di affidarsi solo al gap verticale, ora
+  // che i due non condividono più una riga con l'avatar a fianco.
+  &__divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border-subtle);
   }
 
   &__player-title {
-    margin-top: var(--sp-1);
     font-size: 0.8rem;
     color: var(--text-heading);
     letter-spacing: 0.05em;
+  }
+
+  // Dorso equipaggiato a piena larghezza colonna — margin-top: auto lo spinge in fondo, "un po' di
+  // spazio" sotto nome/titolo invece di un gap fisso che sprecherebbe spazio quando manca il titolo.
+  &__card-back {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-2);
+    width: 100%;
+    margin-top: auto;
+  }
+
+  &__card-back-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__card-back-img {
+    width: 100%;
+    aspect-ratio: var(--card-ratio);
+    object-fit: cover;
+    border: 1px solid var(--border-gold);
+    border-radius: 12px;
   }
 
   &__stats {
@@ -95,8 +190,9 @@
 
   &__stat {
     display: flex;
-    flex-direction: column;
-    gap: var(--sp-1);
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--sp-2);
 
     dd {
       margin: 0;
@@ -105,4 +201,62 @@
       color: var(--text-heading);
     }
   }
+
+  &__spell-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--sp-3);
+
+    // 5 colonne di arte carta diventano illeggibili sotto i 720px (stessa soglia di
+    // .collection__grid) — 3 come .collection__grid--card-backs alla stessa larghezza.
+    @media (max-width: 720px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  &__spell-card {
+    width: 100%;
+    aspect-ratio: var(--card-ratio);
+    object-fit: cover;
+    border: 1px solid var(--border-gold);
+    border-radius: 8px;
+  }
+
+  // Stesso gap di .objectives__grid — le card sono ObjectiveCardComponent, già stilate da sole
+  // (objective-card.component.scss), qui serve solo il contenitore.
+  &__objectives-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-3);
+  }
+}
+
+// Tooltip ricco per le carte incantesimo preferite — stesso schema di BoardComponent/
+// PileDialogComponent (duplicato invece di condiviso: nessun mixin nel progetto, v.
+// board.component.scss). Il contenuto (#spellTip) vive nel template di ProfileComponent, quindi le
+// classi devono stare qui perché l'encapsulation Angular le leghi allo stesso componente.
+.rich-tooltip__rule {
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  margin: var(--sp-1) 0;
+}
+
+.rich-tooltip__flavor {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-muted);
+}
+
+// Banner di categoria sopra al nome — colori invertiti rispetto al resto del tooltip, stesso
+// trattamento di board.component.scss (#spellTip).
+.rich-tooltip__spell-header {
+  margin: calc(-1 * var(--sp-2)) calc(-1 * var(--sp-3)) var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--text-heading);
+  color: #3a2410;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
 }

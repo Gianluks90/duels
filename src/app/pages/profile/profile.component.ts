@@ -17,7 +17,11 @@ import { AppHeaderComponent } from '../../components/app-header/app-header.compo
 import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../../components/ui/tooltip/tooltip.directive';
 import { ProfileDialogComponent } from '../../dialogs/profile/profile-dialog.component';
-import { EMPTY_USER_STATS, type UserProfile } from '../../models/user.model';
+import { ObjectiveCardComponent } from '../../components/objective-card/objective-card.component';
+import { OBJECTIVE_CATALOG } from '../../data/objectives';
+import { SPELL_CATALOG } from '../../data/spells';
+import { buildObjectiveProgress, buildProgressSource } from '../../game/achievements';
+import { EMPTY_USER_STATS, type UserProfile, type UserStats } from '../../models/user.model';
 
 /**
  * Profilo pubblico (Achievements) — raggiungibile dalla lista amici o dal proprio menu, mostra
@@ -30,11 +34,41 @@ import { EMPTY_USER_STATS, type UserProfile } from '../../models/user.model';
   selector: 'app-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display: block' },
-  imports: [TranslatePipe, AppHeaderComponent, IconButtonComponent, TooltipDirective],
+  imports: [
+    TranslatePipe,
+    AppHeaderComponent,
+    IconButtonComponent,
+    TooltipDirective,
+    ObjectiveCardComponent,
+  ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss',
 })
 export class ProfileComponent implements OnInit {
+  /** Ogni metrica scalare di UserStats attualmente tracciata per gli Achievements (esclude le mappe
+   * libere spellCastCounts/elementsObtained/cardPatternMatches, non un singolo valore) — stesso
+   * elenco di campi coperti da ObjectiveMetric (v. objective.model.ts), riusa le etichette già
+   * tradotte in `objectives.metricLabels.*` (ObjectiveCardComponent non le legge più, ma restano nei
+   * dizionari apposta per questo). */
+  private static readonly STAT_FIELDS: readonly (keyof UserStats)[] = [
+    'gamesPlayed',
+    'wins',
+    'losses',
+    'cardsCollected',
+    'combinationsMade',
+    'spellsCast',
+    'damageDealt',
+    'healingDone',
+    'currentWinStreak',
+    'friendDuelsPlayed',
+    'friendDuelWins',
+    'shieldsGained',
+    'shieldsRemoved',
+    'freezeApplied',
+    'poisonApplied',
+    'manaConsumed',
+  ];
+
   private readonly auth = inject(AuthService);
   private readonly friendsService = inject(FriendsService);
   private readonly route = inject(ActivatedRoute);
@@ -43,17 +77,56 @@ export class ProfileComponent implements OnInit {
   protected readonly i18n = inject(TranslationService);
 
   protected readonly gearIcon = '/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly addFriendIcon = '/icons/person_add_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
   private readonly viewedUid = signal('');
   private readonly fetchedProfile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
+  /** Feedback temporaneo sul bottone "Aggiungi amico" — stesso schema di FriendsDialogComponent.linkCopied
+   * (si azzera da solo dopo 2s), niente stato di errore dedicato: chi arriva su questa pagina è già
+   * amico nella stragrande maggioranza dei casi (v. isFriend() in firestore.rules, unica via oggi per
+   * raggiungere il profilo di qualcun altro), quindi un eventuale errore Firestore è la stessa
+   * eccezione rara silenziosamente ignorata di un doppio click. */
+  protected readonly friendRequestSent = signal(false);
 
   protected readonly isSelf = computed(() => this.viewedUid() === this.auth.user()?.uid);
   protected readonly profile = computed(() =>
     this.isSelf() ? this.auth.profile() : this.fetchedProfile(),
   );
   protected readonly stats = computed(() => this.profile()?.stats ?? EMPTY_USER_STATS);
+  protected readonly statFields = ProfileComponent.STAT_FIELDS;
+  protected readonly favoriteSpellIds = computed(() => this.profile()?.favoriteSpellIds ?? []);
+
+  /** Stesso calcolo di ObjectivesComponent.objectivesProgress, sul profilo VISUALIZZATO (non
+   * necessariamente auth.profile()) — buildProgressSource/buildObjectiveProgress accettano già
+   * qualunque UserProfile/UserStats, non solo quello dell'utente loggato. */
+  private readonly objectivesProgress = computed(() => {
+    const p = this.profile();
+    return buildObjectiveProgress(
+      OBJECTIVE_CATALOG,
+      buildProgressSource(p?.stats, p ?? undefined),
+      p?.claimedObjectiveIds,
+    );
+  });
+  /** Stessa formula di ObjectivesComponent.completionPercent — "completato" (progress >= soglia),
+   * non "riscattato". */
+  protected readonly objectivesCompletionPercent = computed(() => {
+    const all = this.objectivesProgress();
+    if (all.length === 0) return 0;
+    const completed = all.filter((item) => item.progress >= item.objective.threshold).length;
+    return Math.round((completed / all.length) * 100);
+  });
+  /** Ultimi 4 obiettivi COMPLETATI, più recente prima — `completedObjectiveIds` cresce per
+   * append (v. AuthService.applyGameStats/claimObjective/..., sempre `[...precedenti, ...nuovi]`),
+   * quindi l'ordine dell'array è già cronologico: bastano gli ultimi 4 elementi, invertiti. */
+  protected readonly recentObjectives = computed(() => {
+    const recentIds = (this.profile()?.completedObjectiveIds ?? []).slice(-4).reverse();
+    const progress = this.objectivesProgress();
+    return recentIds
+      .map((id) => progress.find((item) => item.objective.id === id))
+      .filter((item) => item !== undefined);
+  });
   /** Il titolo da mostrare — risolto in testo (v. TranslationService.titleLabel, `p.title` è una
    * variant-id, non testo già pronto). Chi può EQUIPAGGIARE un titolo esclusivo (v. TITLE_CATALOG,
    * es. "Primo duellante") è ristretto altrove (firestore.rules, CollectionComponent) — una volta
@@ -63,6 +136,103 @@ export class ProfileComponent implements OnInit {
     const titleId = this.profile()?.title;
     return titleId ? this.i18n.titleLabel(titleId) : null;
   });
+  /** Dorso equipaggiato — stesso schema di CardComponent.backSrc (`/cards-back/${skin}.webp`). */
+  protected readonly cardBackSrc = computed(
+    () => `/cards-back/${this.profile()?.cardBack ?? 'dark'}.webp`,
+  );
+
+  /** Arte carta di un incantesimo preferito — stesso path di GrimoireDialogComponent.illustrationSrc. */
+  protected spellImageSrc(spellId: string): string {
+    return `/cards-spell/${spellId}.webp`;
+  }
+
+  protected spellName(spellId: string): string {
+    return this.i18n.t(`spells.${spellId}.name`);
+  }
+
+  /** null se il dizionario non ha una voce flavorText per questo incantesimo — stesso schema di
+   * BoardComponent.spellFlavor. */
+  protected spellFlavor(spellId: string): string | null {
+    const key = `spells.${spellId}.flavorText`;
+    const text = this.i18n.t(key);
+    return text === key ? null : text;
+  }
+
+  /** Stessa formattazione "ridotta" (non quella completa del Grimorio) di BoardComponent.
+   * spellEffectSummary, adattata a un id invece che a una Card intera — le carte preferite qui non
+   * sono mai carte di gioco vere, solo un id. Riusa le stesse chiavi `grimoire.effects.*`. */
+  protected spellEffectSummary(spellId: string): string {
+    const spell = SPELL_CATALOG.find((s) => s.id === spellId);
+    if (!spell) return '';
+    return spell.effects
+      .map((e) => {
+        const amount = e.amount ?? 1;
+        switch (e.type) {
+          case 'damage':
+            return spell.element
+              ? this.i18n.t('grimoire.effects.damageElement', {
+                  amount,
+                  element: this.i18n.elementLabel(spell.element),
+                })
+              : this.i18n.t('grimoire.effects.damage', { amount });
+          case 'damage_ignore_shields':
+            return this.i18n.t('grimoire.effects.damageIgnoreShields', { amount });
+          case 'damage_self':
+            return spell.element
+              ? this.i18n.t('grimoire.effects.damageSelfElement', {
+                  amount,
+                  element: this.i18n.elementLabel(spell.element),
+                })
+              : this.i18n.t('grimoire.effects.damageSelf', { amount });
+          case 'damage_halve_opponent':
+            return this.i18n.t('grimoire.effects.damageHalveOpponent');
+          case 'damage_from_fonte':
+            return this.i18n.t('grimoire.effects.damageFromFonte');
+          case 'heal':
+            return this.i18n.t('grimoire.effects.heal', { amount });
+          case 'shield_add':
+            return this.i18n.t('grimoire.effects.shieldAdd', { amount });
+          case 'shield_remove_opponent':
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.shieldRemoveOpponent', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.shieldRemoveOpponentAll');
+          case 'poison_add':
+            return this.i18n.t('grimoire.effects.poisonAdd', { amount });
+          case 'ice_add':
+            return this.i18n.t('grimoire.effects.iceAdd', { amount });
+          case 'poison_clear_self':
+            return this.i18n.t('grimoire.effects.poisonClearSelf');
+          case 'ice_clear_self':
+            return this.i18n.t('grimoire.effects.iceClearSelf');
+          case 'opponent_discard_random':
+            return this.i18n.t('grimoire.effects.opponentDiscardRandom', { amount });
+          case 'opponent_discard_hand':
+            return this.i18n.t('grimoire.effects.opponentDiscardHand');
+          case 'reveal_opponent_hand':
+            if (e.cardTierFilter === 'spell') {
+              return e.amount !== undefined
+                ? this.i18n.t('grimoire.effects.revealOpponentHandRandomSpell', {
+                    amount: e.amount,
+                  })
+                : this.i18n.t('grimoire.effects.revealOpponentHandSpell');
+            }
+            return e.amount !== undefined
+              ? this.i18n.t('grimoire.effects.revealOpponentHandRandom', { amount: e.amount })
+              : this.i18n.t('grimoire.effects.revealOpponentHand');
+          case 'fonte_reset':
+            return this.i18n.t('grimoire.effects.fonteReset');
+          case 'boost_card_mana':
+            return this.i18n.t('grimoire.effects.boostCardMana', { amount });
+          case 'consume_discards':
+            return e.consumableCardTiers?.includes('spell')
+              ? this.i18n.t('grimoire.effects.consumeDiscardsExtended', { amount })
+              : this.i18n.t('grimoire.effects.consumeDiscards', { amount });
+          default:
+            return e.type;
+        }
+      })
+      .join(' ');
+  }
 
   async ngOnInit(): Promise<void> {
     const uid = this.route.snapshot.paramMap.get('uid') ?? '';
@@ -85,6 +255,22 @@ export class ProfileComponent implements OnInit {
       this.notFound.set(true);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** Solo per un profilo altrui (v. isSelf sopra) — manda una richiesta di amicizia diretta, stesso
+   * FriendsService.sendRequest() di FriendsDialogComponent. */
+  protected async addFriend(): Promise<void> {
+    const myProfile = this.auth.profile();
+    const uid = this.viewedUid();
+    if (!myProfile || !uid) return;
+
+    try {
+      await this.friendsService.sendRequest(myProfile, uid);
+      this.friendRequestSent.set(true);
+      setTimeout(() => this.friendRequestSent.set(false), 2000);
+    } catch {
+      // v. commento su friendRequestSent sopra — nessuno stato di errore dedicato.
     }
   }
 

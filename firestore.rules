@@ -371,52 +371,68 @@ service cloud.firestore {
       ]) || claimGrantValid();
     }
 
-    function claimGrantValid() {
+    // Spezzata in una funzione per campo (era un'unica claimGrantValid con 13 `let`, oltre il
+    // massimo di 10 variabili per funzione imposto dal compilatore delle regole) — claimedGrew()
+    // ricalcola prior/nextClaimed ad ogni chiamata invece di passarli come parametro (le regole
+    // Firestore non supportano funzioni con parametri "pesanti" come liste qui), costo trascurabile.
+    function claimedGrew() {
+      let priorClaimed = resource.data.get('claimedObjectiveIds', []);
+      let nextClaimed = request.resource.data.get('claimedObjectiveIds', priorClaimed);
+      return nextClaimed.size() > priorClaimed.size();
+    }
+
+    function claimedIdsValid() {
       let priorClaimed = resource.data.get('claimedObjectiveIds', []);
       let nextClaimed = request.resource.data.get('claimedObjectiveIds', priorClaimed);
       let completed = request.resource.data.get('completedObjectiveIds', []);
-      let priorCardBacks = resource.data.get('unlockedCardBacks', []);
-      let nextCardBacks = request.resource.data.get('unlockedCardBacks', priorCardBacks);
-      let priorBackgrounds = resource.data.get('unlockedBackgrounds', []);
-      let nextBackgrounds = request.resource.data.get('unlockedBackgrounds', priorBackgrounds);
-      let priorTitles = resource.data.get('unlockedTitles', []);
-      let nextTitles = request.resource.data.get('unlockedTitles', priorTitles);
-      let priorElementVariants = resource.data.get('unlockedElementVariants', []);
-      let nextElementVariants = request.resource.data.get('unlockedElementVariants', priorElementVariants);
-      let claimed = nextClaimed.size() > priorClaimed.size();
-      // A differenza di sfondi/titoli/varianti (una sola fonte legittima: il riscatto obiettivo), i
-      // dorsi possono crescere anche via riscatto CODICE (lastRedeemedCode, v. redeemValid/
-      // redeemGrantValid sopra) — quella scrittura non tocca mai claimedObjectiveIds, quindi qui
-      // basta verificare che sia comunque un riscatto codice "in forma", la validazione vera del
-      // contenuto resta in redeemGrantValid().
-      let redeemedCode = changedKeys().hasAny(['lastRedeemedCode']);
-      // I titoli sono l'unico reward che può aggiungere PIÙ di un id in un solo riscatto: le
-      // varianti di genere (v. data/titles.ts, GENDERED_TITLE_IDS) — al massimo 3 (maschile/
-      // femminile/neutro) per obiettivo. Dorsi/sfondi/varianti elemento restano a +1, un solo id per
-      // riscatto. size() <= 200 su tutti e cinque (stesso fix applicato a
-      // completedObjectiveIdsValid): il tetto di crescita per singola scrittura da solo non
-      // impedirebbe a nessuno di questi array di gonfiarsi senza limite ripetendo il riscatto nel
-      // tempo (claimedObjectiveIds può persino contenere duplicati di un id già completato e restare
-      // comunque "+1 a scrittura" valido) — 200 è un tetto largo apposta, ben oltre qualunque
-      // catalogo realistico (11 elementi collezionabili oggi, v. COLLECTIBLE_ELEMENT_IDS).
+      // size() <= 200: il tetto di crescita "+1 a scrittura" da solo non impedirebbe all'array di
+      // gonfiarsi senza limite ripetendo il riscatto nel tempo (può persino contenere duplicati di
+      // un id già completato e restare comunque valido) — 200 è un tetto largo apposta, ben oltre
+      // qualunque catalogo realistico.
       return completed.hasAll(nextClaimed) &&
         nextClaimed.hasAll(priorClaimed) && nextClaimed.size() <= priorClaimed.size() + 1 &&
-        nextClaimed.size() <= 200 &&
-        nextCardBacks.hasAll(priorCardBacks) && nextCardBacks.size() <= priorCardBacks.size() + 1 &&
-        nextCardBacks.size() <= 200 &&
-        nextBackgrounds.hasAll(priorBackgrounds) && nextBackgrounds.size() <= priorBackgrounds.size() + 1 &&
-        nextBackgrounds.size() <= 200 &&
-        nextTitles.hasAll(priorTitles) && nextTitles.size() <= priorTitles.size() + 3 &&
-        nextTitles.size() <= 200 &&
-        nextElementVariants.hasAll(priorElementVariants) &&
-        nextElementVariants.size() <= priorElementVariants.size() + 1 &&
-        nextElementVariants.size() <= 200 &&
-        // ogni array può crescere solo insieme al proprio riscatto legittimo — mai da una scrittura
-        // scollegata.
-        (nextCardBacks.size() == priorCardBacks.size() || claimed || redeemedCode) &&
-        (nextBackgrounds.size() == priorBackgrounds.size() || claimed) &&
-        (nextTitles.size() == priorTitles.size() || claimed) &&
-        (nextElementVariants.size() == priorElementVariants.size() || claimed);
+        nextClaimed.size() <= 200;
+    }
+
+    // A differenza di sfondi/titoli/varianti (una sola fonte legittima: il riscatto obiettivo), i
+    // dorsi possono crescere anche via riscatto CODICE (lastRedeemedCode, v. redeemValid/
+    // redeemGrantValid sopra) — quella scrittura non tocca mai claimedObjectiveIds, quindi qui basta
+    // verificare che sia comunque un riscatto codice "in forma", la validazione vera del contenuto
+    // resta in redeemGrantValid().
+    function cardBacksClaimValid() {
+      let prior = resource.data.get('unlockedCardBacks', []);
+      let next = request.resource.data.get('unlockedCardBacks', prior);
+      let redeemedCode = changedKeys().hasAny(['lastRedeemedCode']);
+      return next.hasAll(prior) && next.size() <= prior.size() + 1 && next.size() <= 200 &&
+        (next.size() == prior.size() || claimedGrew() || redeemedCode);
+    }
+
+    function backgroundsClaimValid() {
+      let prior = resource.data.get('unlockedBackgrounds', []);
+      let next = request.resource.data.get('unlockedBackgrounds', prior);
+      return next.hasAll(prior) && next.size() <= prior.size() + 1 && next.size() <= 200 &&
+        (next.size() == prior.size() || claimedGrew());
+    }
+
+    // Unico reward che può aggiungere PIÙ di un id in un solo riscatto: le varianti di genere (v.
+    // data/titles.ts, GENDERED_TITLE_IDS) — al massimo 3 (maschile/femminile/neutro) per obiettivo.
+    function titlesClaimValid() {
+      let prior = resource.data.get('unlockedTitles', []);
+      let next = request.resource.data.get('unlockedTitles', prior);
+      return next.hasAll(prior) && next.size() <= prior.size() + 3 && next.size() <= 200 &&
+        (next.size() == prior.size() || claimedGrew());
+    }
+
+    function elementVariantsClaimValid() {
+      let prior = resource.data.get('unlockedElementVariants', []);
+      let next = request.resource.data.get('unlockedElementVariants', prior);
+      return next.hasAll(prior) && next.size() <= prior.size() + 1 && next.size() <= 200 &&
+        (next.size() == prior.size() || claimedGrew());
+    }
+
+    function claimGrantValid() {
+      return claimedIdsValid() && cardBacksClaimValid() && backgroundsClaimValid() &&
+        titlesClaimValid() && elementVariantsClaimValid();
     }
 
     match /users/{userId} {
