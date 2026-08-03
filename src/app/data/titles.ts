@@ -52,6 +52,13 @@ export const GENDERED_TITLE_IDS: ReadonlySet<string> = new Set<string>([
   'prepared',
   'lucky',
   'poisoner',
+  'tempered',
+  'charmed',
+  'magnetic',
+  'wand_master',
+  'devilish',
+  'armored',
+  'daring',
 ]);
 
 /** Gli id concreti da aggiungere a `unlockedTitles` per il reward titolo di un obiettivo (o per un
@@ -155,6 +162,20 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'icy', unlock: { kind: 'objective', objectiveId: 'freeze_100' }, suffix: true },
   { id: 'poisoner', unlock: { kind: 'objective', objectiveId: 'poison_50' } },
   { id: 'plague', unlock: { kind: 'objective', objectiveId: 'poison_100' }, suffix: true },
+  { id: 'viper', unlock: { kind: 'objective', objectiveId: 'poison_finish_win' } },
+  // Categoria "Bacchetta" (documentation/achievement-titles.md).
+  { id: 'provident', unlock: { kind: 'objective', objectiveId: 'wand_tip_10' } },
+  { id: 'farsighted', unlock: { kind: 'objective', objectiveId: 'wand_tip_50' } },
+  { id: 'tempered', unlock: { kind: 'objective', objectiveId: 'wand_body_10' } },
+  { id: 'impregnable', unlock: { kind: 'objective', objectiveId: 'wand_body_50' } },
+  { id: 'charmed', unlock: { kind: 'objective', objectiveId: 'wand_handle_10' } },
+  { id: 'magnetic', unlock: { kind: 'objective', objectiveId: 'wand_handle_50' } },
+  { id: 'wand_master', unlock: { kind: 'objective', objectiveId: 'wand_actions_300' } },
+  { id: 'devilish', unlock: { kind: 'objective', objectiveId: 'black_flame_win' } },
+  { id: 'infernal', unlock: { kind: 'objective', objectiveId: 'wand_self_resist' } },
+  { id: 'armored', unlock: { kind: 'objective', objectiveId: 'wand_resist_10' } },
+  { id: 'indestructible', unlock: { kind: 'objective', objectiveId: 'wand_resist_50' } },
+  { id: 'daring', unlock: { kind: 'objective', objectiveId: 'wand_self_vulnerable' } },
 ];
 
 /** Variant-id EQUIPAGGIABILI senza passare da un riscatto obiettivo, PER UN utente specifico —

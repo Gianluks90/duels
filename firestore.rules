@@ -27,9 +27,11 @@ service cloud.firestore {
 
     // Deve combaciare con public/config/card-backs.json — dorsi sempre selezionabili anche senza
     // possederli esplicitamente in unlockedCardBacks (profili creati prima di questa feature, o che
-    // non hanno mai riscattato nulla).
+    // non hanno mai riscattato nulla). 'light' è uscito da qui (ora reward di win_10, v.
+    // data/card-backs.ts) — rottura deliberata del "il gratuito resta gratuito per sempre" ancora
+    // valido per freeBackgrounds() sotto, accettata consapevolmente (v. commento in card-backs.ts).
     function freeCardBacks() {
-      return ['dark', 'light'];
+      return ['dark'];
     }
 
     function cardBackValid() {
@@ -260,6 +262,24 @@ service cloud.firestore {
         // Tetto coerente con spellsCast sopra (max 50 lanci/partita) per il manaCost più alto del
         // catalogo (6, v. SPELL_CATALOG in data/spells.ts): 50 * 6 = 300.
         statsDelta('manaConsumed') >= 0 && statsDelta('manaConsumed') <= 300 &&
+        // tipHeld: la punta si consuma/libera a fine turno se non usata, quindi può ripetersi più
+        // volte a partita — stesso tetto di combinationsMade/spellsCast sopra. bodySocketed/
+        // handleSocketed: al massimo 1 a partita, lo slot si riempie una sola volta e non è mai
+        // sovrascrivibile (v. socketElement in turn-engine.ts). poisonFinishWins: al massimo 1 a
+        // partita, v. wonWithPoisonFinish in game/achievements.ts.
+        statsDelta('tipHeld') >= 0 && statsDelta('tipHeld') <= 50 &&
+        statsDelta('bodySocketed') >= 0 && statsDelta('bodySocketed') <= 1 &&
+        statsDelta('handleSocketed') >= 0 && statsDelta('handleSocketed') <= 1 &&
+        statsDelta('poisonFinishWins') >= 0 && statsDelta('poisonFinishWins') <= 1 &&
+        // wandDamageResisted/selfDamageResisted: nessun tetto "1 a partita" qui, a differenza di
+        // bodySocketed/handleSocketed sopra — Fiamma Nera (l'unico incantesimo con damage_self) può
+        // essere craftata e lanciata più volte nella stessa partita. Tetto coerente con
+        // spellsCast/freezeApplied sopra.
+        statsDelta('wandDamageResisted') >= 0 && statsDelta('wandDamageResisted') <= 100 &&
+        statsDelta('selfDamageResisted') >= 0 && statsDelta('selfDamageResisted') <= 50 &&
+        // selfVulnerableWins: come poisonFinishWins sopra, il "+1" è legato all'ESITO (vinta), non
+        // al numero di volte in cui l'evento è scattato — al massimo 1 a partita.
+        statsDelta('selfVulnerableWins') >= 0 && statsDelta('selfVulnerableWins') <= 1 &&
         winStreakValid() &&
         friendDuelStatsValid();
     }

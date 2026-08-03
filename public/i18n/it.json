@@ -355,7 +355,8 @@
       "elements": "Elementi",
       "spellsCast": "Incantesimi",
       "combat": "Combattimento",
-      "deck": "Mazzo"
+      "deck": "Mazzo",
+      "wand": "Bacchetta"
     },
     "metricLabels": {
       "manaConsumed": "Mana consumato",
@@ -447,7 +448,20 @@
       "freeze_50": "Morso del gelo",
       "freeze_100": "Inverno perenne",
       "poison_50": "Dose letale",
-      "poison_100": "Epidemia"
+      "poison_100": "Epidemia",
+      "poison_finish_win": "Colpo di coda",
+      "wand_tip_10": "Lo tengo per dopo",
+      "wand_tip_50": "Sempre un passo avanti",
+      "wand_body_10": "Dare e avere",
+      "wand_body_50": "Accettare il rischio",
+      "wand_handle_10": "Preferisco questo",
+      "wand_handle_50": "Puntare tutto",
+      "wand_actions_300": "Usa bene i tuoi strumenti",
+      "black_flame_win": "Gioco col fuoco",
+      "wand_self_resist": "Io sono fuoco",
+      "wand_resist_10": "Ridurre il rischio",
+      "wand_resist_50": "A prova di tutto",
+      "wand_self_vulnerable": "Non temo nulla"
     },
     "descriptions": {
       "rulebook_read": "Leggi tutto il regolamento, ti servirà!",
@@ -503,7 +517,20 @@
       "freeze_50": "Applica 50 Congelamenti all'avversario",
       "freeze_100": "Applica 100 Congelamenti all'avversario",
       "poison_50": "Applica 50 livelli di Avvelenamento all'avversario",
-      "poison_100": "Applica 100 livelli di Avvelenamento all'avversario"
+      "poison_100": "Applica 100 livelli di Avvelenamento all'avversario",
+      "poison_finish_win": "Vinci un duello infliggendo l'ultimo danno con il Veleno",
+      "wand_tip_10": "Trattieni un elemento alla punta della bacchetta 15 volte",
+      "wand_tip_50": "Trattieni un elemento alla punta della bacchetta 50 volte",
+      "wand_body_10": "Incastona un elemento nell'asta della bacchetta 15 volte",
+      "wand_body_50": "Incastona un elemento nell'asta della bacchetta 50 volte",
+      "wand_handle_10": "Incastona un elemento nel manico della bacchetta 15 volte",
+      "wand_handle_50": "Incastona un elemento nel manico della bacchetta 50 volte",
+      "wand_actions_300": "Trattieni o incastona un elemento nella bacchetta, in qualunque combinazione, per un totale di 300 volte",
+      "black_flame_win": "Vinci un duello dopo aver lanciato la Fiamma Nera",
+      "wand_self_resist": "Lancia la Fiamma Nera con Fuoco incastonato nell'asta, riducendo il danno su te stesso",
+      "wand_resist_10": "Fai in modo che la tua bacchetta riduca un danno che stai per subire, 10 volte",
+      "wand_resist_50": "Fai in modo che la tua bacchetta riduca un danno che stai per subire, 50 volte",
+      "wand_self_vulnerable": "Vinci un duello dopo aver usato la Fiamma Nera con Acqua incastonata nell'asta (vulnerabile al Fuoco, danno maggiorato)"
     }
   },
 
@@ -553,7 +580,7 @@
       },
       "light": {
         "name": "Chiaro",
-        "description": "Il suo contraltare luminoso, sempre a disposizione di ogni mago."
+        "description": "Il suo contraltare luminoso — riservato a chi ha già dimostrato il proprio valore in duello."
       },
       "golden": {
         "name": "Dorato",
@@ -582,6 +609,10 @@
       "friendship": {
         "name": "Amicizia",
         "description": "Due cuori intrecciati per chi condivide la magia di Duels con un amico."
+      },
+      "wands": {
+        "name": "Bacchette incrociate",
+        "description": "Un rischio calcolato, corso a viso aperto — per chi ha osato usare la propria debolezza come arma."
       }
     },
     "backgroundCatalog": {
@@ -698,7 +729,34 @@
       "poisoner_m": { "name": "l'avvelenatore" },
       "poisoner_f": { "name": "l'avvelenatrice" },
       "poisoner_x": { "name": "l'avvelenator*" },
-      "plague": { "name": "della Pestilenza" }
+      "plague": { "name": "della Pestilenza" },
+      "viper": { "name": "Vipera" },
+      "provident": { "name": "Previdente" },
+      "farsighted": { "name": "Lungimirante" },
+      "tempered_m": { "name": "Temprato" },
+      "tempered_f": { "name": "Temprata" },
+      "tempered_x": { "name": "Tempr*" },
+      "impregnable": { "name": "Inespugnabile" },
+      "charmed_m": { "name": "Incantato" },
+      "charmed_f": { "name": "Incantata" },
+      "charmed_x": { "name": "Incantat*" },
+      "magnetic_m": { "name": "Magnetico" },
+      "magnetic_f": { "name": "Magnetica" },
+      "magnetic_x": { "name": "Magnetic*" },
+      "wand_master_m": { "name": "Maestro di bacchetta" },
+      "wand_master_f": { "name": "Maestra di bacchetta" },
+      "wand_master_x": { "name": "Maestr* di bacchetta" },
+      "devilish_m": { "name": "Diabolico" },
+      "devilish_f": { "name": "Diabolica" },
+      "devilish_x": { "name": "Diabolic*" },
+      "infernal": { "name": "Infernale" },
+      "armored_m": { "name": "Corazzato" },
+      "armored_f": { "name": "Corazzata" },
+      "armored_x": { "name": "Corazzat*" },
+      "indestructible": { "name": "Indistruttibile" },
+      "daring_m": { "name": "Temerario" },
+      "daring_f": { "name": "Temeraria" },
+      "daring_x": { "name": "Temerari*" }
     }
   },
 
@@ -835,6 +893,10 @@
       "wandSocketedBodyOther": "{name} ha incastonato {element} nell'asta della bacchetta.",
       "wandSocketedHandleSelf": "Hai incastonato {element} nel manico della bacchetta.",
       "wandSocketedHandleOther": "{name} ha incastonato {element} nel manico della bacchetta.",
+      "wandResistedSelf": "La tua bacchetta ha ridotto il danno grazie alla Resistenza.",
+      "wandResistedOther": "La bacchetta di {name} ha ridotto il danno grazie alla Resistenza.",
+      "wandVulnerableSelf": "La tua bacchetta ha aumentato il danno per la Vulnerabilità.",
+      "wandVulnerableOther": "La bacchetta di {name} ha aumentato il danno per la Vulnerabilità.",
       "handRevealedFullSelf": "Hai rivelato l'intera mano dell'avversario.",
       "handRevealedFullOther": "{name} ha rivelato la tua intera mano.",
       "handRevealedPartialSelf": "Hai rivelato una carta della mano avversaria.",

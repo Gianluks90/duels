@@ -177,6 +177,42 @@ export interface UserStats {
    * stato FINALE della partita (v. game/achievements.ts computeCardPatternMatches), non
    * sull'eventLog. */
   cardPatternMatches: Record<string, number>;
+  /** Volte in cui hai trattenuto un elemento alla punta della bacchetta (Achievements, "Previdente"/
+   * "Lungimirante") — derivato da `GameLogEntryData.wandTipHeld` (già loggato per il Log di gioco,
+   * mai letto da nessun achievement prima d'ora), stesso principio di `shieldsGained`. */
+  tipHeld: number;
+  /** Volte in cui hai incastonato un elemento nell'ASTA della bacchetta (Achievements, "Temprato/
+   * Temprata/Tempr*"/"Inespugnabile") — derivato da `GameLogEntryData.wandSocketed` con
+   * `slot === 'body'`. Al massimo 1 per partita (lo slot si riempie una sola volta, mai
+   * sovrascrivibile — v. `socketElement` in `turn-engine.ts`). */
+  bodySocketed: number;
+  /** Come `bodySocketed` sopra ma per il MANICO (Achievements, "Incantato/Incantata/Incantat*"/
+   * "Magnetico/Magnetica/Magnetic*") — `GameLogEntryData.wandSocketed` con `slot === 'handle'`. */
+  handleSocketed: number;
+  /** Vittorie in cui l'ultimo danno inflitto all'avversario è stato Veleno (Achievements, "Vipera")
+   * — derivato guardando l'ULTIMA voce `damage` sul perdente nell'eventLog di una partita vinta
+   * (`DamageLogSource.kind === 'poison'`, v. `wonWithPoisonFinish` in `game/achievements.ts`). Al
+   * massimo 1 per partita: la vittoria si decide subito dopo ogni reducer (`resolveVictory`), quindi
+   * quella voce è per forza il colpo letale, non una tra tante. */
+  poisonFinishWins: number;
+  /** Volte in cui la TUA bacchetta ha ridotto un danno che stavi per subire, da qualunque fonte
+   * (Achievements, "Corazzato/Corazzata/Corazzat*"/"Indistruttibile") — derivato da
+   * `GameLogEntryData.wandResistanceTriggered` con `outcome === 'resisted'` (qualunque
+   * `selfInflicted`). `selfDamageResisted` sotto ne è un sottoinsieme (solo `selfInflicted`), non un
+   * contatore indipendente: ogni volta che scatta "Infernale" conta ANCHE qui. */
+  wandDamageResisted: number;
+  /** Sottoinsieme di `wandDamageResisted` sopra: solo i danni AUTO-inflitti ridotti dalla propria
+   * Resistenza (Achievements, "Infernale") — oggi possibile solo con Fiamma Nera, l'unico
+   * incantesimo con `damage_self`. A differenza di `wandDamageResisted`, non richiede una soglia
+   * alta: basta che sia successo una volta. */
+  selfDamageResisted: number;
+  /** Vittorie in cui, in qualunque momento della partita, la TUA Vulnerabilità ha aumentato un danno
+   * AUTO-inflitto (Achievements, "Temerario/Temeraria/Temerari*", "Non temo nulla") — derivato da
+   * `wonWithSelfVulnerable` in `game/achievements.ts` (`GameLogEntryData.wandResistanceTriggered`,
+   * `outcome === 'vulnerable' && selfInflicted`). Al massimo 1 per partita, come
+   * `poisonFinishWins`: qui non serve l'ULTIMA occorrenza (a differenza di quello), ma il "+1" resta
+   * comunque legato all'ESITO della partita (vinta), non al numero di volte in cui è successo. */
+  selfVulnerableWins: number;
 }
 
 export const EMPTY_USER_STATS: UserStats = {
@@ -199,4 +235,11 @@ export const EMPTY_USER_STATS: UserStats = {
   elementsObtained: {},
   manaConsumed: 0,
   cardPatternMatches: {},
+  tipHeld: 0,
+  bodySocketed: 0,
+  handleSocketed: 0,
+  poisonFinishWins: 0,
+  wandDamageResisted: 0,
+  selfDamageResisted: 0,
+  selfVulnerableWins: 0,
 };

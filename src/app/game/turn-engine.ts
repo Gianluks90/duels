@@ -925,25 +925,54 @@ function resolvePreparation(state: GameState, target: PlayerId): GameState {
   };
 }
 
+/** Esito dell'asta della bacchetta su un danno — v. bodyResistanceOutcome sotto. */
+type BodyResistanceOutcome = 'resisted' | 'vulnerable' | 'none';
+
 /**
- * Asta della bacchetta (regolamento 1.4.2): modifica il danno subito in base all'elemento incastonato
- * dal bersaglio — Resistenza (-1) se coincide con l'elemento della magia, Vulnerabilità (+1) se
- * coincide con il suo opposto, invariato altrimenti (incluse le magie senza elemento, es.
- * starter_bolt, e un'asta ancora vuota — 1.4.2: "non ha alcuna abilità finché non vi viene
- * incastonato un elemento base"). Il danno non scende mai sotto 0 per via della sola Resistenza.
- * Si applica solo all'ammontare base dell'effetto, non al bonus di mana caotico (3.2.3, calcolato
- * separatamente in castSpell): quel bonus dipende dal tipo di carta usata per pagare, non
- * dall'elemento della magia.
+ * Asta della bacchetta (regolamento 1.4.2): quale esito ha subito un danno in base all'elemento
+ * incastonato dal bersaglio — 'resisted' se coincide con l'elemento della magia, 'vulnerable' se
+ * coincide con il suo opposto, 'none' altrimenti (incluse le magie senza elemento, es. starter_bolt,
+ * e un'asta ancora vuota — 1.4.2: "non ha alcuna abilità finché non vi viene incastonato un elemento
+ * base"). Separata da applyResistanceOutcome sotto (che applica solo il numero) perché l'ESITO serve
+ * anche a logWandResistance, per gli Achievements "Infernale"/"Corazzato" (v. game/achievements.ts) —
+ * senza una voce di log dedicata, un danno ridotto da Resistenza era indistinguibile da uno ridotto
+ * dallo scudo (absorbWithShield sotto) guardando solo l'ammontare finale.
  */
-function applyBodyResistance(
-  amount: number,
+function bodyResistanceOutcome(
   spellElement: BaseElement | undefined,
   targetBodySocket: BaseElement | null,
-): number {
-  if (!spellElement || !targetBodySocket) return amount;
-  if (spellElement === targetBodySocket) return Math.max(0, amount - 1);
-  if (spellElement === ELEMENT_OPPOSITES[targetBodySocket]) return amount + 1;
+): BodyResistanceOutcome {
+  if (!spellElement || !targetBodySocket) return 'none';
+  if (spellElement === targetBodySocket) return 'resisted';
+  if (spellElement === ELEMENT_OPPOSITES[targetBodySocket]) return 'vulnerable';
+  return 'none';
+}
+
+/** Applica l'esito di bodyResistanceOutcome sopra a un ammontare di danno — Resistenza -1 (mai sotto
+ * 0), Vulnerabilità +1. Si applica solo all'ammontare base dell'effetto, non al bonus di mana caotico
+ * (3.2.3, calcolato separatamente in castSpell): quel bonus dipende dal tipo di carta usata per
+ * pagare, non dall'elemento della magia. */
+function applyResistanceOutcome(amount: number, outcome: BodyResistanceOutcome): number {
+  if (outcome === 'resisted') return Math.max(0, amount - 1);
+  if (outcome === 'vulnerable') return amount + 1;
   return amount;
+}
+
+/** Logga bodyResistanceOutcome quando scatta davvero (mai per 'none') — `role` è il proprietario
+ * della bacchetta che ha determinato l'esito, cioè chi STA PER SUBIRE il danno (l'avversario per
+ * 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self', v. applySpellEffect).
+ * `selfInflicted` distingue il caso "Infernale"/"Temerario" (asta propria su un danno AUTO-inflitto,
+ * oggi possibile solo con Fiamma Nera) dal caso generale "Corazzato" (qualunque danno ricevuto, da
+ * qualunque fonte) — v. game/achievements.ts. */
+function logWandResistance(
+  state: GameState,
+  role: PlayerId,
+  outcome: BodyResistanceOutcome,
+  selfInflicted: boolean,
+): GameState {
+  return outcome === 'none'
+    ? state
+    : appendLog(state, { type: 'wandResistanceTriggered', role, outcome, selfInflicted });
 }
 
 /** Scudo (2.3.3): assorbe danno prima dei PS — l'eccedenza rispetto allo scudo disponibile passa a hp, lo scudo assorbito si consuma (mai sotto 0, mai oltre `amount`). Usata solo dal case 'damage' sotto — 'damage_ignore_shields' bypassa questa funzione apposta, va dritto a hp. */
@@ -973,7 +1002,7 @@ function countAdvancedPairsInFonte(fonteElementale: readonly Card[]): number {
 
 const FONTE_PAIR_DAMAGE = 3;
 
-/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'damage_halve_opponent'/'damage_from_fonte'/'heal'/'shield_add'/'shield_remove_opponent'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self'/'opponent_discard_random'/'opponent_discard_hand'/'reveal_opponent_hand'/'fonte_reset'/'boost_card_mana'/'consume_discards' per ora; 'element_immunity' resta l'unico SpellEffectType senza risoluzione (no-op, rimandato — vedi spell.model.ts). `pending` porta sia il mana speciale (3.2.2/3.2.3, calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente — vitale→heal, caotico→damage/damage_ignore_shields/damage_from_fonte, tutti e 3 danno all'avversario "nel modo standard", altrimenti resta inerte, gli altri non ne beneficiano di proposito) sia l'eventuale carta/e bersaglio scelte dal giocatore (`targetCardId` per 'boost_card_mana', `targetCardIds` per 'consume_discards' — TARGET_CARD_EFFECT_TYPES/MULTI_TARGET_CARD_EFFECT_TYPES in spell.model.ts). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, applyBodyResistance) sui tre effetti danno "normali" (non 'damage_from_fonte': `element` è sempre assente sulla sua formula, 4 basi miste senza un elemento portante, vedi risk in SPELL_CATALOG), ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — 'damage_halve_opponent' ne resta fuori apposta (dimezza l'hp corrente, un valore già post-asta/scudo di colpi precedenti, non un nuovo danno da filtrare) e gli altri non sono mai elementali. Nessun clamp su hp qui: può scendere sotto 0, la condizione di vittoria (resolveVictory, in fondo al file) se ne accorge comunque con un semplice `<= 0`, applicata centralmente da GameEngineService.mutate() dopo ogni reducer. */
+/** Applica un singolo effetto di un incantesimo lanciato — 'damage'/'damage_ignore_shields'/'damage_self'/'damage_halve_opponent'/'damage_from_fonte'/'heal'/'shield_add'/'shield_remove_opponent'/'poison_add'/'poison_clear_self'/'ice_add'/'ice_clear_self'/'opponent_discard_random'/'opponent_discard_hand'/'reveal_opponent_hand'/'fonte_reset'/'boost_card_mana'/'consume_discards' per ora; 'element_immunity' resta l'unico SpellEffectType senza risoluzione (no-op, rimandato — vedi spell.model.ts). `pending` porta sia il mana speciale (3.2.2/3.2.3, calcolato al pagamento in castSpell: si somma solo all'effetto corrispondente — vitale→heal, caotico→damage/damage_ignore_shields/damage_from_fonte, tutti e 3 danno all'avversario "nel modo standard", altrimenti resta inerte, gli altri non ne beneficiano di proposito) sia l'eventuale carta/e bersaglio scelte dal giocatore (`targetCardId` per 'boost_card_mana', `targetCardIds` per 'consume_discards' — TARGET_CARD_EFFECT_TYPES/MULTI_TARGET_CARD_EFFECT_TYPES in spell.model.ts). `spellElement` (Spell.element) alimenta la Resistenza/Vulnerabilità dell'asta (1.4.2, bodyResistanceOutcome/applyResistanceOutcome) sui tre effetti danno "normali" (non 'damage_from_fonte': `element` è sempre assente sulla sua formula, 4 basi miste senza un elemento portante, vedi risk in SPELL_CATALOG), ciascuno sull'asta del proprio bersaglio (avversario per 'damage'/'damage_ignore_shields', il lanciatore stesso per 'damage_self') — 'damage_halve_opponent' ne resta fuori apposta (dimezza l'hp corrente, un valore già post-asta/scudo di colpi precedenti, non un nuovo danno da filtrare) e gli altri non sono mai elementali. Nessun clamp su hp qui: può scendere sotto 0, la condizione di vittoria (resolveVictory, in fondo al file) se ne accorge comunque con un semplice `<= 0`, applicata centralmente da GameEngineService.mutate() dopo ogni reducer. */
 function applySpellEffect(
   state: GameState,
   casterRole: PlayerId,
@@ -986,33 +1015,35 @@ function applySpellEffect(
   switch (effect.type) {
     case 'damage': {
       const opponent = state.players[opponentRole];
-      const amount =
-        applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
-        pending.chaoticBonus;
+      const outcome = bodyResistanceOutcome(spellElement, opponent.wand.bodySocket);
+      const amount = applyResistanceOutcome(effect.amount ?? 0, outcome) + pending.chaoticBonus;
       const { hpLoss, shieldLeft } = absorbWithShield(opponent.tokens.shield, amount);
       const next = updatePlayer(state, opponentRole, {
         hp: opponent.hp - hpLoss,
         tokens: { ...opponent.tokens, shield: shieldLeft },
       });
-      return logDamage(next, opponentRole, hpLoss, { kind: 'spell', spellId });
+      const logged = logDamage(next, opponentRole, hpLoss, { kind: 'spell', spellId });
+      return logWandResistance(logged, opponentRole, outcome, false);
     }
     case 'damage_ignore_shields': {
       const opponent = state.players[opponentRole];
-      const amount =
-        applyBodyResistance(effect.amount ?? 0, spellElement, opponent.wand.bodySocket) +
-        pending.chaoticBonus;
+      const outcome = bodyResistanceOutcome(spellElement, opponent.wand.bodySocket);
+      const amount = applyResistanceOutcome(effect.amount ?? 0, outcome) + pending.chaoticBonus;
       const next = updatePlayer(state, opponentRole, { hp: opponent.hp - amount });
-      return logDamage(next, opponentRole, amount, { kind: 'spell', spellId });
+      const logged = logDamage(next, opponentRole, amount, { kind: 'spell', spellId });
+      return logWandResistance(logged, opponentRole, outcome, false);
     }
     case 'damage_self': {
       const caster = state.players[casterRole];
-      const amount = applyBodyResistance(effect.amount ?? 0, spellElement, caster.wand.bodySocket);
+      const outcome = bodyResistanceOutcome(spellElement, caster.wand.bodySocket);
+      const amount = applyResistanceOutcome(effect.amount ?? 0, outcome);
       const { hpLoss, shieldLeft } = absorbWithShield(caster.tokens.shield, amount);
       const next = updatePlayer(state, casterRole, {
         hp: caster.hp - hpLoss,
         tokens: { ...caster.tokens, shield: shieldLeft },
       });
-      return logDamage(next, casterRole, hpLoss, { kind: 'spell', spellId });
+      const logged = logDamage(next, casterRole, hpLoss, { kind: 'spell', spellId });
+      return logWandResistance(logged, casterRole, outcome, true);
     }
     case 'damage_halve_opponent': {
       const opponent = state.players[opponentRole];

@@ -352,7 +352,8 @@
       "elements": "Elements",
       "spellsCast": "Spells",
       "combat": "Combat",
-      "deck": "Deck"
+      "deck": "Deck",
+      "wand": "Wand"
     },
     "metricLabels": {
       "manaConsumed": "Mana spent",
@@ -444,7 +445,20 @@
       "freeze_50": "Frostbite",
       "freeze_100": "Endless Winter",
       "poison_50": "Lethal Dose",
-      "poison_100": "Outbreak"
+      "poison_100": "Outbreak",
+      "poison_finish_win": "Sting in the Tail",
+      "wand_tip_10": "Saving It for Later",
+      "wand_tip_50": "Always One Step Ahead",
+      "wand_body_10": "Give and Take",
+      "wand_body_50": "Accepting the Risk",
+      "wand_handle_10": "I Prefer This One",
+      "wand_handle_50": "All In",
+      "wand_actions_300": "Use Your Tools Well",
+      "black_flame_win": "Playing with Fire",
+      "wand_self_resist": "I Am Fire",
+      "wand_resist_10": "Lowering the Risk",
+      "wand_resist_50": "Proof Against Anything",
+      "wand_self_vulnerable": "I Fear Nothing"
     },
     "descriptions": {
       "rulebook_read": "Read the whole rulebook — it'll come in handy!",
@@ -500,7 +514,20 @@
       "freeze_50": "Apply 50 Freeze to your opponent",
       "freeze_100": "Apply 100 Freeze to your opponent",
       "poison_50": "Apply 50 levels of Poison to your opponent",
-      "poison_100": "Apply 100 levels of Poison to your opponent"
+      "poison_100": "Apply 100 levels of Poison to your opponent",
+      "poison_finish_win": "Win a duel by dealing the final blow with Poison",
+      "wand_tip_10": "Hold an element at the tip of your wand 15 times",
+      "wand_tip_50": "Hold an element at the tip of your wand 50 times",
+      "wand_body_10": "Socket an element into your wand's body 15 times",
+      "wand_body_50": "Socket an element into your wand's body 50 times",
+      "wand_handle_10": "Socket an element into your wand's handle 15 times",
+      "wand_handle_50": "Socket an element into your wand's handle 50 times",
+      "wand_actions_300": "Hold or socket an element in your wand, in any combination, a total of 300 times",
+      "black_flame_win": "Win a duel after casting Black Flame",
+      "wand_self_resist": "Cast Black Flame with Fire socketed in your wand's body, reducing the damage to yourself",
+      "wand_resist_10": "Have your wand reduce damage you're about to take, 10 times",
+      "wand_resist_50": "Have your wand reduce damage you're about to take, 50 times",
+      "wand_self_vulnerable": "Win a duel after using Black Flame with Water socketed in your wand's body (vulnerable to Fire, increased damage)"
     }
   },
 
@@ -550,7 +577,7 @@
       },
       "light": {
         "name": "Light",
-        "description": "Its luminous counterpart, always available to every mage."
+        "description": "Its luminous counterpart — reserved for those who have already proven their worth in duel."
       },
       "golden": {
         "name": "Golden",
@@ -579,6 +606,10 @@
       "friendship": {
         "name": "Friendship",
         "description": "Two intertwined hearts for those who share the magic of Duels with a friend."
+      },
+      "wands": {
+        "name": "Crossed Wands",
+        "description": "A calculated risk, taken head-on — for those who dared to turn their own weakness into a weapon."
       }
     },
     "backgroundCatalog": {
@@ -695,7 +726,34 @@
       "poisoner_m": { "name": "the Poisoner" },
       "poisoner_f": { "name": "the Poisoner" },
       "poisoner_x": { "name": "the Poisoner" },
-      "plague": { "name": "of the Plague" }
+      "plague": { "name": "of the Plague" },
+      "viper": { "name": "Viper" },
+      "provident": { "name": "Provident" },
+      "farsighted": { "name": "Farsighted" },
+      "tempered_m": { "name": "Tempered" },
+      "tempered_f": { "name": "Tempered" },
+      "tempered_x": { "name": "Tempered" },
+      "impregnable": { "name": "Impregnable" },
+      "charmed_m": { "name": "Charmed" },
+      "charmed_f": { "name": "Charmed" },
+      "charmed_x": { "name": "Charmed" },
+      "magnetic_m": { "name": "Magnetic" },
+      "magnetic_f": { "name": "Magnetic" },
+      "magnetic_x": { "name": "Magnetic" },
+      "wand_master_m": { "name": "Wand Master" },
+      "wand_master_f": { "name": "Wand Master" },
+      "wand_master_x": { "name": "Wand Master" },
+      "devilish_m": { "name": "Devilish" },
+      "devilish_f": { "name": "Devilish" },
+      "devilish_x": { "name": "Devilish" },
+      "infernal": { "name": "Infernal" },
+      "armored_m": { "name": "Armored" },
+      "armored_f": { "name": "Armored" },
+      "armored_x": { "name": "Armored" },
+      "indestructible": { "name": "Indestructible" },
+      "daring_m": { "name": "Daring" },
+      "daring_f": { "name": "Daring" },
+      "daring_x": { "name": "Daring" }
     }
   },
 
@@ -832,6 +890,10 @@
       "wandSocketedBodyOther": "{name} socketed {element} into the wand's body.",
       "wandSocketedHandleSelf": "You socketed {element} into the wand's handle.",
       "wandSocketedHandleOther": "{name} socketed {element} into the wand's handle.",
+      "wandResistedSelf": "Your wand reduced the damage thanks to Resistance.",
+      "wandResistedOther": "{name}'s wand reduced the damage thanks to Resistance.",
+      "wandVulnerableSelf": "Your wand increased the damage due to Vulnerability.",
+      "wandVulnerableOther": "{name}'s wand increased the damage due to Vulnerability.",
       "handRevealedFullSelf": "You revealed the opponent's entire hand.",
       "handRevealedFullOther": "{name} revealed your entire hand.",
       "handRevealedPartialSelf": "You revealed a card from the opponent's hand.",

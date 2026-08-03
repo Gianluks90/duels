@@ -120,6 +120,10 @@ export class GameLogDialogComponent {
           element: this.i18n.elementLabel(entry.element),
           name,
         });
+      case 'wandResistanceTriggered':
+        return this.pick(entry.outcome === 'resisted' ? 'wandResisted' : 'wandVulnerable', self, {
+          name,
+        });
       case 'handRevealed':
         return this.pick(entry.full ? 'handRevealedFull' : 'handRevealedPartial', self, { name });
       case 'opponentForcedDiscard':

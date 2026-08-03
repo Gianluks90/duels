@@ -31,6 +31,11 @@ type EventLogStatsDelta = Pick<
   | 'poisonApplied'
   | 'elementsObtained'
   | 'manaConsumed'
+  | 'tipHeld'
+  | 'bodySocketed'
+  | 'handleSocketed'
+  | 'wandDamageResisted'
+  | 'selfDamageResisted'
 >;
 
 /**
@@ -60,6 +65,11 @@ export function computeStatsDelta(
     poisonApplied: 0,
     elementsObtained: {},
     manaConsumed: 0,
+    tipHeld: 0,
+    bodySocketed: 0,
+    handleSocketed: 0,
+    wandDamageResisted: 0,
+    selfDamageResisted: 0,
   };
 
   for (const entry of eventLog) {
@@ -113,12 +123,73 @@ export function computeStatsDelta(
       case 'poisonApplied':
         if (entry.role === opponentRole) delta.poisonApplied += entry.amount;
         break;
+      case 'wandTipHeld':
+        if (entry.role === role) delta.tipHeld += 1;
+        break;
+      case 'wandSocketed':
+        if (entry.role === role) {
+          if (entry.slot === 'body') delta.bodySocketed += 1;
+          else delta.handleSocketed += 1;
+        }
+        break;
+      // 'vulnerable' non alimenta ancora nessun contatore — nessun achievement lo legge oggi (v.
+      // "Temerario"/"Non temo nulla" in documentation/achievement-titles.md, non ancora implementato).
+      case 'wandResistanceTriggered':
+        if (entry.role === role && entry.outcome === 'resisted') {
+          delta.wandDamageResisted += 1;
+          if (entry.selfInflicted) delta.selfDamageResisted += 1;
+        }
+        break;
       default:
         break;
     }
   }
 
   return delta;
+}
+
+/** "Vipera": hai vinto E l'ultima voce `damage` sul PERDENTE nell'eventLog ha `source.kind ===
+ * 'poison'` — non serve altro contesto. La vittoria si decide subito dopo ogni reducer (v.
+ * `resolveVictory`/`isGameOver` in `turn-engine.ts`, applicate da `GameEngineService.mutate()`),
+ * quindi l'ULTIMA voce `damage` che colpisce chi ha perso è per forza il colpo letale, non una tra
+ * tante — a differenza di altri delta qui sopra, non serve sommare né filtrare per `role`, basta
+ * l'ultima corrispondenza scandendo il log a ritroso. */
+function wonWithPoisonFinish(
+  eventLog: readonly GameLogEntry[],
+  winner: PlayerId | null,
+  role: PlayerId,
+): boolean {
+  if (winner !== role) return false;
+  const opponentRole: PlayerId = role === 'host' ? 'guest' : 'host';
+  for (let i = eventLog.length - 1; i >= 0; i--) {
+    const entry = eventLog[i];
+    if (entry.type === 'damage' && entry.role === opponentRole) {
+      return entry.source.kind === 'poison';
+    }
+  }
+  return false;
+}
+
+/** "Temerario"/"Temeraria"/"Non temo nulla": hai vinto E, in QUALUNQUE momento della partita, la tua
+ * Vulnerabilità ha aumentato un danno AUTO-inflitto (`wandResistanceTriggered`, `outcome ===
+ * 'vulnerable' && selfInflicted` — oggi possibile solo con Fiamma Nera, l'unico incantesimo con
+ * `damage_self`, lanciata con l'elemento opposto al Fuoco incastonato nell'asta). A differenza di
+ * `wonWithPoisonFinish` sopra non serve l'ULTIMA occorrenza (l'azzardo può essere stato preso in un
+ * turno qualunque, non necessariamente quello decisivo) — basta che sia successo almeno una volta in
+ * una partita poi vinta. */
+function wonWithSelfVulnerable(
+  eventLog: readonly GameLogEntry[],
+  winner: PlayerId | null,
+  role: PlayerId,
+): boolean {
+  if (winner !== role) return false;
+  return eventLog.some(
+    (entry) =>
+      entry.type === 'wandResistanceTriggered' &&
+      entry.role === role &&
+      entry.outcome === 'vulnerable' &&
+      entry.selfInflicted,
+  );
 }
 
 /** L'identificativo di una carta ai fini di CARD_PATTERN_CATALOG: lo SpellId se è un incantesimo
@@ -241,6 +312,17 @@ export function applyGameStatsDelta(
     // firestore.rules.
     friendDuelsPlayed: prior.friendDuelsPlayed + (wasFriendDuel ? 1 : 0),
     friendDuelWins: prior.friendDuelWins + (wasFriendDuel && won ? 1 : 0),
+    tipHeld: prior.tipHeld + delta.tipHeld,
+    bodySocketed: prior.bodySocketed + delta.bodySocketed,
+    handleSocketed: prior.handleSocketed + delta.handleSocketed,
+    // "Vipera": al massimo 1 per partita, v. wonWithPoisonFinish sopra.
+    poisonFinishWins:
+      prior.poisonFinishWins + (wonWithPoisonFinish(eventLog, winner, role) ? 1 : 0),
+    wandDamageResisted: prior.wandDamageResisted + delta.wandDamageResisted,
+    selfDamageResisted: prior.selfDamageResisted + delta.selfDamageResisted,
+    // "Temerario"/"Non temo nulla": al massimo 1 per partita, v. wonWithSelfVulnerable sopra.
+    selfVulnerableWins:
+      prior.selfVulnerableWins + (wonWithSelfVulnerable(eventLog, winner, role) ? 1 : 0),
   };
 }
 
@@ -296,6 +378,16 @@ export function buildProgressSource(
     loginStreak: profile?.loginStreak ?? 0,
     rulebookRead: profile?.rulebookRead ? 1 : 0,
     friendsCount: profile?.friendsCount ?? 0,
+    tipHeld: s.tipHeld,
+    bodySocketed: s.bodySocketed,
+    handleSocketed: s.handleSocketed,
+    poisonFinishWins: s.poisonFinishWins,
+    wandDamageResisted: s.wandDamageResisted,
+    selfDamageResisted: s.selfDamageResisted,
+    selfVulnerableWins: s.selfVulnerableWins,
+    // Dorso "wands": impegno complessivo con la bacchetta, non un'azione specifica — v.
+    // ObjectiveMetric.wandActionsTotal.
+    wandActionsTotal: s.tipHeld + s.bodySocketed + s.handleSocketed,
     ...elementProgress,
     ...patternProgress,
   };

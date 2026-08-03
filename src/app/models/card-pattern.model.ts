@@ -3,7 +3,7 @@
  * element.model.ts/data/elements.ts): serve staticamente per generare le chiavi
  * `pattern_${CardPatternId}` di ObjectiveMetric, va quindi estesa qui ogni volta che si aggiunge un
  * pattern nuovo al catalogo. */
-export type CardPatternId = 'reveal_trio' | 'all_elements' | 'lucky_win';
+export type CardPatternId = 'reveal_trio' | 'all_elements' | 'lucky_win' | 'black_flame_win';
 
 export type CardPatternMode =
   /** Tutti gli identificativi richiesti presenti — il resto del mazzo è irrilevante. */

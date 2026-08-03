@@ -19,9 +19,13 @@ export interface ObjectiveCategory {
  * `COLLECTIBLE_ELEMENT_IDS`, v. data/elements.ts) condividono "Elementi" — la scomposizione per
  * elemento di combinationsMade/cardsCollected sopra, categoria a parte perché sono tanti (13
  * obiettivi: 2 titoli + 11 varianti) e affollerebbero "Azioni comuni"; `damageDealt`/`healingDone`/
- * `shieldsGained`/`shieldsRemoved` condividono "Combattimento" (ex "Cure e Danni" — rinominata
- * quando gli scudi si sono aggiunti a danno/cura, non ci stavano più sotto quel nome; destinata a
- * crescere ancora, v. README); `spellsCast`/`manaConsumed`/`distinctSpellsCast` condividono
+ * `shieldsGained`/`shieldsRemoved`/`freezeApplied`/`poisonApplied`/`poisonFinishWins` condividono
+ * "Combattimento" (ex "Cure e Danni" — rinominata quando gli scudi si sono aggiunti a danno/cura,
+ * non ci stavano più sotto quel nome; destinata a crescere ancora, v. README);
+ * `tipHeld`/`bodySocketed`/`handleSocketed`/`wandActionsTotal` hanno invece una categoria propria,
+ * "Bacchetta" (v. documentation/achievement-titles.md) — meccanica abbastanza diversa da tutto il
+ * resto da meritare una nav a parte, non infilata in "Combattimento";
+ * `spellsCast`/`manaConsumed`/`distinctSpellsCast` condividono
  * "Incantesimi" (etichetta più corta di quella usata sulla singola card,
  * `objectives.metricLabels.spellsCast`, "Incantesimi lanciati · <soglia>") — `manaConsumed` (mana
  * speso lanciando, "Spendaccione"/variante "Mana (V1)") e `distinctSpellsCast` (incantesimi diversi
@@ -73,6 +77,7 @@ export const OBJECTIVE_CATEGORY_CATALOG: readonly ObjectiveCategory[] = [
       'shieldsRemoved',
       'freezeApplied',
       'poisonApplied',
+      'poisonFinishWins',
     ],
   },
   // Pattern di composizione mazzo (CARD_PATTERN_CATALOG, data/card-patterns.ts) — a differenza di
@@ -83,5 +88,20 @@ export const OBJECTIVE_CATEGORY_CATALOG: readonly ObjectiveCategory[] = [
     id: 'deck',
     labelKey: 'objectives.categories.deck',
     metrics: CARD_PATTERN_CATALOG.map((pattern): ObjectiveMetric => `pattern_${pattern.id}`),
+  },
+  // "Bacchetta" (documentation/achievement-titles.md) — trattenere alla punta/incastonare asta o
+  // manico, più il traguardo complessivo (wandActionsTotal, dorso "wands").
+  {
+    id: 'wand',
+    labelKey: 'objectives.categories.wand',
+    metrics: [
+      'tipHeld',
+      'bodySocketed',
+      'handleSocketed',
+      'wandActionsTotal',
+      'selfDamageResisted',
+      'wandDamageResisted',
+      'selfVulnerableWins',
+    ],
   },
 ];

@@ -56,7 +56,7 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     rewards: [{ type: 'title', id: 'novice' }],
   },
   { id: 'first_win', metric: 'wins', threshold: 1, rewards: [{ type: 'title', id: 'apprentice' }] },
-  { id: 'win_10', metric: 'wins', threshold: 10, rewards: [{ type: 'cardBack', id: 'golden' }] },
+  { id: 'win_10', metric: 'wins', threshold: 10, rewards: [{ type: 'cardBack', id: 'light' }] },
   {
     id: 'win_50',
     metric: 'wins',
@@ -74,7 +74,10 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     id: 'win_streak_5',
     metric: 'currentWinStreak',
     threshold: 5,
-    rewards: [{ type: 'title', id: 'unstoppable' }],
+    rewards: [
+      { type: 'title', id: 'unstoppable' },
+      { type: 'cardBack', id: 'golden' },
+    ],
   },
   {
     id: 'friend_duel_1',
@@ -408,5 +411,103 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     metric: 'poisonApplied',
     threshold: 100,
     rewards: [{ type: 'title', id: 'plague' }],
+  },
+  // "Vipera": al massimo 1 per partita (v. UserStats.poisonFinishWins/wonWithPoisonFinish in
+  // game/achievements.ts) — vittoria in cui l'ultimo danno inflitto è stato Veleno.
+  {
+    id: 'poison_finish_win',
+    metric: 'poisonFinishWins',
+    threshold: 1,
+    rewards: [{ type: 'title', id: 'viper' }],
+  },
+  // Categoria "Bacchetta" (documentation/achievement-titles.md): trattenere alla punta/incastonare
+  // asta/incastonare manico erano già eventi loggati (wandTipHeld/wandSocketed) ma mai letti da
+  // nessun achievement prima d'ora — v. UserStats.tipHeld/bodySocketed/handleSocketed.
+  {
+    id: 'wand_tip_10',
+    metric: 'tipHeld',
+    threshold: 15,
+    rewards: [{ type: 'title', id: 'provident' }],
+  },
+  {
+    id: 'wand_tip_50',
+    metric: 'tipHeld',
+    threshold: 50,
+    rewards: [{ type: 'title', id: 'farsighted' }],
+  },
+  {
+    id: 'wand_body_10',
+    metric: 'bodySocketed',
+    threshold: 15,
+    rewards: [{ type: 'title', id: 'tempered' }],
+  },
+  {
+    id: 'wand_body_50',
+    metric: 'bodySocketed',
+    threshold: 50,
+    rewards: [{ type: 'title', id: 'impregnable' }],
+  },
+  {
+    id: 'wand_handle_10',
+    metric: 'handleSocketed',
+    threshold: 15,
+    rewards: [{ type: 'title', id: 'charmed' }],
+  },
+  {
+    id: 'wand_handle_50',
+    metric: 'handleSocketed',
+    threshold: 50,
+    rewards: [{ type: 'title', id: 'magnetic' }],
+  },
+  // "Maestro di bacchetta": impegno complessivo (punta+asta+manico insieme), non un'azione
+  // specifica — v. ObjectiveMetric.wandActionsTotal.
+  {
+    id: 'wand_actions_300',
+    metric: 'wandActionsTotal',
+    threshold: 300,
+    rewards: [{ type: 'title', id: 'wand_master' }],
+  },
+  // "Diabolico"/"Diabolica": v. CARD_PATTERN_CATALOG.black_flame_win (data/card-patterns.ts) — non
+  // un contatore UserStats, stato finale del mazzo come "Che tutto vede"/"Fortunato".
+  {
+    id: 'black_flame_win',
+    metric: 'pattern_black_flame_win',
+    threshold: 1,
+    rewards: [{ type: 'title', id: 'devilish' }],
+  },
+  // "Infernale" — una tantum, v. UserStats.selfDamageResisted (sottoinsieme di wandDamageResisted
+  // sotto: solo il caso auto-inflitto, oggi possibile solo con Fiamma Nera).
+  {
+    id: 'wand_self_resist',
+    metric: 'selfDamageResisted',
+    threshold: 1,
+    rewards: [{ type: 'title', id: 'infernal' }],
+  },
+  // "Corazzato"/"Indistruttibile" — v. UserStats.wandDamageResisted, qualunque fonte (include anche
+  // le occorrenze già contate per "Infernale" sopra, nessuna esclusione reciproca).
+  {
+    id: 'wand_resist_10',
+    metric: 'wandDamageResisted',
+    threshold: 10,
+    rewards: [{ type: 'title', id: 'armored' }],
+  },
+  {
+    id: 'wand_resist_50',
+    metric: 'wandDamageResisted',
+    threshold: 50,
+    rewards: [{ type: 'title', id: 'indestructible' }],
+  },
+  // "Temerario"/"Temeraria"/"Non temo nulla" — una tantum come wand_self_resist sopra, ma richiede
+  // ANCHE la vittoria (v. UserStats.selfVulnerableWins/wonWithSelfVulnerable in
+  // game/achievements.ts): un vero azzardo ripagato, non solo preso. Unico obiettivo di questo
+  // catalogo il cui dorso premia una scelta deliberata invece di grind/completismo.
+  {
+    id: 'wand_self_vulnerable',
+    metric: 'selfVulnerableWins',
+    threshold: 1,
+    rewards: [
+      { type: 'title', id: 'daring' },
+      { type: 'cardBack', id: 'wands' },
+    ],
   },
 ];

@@ -56,4 +56,17 @@ export const CARD_PATTERN_CATALOG: CardPattern[] = [
     mode: 'exclusiveAll',
     requireWin: true,
   },
+  // "Diabolico"/"Diabolica": vittoria in una partita in cui la Fiamma Nera è stata lanciata —
+  // 'contains' invece dell'eventLog (rischio-cap a 50 voci, v. README) perché una carta incantesimo
+  // lanciata finisce negli SCARTI DEL GIOCATORE (PlayerState.discards, v. resolveSpells in
+  // turn-engine.ts), non in quelli comuni: resta quindi rintracciabile nello stato finale come ogni
+  // altro pattern qui sopra, anche dopo essere stata risolta (a differenza di una carta incastonata
+  // nell'asta/manico, che va invece negli scarti comuni).
+  {
+    id: 'black_flame_win',
+    cardKind: 'spell',
+    identifiers: ['black_flame'],
+    mode: 'contains',
+    requireWin: true,
+  },
 ];

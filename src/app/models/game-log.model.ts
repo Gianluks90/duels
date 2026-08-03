@@ -61,6 +61,18 @@ export type GameLogEntryData =
     }
   | { type: 'wandTipHeld'; role: PlayerId; element: BaseElement }
   | { type: 'wandSocketed'; role: PlayerId; slot: 'body' | 'handle'; element: BaseElement }
+  /** Resistenza/Vulnerabilità dell'asta scattata su un danno (1.4.2, bodyResistanceOutcome in
+   * turn-engine.ts) — `role` è il proprietario della bacchetta che ha determinato l'esito, cioè chi
+   * STA PER SUBIRE il danno (non sempre il bersaglio "naturale" dell'incantesimo: per 'damage_self'
+   * è il lanciatore stesso). `selfInflicted` true solo per 'damage_self' (oggi solo Fiamma Nera, v.
+   * Achievements "Infernale"/"Temerario") — false per 'damage'/'damage_ignore_shields' (Achievements
+   * "Corazzato", qualunque fonte). Mai loggata per `outcome` 'none' (nessuna reazione dell'asta). */
+  | {
+      type: 'wandResistanceTriggered';
+      role: PlayerId;
+      outcome: 'resisted' | 'vulnerable';
+      selfInflicted: boolean;
+    }
   /** Terzo occhio/Occhio supremo/Occhio arcano — `full` true solo per Occhio supremo (rivela
    * l'intera mano, `count` assente in SpellEffect.amount), altrimenti una rivelazione parziale. */
   | { type: 'handRevealed'; role: PlayerId; full: boolean }

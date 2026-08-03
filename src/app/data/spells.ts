@@ -296,7 +296,7 @@ export const SPELL_CATALOG: Spell[] = [
   },
   // Tenebra pura, mana alto per un singolo effetto molto forte — element assente (Tenebra è
   // SuperiorElement, mai un BaseElement dell'asta 1.4.2, e comunque damage_halve_opponent non passa
-  // per applyBodyResistance, vedi applySpellEffect).
+  // per bodyResistanceOutcome/applyResistanceOutcome, vedi applySpellEffect).
   {
     id: 'black_hole',
     formula: ['dark', 'dark'],

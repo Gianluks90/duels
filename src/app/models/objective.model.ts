@@ -39,6 +39,9 @@ export interface ObjectiveReward {
  * `pattern_<id>` applica la stessa idea a `UserStats.cardPatternMatches` (v. CARD_PATTERN_CATALOG,
  * data/card-patterns.ts): una proiezione scalare per pattern di composizione mazzo (es. "Che tutto
  * vede"), valutato sullo stato finale della partita invece che sull'eventLog.
+ * `wandActionsTotal` applica la stessa idea di proiezione scalare, ma sommando (non contando chiavi
+ * di una mappa): `tipHeld + bodySocketed + handleSocketed`, per il dorso "wands" (Achievements,
+ * "Maestro di bacchetta") — un impegno complessivo con la bacchetta, non un'azione specifica.
  */
 export type ObjectiveMetric =
   | Exclude<keyof UserStats, 'spellCastCounts' | 'elementsObtained' | 'cardPatternMatches'>
@@ -47,7 +50,8 @@ export type ObjectiveMetric =
   | 'friendsCount'
   | `element_${CollectibleElement}`
   | 'distinctSpellsCast'
-  | `pattern_${CardPatternId}`;
+  | `pattern_${CardPatternId}`
+  | 'wandActionsTotal';
 
 export interface Objective {
   id: string;
