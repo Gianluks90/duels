@@ -610,6 +610,10 @@
       "wands": {
         "name": "Crossed Wands",
         "description": "A calculated risk, taken head-on — for those who dared to turn their own weakness into a weapon."
+      },
+      "amber": {
+        "name": "Amber",
+        "description": "An amber tone, reserved for those who have already completed 150 combinations."
       }
     },
     "backgroundCatalog": {
@@ -647,7 +651,7 @@
       },
       "amber": {
         "name": "Amber",
-        "description": "An amber backdrop, coming with the autumn season."
+        "description": "An amber backdrop, reserved for those who have already collected 500 cards."
       }
     },
     "titleCatalog": {
@@ -702,7 +706,7 @@
       "radiant_m": { "name": "Radiant" },
       "radiant_f": { "name": "Radiant" },
       "radiant_x": { "name": "Radiant" },
-      "collector": { "name": "Collector" },
+      "archivist": { "name": "Archivist" },
       "alchemist": { "name": "Alchemist" },
       "sorcerer_m": { "name": "Sorcerer" },
       "sorcerer_f": { "name": "Sorcerer" },

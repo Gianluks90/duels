@@ -613,6 +613,10 @@
       "wands": {
         "name": "Bacchette incrociate",
         "description": "Un rischio calcolato, corso a viso aperto — per chi ha osato usare la propria debolezza come arma."
+      },
+      "amber": {
+        "name": "Ambra",
+        "description": "Una tonalità ambrata, riservata a chi ha già completato 150 combinazioni."
       }
     },
     "backgroundCatalog": {
@@ -650,7 +654,7 @@
       },
       "amber": {
         "name": "Ambra",
-        "description": "Uno sfondo ambrato, in arrivo con la stagione autunnale."
+        "description": "Uno sfondo ambrato, riservato a chi ha già raccolto 500 carte."
       }
     },
     "titleCatalog": {
@@ -705,7 +709,7 @@
       "radiant_m": { "name": "Luminoso" },
       "radiant_f": { "name": "Luminosa" },
       "radiant_x": { "name": "Luminos*" },
-      "collector": { "name": "Collezionista" },
+      "archivist": { "name": "Archivista" },
       "alchemist": { "name": "Alchimista" },
       "sorcerer_m": { "name": "Stregone" },
       "sorcerer_f": { "name": "Strega" },

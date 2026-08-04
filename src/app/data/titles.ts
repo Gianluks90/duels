@@ -11,9 +11,9 @@ import type { RewardUnlock } from '../models/reward-unlock.model';
  * senza questa distinzione (es. inglese) può ripetere lo stesso testo per tutte e tre le varianti.
  *
  * Titoli non elencati qui restano un id singolo invariante (stesso comportamento di sempre) —
- * `apprentice`/`mixologist`/`resilient`/`collector`/`alchemist`/`beginner` sono parole di genere
+ * `apprentice`/`mixologist`/`resilient`/`archivist`/`alchemist`/`beginner` sono parole di genere
  * comune o invariabili in italiano ("un/una apprendista", "Mixologista", "Resistente",
- * "Collezionista", "Alchimista", "Principiante"), non hanno bisogno di varianti.
+ * "Archivista", "Alchimista", "Principiante"), non hanno bisogno di varianti.
  *
  * Nota sulla forma neutra/inclusiva (`_x`): per le coppie in -o/-a (`novice`, `stubborn`,
  * `dangerous`, `magical`, `first_duelist`, `attentive`, `educated`, `buddy`, `shadowbound`,
@@ -27,7 +27,7 @@ import type { RewardUnlock } from '../models/reward-unlock.model';
  *
  * `hostile`/`black_magic`/`white_magic`/`unstoppable`/`omnipresent`/`sociable_duelist`/
  * `friendly_duelist`/`rival`/`defensive`/`on_guard`/`the_wall`/`shieldbreaker` restano invarianti
- * come `resilient`/`collector`/`alchemist` sopra: aggettivi in -e (stessa forma per m/f in
+ * come `resilient`/`archivist`/`alchemist` sopra: aggettivi in -e (stessa forma per m/f in
  * italiano, incluso "duellante" stesso), frasi descrittive senza accordo di genere sulla persona
  * ("La muraglia", "In difesa"/"In guardia" — epiteti, non descrivono grammaticalmente CHI li porta),
  * o composti bahuvrihi già invariabili di loro (`shieldbreaker`, "Spezzadifese", come
@@ -128,7 +128,7 @@ export const TITLE_CATALOG: TitleDefinition[] = [
   { id: 'buddy', unlock: { kind: 'objective', objectiveId: 'friend_duel_1' } },
   { id: 'rival', unlock: { kind: 'objective', objectiveId: 'friend_duel_wins_5' } },
   { id: 'gatherer', unlock: { kind: 'objective', objectiveId: 'collect_100' } },
-  { id: 'collector', unlock: { kind: 'objective', objectiveId: 'collect_500' } },
+  { id: 'archivist', unlock: { kind: 'objective', objectiveId: 'collect_250' } },
   { id: 'mixologist', unlock: { kind: 'objective', objectiveId: 'combine_10' } },
   { id: 'alchemist', unlock: { kind: 'objective', objectiveId: 'combine_50' } },
   { id: 'enchanter', unlock: { kind: 'objective', objectiveId: 'cast_15' } },

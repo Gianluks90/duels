@@ -7,8 +7,10 @@ import type { Objective } from '../models/objective.model';
  * ciascuno), v. README "Achievements".
  *
  * Un obiettivo può dare più ricompense insieme (`rewards: ObjectiveReward[]`, v. modello) — usato
- * per `collect_500`/`combine_50`/`cast_100`, che davano già uno sfondo prima che i titoli avessero
- * contenuto reale: invece di scegliere quale reward "vince", danno entrambi.
+ * per `cast_100`, che dava già uno sfondo prima che i titoli avessero contenuto reale: invece di
+ * scegliere quale reward "vince", dà entrambi. `collect_500`/`combine_50` erano nello stesso caso in
+ * origine ma sono stati separati (v. sotto): lo sfondo/dorso ancora `TODO_...` si è spostato su una
+ * nuova soglia più alta (`collect_500`→sfondo, `combine_150`→dorso) invece di restare lì.
  *
  * `hidden` (Objective.hidden, v. modello): nessun obiettivo qui lo usa ancora — tutti mostrano la
  * propria condizione (metrica · soglia). Da applicare quando deciderete quali sblocchi restare
@@ -98,13 +100,20 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     rewards: [{ type: 'title', id: 'gatherer' }],
   },
   {
+    id: 'collect_250',
+    metric: 'cardsCollected',
+    threshold: 250,
+    rewards: [{ type: 'title', id: 'archivist' }],
+  },
+  {
+    // "Collezionista" (titolo originale di questa soglia) è stato scartato: rimandava troppo alla
+    // pagina Collezione, non alla Raccolta (4.3) — l'obiettivo dà ora solo lo sfondo "Ambra",
+    // riassegnato qui da 'seasonal' (v. data/backgrounds.ts), lo stesso schema già usato per il
+    // dorso Dorato spostato da win_10 a win_streak_5.
     id: 'collect_500',
     metric: 'cardsCollected',
     threshold: 500,
-    rewards: [
-      { type: 'background', id: 'TODO_collect_500' },
-      { type: 'title', id: 'collector' },
-    ],
+    rewards: [{ type: 'background', id: 'amber' }],
   },
   {
     id: 'combine_10',
@@ -116,10 +125,15 @@ export const OBJECTIVE_CATALOG: Objective[] = [
     id: 'combine_50',
     metric: 'combinationsMade',
     threshold: 50,
-    rewards: [
-      { type: 'background', id: 'TODO_combine_50' },
-      { type: 'title', id: 'alchemist' },
-    ],
+    rewards: [{ type: 'title', id: 'alchemist' }],
+  },
+  {
+    // Il dorso "Ambra" — asset già pronto (public/cards-back/amber.webp) ma mai catalogato prima —
+    // premia il livello di dedizione al combinare successivo ad Alchimista, non lo stesso traguardo.
+    id: 'combine_150',
+    metric: 'combinationsMade',
+    threshold: 150,
+    rewards: [{ type: 'cardBack', id: 'amber' }],
   },
   {
     // Soglia 15 (non 10 come nella bozza originale): a costo pressoché zero rispetto ad altri

@@ -22,5 +22,8 @@ export const BACKGROUND_CATALOG: BackgroundDefinition[] = [
   { id: 'felt-fabric', unlock: { kind: 'objective', objectiveId: 'played_50' } },
   { id: 'arcane', unlock: { kind: 'objective', objectiveId: 'cast_100' } },
   { id: 'founder', unlock: { kind: 'purchase' } },
-  { id: 'amber', unlock: { kind: 'seasonal' } },
+  // Riassegnato da 'seasonal' a collect_500 — stesso schema del dorso Dorato spostato da win_10 a
+  // win_streak_5 (v. documentation/achievement-titles.md): l'arte esisteva già senza un vero
+  // consumatore, "gioca N partite in un periodo" resta un'idea futura senza supporto nel motore.
+  { id: 'amber', unlock: { kind: 'objective', objectiveId: 'collect_500' } },
 ];

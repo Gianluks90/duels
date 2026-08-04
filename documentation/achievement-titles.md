@@ -58,9 +58,22 @@ riguadagnarlo vincendo 10 duelli.
 | Id obiettivo  | Metrica · Soglia                                       | Ricompensa attuale                               | Titolo proposto           | Suggerimento                                                                   |
 | ------------- | ------------------------------------------------------ | ------------------------------------------------ | ------------------------- | ------------------------------------------------------------------------------ |
 | `collect_100` | Raccogli un totale di almeno 100 carte                 | Titolo "Raccoglitore/Raccoglitrice/Raccoglitor*" | Nel dubbio prendili       | **Acchiappali tutti** (slogan Pokémon, calza a pennello per un gioco di carte) |
-| `collect_500` | Raccogli un totale di almeno 500 carte                 | Sfondo (TODO) + Titolo "Collezionista"           | A qualcosa mi serviranno  | **La caccia al tesoro** — o **Un tesoro senza fine**                           |
+| `collect_250` | Raccogli un totale di almeno 250 carte                 | Titolo "Archivista" (**✅ deciso E implementato**) | —                        | —                                                                              |
+| `collect_500` | Raccogli un totale di almeno 500 carte                 | Sfondo "Ambra" (**✅ deciso E implementato**, v. nota sotto) | —                  | —                                                                              |
 | `combine_10`  | Combina 10 volte due o più carte per un Elemento nuovo | Titolo "Mixologista"                             | Come mattoncini           | ok così, il nod ai LEGO funziona già                                           |
-| `combine_50`  | Combina 50 volte due o più carte per un Elemento nuovo | Sfondo (TODO) + Titolo "Alchimista"              | Combinazioni perfezionate | **Scambio alla pari** ("l'equivalent exchange" di _Fullmetal Alchemist_)       |
+| `combine_50`  | Combina 50 volte due o più carte per un Elemento nuovo | Titolo "Alchimista"                              | Combinazioni perfezionate | **Scambio alla pari** ("l'equivalent exchange" di _Fullmetal Alchemist_)       |
+| `combine_150` | Combina 150 volte due o più carte per un Elemento nuovo | Dorso "Ambra" (**✅ deciso E implementato**, v. nota sotto) | —                 | —                                                                              |
+
+**Nota — reward `collect_500`/`combine_50` risolti (✅ decisa E implementata, 2026-08-04):** il
+titolo "Collezionista" (proposto per `collect_500`) è stato scartato — rimandava troppo alla pagina
+Collezione, non alla Raccolta (4.3) che l'obiettivo misura davvero. Al suo posto, un nuovo obiettivo
+intermedio `collect_250` ("Archivista") riempie il salto 100→500 con una curva più graduale
+(2.5x→2x, in linea con `cast_15/50/100`). Gli sfondi/dorsi `TODO_...` di `collect_500`/`combine_50`
+sono stati risolti riassegnando due asset già pronti ma orfani: lo sfondo "Ambra" (era `unlock.kind:
+'seasonal'`, nessun obiettivo lo consumava — v. `data/backgrounds.ts`) è passato a `collect_500`; il
+dorso "Ambra" (`public/cards-back/amber.webp` esisteva ma non era nemmeno catalogato) è diventato il
+reward di un nuovo obiettivo `combine_150`, un gradino oltre "Alchimista" (`combine_50`, che ora dà
+solo il titolo). Stesso schema già usato per Dorato spostato da `win_10` a `win_streak_5`.
 
 ## Elementi
 

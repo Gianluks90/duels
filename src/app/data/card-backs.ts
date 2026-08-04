@@ -32,4 +32,7 @@ export const CARD_BACK_CATALOG: CardBackDefinition[] = [
   // "Non temo nulla" — l'unico dorso di questo catalogo che premia un azzardo deliberato invece di
   // grind/completismo (v. documentation/achievement-titles.md, "Bacchetta").
   { id: 'wands', unlock: { kind: 'objective', objectiveId: 'wand_self_vulnerable' } },
+  // Asset già pronto (public/cards-back/amber.webp) ma mai catalogato prima — assegnato a
+  // combine_150, un gradino oltre Alchimista (combine_50) sulla stessa metrica.
+  { id: 'amber', unlock: { kind: 'objective', objectiveId: 'combine_150' } },
 ];
