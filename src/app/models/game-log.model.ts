@@ -1,11 +1,10 @@
 import type { BaseElement, Element } from './element.model';
 import type { PlayerId } from './player.model';
 
-/** Causa di un `damage`: distingue un incantesimo (con nome), un'Esplosione elementale (2.4) o
- * l'Avvelenamento (2.3.4) — la cura invece porta sempre `spellId` direttamente (nessun'altra fonte
- * di cura esiste nel motore), non le serve un'unione. */
-export type DamageLogSource =
-  { kind: 'spell'; spellId: string } | { kind: 'explosion' } | { kind: 'poison' };
+/** Causa di un `damage`: distingue un incantesimo (con nome) dall'Avvelenamento (2.3.4) — la cura
+ * invece porta sempre `spellId` direttamente (nessun'altra fonte di cura esiste nel motore), non le
+ * serve un'unione. */
+export type DamageLogSource = { kind: 'spell'; spellId: string } | { kind: 'poison' };
 
 /**
  * Una voce del log eventi di gioco, senza `id` (assegnato da turn-engine.ts, appendLog) — union

@@ -16,7 +16,7 @@ const SUPERIOR_ELEMENTS: readonly SuperiorElement[] = ['light', 'dark'];
  * Le 2 magie seminate nel mazzo iniziale di ogni giocatore (vedi buildPlayerStartingDeck) —
  * un'eccezione dichiarata a "ogni incantesimo si crea" (5.1, non ancora implementato), al posto di
  * Luce/Tenebra rimosse dalle carte iniziali. `element` è solo per l'arte (CardComponent) — usare
- * sempre un elemento base: mai 'light'/'dark' (rientrerebbero nei controlli di resolveElementalExplosions).
+ * sempre un elemento base: mai 'light'/'dark'.
  */
 const STARTER_SPELLS: ReadonlyArray<{ spellId: string; element: BaseElement }> = [
   { spellId: 'starter_bolt', element: 'fire' },
@@ -220,8 +220,6 @@ export function createInitialGameState(host: PlayerSetup, guest: PlayerSetup): G
     advancedDeck,
     advancedDiscards,
     residiumDeck,
-    explosionBatchId: 0,
-    lastExplosions: [],
     poisonDamageBatchId: 0,
     lastPoisonDamage: null,
     eventLog: [],

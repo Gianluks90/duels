@@ -860,8 +860,6 @@
     "entries": {
       "damageSpellSelf": "You took {amount} damage from {spell}.",
       "damageSpellOther": "{name} took {amount} damage from {spell}.",
-      "damageExplosionSelf": "You took {amount} damage from an Elemental Explosion.",
-      "damageExplosionOther": "{name} took {amount} damage from an Elemental Explosion.",
       "damagePoisonSelf": "You took {amount} damage from Poison.",
       "damagePoisonOther": "{name} took {amount} damage from Poison.",
       "healedSelf": "You recovered {amount} HP with {spell}.",

@@ -13,26 +13,9 @@ import type { FlashEvent } from '../components/player-hud/player-hud.component';
  * allungare il ritardo di auto-avanzamento a Finale quando in mano c'è un Residuo in scadenza,
  * dandogli il tempo di sparire in vista prima che endTurn lo rimuova davvero. */
 export const VANISH_DURATION_MS = 1000;
-/** Durata del lampo + scossa sulle carte Luce/Tenebra coinvolte in un'Esplosione elementale (2.4) in
- * mano — deve combaciare con @keyframes hand-card-explode in board.component.scss. */
-const EXPLOSION_GHOST_DURATION_MS = 700;
-/** Durata del lampo + scossa sull'intera riga della Fonte Arcana per un'Esplosione elementale (2.4)
- * lì — deve combaciare con @keyframes fonte-explode in board.component.scss. */
-const FONTE_EXPLOSION_DURATION_MS = 500;
 /** Ritardo prima di rivelare il bonus manico (1.4.3) su una coppia appena pescata in Raccolta, per
  * farlo notare invece di mostrarlo già risolto. */
 const COLLECT_BONUS_REVEAL_DELAY_MS = 900;
-/** Ritardo prima del flip di rivelazione delle carte coinvolte in un'Esplosione elementale in mano,
- * per far leggere "ecco cos'è esploso" invece di mostrarle già scoperte di scatto. */
-const HAND_EXPLOSION_REVEAL_DELAY_MS = 100;
-/** Durata del flip (CardComponent, [revealed] false→true) — deve combaciare con CARD_FLIP_HALF_MS*2
- * in card.component.ts / @keyframes card-flip in card.component.scss. Il lampo/scossa
- * (EXPLOSION_GHOST_DURATION_MS) deve iniziare solo a flip concluso, mai in contemporanea: sono due
- * @keyframes distinte applicate allo stesso elemento (una dal CardComponent stesso via
- * card--flipping, una da board.component.scss via board__hand-card--exploding) — la proprietà CSS
- * `animation` non si somma tra due regole diverse, la seconda applicata sovrascrive semplicemente la
- * prima, quindi una delle due smetterebbe di vedersi se scattassero insieme. */
-const CARD_FLIP_DURATION_MS = 300;
 /** Durata trascurabile per far scattare una transizione CSS (margin-bottom) invece di un salto secco
  * quando una carta arriva nella punta/asta/manico della bacchetta. */
 const WAND_ENTER_TRANSITION_MS = 20;
@@ -57,11 +40,6 @@ export interface VanishingGhost {
   kind: 'expiry' | 'toTip' | 'toSocket';
 }
 
-export interface HandExplosion {
-  role: PlayerId;
-  cards: readonly Card[];
-}
-
 function roleRecord<T>(value: T): Record<PlayerId, T> {
   return { host: value, guest: value };
 }
@@ -72,7 +50,7 @@ function roleRecord<T>(value: T): Record<PlayerId, T> {
  * via deriveGameEvents, mantenendo un piccolo set di segnali "overlay" effimeri che il template
  * consulta ACCANTO allo stato grezzo (mai al posto suo) per mostrare cosa sta sparendo/comparendo/
  * lampeggiando. Lo stato grezzo (hp, mano, mazzi...) resta sempre immediato — è così che le
- * animazioni già funzionanti in questo progetto (vanish ghost, flash esplosione) hanno sempre
+ * animazioni già funzionanti in questo progetto (vanish ghost, flash danno) hanno sempre
  * operato: un valore vero aggiornato subito più un overlay temporaneo derivato da un diff, non un
  * secondo GameState "ritardato" in parallelo (che duplicherebbe lo stato senza risolvere altro).
  *
@@ -98,13 +76,6 @@ export class AnimationQueueService {
   readonly drawingCards = signal<ReadonlyMap<string, number>>(new Map());
   readonly vanishingCardIds = signal<ReadonlySet<string>>(new Set());
   readonly vanishingGhosts = signal<readonly VanishingGhost[]>([]);
-  readonly handExplosions = signal<readonly HandExplosion[]>([]);
-  /** Pilota SOLO il flip (CardComponent [revealed]) — mai lo shake, vedi handExplosionShaking. */
-  readonly handExplosionRevealed = signal(false);
-  /** Pilota SOLO il lampo/scossa (classe board__hand-card--exploding) — parte apposta dopo che il
-   * flip pilotato da handExplosionRevealed è concluso, mai in contemporanea (vedi CARD_FLIP_DURATION_MS). */
-  readonly handExplosionShaking = signal(false);
-  readonly fonteExploding = signal(false);
   readonly revealedBonusIds = signal<ReadonlySet<string>>(new Set());
   private readonly tipEnteringByRole = signal<Record<PlayerId, boolean>>(roleRecord(false));
   private readonly tipVanishingByRole = signal<Record<PlayerId, Card | null>>(roleRecord(null));
@@ -220,15 +191,6 @@ export class AnimationQueueService {
     this.syncCounter++;
     const flashId = this.syncCounter;
 
-    // Un solo colpo di lampo+scossa anche quando più coppie esplodono nello stesso batch (2.4) —
-    // sostituzione in blocco, non accodamento, stesso schema dell'effect che sostituiva.
-    const explosions = events.filter(
-      (e): e is Extract<GameEvent, { type: 'handExploded' }> => e.type === 'handExploded',
-    );
-    if (explosions.length > 0) {
-      this.onHandExploded(explosions.map(({ role, cards }) => ({ role, cards })));
-    }
-
     for (const event of events) {
       switch (event.type) {
         case 'cardsDrawn':
@@ -240,11 +202,6 @@ export class AnimationQueueService {
           // filtro, una Congelamento sciolta nella mano dell'AVVERSARIO produceva comunque un ghost,
           // mostrato per errore come se stesse sparendo dalla propria mano.
           if (event.role === myRole) this.onCardVanished(event.card, event.index, event.total);
-          break;
-        case 'handExploded':
-          break; // già gestito in blocco sopra
-        case 'fonteExploded':
-          this.onFonteExploded();
           break;
         case 'fonteRevealed':
           this.audio.playFx('fonteReveal');
@@ -346,41 +303,6 @@ export class AnimationQueueService {
     const timer = setTimeout(() => {
       this.vanishingGhosts.update((list) => list.filter((g) => g.card.id !== card.id));
     }, VANISH_DURATION_MS);
-    this.destroyRef.onDestroy(() => clearTimeout(timer));
-  }
-
-  private onHandExploded(explosions: readonly HandExplosion[]): void {
-    this.handExplosions.set(explosions);
-    this.handExplosionRevealed.set(false);
-    this.handExplosionShaking.set(false);
-
-    const revealTimer = setTimeout(
-      () => this.handExplosionRevealed.set(true),
-      HAND_EXPLOSION_REVEAL_DELAY_MS,
-    );
-    this.destroyRef.onDestroy(() => clearTimeout(revealTimer));
-
-    // Lo shake parte solo a flip concluso, mai in contemporanea (vedi CARD_FLIP_DURATION_MS).
-    const shakeTimer = setTimeout(
-      () => this.handExplosionShaking.set(true),
-      HAND_EXPLOSION_REVEAL_DELAY_MS + CARD_FLIP_DURATION_MS,
-    );
-    this.destroyRef.onDestroy(() => clearTimeout(shakeTimer));
-
-    const clearTimer = setTimeout(
-      () => {
-        this.handExplosions.set([]);
-        this.handExplosionRevealed.set(false);
-        this.handExplosionShaking.set(false);
-      },
-      HAND_EXPLOSION_REVEAL_DELAY_MS + CARD_FLIP_DURATION_MS + EXPLOSION_GHOST_DURATION_MS,
-    );
-    this.destroyRef.onDestroy(() => clearTimeout(clearTimer));
-  }
-
-  private onFonteExploded(): void {
-    this.fonteExploding.set(true);
-    const timer = setTimeout(() => this.fonteExploding.set(false), FONTE_EXPLOSION_DURATION_MS);
     this.destroyRef.onDestroy(() => clearTimeout(timer));
   }
 

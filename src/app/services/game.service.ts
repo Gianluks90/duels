@@ -22,7 +22,6 @@ import type { GameState } from '../models/game.model';
 import type { UserProfile } from '../models/user.model';
 import type { CardBackSkin } from '../models/player.model';
 import { createInitialGameState } from '../game/deck-builder';
-import { resolveElementalExplosions } from '../game/turn-engine';
 
 export interface GameDoc {
   id: string;
@@ -204,13 +203,9 @@ export class GameService {
       createdAt: Date.now(),
       password: null,
       visibility: 'public',
-      // Esplosione elementale (2.4): come in tryStartGame, la mano iniziale o la Fonte Arcana
-      // appena rivelata potrebbero già contenere sia Luce che Tenebra fin dal primo istante.
-      state: resolveElementalExplosions(
-        createInitialGameState(
-          { name: hostName, wand: defaultWand, cardBack: profile.cardBack },
-          { name: guestName, wand: defaultWand, cardBack: 'dark' },
-        ),
+      state: createInitialGameState(
+        { name: hostName, wand: defaultWand, cardBack: profile.cardBack },
+        { name: guestName, wand: defaultWand, cardBack: 'dark' },
       ),
     };
     await setDoc(doc(this.db, 'games', gameId), data);

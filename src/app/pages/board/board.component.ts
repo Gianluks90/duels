@@ -323,7 +323,7 @@ export class BoardComponent implements OnInit {
   });
 
   /** Danno subito da mostrare come lampo sulla barra vita — copre qualunque causa TRANNE il veleno
-   * (Esplosione elementale, incantesimo), derivato da AnimationQueueService confrontando l'HP tra due
+   * (oggi solo incantesimo), derivato da AnimationQueueService confrontando l'HP tra due
    * GameState consecutivi (vedi deriveGameEvents). Il veleno ha un proprio evento dedicato
    * (playerPoisonDamageEvent/opponentPoisonDamageEvent sotto, icona/colore diversi), scorporato dal
    * danno generico invece di sommarcisi. */
@@ -723,10 +723,9 @@ export class BoardComponent implements OnInit {
   };
 
   // I segnali "overlay" sotto (vanishingCardIds/Ghosts, tip/body/handle entering/vanishing,
-  // handExplosions, fonteExploding, revealedBonusIds) sono tutti di proprietà di
-  // AnimationQueueService, che li deriva confrontando ogni nuovo state() col precedente (vedi
-  // deriveGameEvents) — qui solo alias di sola lettura, così il template e il resto della classe
-  // restano invariati. tipEntering/tipVanishing/bodyEntering/handleEntering sono filtrati sul
+  // revealedBonusIds) sono tutti di proprietà di AnimationQueueService, che li deriva confrontando
+  // ogni nuovo state() col precedente (vedi deriveGameEvents) — qui solo alias di sola lettura, così
+  // il template e il resto della classe restano invariati. tipEntering/tipVanishing/bodyEntering/handleEntering sono filtrati sul
   // proprio ruolo (myRole()): il servizio li tiene per entrambi i giocatori, ma solo il proprio
   // pannello bacchetta li anima, mai quello dell'avversario (vedi board.component.html).
   /** Pesca di carte (Fine turno, Raccolta) — id in finestra d'ingresso → ritardo ms per lo
@@ -756,28 +755,6 @@ export class BoardComponent implements OnInit {
   protected readonly handleEntering = computed(() =>
     this.animationQueue.handleEnteringFor(this.myRole()),
   );
-
-  /** Esplosioni elementali (2.4) risolte in una mano nell'ultimo batch — una entry per ruolo
-   * colpito, con le carte vere prese dall'evento (vedi HandExplosion). */
-  protected readonly handExplosions = this.animationQueue.handExplosions;
-  /** true per un attimo dopo la comparsa di handExplosions() — pilota SOLO il flip di rivelazione
-   * (CardComponent.revealed) delle carte coinvolte, invece di mostrarle già scoperte di scatto. */
-  protected readonly handExplosionRevealed = this.animationQueue.handExplosionRevealed;
-  /** true a flip concluso — pilota SOLO il lampo/scossa (board__hand-card--exploding), mai in
-   * contemporanea al flip (le due animation CSS sullo stesso elemento si sovrascriverebbero a
-   * vicenda, vedi AnimationQueueService). */
-  protected readonly handExplosionShaking = this.animationQueue.handExplosionShaking;
-
-  protected readonly playerHandExplosion = computed(
-    () => this.handExplosions().find((e) => e.role === this.myRole()) ?? null,
-  );
-  protected readonly opponentHandExplosion = computed(
-    () => this.handExplosions().find((e) => e.role === this.opponentRole()) ?? null,
-  );
-
-  /** true per la durata del lampo + scossa quando un'Esplosione elementale (2.4) avviene in Fonte
-   * Arcana (danneggia entrambi i giocatori, quindi non è legata a un ruolo). */
-  protected readonly fonteExploding = this.animationQueue.fonteExploding;
 
   constructor() {
     // effect (non afterNextRender): l'elemento potrebbe non esistere ancora al primissimo render
@@ -917,11 +894,10 @@ export class BoardComponent implements OnInit {
     });
 
     // Tutte le animazioni/fx derivate da un cambio di stato (carte scadute sparite dalla mano,
-    // Esplosioni elementali, bacchetta, bonus manico rivelato, suoni di pesca/rivelazione Fonte,
-    // flash danno) sono centralizzate in AnimationQueueService: ogni nuovo state() grezzo viene
-    // confrontato col precedente (deriveGameEvents) e tradotto negli overlay effimeri esposti sopra
-    // (vanishingGhosts, handExplosions, tipEntering, ecc.), invece di 9 effect separati con un
-    // proprio "lastKnownX" mutabile ciascuno.
+    // bacchetta, bonus manico rivelato, suoni di pesca/rivelazione Fonte, flash danno) sono
+    // centralizzate in AnimationQueueService: ogni nuovo state() grezzo viene confrontato col
+    // precedente (deriveGameEvents) e tradotto negli overlay effimeri esposti sopra (vanishingGhosts,
+    // tipEntering, ecc.), invece di 9 effect separati con un proprio "lastKnownX" mutabile ciascuno.
     effect(() => {
       const raw = this.state();
       if (raw) this.animationQueue.sync(raw, this.myRole());

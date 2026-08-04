@@ -351,15 +351,6 @@
       animation: hand-card-vanish 1s ease-in forwards;
     }
 
-    // Esplosione elementale (2.4): Luce+Tenebra coinvolte lampeggiano e "scuotono" prima di sparire.
-    // Usa la proprietà `translate` standalone (non `transform: translate()`) apposta: `transform` qui
-    // è già occupato dal ventaglio (handCardStyle) — `translate` si compone con esso invece di sovrascriverlo,
-    // stesso motivo per cui --vanishing sopra usa `top` invece di `transform`.
-    &--exploding {
-      pointer-events: none;
-      animation: hand-card-explode 700ms ease-out forwards;
-    }
-
     // Occhio (5.x, Card.revealedToOpponent): la carta dell'avversario passa dal dorso al volto vero
     // tramite uno swap di template (@if/@else in board.component.html), non un cambio di [revealed]
     // sulla stessa istanza — la garanzia di privacy vuole che i dati veri non vengano MAI passati a un
@@ -367,24 +358,10 @@
     // flip interno di CardComponent (mai una stessa istanza che passa da retro a fronte). L'elemento
     // è sempre nuovo di zecca nell'istante in cui compare: basta una classe statica, l'animazione CSS
     // parte da sola all'inserimento nel DOM, senza bisogno di alcun segnale. Usa `scale`/`filter`
-    // standalone (non `transform`/`box-shadow`) per lo stesso motivo di --vanishing/--exploding sopra.
+    // standalone (non `transform`/`box-shadow`) per lo stesso motivo di --vanishing sopra.
     &--revealing {
       animation: card-reveal-pop 500ms ease-out;
     }
-  }
-
-  // Esplosione elementale (2.4) in mano: le 1-2 carte vere consumate, centrate sopra il ventaglio
-  // (non fanno parte di handCardStyle — non hanno una posizione naturale nel ventaglio, dato che
-  // spariscono nella stessa transazione in cui vi entrano, vedi HandExplosion in board.component.ts).
-  &__hand-explosion {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 5;
-    display: flex;
-    gap: var(--sp-2);
-    pointer-events: none;
   }
 
   // ── Fonte Arcana (middle zone internals) ────────────────────────────────────
@@ -442,12 +419,6 @@
     display: flex;
     gap: var(--sp-3);
     align-items: center;
-
-    // Esplosione elementale (2.4) in Fonte Arcana: danneggia entrambi i giocatori, non singole carte
-    // (la riga usa track $index) — lampo + scossa semplificati sull'intera riga invece di un ghost per carta.
-    &--exploding {
-      animation: fonte-explode 500ms ease-out;
-    }
   }
 
   // Wrapper per ancorare il badge bookmark (magia pinnata, Qualità della vita) — app-action-menu non
@@ -760,30 +731,6 @@
   }
 }
 
-// Esplosione elementale (2.4) — "lampo + scossa": lampi bianco/dorati (via filter) + shake
-// orizzontale, poi svanisce. Durata in sync con EXPLOSION_GHOST_DURATION_MS (board.component.ts).
-@keyframes hand-card-explode {
-  0% {
-    filter: brightness(1);
-    translate: 0 0;
-  }
-  15%,
-  45% {
-    filter: brightness(2.2);
-    translate: -6px 0;
-  }
-  30%,
-  60% {
-    filter: brightness(2.2);
-    translate: 6px 0;
-  }
-  100% {
-    filter: brightness(1);
-    translate: 0 0;
-    opacity: 0;
-  }
-}
-
 // Occhio (5.x) — "pop" d'ingresso quando la carta vera dell'avversario compare al posto del dorso
 // (vedi .board__hand-card--revealing sopra): parte piccola e sovraesposta, si assesta alla misura
 // reale. Nessun collegamento a un batch id/segnale — riparte da sola ogni volta che questa classe si
@@ -807,7 +754,7 @@
 // Arcana (evento GameEvent 'cardsDrawn'/'fonteRevealed', AnimationQueueService.stageDrawingCards) —
 // un "pop" scaglionato carta per carta (animation-delay via --draw-delay, impostato da
 // board.component.ts) quando una carta nuova entra in mano, propria o dell'avversario, o in uno slot
-// della Fonte. Classe STANDALONE (non annidata sotto &__hand-card come --vanishing/--exploding/
+// della Fonte. Classe STANDALONE (non annidata sotto &__hand-card come --vanishing/
 // --revealing sopra): si applica sia a carte vere (app-card, propria mano/Fonte o avversario
 // rivelato) sia ai semplici dorsi placeholder (div, avversario non rivelato, desktop e compatto) —
 // elementi diversi che non condividono sempre la classe base .board__hand-card, quindi qui non può
@@ -816,7 +763,7 @@
 // (handCardStyle/compactHandCardStyle) — la Fonte non usa transform qui, ma la stessa classe resta
 // condivisa apposta, non vale la pena duplicarla. Il piccolo scale quasi a zero orizzontale a metà
 // corsa (40%) è la stessa illusione di "taglio di profilo" usata dal flip vero e proprio (card-flip
-// in card.component.scss, CARD_FLIP_DURATION_MS in AnimationQueueService) — qui non c'è un volto da
+// in card.component.scss, CARD_FLIP_HALF_MS in card.component.ts) — qui non c'è un volto da
 // scambiare (la carta mostra sempre lo stesso contenuto, dorso o fronte, dall'inizio alla fine), ma
 // il gesto visivo comunica "sta arrivando/si sta girando in vista" comunque, senza bisogno di
 // calcolare la direzione reale verso il mazzo (animazione stilizzata, non un volo geometricamente
@@ -842,26 +789,6 @@
     translate: 0 0;
     scale: 1 1;
     opacity: 1;
-  }
-}
-
-// Stessa idea semplificata per l'intera riga della Fonte Arcana (non singole carte, vedi nota su
-// .board__fonte-row--exploding). Durata in sync con FONTE_EXPLOSION_DURATION_MS (board.component.ts).
-@keyframes fonte-explode {
-  0%,
-  100% {
-    filter: brightness(1);
-    translate: 0 0;
-  }
-  15%,
-  45% {
-    filter: brightness(1.9);
-    translate: -5px 0;
-  }
-  30%,
-  60% {
-    filter: brightness(1.9);
-    translate: 5px 0;
   }
 }
 

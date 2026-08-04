@@ -16,8 +16,6 @@ export type GameEvent =
   | { type: 'cardsDrawn'; role: PlayerId; source: 'hand' | 'collect'; cards: readonly Card[] }
   /** Carta "temporanea" (Congelamento/Residuo, Card.expiresAt) sparita dalla mano. */
   | { type: 'cardVanished'; role: PlayerId; card: Card; index: number; total: number }
-  | { type: 'handExploded'; role: PlayerId; cards: readonly Card[] }
-  | { type: 'fonteExploded' }
   /** Slot della Fonte Arcana cambiati nell'ultimo batch — `cards` sono le carte nuove nelle
    * posizioni cambiate (confronto posizionale, non per-id: qui la posizione È il significato di
    * "rivelata in quello slot"), usate per lo stesso ingresso scaglionato di cardsDrawn. */
@@ -27,8 +25,8 @@ export type GameEvent =
   | { type: 'wandSocketFilled'; role: PlayerId; slot: 'body' | 'handle'; element: BaseElement }
   /** Bonus manico (1.4.3) rivelato su una o entrambe le carte appena pescate in Raccolta. */
   | { type: 'collectBonusRevealed'; role: PlayerId; cardIds: readonly string[] }
-  /** Danno generico (esplosione, incantesimo...) — la quota di danno da Avvelenamento nella stessa
-   * transazione (se presente) è già stata scorporata, vedi poisonDamageDealt sotto. */
+  /** Danno generico da incantesimo — la quota di danno da Avvelenamento nella stessa transazione (se
+   * presente) è già stata scorporata, vedi poisonDamageDealt sotto. */
   | { type: 'damageDealt'; role: PlayerId; amount: number }
   | { type: 'healed'; role: PlayerId; amount: number }
   /** Scudo aumentato (shield_add, 2.3.3) — solo gli aumenti, mai le diminuzioni (assorbimento di un

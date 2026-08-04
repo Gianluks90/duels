@@ -10,13 +10,12 @@ const ROLES: readonly PlayerId[] = ['host', 'guest'];
  * stato grezzo più recente). `prev` null significa "primo stato mai visto": nessun evento, va
  * mostrato direttamente senza animare nulla (vedi AnimationQueueService.sync).
  *
- * Alcuni eventi non sono derivabili da un diff strutturale per costruzione del dominio (Esplosione
- * elementale, ripesca durante Raccolta/Finale: le carte coinvolte si consumano nella stessa
- * transazione atomica in cui entrano in gioco, quindi il client non vede mai lo stato intermedio da
- * cui dedurle) — per quei casi si legge il contatore/payload che il reducer (turn-engine.ts) scrive
- * apposta per il client (explosionBatchId/lastExplosions, handDrawBatchId, collectDrawBatchId), mai
- * un diff. Per tutto il resto (carte scadute sparite dalla mano, bacchetta, HP) un diff per-id o
- * numerico diretto è affidabile.
+ * Alcuni eventi non sono derivabili da un diff strutturale per costruzione del dominio (ripesca
+ * durante Raccolta/Finale: le carte coinvolte si consumano nella stessa transazione atomica in cui
+ * entrano in gioco, quindi il client non vede mai lo stato intermedio da cui dedurle) — per quei
+ * casi si legge il contatore/payload che il reducer (turn-engine.ts) scrive apposta per il client
+ * (handDrawBatchId, collectDrawBatchId), mai un diff. Per tutto il resto (carte scadute sparite
+ * dalla mano, bacchetta, HP) un diff per-id o numerico diretto è affidabile.
  */
 export function deriveGameEvents(prev: GameState | null, next: GameState): GameEvent[] {
   if (!prev) return [];
@@ -24,10 +23,10 @@ export function deriveGameEvents(prev: GameState | null, next: GameState): GameE
   const events: GameEvent[] = [];
 
   // Danno da Avvelenamento (2.3.4): segnale esplicito (poisonDamageBatchId/lastPoisonDamage), non un
-  // diff — la stessa transazione di endTurn può risolvere anche un'Esplosione elementale sulla mano
-  // appena pescata subito dopo resolvePreparation, quindi un'unica perdita di HP osservata qui
-  // potrebbe sommare veleno + esplosione insieme (vedi il commento su quei campi in game.model.ts).
-  // Scorporata più sotto dal danno/cura generico per quel ruolo, non aggiunta in più.
+  // diff — la stessa transazione di endTurn potrebbe risolvere anche danno da incantesimo, quindi
+  // un'unica perdita di HP osservata qui potrebbe sommare veleno + incantesimo insieme (vedi il
+  // commento su quei campi in game.model.ts). Scorporata più sotto dal danno/cura generico per quel
+  // ruolo, non aggiunta in più.
   const poisonBatchChanged = next.poisonDamageBatchId !== prev.poisonDamageBatchId;
   const poisonRole = poisonBatchChanged ? next.lastPoisonDamage?.role : undefined;
   const poisonAmount = poisonBatchChanged ? (next.lastPoisonDamage?.amount ?? 0) : 0;
@@ -107,10 +106,9 @@ export function deriveGameEvents(prev: GameState | null, next: GameState): GameE
       });
     }
 
-    // Danno/cura: diff numerico diretto sull'HP — copre qualunque causa (Esplosione elementale,
-    // incantesimo), non solo le Esplosioni come faceva il vecchio damageEventFor in
-    // board.component.ts. La quota di veleno (poisonAmount sopra, se questo è il ruolo colpito) viene
-    // scorporata prima: quel danno ha già il proprio evento dedicato più sotto.
+    // Danno/cura: diff numerico diretto sull'HP — copre qualunque causa (oggi solo incantesimo). La
+    // quota di veleno (poisonAmount sopra, se questo è il ruolo colpito) viene scorporata prima: quel
+    // danno ha già il proprio evento dedicato più sotto.
     const poisonPortion = role === poisonRole ? poisonAmount : 0;
     const hpDrop = prevPlayer.hp - nextPlayer.hp - poisonPortion;
     if (hpDrop > 0) {
@@ -131,20 +129,6 @@ export function deriveGameEvents(prev: GameState | null, next: GameState): GameE
         role,
         amount: nextPlayer.tokens.shield - prevPlayer.tokens.shield,
       });
-    }
-  }
-
-  if (next.explosionBatchId !== prev.explosionBatchId) {
-    for (const explosion of next.lastExplosions) {
-      if (explosion.location === 'hand') {
-        events.push({
-          type: 'handExploded',
-          role: explosion.affectedRoles[0],
-          cards: explosion.cards,
-        });
-      } else {
-        events.push({ type: 'fonteExploded' });
-      }
     }
   }
 

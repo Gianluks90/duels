@@ -1,7 +1,7 @@
 import type { Card, CardTier } from '../models/card.model';
 import type { BaseElement, Element } from '../models/element.model';
 import { SUPERIOR_FORMULA } from '../models/element.model';
-import type { ExplosionEvent, GameState } from '../models/game.model';
+import type { GameState } from '../models/game.model';
 import type { DamageLogSource, GameLogEntryData } from '../models/game-log.model';
 import type { PendingSpell, PlayerId, PlayerState } from '../models/player.model';
 import { computePlayerMana } from '../models/player.model';
@@ -48,7 +48,7 @@ function appendLog(state: GameState, entry: GameLogEntryData): GameState {
 
 /** Logga un `damage` solo se è stato davvero perso HP (amount > 0) — es. un danno interamente
  * assorbito dallo scudo non genera una voce, non c'è nulla da raccontare. Condivisa da tutti gli
- * effetti danno di applySpellEffect, resolveElementalExplosions e resolvePreparation (veleno). */
+ * effetti danno di applySpellEffect e resolvePreparation (veleno). */
 function logDamage(
   state: GameState,
   role: PlayerId,
@@ -666,16 +666,12 @@ export function combineElements(
     discards: [...player.discards, taken.obtained],
     wand: { ...player.wand, tipSlot: tipAfterB },
   });
-  const logged = appendLog(withHand, {
+  return appendLog(withHand, {
     type: 'combined',
     role,
     kind: 'advanced',
     element: taken.obtained.element,
   });
-
-  // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
-  // essere Luce o Tenebra (la carta ottenuta qui è sempre un avanzato, mai un potente).
-  return resolveElementalExplosions(logged);
 }
 
 /**
@@ -722,16 +718,12 @@ export function combineSuperior(
     discards: [...player.discards, taken.obtained],
     wand: { ...player.wand, tipSlot },
   });
-  const logged = appendLog(withHand, {
+  return appendLog(withHand, {
     type: 'combined',
     role,
     kind: 'superior',
     element: taken.obtained.element,
   });
-
-  // Esplosione elementale (2.4): il nuovo slot rivelato in Fonte Arcana da takeFromFonte potrebbe
-  // essere l'elemento potente opposto a quello appena ottenuto qui (che va negli scarti, non in mano).
-  return resolveElementalExplosions(logged);
 }
 
 /**
@@ -867,10 +859,7 @@ function endTurn(state: GameState, role: PlayerId): GameState {
   // appena concluso — non richiede un passo separato, dato che l'unico modo di entrare in
   // 'preparazione' è proprio questo handoff di turno (o l'inizio partita, dove i due contatori sono
   // comunque a zero).
-  const stateAfterPreparation = resolvePreparation(stateForNextTurn, otherRole);
-
-  // Esplosione elementale (2.4): la mano appena pescata potrebbe contenere sia Luce che Tenebra.
-  return resolveElementalExplosions(stateAfterPreparation);
+  return resolvePreparation(stateForNextTurn, otherRole);
 }
 
 /**
@@ -885,7 +874,7 @@ function endTurn(state: GameState, role: PlayerId): GameState {
  * forte. Il danno usa il livello PRIMA del decadimento (l'ultimo colpo pieno prima di scendere), non
  * quello dopo. Incrementa poisonDamageBatchId/lastPoisonDamage (GameState) SOLO se è stato inflitto
  * davvero un danno — segnale esplicito per il client, vedi il commento su quei campi in
- * game.model.ts: la stessa transazione di endTurn può risolvere anche un'Esplosione elementale
+ * game.model.ts: la stessa transazione di endTurn potrebbe risolvere anche danno da incantesimo
  * subito dopo, un semplice diff sull'HP non basterebbe a isolare la sola quota di veleno.
  */
 function resolvePreparation(state: GameState, target: PlayerId): GameState {
@@ -1144,10 +1133,7 @@ function applySpellEffect(
  * Fase Incantesimo (4.5/5.3): risolve le magie lanciate in Azione (pendingSpells) — applica gli
  * effetti di ciascuna (più l'eventuale bonus di mana speciale calcolato al pagamento, 3.2.2/3.2.3),
  * poi le sposta tutte negli scarti del lanciatore e svuota pendingSpells. Agganciata dentro
- * advanceTurnPhase, non da un endpoint separato. Chiude con resolveElementalExplosions (2.4): alcuni
- * effetti (es. opponent_discard_hand, fonte_reset) pescano carte fresche in una mano o rivelano nuovi
- * slot in Fonte Arcana, che potrebbero introdurre Luce+Tenebra insieme — stesso motivo per cui
- * endTurn/combineElements/combineSuperior la richiamano già, mancava solo qui.
+ * advanceTurnPhase, non da un endpoint separato.
  */
 function resolveSpells(state: GameState, role: PlayerId): GameState {
   const player = state.players[role];
@@ -1162,97 +1148,10 @@ function resolveSpells(state: GameState, role: PlayerId): GameState {
   }
 
   const caster = next.players[role];
-  const withDiscards = updatePlayer(next, role, {
+  return updatePlayer(next, role, {
     discards: [...caster.discards, ...player.pendingSpells.map((p) => p.card)],
     pendingSpells: [],
   });
-  return resolveElementalExplosions(withDiscards);
-}
-
-function extractOneByExactElement(
-  cards: readonly Card[],
-  element: Element,
-): { removed: Card | null; rest: Card[] } {
-  const rest = [...cards];
-  const index = rest.findIndex((c) => c.element === element);
-  if (index === -1) return { removed: null, rest };
-  const [removed] = rest.splice(index, 1);
-  return { removed, rest };
-}
-
-/**
- * Esplosione elementale (2.4): quando Luce e Tenebra si trovano nello stesso luogo — la mano di un
- * giocatore, o la Fonte Arcana — esplodono: 1 danno al bersaglio (solo al proprietario se in mano,
- * a entrambi i giocatori se nella Fonte Arcana) e le 2 carte si consumano. Per definizione di
- * "consumare" (2.4, nota su Consumare/Scartare): tornano negli scarti del mazzo comune a cui
- * appartengono, cioè il mazzo avanzato — non nella pila del proprietario (altrimenti, essendo mano
- * e mazzo personale dello stesso giocatore, rientrerebbero prima o poi nella sua stessa mano e
- * riesploderebbero all'infinito). In loop per il caso limite di più di 1 copia compresente. Va
- * richiamata dopo qualunque cambiamento che potrebbe aver introdotto un elemento potente in una
- * mano o in Fonte Arcana (inizio partita, endTurn, combineElements/combineSuperior).
- *
- * Ogni esplosione risolta qui è invisibile al client finché non arriva il nuovo stato (si è già
- * consumata, proprio come lo scioglimento del Congelamento) — `lastExplosions`/`explosionBatchId`
- * esistono solo per permettere al client di accorgersene e giocare un'animazione, non sono un log
- * storico: se non succede nulla restano quelli di sempre, invariati.
- */
-export function resolveElementalExplosions(state: GameState): GameState {
-  let next = state;
-  const events: ExplosionEvent[] = [];
-
-  for (const role of ['host', 'guest'] as const) {
-    let player = next.players[role];
-    while (
-      player.hand.some((c) => c.element === 'light') &&
-      player.hand.some((c) => c.element === 'dark')
-    ) {
-      const { removed: light, rest: afterLight } = extractOneByExactElement(player.hand, 'light');
-      const { removed: dark, rest: hand } = extractOneByExactElement(afterLight, 'dark');
-      next = updatePlayer(next, role, { hand, hp: player.hp - 1 });
-      next = { ...next, advancedDiscards: [...next.advancedDiscards, light!, dark!] };
-      next = logDamage(next, role, 1, { kind: 'explosion' });
-      player = next.players[role];
-      events.push({ location: 'hand', affectedRoles: [role], cards: [light!, dark!] });
-    }
-  }
-
-  while (
-    next.fonteElementale.some((c) => c.element === 'light') &&
-    next.fonteElementale.some((c) => c.element === 'dark')
-  ) {
-    const { removed: light, rest: afterLight } = extractOneByExactElement(
-      next.fonteElementale,
-      'light',
-    );
-    const { removed: dark, rest: afterDark } = extractOneByExactElement(afterLight, 'dark');
-
-    // 2.6: i 2 slot appena esplosi si rimpiazzano subito con 2 nuove carte pescate dal mazzo
-    // avanzato (stessa pescata di takeFromFonte) — restano vuoti solo nel caso limite in cui anche
-    // gli scarti del mazzo avanzato (già aggiornati con light/dark appena consumate) siano esauriti.
-    const {
-      drawn: replacements,
-      deck: advancedDeck,
-      discards: advancedDiscards,
-    } = drawUpTo(next.advancedDeck, [...next.advancedDiscards, light!, dark!], 2);
-    const fonteElementale = [...afterDark, ...replacements];
-
-    next = {
-      ...next,
-      fonteElementale,
-      advancedDeck,
-      advancedDiscards,
-      players: {
-        host: { ...next.players.host, hp: next.players.host.hp - 1 },
-        guest: { ...next.players.guest, hp: next.players.guest.hp - 1 },
-      },
-    };
-    next = logDamage(next, 'host', 1, { kind: 'explosion' });
-    next = logDamage(next, 'guest', 1, { kind: 'explosion' });
-    events.push({ location: 'fonte', affectedRoles: ['host', 'guest'], cards: [light!, dark!] });
-  }
-
-  if (events.length === 0) return next;
-  return { ...next, lastExplosions: events, explosionBatchId: next.explosionBatchId + 1 };
 }
 
 const MAX_POISON = 3;
@@ -1497,7 +1396,7 @@ function applyBoostCardMana(
  * elements.md): consuma fino a `maxAmount` carte scelte dal giocatore nei PROPRI scarti. Elementi
  * veri tornano negli scarti del mazzo COMUNE (tier 'base') o AVANZATO (tier 'advanced'/'superior')
  * a cui appartengono, mai in quelli del giocatore stesso — stesso instradamento per tier già usato
- * da combineElements/resolveElementalExplosions per le carte consumate dalla mano. Incantesimi e
+ * da combineElements per le carte consumate dalla mano. Incantesimi e
  * carte effetto (tier 'spell'/'freeze', eleggibili solo per magie con consumableCardTiers allargato
  * — es. 'destroy') non appartengono a nessun mazzo condiviso: consumarli li fa sparire dal gioco,
  * semplicemente non finiscono in nessuna delle due pile sotto. `targetCardIds` è scelto dal
@@ -1532,9 +1431,8 @@ function applyConsumeDiscards(
  * Condizione di vittoria (1.3, regolamento v2): "Quando i Punti Salute si riducono a 0 o meno, per
  * qualsiasi motivo, vince la partita il giocatore che ne ha ancora almeno 1". Applicata centralmente
  * da GameEngineService.mutate() dopo OGNI reducer — non sparsa nei singoli punti del motore che
- * toccano hp (danno da incantesimo, Avvelenamento in resolvePreparation, Esplosione elementale...),
- * altrimenti andrebbero enumerati e tenuti aggiornati uno per uno. Pareggio (entrambi <= 0 nello
- * stesso reducer, es. doppia Esplosione elementale in Fonte quando entrambi sono già quasi a 0): il
+ * toccano hp (danno da incantesimo, Avvelenamento in resolvePreparation...), altrimenti andrebbero
+ * enumerati e tenuti aggiornati uno per uno. Pareggio (entrambi <= 0 nello stesso reducer): il
  * regolamento non lo prevede esplicitamente, restiamo senza winner — "comunque finita" lo segnala
  * GameDoc.status (v. isGameOver sotto), non questo campo. No-op se un winner è già stato assegnato
  * (es. da un arrendersi, GameEngineService.surrender) o se nessuno dei due è a 0.

@@ -6,7 +6,7 @@ Il Mana è la risorsa necessaria per lanciare gli incantesimi. Ogni elemento —
 |---|---|
 | Base | 1 |
 | Avanzato | 2 |
-| Potente | 2 |
+| Potente | 3 |
 | Residuo Arcano | 0 — non è un elemento |
 
 Il mana non è un serbatoio che accumuli: **è il valore delle carte che hai in mano** in quel momento. Per lanciare un incantesimo ti serve in mano un valore di mana almeno pari al suo costo — le carte usate per pagarlo vengono scartate.

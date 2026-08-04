@@ -22,9 +22,7 @@ Un rimando rapido ai termini del regolamento, in ordine alfabetico. Per la spieg
 
 **Elemento base** — Fuoco, Acqua, Aria o Terra. Vale 1 mana; si pesca dal mazzo comune durante la Raccolta.
 
-**Elemento potente** — Luce o Tenebra. Vale 2 mana; si ottiene combinando Fuoco + Acqua + Aria + Terra nella Fonte Arcana.
-
-**Esplosione elementale** — quando due elementi potenti diversi si trovano nello stesso luogo (la tua mano o la Fonte Arcana): 1 danno al bersaglio e le 2 carte coinvolte si consumano.
+**Elemento potente** — Luce o Tenebra. Vale 3 mana; si ottiene combinando Fuoco + Acqua + Aria + Terra nella Fonte Arcana.
 
 **Fase** — una delle sei tappe del turno, sempre nello stesso ordine: Attesa, Preparazione, Raccolta, Azione, Incantesimo, Fine.
 

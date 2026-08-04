@@ -51,11 +51,9 @@ Gli elementi avanzati danno accesso a incantesimi più potenti, che tendenzialme
   <figcaption>I quattro elementi avanzati: Ghiaccio, Tuono, Lava, Veleno.</figcaption>
 </figure>
 
-## Elementi Potenti ed Esplosione Elementale
+## Elementi Potenti
 
-Luce e Tenebra valgono 2 mana ciascuno e si ottengono combinando Fuoco + Acqua + Aria + Terra nella Fonte Arcana.
-
-Quando due elementi potenti diversi si trovano nello stesso luogo — la tua mano, oppure la Fonte Arcana — avviene un'**esplosione elementale**: 1 danno al bersaglio (se accade in mano, solo a chi la possiede; se accade nella Fonte Arcana, a entrambi i giocatori) e le 2 carte coinvolte si consumano.
+Luce e Tenebra valgono 3 mana ciascuno e si ottengono combinando Fuoco + Acqua + Aria + Terra nella Fonte Arcana.
 
 <figure class="rb-card-gallery">
   <div class="rb-card-gallery__row">

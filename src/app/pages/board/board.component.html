@@ -205,22 +205,6 @@
               }
             }
 
-            <!-- Esplosione elementale (2.4) nella mano dell'avversario — le sue carte, altrimenti mai
-             visibili, si rivelano per l'istante dell'esplosione (vedi handExplosions in board.component.ts). -->
-            @if (opponentHandExplosion(); as ex) {
-              <div class="board__hand-explosion">
-                @for (card of ex.cards; track card.id) {
-                  <app-card
-                    [class.board__hand-card--exploding]="handExplosionShaking()"
-                    [element]="card.element"
-                    [manaBonus]="card.manaBonus ?? 0"
-                    [size]="handArcCardWidth"
-                    [revealed]="handExplosionRevealed()"
-                    aria-hidden="true"
-                  />
-                }
-              </div>
-            }
           </div>
 
           <div class="board__hand-box-side">
@@ -446,7 +430,6 @@
                 class="board__fonte-row"
                 role="region"
                 [attr.aria-label]="'board.fonteAria' | translate"
-                [class.board__fonte-row--exploding]="fonteExploding()"
               >
                 @for (card of fonteCards(); track $index) {
                   <ng-template #recipeTip>
@@ -832,23 +815,6 @@
                 [style]="handCardStyle(ghost.index, ghost.total, playerHandTrackWidth(), false)"
                 aria-hidden="true"
               />
-            }
-
-            <!-- Esplosione elementale (2.4) nella propria mano — le carte vere prese dall'evento, si
-             rivelano con un flip prima di lampeggiare/scuotere e sparire (vedi handExplosions). -->
-            @if (playerHandExplosion(); as ex) {
-              <div class="board__hand-explosion">
-                @for (card of ex.cards; track card.id) {
-                  <app-card
-                    [class.board__hand-card--exploding]="handExplosionShaking()"
-                    [element]="card.element"
-                    [manaBonus]="card.manaBonus ?? 0"
-                    [size]="handArcCardWidth"
-                    [revealed]="handExplosionRevealed()"
-                    aria-hidden="true"
-                  />
-                }
-              </div>
             }
           </div>
 

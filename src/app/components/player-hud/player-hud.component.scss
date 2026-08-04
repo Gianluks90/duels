@@ -236,8 +236,8 @@
       background: linear-gradient(180deg, #b6d94f 0%, #7a9a2e 32%, #4a5c18 68%, #2e3a10 100%);
     }
 
-    // Esplosione elementale (2.4) — "lampo": un impulso bianco/dorato sopra il fill, durata
-    // allineata a FLASH_DURATION_MS (player-hud.component.ts).
+    // Danno subito — "lampo": un impulso bianco/dorato sopra il fill, durata allineata a
+    // FLASH_DURATION_MS (player-hud.component.ts).
     &--damage-flash {
       animation: hp-damage-flash 1000ms ease-out;
     }
@@ -484,7 +484,7 @@
   }
 }
 
-// Esplosione elementale (2.4) — durata di entrambe: 1000ms, in sync con FLASH_DURATION_MS
+// Danno subito — durata di entrambe: 1000ms, in sync con FLASH_DURATION_MS
 // (player-hud.component.ts). Top-level: le @keyframes non possono stare dentro un blocco &.
 @keyframes hp-damage-flash {
   0%,

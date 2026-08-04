@@ -20,7 +20,11 @@ export const ADVANCED_RECIPES: Record<AdvancedElement, [BaseElement, BaseElement
 
 export const SUPERIOR_FORMULA: BaseElement[] = ['fire', 'water', 'air', 'earth'];
 
-/** Mana value of each element — base elements are worth 1, advanced/superior 2, Residuo Arcano 0 (regolamento v2, 2.2/2.3/2.4/2.5); mana accumulato (Raccolta) vale 1, come una base, ma non è spendibile in nessuna combinazione (nessun helper di combinazione riconosce tier 'mana'). */
+/** Mana value of each element — base elements are worth 1, advanced 2, superior (Luce/Tenebra) 3,
+ * Residuo Arcano 0 (regolamento v2, 2.2/2.3/2.4/2.5); mana accumulato (Raccolta) vale 1, come una
+ * base, ma non è spendibile in nessuna combinazione (nessun helper di combinazione riconosce tier
+ * 'mana'). Luce/Tenebra un gradino sopra gli avanzati, non allo stesso livello: servono 4 basi da
+ * combinare (2.4) contro le 2 di un avanzato (2.3), quindi sono più rare/costose da ottenere. */
 export const ELEMENT_MANA: Record<Element, number> = {
   fire: 1,
   water: 1,
@@ -30,8 +34,8 @@ export const ELEMENT_MANA: Record<Element, number> = {
   poison: 2,
   ice: 2,
   lava: 2,
-  light: 2,
-  dark: 2,
+  light: 3,
+  dark: 3,
   residium: 0,
   mana: 1,
 };

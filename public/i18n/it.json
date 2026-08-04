@@ -863,8 +863,6 @@
     "entries": {
       "damageSpellSelf": "Hai subito {amount} danno/i da {spell}.",
       "damageSpellOther": "{name} ha subito {amount} danno/i da {spell}.",
-      "damageExplosionSelf": "Hai subito {amount} danno/i da un'Esplosione elementale.",
-      "damageExplosionOther": "{name} ha subito {amount} danno/i da un'Esplosione elementale.",
       "damagePoisonSelf": "Hai subito {amount} danno/i da Avvelenamento.",
       "damagePoisonOther": "{name} ha subito {amount} danno/i da Avvelenamento.",
       "healedSelf": "Hai recuperato {amount} PS con {spell}.",

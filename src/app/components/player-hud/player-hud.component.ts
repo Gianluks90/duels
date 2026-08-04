@@ -21,8 +21,8 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 const FLASH_DURATION_MS = 1000;
 
 /** Una variazione da mostrare una tantum (danno subito, cura ricevuta, scudo guadagnato) — `id` deve
- * cambiare solo quando è successo davvero qualcosa di nuovo (es. GameState.explosionBatchId, o il
- * contatore interno di AnimationQueueService), non a ogni render. */
+ * cambiare solo quando è successo davvero qualcosa di nuovo (il contatore interno di
+ * AnimationQueueService), non a ogni render. */
 export interface FlashEvent {
   id: number;
   amount: number;
@@ -85,7 +85,7 @@ export class PlayerHudComponent {
    * solo il pannello PROPRIO le riceve (board.component.html non le passa a quello dell'avversario):
    * sono un promemoria privato, non visibile all'altro giocatore. */
   readonly pinnedSpells = input<readonly PinnedSpellInfo[]>([]);
-  /** Colpo subito da segnalare (es. Esplosione elementale, 2.4) — funziona anche quando la causa non è visibile a schermo (es. nella mano coperta dell'avversario), dato che qui basta sapere "quanto" e "quando", non "perché". */
+  /** Colpo subito da segnalare (danno da incantesimo) — funziona anche quando la causa non è visibile a schermo (es. nella mano coperta dell'avversario), dato che qui basta sapere "quanto" e "quando", non "perché". */
   readonly damageEvent = input<FlashEvent | null>(null);
   /** Cura ricevuta da segnalare (es. Rigenerazione) — stesso schema di damageEvent. */
   readonly healEvent = input<FlashEvent | null>(null);

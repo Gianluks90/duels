@@ -17,7 +17,6 @@ import {
   isGameOver,
   keepCard as keepCardReducer,
   keepMana as keepManaReducer,
-  resolveElementalExplosions,
   resolveVictory,
   socketElement as socketElementReducer,
   startCollect as startCollectReducer,
@@ -51,18 +50,13 @@ export class GameEngineService {
     if (!data.hostReady || !data.guestReady) return;
     if (!data.hostWand || !data.guestWand) return;
 
-    // Esplosione elementale (2.4): la mano iniziale (pescata dal proprio mazzo, con 1 Luce + 1
-    // Tenebra ciascuno, 1.2) o la Fonte Arcana appena rivelata potrebbero già contenere entrambi
-    // gli elementi potenti fin dal primo istante.
-    const state = resolveElementalExplosions(
-      createInitialGameState(
-        { name: data.hostName, wand: data.hostWand, cardBack: data.hostCardBack },
-        {
-          name: data.guestName ?? data.hostName,
-          wand: data.guestWand,
-          cardBack: data.guestCardBack,
-        },
-      ),
+    const state = createInitialGameState(
+      { name: data.hostName, wand: data.hostWand, cardBack: data.hostCardBack },
+      {
+        name: data.guestName ?? data.hostName,
+        wand: data.guestWand,
+        cardBack: data.guestCardBack,
+      },
     );
 
     await updateDoc(ref, { status: 'playing', state });

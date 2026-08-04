@@ -81,9 +81,6 @@ export class GameLogDialogComponent {
             name,
           });
         }
-        if (entry.source.kind === 'explosion') {
-          return this.pick('damageExplosion', self, { amount, name });
-        }
         return this.pick('damagePoison', self, { amount, name });
       }
       case 'healed':
