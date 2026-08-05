@@ -772,10 +772,15 @@
     "loading": "Caricamento…",
     "notFound": "Profilo non trovato.",
     "cardBack": "Dorso carta attuale",
+    "friendsCount": {
+      "none": "Ancora nessun amico",
+      "some": "{count} amici"
+    },
     "sections": {
       "stats": "Statistiche",
       "favoriteSpells": "Incantesimi preferiti",
-      "objectives": "Obiettivi"
+      "objectives": "Obiettivi",
+      "collection": "Collezione"
     },
     "favoriteSpellsEmpty": "Nessun incantesimo impostato come preferito. Apri il grimorio e seleziona l'icona a forma di stella nella pagina dell'incantesimo che vuoi mettere come preferito.",
     "objectivesEmpty": "Ancora nessun obbiettivo raggiunto."

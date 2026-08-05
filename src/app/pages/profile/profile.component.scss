@@ -40,6 +40,39 @@
     font-size: 1.5rem;
   }
 
+  // Sotto al titolo del giocatore (v. &__player-title, template) nella colonna identità —
+  // centrato come il resto di quella colonna (v. &__column--identity, text-align: center, che da
+  // solo non basta perché questo è un flex container). Stesso colore oro di titolo/valori
+  // (var(--text-heading)) invece che testo muted: "N amici" è un dato che vale la pena far
+  // risaltare come le percentuali di completamento (v. &__section-percent sotto), non una
+  // didascalia secondaria. margin-top oltre al gap di &__column--identity: staccato di più dal
+  // blocco nome/divisore/titolo sopra, non solo il ritmo uniforme del resto della colonna.
+  &__friends-count {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-1);
+    margin-top: var(--sp-2);
+    font-size: 0.8rem;
+    color: var(--text-heading);
+  }
+
+  // Icona mascherata e tinta dello stesso oro del testo accanto (stesso schema di
+  // IconButtonComponent.icon-btn__icon) — l'SVG sorgente è grigio chiaro fisso, un `<img>` normale
+  // non potrebbe seguire il colore del testo.
+  &__friends-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    background-color: var(--text-heading);
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+
   // Stesso schema a due colonne di CollectionComponent/ObjectivesComponent (corpo diviso da un
   // bordo verticale) invece della vecchia colonna singola centrata — coerenza tra i pannelli
   // Achievements. A differenza di quelle due, qui entrambe le colonne mostrano contenuto vero

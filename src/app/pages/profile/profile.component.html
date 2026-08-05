@@ -46,6 +46,20 @@
             <p class="profile__player-title">{{ title }}</p>
           }
 
+          <p class="profile__friends-count">
+            <span
+              class="profile__friends-icon"
+              aria-hidden="true"
+              [style.mask-image]="'url(\'' + friendsIcon + '\')'"
+              [style.-webkit-mask-image]="'url(\'' + friendsIcon + '\')'"
+            ></span>
+            @if (friendsCount() === 0) {
+              {{ 'profilePage.friendsCount.none' | translate }}
+            } @else {
+              {{ 'profilePage.friendsCount.some' | translate: { count: friendsCount() } }}
+            }
+          </p>
+
           <div class="profile__card-back">
             <p class="t-muted profile__card-back-label">
               {{ 'profilePage.cardBack' | translate }}
@@ -90,7 +104,7 @@
                     </div>
                     <strong>{{ spellName(spellId) }}</strong>
                     <hr class="rich-tooltip__rule" />
-                    <p class="rich-tooltip__effect">{{ spellEffectSummary(spellId) }}</p>
+                    <p class="rich-tooltip__effect" [innerHTML]="spellEffectSummary(spellId)"></p>
                     @if (spellFlavor(spellId); as flavor) {
                       <p class="rich-tooltip__flavor">
                         <em>{{ flavor }}</em>
@@ -134,6 +148,24 @@
                 }
               </div>
             }
+          </section>
+
+          <section class="profile__section">
+            <div class="profile__section-header">
+              <h2 class="t-heading profile__section-title">
+                {{ 'profilePage.sections.collection' | translate }}
+              </h2>
+              <span class="profile__section-percent">{{ collectionCompletionPercent() }}%</span>
+            </div>
+            <div class="profile__divider"></div>
+            <dl class="profile__stats">
+              @for (item of collectionBreakdown(); track item.key) {
+                <div class="profile__stat">
+                  <dt class="t-muted">{{ 'collection.' + item.key | translate }}</dt>
+                  <dd>{{ item.owned }}/{{ item.total }}</dd>
+                </div>
+              }
+            </dl>
           </section>
 
           <section class="profile__section">

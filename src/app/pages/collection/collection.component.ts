@@ -19,6 +19,7 @@ import {
 } from '../../data/titles';
 import { COLLECTIBLE_ELEMENT_IDS } from '../../data/elements';
 import { SPELL_CATALOG } from '../../data/spells';
+import { SPELL_LEGACY_UNLOCK_COUNT } from '../../game/collection-progress';
 import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
 import { elementImagePath } from '../../models/element.model';
 import type { RewardUnlock } from '../../models/reward-unlock.model';
@@ -47,10 +48,6 @@ export class CollectionComponent {
   private readonly auth = inject(AuthService);
   private readonly backgroundService = inject(BackgroundService);
   private readonly i18n = inject(TranslationService);
-
-  /** Incantesimi lanciati per sbloccare l'arte v1 di un incantesimo (v. spellItems sotto) — soglia
-   * fissa uguale per tutti, non (ancora) per-incantesimo come i reward di OBJECTIVE_CATALOG. */
-  private static readonly SPELL_LEGACY_UNLOCK_COUNT = 10;
 
   protected readonly categories: readonly { id: CollectionCategory; labelKey: string }[] = [
     { id: 'cardBacks', labelKey: 'collection.cardBacks' },
@@ -274,7 +271,7 @@ export class CollectionComponent {
         const name = this.i18n.t(`spells.${spell.id}.name`);
         const description = this.i18n.t(`spells.${spell.id}.flavorText`);
         const castCount = castCounts[spell.id] ?? 0;
-        const owned = castCount >= CollectionComponent.SPELL_LEGACY_UNLOCK_COUNT;
+        const owned = castCount >= SPELL_LEGACY_UNLOCK_COUNT;
         const current: CollectionItem = {
           id: spell.id,
           imageUrl: `/cards-spell/${spell.id}.webp`,
@@ -293,7 +290,7 @@ export class CollectionComponent {
             owned ? 'collection.unlockedSpellUsage' : 'collection.lockedSpellUsage',
             {
               name,
-              count: CollectionComponent.SPELL_LEGACY_UNLOCK_COUNT,
+              count: SPELL_LEGACY_UNLOCK_COUNT,
             },
           ),
         };

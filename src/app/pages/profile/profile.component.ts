@@ -21,6 +21,11 @@ import { ObjectiveCardComponent } from '../../components/objective-card/objectiv
 import { OBJECTIVE_CATALOG } from '../../data/objectives';
 import { SPELL_CATALOG } from '../../data/spells';
 import { buildObjectiveProgress, buildProgressSource } from '../../game/achievements';
+import {
+  COLLECTION_CATEGORY_ORDER,
+  collectionCompletionPercent,
+  collectionProgress,
+} from '../../game/collection-progress';
 import { EMPTY_USER_STATS, type UserProfile, type UserStats } from '../../models/user.model';
 
 /**
@@ -78,6 +83,10 @@ export class ProfileComponent implements OnInit {
 
   protected readonly gearIcon = '/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly addFriendIcon = '/icons/person_add_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  /** Mascherata e tinta oro in CSS (stesso schema di IconButtonComponent.icon-btn__icon, v.
+   * profile.component.scss) invece che un `<img>` — l'SVG sorgente è grigio chiaro fisso
+   * (E3E3E3), qui deve invece comparire dello stesso colore del testo accanto. */
+  protected readonly friendsIcon = '/icons/group_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg';
 
   private readonly viewedUid = signal('');
   private readonly fetchedProfile = signal<UserProfile | null>(null);
@@ -97,6 +106,10 @@ export class ProfileComponent implements OnInit {
   protected readonly stats = computed(() => this.profile()?.stats ?? EMPTY_USER_STATS);
   protected readonly statFields = ProfileComponent.STAT_FIELDS;
   protected readonly favoriteSpellIds = computed(() => this.profile()?.favoriteSpellIds ?? []);
+  /** Sincronizzato da FriendsDialogComponent ogni volta che carica la lista amici per intero (v.
+   * AuthService.syncFriendsCount) — nessuna chiamata di rete in più qui, solo il valore già
+   * denormalizzato sul profilo (proprio o di un amico, entrambi leggibili da questa pagina). */
+  protected readonly friendsCount = computed(() => this.profile()?.friendsCount ?? 0);
 
   /** Stesso calcolo di ObjectivesComponent.objectivesProgress, sul profilo VISUALIZZATO (non
    * necessariamente auth.profile()) — buildProgressSource/buildObjectiveProgress accettano già
@@ -126,6 +139,23 @@ export class ProfileComponent implements OnInit {
     return recentIds
       .map((id) => progress.find((item) => item.objective.id === id))
       .filter((item) => item !== undefined);
+  });
+
+  /** % di completamento Collezione (dorsi/sfondi/titoli/arte v1) del profilo VISUALIZZATO — stessa
+   * idea di objectivesCompletionPercent sopra, calcolo estratto in game/collection-progress.ts
+   * perché CollectionComponent.completionPercent dipende da i18n/BackgroundService (serve solo per
+   * disegnare i tile) che qui non servono. */
+  protected readonly collectionCompletionPercent = computed(() =>
+    collectionCompletionPercent(this.profile()),
+  );
+
+  /** Owned/totale per ciascuna categoria di Collezione, nello stesso ordine delle tab di
+   * CollectionComponent — mostrato come la sezione "Statistiche" sotto (stesso `dl`/`dt`/`dd`), con
+   * "owned/totale" al posto di un singolo numero (v. template, `collection.<key>` per l'etichetta,
+   * le stesse stringhe già usate per le tab di CollectionComponent). */
+  protected readonly collectionBreakdown = computed(() => {
+    const progress = collectionProgress(this.profile());
+    return COLLECTION_CATEGORY_ORDER.map((key) => ({ key, ...progress[key] }));
   });
   /** Il titolo da mostrare — risolto in testo (v. TranslationService.titleLabel, `p.title` è una
    * variant-id, non testo già pronto). Chi può EQUIPAGGIARE un titolo esclusivo (v. TITLE_CATALOG,

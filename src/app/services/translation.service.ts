@@ -3,6 +3,7 @@ import { SUPPORTED_LANGUAGES, type LanguageCode } from '../models/language.model
 import type { Element } from '../models/element.model';
 import type { SpecialMana } from '../models/card.model';
 import type { TurnPhase } from '../models/turn-phase.model';
+import type { ObjectiveReward } from '../models/objective.model';
 import { TITLE_CATALOG, titleBaseId, titleRewardVariantIds } from '../data/titles';
 
 interface DictionaryObject {
@@ -101,6 +102,38 @@ export class TranslationService {
    * vuota altrimenti (un epiteto già completo da solo, es. "La muraglia", "Fortunato"). */
   private titleMarker(baseId: string): string {
     return TITLE_CATALOG.find((def) => def.id === baseId)?.suffix ? '…' : '';
+  }
+
+  /** Etichetta "Categoria "Nome"" di una singola ricompensa (es. `Sfondo "Dorato"`) — riusata da
+   * ObjectiveCardComponent (anteprima ricompense di un obiettivo) e ProfileComponent (ultimi
+   * elementi di collezione ottenuti), un solo posto che sa come mostrare un ObjectiveReward come
+   * testo invece di duplicare lo switch sui quattro ObjectiveRewardType in ogni componente. */
+  rewardLabel(reward: ObjectiveReward): string {
+    if (reward.id.startsWith('TODO_')) return this.t('objectives.rewardPending');
+
+    const name =
+      reward.type === 'cardBack'
+        ? this.t(`collection.cardBackCatalog.${reward.id}.name`)
+        : reward.type === 'background'
+          ? this.t(`collection.backgroundCatalog.${reward.id}.name`)
+          : reward.type === 'elementVariant'
+            ? this.t('objectives.elementVariantName', {
+                name: this.elementLabel(reward.id as Element),
+              })
+            : this.titleForms(reward.id).join(' / ');
+    if (!name) return this.t('objectives.rewardPending');
+
+    return `${this.t(`objectives.rewardTypeLabels.${reward.type}`)} "${name}"`;
+  }
+
+  /** Unisce più etichette come un elenco in linguaggio naturale ("A, B e C",
+   * `objectives.rewardConjunction` per l'ultima congiunzione) invece che con un semplice
+   * separatore — riusato ovunque più ricompense/elementi vadano elencati in una frase. */
+  joinWithConjunction(labels: readonly string[]): string {
+    if (labels.length <= 1) return labels.join('');
+    const last = labels[labels.length - 1];
+    const rest = labels.slice(0, -1);
+    return `${rest.join(', ')} ${this.t('objectives.rewardConjunction')} ${last}`;
   }
 
   private resolveTitleForm(variantId: string): string | null {

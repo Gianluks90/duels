@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
-import type { Element } from '../../models/element.model';
-import type { Objective, ObjectiveReward } from '../../models/objective.model';
+import type { Objective } from '../../models/objective.model';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -103,29 +102,9 @@ export class ObjectiveCardComponent {
    * così il giocatore capisce cosa sta per ottenere senza dover aprire la Collezione. Più ricompense
    * sullo stesso obiettivo sono unite come un elenco in linguaggio naturale ("A, B e C",
    * objectives.rewardConjunction per l'ultima congiunzione) invece che con un semplice "+". */
-  protected readonly rewardLabel = computed(() => {
-    const labels = this.objective().rewards.map((reward) => this.singleRewardLabel(reward));
-    if (labels.length <= 1) return labels.join('');
-    const last = labels[labels.length - 1];
-    const rest = labels.slice(0, -1);
-    return `${rest.join(', ')} ${this.i18n.t('objectives.rewardConjunction')} ${last}`;
-  });
-
-  private singleRewardLabel(reward: ObjectiveReward): string {
-    if (reward.id.startsWith('TODO_')) return this.i18n.t('objectives.rewardPending');
-
-    const name =
-      reward.type === 'cardBack'
-        ? this.i18n.t(`collection.cardBackCatalog.${reward.id}.name`)
-        : reward.type === 'background'
-          ? this.i18n.t(`collection.backgroundCatalog.${reward.id}.name`)
-          : reward.type === 'elementVariant'
-            ? this.i18n.t('objectives.elementVariantName', {
-                name: this.i18n.elementLabel(reward.id as Element),
-              })
-            : this.i18n.titleForms(reward.id).join(' / ');
-    if (!name) return this.i18n.t('objectives.rewardPending');
-
-    return `${this.i18n.t(`objectives.rewardTypeLabels.${reward.type}`)} "${name}"`;
-  }
+  protected readonly rewardLabel = computed(() =>
+    this.i18n.joinWithConjunction(
+      this.objective().rewards.map((reward) => this.i18n.rewardLabel(reward)),
+    ),
+  );
 }
