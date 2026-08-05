@@ -326,6 +326,78 @@ export function applyGameStatsDelta(
   };
 }
 
+/**
+ * Quali ObjectiveMetric si sono mossi in QUESTA partita (colonna Achievements a fine partita,
+ * result.component.ts) — a differenza di newlyCompletedObjectives sotto (che confronta due
+ * ObjectiveProgressSource per trovare cosa ha appena RAGGIUNTO la soglia), qui basta che il
+ * contributo di questa singola partita sul metric sia diverso da zero, soglia raggiunta o no:
+ * "influenzato dalla partita", non "completato dalla partita". Ricostruito da zero dall'eventLog/
+ * esito invece che confrontando profilo prima/dopo, perché a differenza di applyGameStats() questo
+ * deve restare corretto anche riaprendo la pagina risultato in una sessione successiva, quando
+ * `AuthService.profile()` riflette già stats cumulativi ben oltre questa sola partita.
+ *
+ * `loginStreak`/`rulebookRead`/`friendsCount` restano sempre fuori: si aggiornano fuori dal flusso
+ * di fine partita (v. buildProgressSource sopra), nessuna partita li tocca mai. `distinctSpellsCast`
+ * è un'approssimazione: "influenzato" ogni volta che si è lanciato almeno un incantesimo in questa
+ * partita, non solo quando se ne lancia uno MAI lanciato prima (richiederebbe i conteggi prima
+ * della partita, che qui non abbiamo) — un incantesimo già noto rilanciato risulta quindi incluso
+ * anche se la metrica in sé non si è mossa, l'unico falso positivo accettato in questa funzione.
+ */
+export function matchAffectedMetrics(
+  eventLog: readonly GameLogEntry[],
+  role: PlayerId,
+  winner: PlayerId | null,
+  wasFriendDuel: boolean,
+  finalPlayer: PlayerState,
+): ReadonlySet<ObjectiveMetric> {
+  const delta = computeStatsDelta(eventLog, role);
+  const won = winner === role;
+  const lost = winner !== null && winner !== role;
+  const patternMatches = computeCardPatternMatches(finalPlayer, won);
+
+  const affected = new Set<ObjectiveMetric>(['gamesPlayed']);
+  if (won) affected.add('wins');
+  if (lost) affected.add('losses');
+  // currentWinStreak cambia sempre tranne che su un pareggio (v. applyGameStatsDelta sopra: +1, o
+  // azzerato, mai invariato quando `winner` è deciso).
+  if (winner !== null) affected.add('currentWinStreak');
+  if (wasFriendDuel) {
+    affected.add('friendDuelsPlayed');
+    if (won) affected.add('friendDuelWins');
+  }
+  if (delta.cardsCollected > 0) affected.add('cardsCollected');
+  if (delta.combinationsMade > 0) affected.add('combinationsMade');
+  if (delta.spellsCast > 0) {
+    affected.add('spellsCast');
+    affected.add('distinctSpellsCast');
+  }
+  if (delta.damageDealt > 0) affected.add('damageDealt');
+  if (delta.healingDone > 0) affected.add('healingDone');
+  if (delta.shieldsGained > 0) affected.add('shieldsGained');
+  if (delta.shieldsRemoved > 0) affected.add('shieldsRemoved');
+  if (delta.freezeApplied > 0) affected.add('freezeApplied');
+  if (delta.poisonApplied > 0) affected.add('poisonApplied');
+  if (delta.manaConsumed > 0) affected.add('manaConsumed');
+  if (delta.tipHeld > 0) affected.add('tipHeld');
+  if (delta.bodySocketed > 0) affected.add('bodySocketed');
+  if (delta.handleSocketed > 0) affected.add('handleSocketed');
+  if (delta.wandDamageResisted > 0) affected.add('wandDamageResisted');
+  if (delta.selfDamageResisted > 0) affected.add('selfDamageResisted');
+  if (delta.tipHeld > 0 || delta.bodySocketed > 0 || delta.handleSocketed > 0) {
+    affected.add('wandActionsTotal');
+  }
+  if (wonWithPoisonFinish(eventLog, winner, role)) affected.add('poisonFinishWins');
+  if (wonWithSelfVulnerable(eventLog, winner, role)) affected.add('selfVulnerableWins');
+  for (const element of Object.keys(delta.elementsObtained)) {
+    affected.add(`element_${element}` as `element_${CollectibleElement}`);
+  }
+  for (const patternId of Object.keys(patternMatches)) {
+    affected.add(`pattern_${patternId}` as ObjectiveMetric);
+  }
+
+  return affected;
+}
+
 /** Un numero per ogni ObjectiveMetric — la maggior parte viene da UserStats (aggiornato a fine
  * partita), `loginStreak`/`rulebookRead`/`friendsCount` sono invece campi indipendenti su
  * UserProfile, aggiornati fuori dal flusso di fine partita (AuthService.ensureUserProfile/

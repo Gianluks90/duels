@@ -319,13 +319,20 @@
   },
 
   "result": {
-    "win": { "title": "Vittoria!", "subtitle": "Hai sconfitto il tuo avversario." },
-    "loss": { "title": "Sconfitta", "subtitle": "Il tuo avversario ha vinto il duello." },
-    "draw": { "title": "Duello concluso", "subtitle": "La partita è terminata." },
+    "title": "Esito duello",
+    "win": { "title": "Vittoria!" },
+    "loss": { "title": "Sconfitta" },
+    "draw": { "title": "Duello concluso" },
+    "matchDetails": "Dettagli duello",
     "vs": "vs",
-    "opponentFallback": "Avversario",
-    "backHome": "Torna alla Home",
-    "achievementsTitle": "Obiettivi"
+    "addFriend": "Richiedi amicizia",
+    "exit": "Esci",
+    "tabsAria": "Obiettivi ed eventi della partita",
+    "tabs": {
+      "objectives": "Obiettivi",
+      "log": "Eventi partita",
+      "objectivesEmpty": "Nessun obiettivo nuovo da questa partita."
+    }
   },
 
   "objectives": {
@@ -399,9 +406,11 @@
       "friend_duel_1": "I duellanti",
       "friend_duel_wins_5": "Ora siamo rivali",
       "collect_100": "Nel dubbio prendili",
+      "collect_250": "Non si sa mai",
       "collect_500": "A qualcosa mi serviranno",
       "combine_10": "Come mattoncini",
       "combine_50": "Combinazioni perfezionate",
+      "combine_150": "Ossessione chimica",
       "cast_15": "Primo anno",
       "cast_50": "Secondo anno",
       "cast_100": "Terzo anno",
@@ -472,9 +481,11 @@
       "friend_duel_1": "Duella con un amico",
       "friend_duel_wins_5": "Sconfiggi 5 volte un amico",
       "collect_100": "Raccogli un totale di almeno 100 carte",
+      "collect_250": "Raccogli un totale di almeno 250 carte",
       "collect_500": "Raccogli un totale di almeno 500 carte",
       "combine_10": "Combina 10 volte due o più carte per un Elemento nuovo",
       "combine_50": "Combina 50 volte due o più carte per un Elemento nuovo",
+      "combine_150": "Combina 150 volte due o più carte per un Elemento nuovo",
       "combine_dark_5": "Ottieni 5 carte Oscurità",
       "combine_light_5": "Ottieni 5 carte Luce",
       "variant_fire": "Ottieni o raccogli 50 carte Fuoco",
@@ -652,6 +663,7 @@
       }
     },
     "titleCatalog": {
+      "debug": { "name": "Debug" },
       "novice_m": { "name": "Novizio" },
       "novice_f": { "name": "Novizia" },
       "novice_x": { "name": "Novizi*" },
@@ -858,7 +870,7 @@
     "empty": "Nessuna carta."
   },
 
-  "gameLogDialog": {
+  "gameLog": {
     "dialogAria": "Eventi di gioco",
     "closeAria": "Chiudi",
     "title": "Eventi di gioco",

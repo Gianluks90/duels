@@ -260,7 +260,7 @@ export class HomeComponent implements OnInit {
     this.cancelling.set(true);
     this.stopWaitingListener();
     try {
-      await this.game.cancelGame(code);
+      await this.game.deleteGame(code);
     } finally {
       this.roomCode.set(null);
       this.cancelling.set(false);

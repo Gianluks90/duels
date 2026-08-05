@@ -1,0 +1,12 @@
+@if (visibleEntries().length === 0) {
+  <p class="game-log-list__empty">{{ 'gameLog.empty' | translate }}</p>
+} @else {
+  <ul class="game-log-list__list">
+    @for (entry of visibleEntries(); track entry.id) {
+      <li class="game-log-list__entry">
+        <span class="game-log-list__time">{{ formatTime(entry.timestamp) }}</span>
+        <span class="game-log-list__text">{{ describe(entry) }}</span>
+      </li>
+    }
+  </ul>
+}

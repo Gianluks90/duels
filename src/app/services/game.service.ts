@@ -177,7 +177,7 @@ export class GameService {
     const gameId = this.generateRoomCode();
     const defaultWand: Wand = { handleSocket: null, bodySocket: null, tipSlot: null };
     const hostName = profile.displayName;
-    const guestName = 'Avversario Debug';
+    const guestName = 'Avversario';
     const data: GameDoc = {
       id: gameId,
       status: 'playing',
@@ -194,7 +194,10 @@ export class GameService {
       guestPhoto: null,
       guestFavoriteSpellIds: [],
       guestCardBack: 'dark',
-      guestTitle: null,
+      // Variant-id sintetica, non in TITLE_CATALOG (mai vinta/equipaggiata per davvero, solo
+      // etichetta) — risolta comunque in "Debug" via TranslationService.titleLabel grazie alla
+      // voce collection.titleCatalog.debug.name, stessa via di ogni altro titolo reale.
+      guestTitle: 'debug',
       guestWand: defaultWand,
       guestReady: true,
       // Il bot di debug non è mai un amico — e comunque escluso da isStatsGameParticipant() in
@@ -212,7 +215,13 @@ export class GameService {
     return gameId;
   }
 
-  async cancelGame(gameId: string): Promise<void> {
+  /** Cancella il documento partita — due usi distinti dietro la stessa scrittura: l'host che
+   * annulla una partita ancora 'waiting' (HomeComponent.cancelGame) e chi preme "Esci" dalla pagina
+   * Risultato a fine duello (ResultComponent.goHome), host o guest indifferentemente. Le regole
+   * Firestore (games/{gameId}, allow delete) autorizzano l'host sempre, il guest solo se
+   * status == 'finished' — mai su una partita ancora in corso, per non lasciare che chi perde
+   * cancelli la partita sotto ai piedi dell'host prima che finisca. */
+  async deleteGame(gameId: string): Promise<void> {
     await deleteDoc(doc(this.db, 'games', gameId));
   }
 

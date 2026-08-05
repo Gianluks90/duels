@@ -2,30 +2,23 @@
   class="game-log-dialog"
   role="dialog"
   aria-modal="true"
-  [attr.aria-label]="'gameLogDialog.dialogAria' | translate"
+  [attr.aria-label]="'gameLog.dialogAria' | translate"
 >
   <header class="game-log-dialog__header">
-    <h2 class="t-heading game-log-dialog__title">{{ 'gameLogDialog.title' | translate }}</h2>
+    <h2 class="t-heading game-log-dialog__title">{{ 'gameLog.title' | translate }}</h2>
     <app-icon-button
       [icon]="closeIcon"
-      [ariaLabel]="'gameLogDialog.closeAria' | translate"
+      [ariaLabel]="'gameLog.closeAria' | translate"
       [size]="32"
       (iconClick)="close()"
     />
   </header>
 
   <div class="game-log-dialog__body">
-    @if (entries().length === 0) {
-      <p class="game-log-dialog__empty">{{ 'gameLogDialog.empty' | translate }}</p>
-    } @else {
-      <ul class="game-log-dialog__list">
-        @for (entry of entries(); track entry.id) {
-          <li class="game-log-dialog__entry">
-            <span class="game-log-dialog__time">{{ formatTime(entry.timestamp) }}</span>
-            <span class="game-log-dialog__text">{{ describe(entry) }}</span>
-          </li>
-        }
-      </ul>
-    }
+    <app-game-log-list
+      [entries]="data.entries"
+      [myRole]="data.myRole"
+      [opponentName]="data.opponentName"
+    />
   </div>
 </div>

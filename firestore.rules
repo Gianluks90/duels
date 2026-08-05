@@ -542,7 +542,14 @@ service cloud.firestore {
           (resource.data.hostId == request.auth.uid || resource.data.guestId == request.auth.uid)
         );
 
-      allow delete: if request.auth != null && resource.data.hostId == request.auth.uid;
+      // Host: sempre (anche una partita ancora 'waiting', v. HomeComponent "Annulla partita").
+      // Guest: solo a partita 'finished' (v. ResultComponent "Esci") — mai su una partita ancora in
+      // corso, per non lasciare che chi sta per perdere la cancelli sotto ai piedi dell'host prima
+      // che finisca davvero.
+      allow delete: if request.auth != null && (
+        resource.data.hostId == request.auth.uid ||
+        (resource.data.guestId == request.auth.uid && resource.data.status == 'finished')
+      );
     }
   }
 }

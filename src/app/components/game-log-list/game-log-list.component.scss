@@ -1,0 +1,52 @@
+// Stesso "stile card" di prima (GameLogDialogComponent), qui senza il wrapper dialog (background/
+// bordo/ombra restano a chi ospita questo componente — dialog o colonna a fine partita).
+:host {
+  display: block;
+}
+
+.game-log-list {
+  &__empty {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: var(--sp-6) 0;
+  }
+
+  &__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  // Ogni voce ha un bordo leggero proprio (non solo un separatore tra righe) per leggersi come una
+  // scheda a sé, non come una tabella continua.
+  &__entry {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+  }
+
+  // Etichetta oraria volutamente opaca — un ausilio secondario per orientarsi, non un dato rilevante
+  // quanto il testo dell'evento.
+  &__time {
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__text {
+    flex: 1;
+  }
+}

@@ -316,13 +316,20 @@
   },
 
   "result": {
-    "win": { "title": "Victory!", "subtitle": "You defeated your opponent." },
-    "loss": { "title": "Defeat", "subtitle": "Your opponent won the duel." },
-    "draw": { "title": "Duel over", "subtitle": "The match has ended." },
+    "title": "Duel outcome",
+    "win": { "title": "Victory!" },
+    "loss": { "title": "Defeat" },
+    "draw": { "title": "Duel over" },
+    "matchDetails": "Match details",
     "vs": "vs",
-    "opponentFallback": "Opponent",
-    "backHome": "Back to Home",
-    "achievementsTitle": "Objectives"
+    "addFriend": "Send friend request",
+    "exit": "Exit",
+    "tabsAria": "Objectives and match events",
+    "tabs": {
+      "objectives": "Objectives",
+      "log": "Match events",
+      "objectivesEmpty": "No new objectives from this match."
+    }
   },
 
   "objectives": {
@@ -396,9 +403,11 @@
       "friend_duel_1": "The Duellists",
       "friend_duel_wins_5": "Now We're Rivals",
       "collect_100": "When in Doubt, Take It",
+      "collect_250": "You Never Know",
       "collect_500": "They'll Come in Handy",
       "combine_10": "Building Blocks",
       "combine_50": "Perfected Combinations",
+      "combine_150": "Chemical Obsession",
       "cast_15": "First Year",
       "cast_50": "Second Year",
       "cast_100": "Third Year",
@@ -469,9 +478,11 @@
       "friend_duel_1": "Duel a friend",
       "friend_duel_wins_5": "Beat a friend 5 times",
       "collect_100": "Collect a total of at least 100 cards",
+      "collect_250": "Collect a total of at least 250 cards",
       "collect_500": "Collect a total of at least 500 cards",
       "combine_10": "Combine two or more cards into a new Element 10 times",
       "combine_50": "Combine two or more cards into a new Element 50 times",
+      "combine_150": "Combine two or more cards into a new Element 150 times",
       "combine_dark_5": "Obtain 5 Darkness cards",
       "combine_light_5": "Obtain 5 Light cards",
       "variant_fire": "Obtain or collect 50 Fire cards",
@@ -649,6 +660,7 @@
       }
     },
     "titleCatalog": {
+      "debug": { "name": "Debug" },
       "novice_m": { "name": "Novice" },
       "novice_f": { "name": "Novice" },
       "novice_x": { "name": "Novice" },
@@ -855,7 +867,7 @@
     "empty": "No cards."
   },
 
-  "gameLogDialog": {
+  "gameLog": {
     "dialogAria": "Game events",
     "closeAria": "Close",
     "title": "Game events",

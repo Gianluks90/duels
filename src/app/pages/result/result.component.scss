@@ -1,33 +1,113 @@
+.result-page {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+
+  // Stacca il pannello dai bordi fisici dello schermo in mobile portrait — stesso schema di
+  // .collection-page/.objectives-page/.friends-page/.profile-page.
+  @media (max-width: 639px) and (orientation: portrait) {
+    padding: 0 var(--sp-2);
+  }
+}
+
+// Stesso schema a due colonne di CollectionComponent/ObjectivesComponent/FriendsComponent (header
+// con bordo sotto + corpo diviso da un bordo verticale) invece del vecchio layout a due panel
+// separati affiancati (un piccolo box a larghezza fissa per l'esito + una colonna achievement
+// stretta 320px) — quest'ultima era troppo stretta per il testo delle card obiettivo, che finiva
+// fuori dal contenitore.
 .result {
   display: flex;
-  align-items: stretch;
-  justify-content: center;
-  gap: var(--sp-5);
-  height: 100dvh;
-  padding: var(--sp-5);
-  overflow: auto;
+  flex-direction: column;
+  max-width: 1200px;
+  width: 100%;
+  margin: var(--sp-5) auto;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 
-  @media (max-width: 720px) {
-    flex-direction: column;
-    align-items: center;
-    height: auto;
-    min-height: 100dvh;
+  @media (max-width: 639px) and (orientation: portrait) {
+    margin-bottom: 64px;
   }
 
-  &__panel {
+  &__header {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: var(--sp-5);
-    padding: var(--sp-8) var(--sp-7);
-    min-width: 360px;
-    max-width: 480px;
-    text-align: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
   }
 
   &__title {
-    font-size: clamp(3rem, 8vw, 5rem);
-    line-height: 1;
+    font-size: 1.5rem;
+  }
+
+  &__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+
+    @media (max-width: 720px) {
+      flex-direction: column;
+    }
+  }
+
+  // Colonna sinistra — contenuto (esito + dettagli duello) che scorre da solo sopra, bottone
+  // "Esci" fissato in fondo sotto: stesso schema di .collection__sidebar/.collection__personalize
+  // (categorie scorrono in autonomia, il bottone "Personalizza" resta sempre in vista in fondo).
+  // Stessa larghezza 220px di .collection__sidebar/.objectives__sidebar: la colonna destra deve
+  // avere la STESSA ampiezza di content che hanno quelle pagine, altrimenti la griglia di card
+  // obiettivo torna a essere più stretta del solito e il testo esce dal contenitore. Look ancora
+  // grezzo di proposito ("lo renderemo più graficamente carino dopo").
+  &__column--summary {
+    display: flex;
+    flex-direction: column;
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-subtle);
+
+    @media (max-width: 720px) {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+  }
+
+  &__summary-scroll {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-4);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--sp-5) var(--sp-4);
+    text-align: center;
+  }
+
+  &__exit {
+    flex-shrink: 0;
+    padding: var(--sp-3);
+    border-top: 1px solid var(--border-subtle);
+
+    .btn {
+      width: 100%;
+    }
+  }
+
+  &__column--objectives {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+
+  // Vittoria!/Sconfitta — ridotto rispetto a prima (sborda va oltre il bordo della colonna a
+  // 220px): non più il titolo di pagina, solo il primo dato dentro la colonna sinistra (v.
+  // &__title sopra, ora l'header del box "Esito duello").
+  &__outcome {
+    font-size: 1.6rem;
+    line-height: 1.15;
 
     &--win {
       color: var(--text-heading);
@@ -38,54 +118,230 @@
     }
   }
 
-  &__subtitle {
-    font-size: 0.8rem;
+  &__section-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
-  &__players {
+  // ── Scheda giocatore/avversario ────────────────────────────────────────────────
+  &__matchup {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: var(--sp-4);
-    padding: var(--sp-3) 0;
+    gap: var(--sp-5);
+    width: 100%;
   }
 
   &__player {
-    font-size: 0.9rem;
-  }
-
-  &__vs {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  &__btn {
-    width: 100%;
-    padding: var(--sp-3) var(--sp-5);
-  }
-
-  &__achievements {
     display: flex;
     flex-direction: column;
-    gap: var(--sp-4);
-    padding: var(--sp-5);
-    width: 320px;
-    flex-shrink: 0;
-    overflow-y: auto;
+    align-items: center;
+    gap: var(--sp-2);
+    width: 100%;
+  }
 
-    @media (max-width: 720px) {
-      width: 100%;
-      max-width: 480px;
+  &__player-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-gold);
+
+    &--fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      font-family: var(--font-ui);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-transform: uppercase;
     }
   }
 
-  &__achievements-title {
-    font-size: 0.9rem;
+  &__player-name {
+    font-size: 0.85rem;
   }
 
-  &__achievements-list {
+  &__player-divider {
+    width: 60%;
+    height: 1px;
+    background: var(--border-subtle);
+  }
+
+  &__player-title {
+    font-size: 0.7rem;
+    color: var(--text-heading);
+    letter-spacing: 0.03em;
+  }
+
+  // Badge circolare invece di semplice testo — separa visivamente i due blocchi giocatore, più
+  // netto del piccolo "vs" muto di prima.
+  &__vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-gold);
+    background: var(--bg-panel);
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-heading);
+  }
+
+  // Stesso schema mascherato di IconButtonComponent.icon-btn__icon (l'SVG sorgente è grigio chiaro
+  // fisso, qui deve comparire dello stesso colore del testo accanto) — icona statica, mask-image
+  // direttamente in CSS invece che un binding di stile dinamico (stesso schema di
+  // ObjectivesComponent.__warning-icon).
+  &__add-friend {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--text-heading);
+    font-size: 0.78rem;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+
+  &__add-friend-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    background-color: currentColor;
+    mask-image: url('/icons/person_add_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-image: url('/icons/person_add_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+
+  // ── Tab "Obiettivi" / "Eventi partita" ────────────────────────────────────────
+  &__tabs {
+    display: flex;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 0 var(--sp-6);
+
+    @media (max-width: 720px) {
+      padding: 0 var(--sp-3);
+    }
+  }
+
+  // Stesso linguaggio cromatico di .collection__category--active/.objectives__category--active
+  // (bordo + colore oro sull'attivo) ma orizzontale sotto invece che verticale a sinistra: qui i
+  // tab stanno in cima a un'area di contenuto, non in una sidebar di navigazione.
+  &__tab {
+    padding: var(--sp-3) var(--sp-4);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition:
+      color var(--transition),
+      border-color var(--transition);
+
+    &:hover {
+      color: var(--text-primary);
+    }
+
+    &--active {
+      color: var(--text-heading);
+      border-bottom-color: var(--text-heading);
+    }
+  }
+
+  &__tab-content {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--sp-6);
+
+    @media (max-width: 720px) {
+      padding: var(--sp-4) var(--sp-3);
+    }
+  }
+
+  // Stesso avviso "tracciamento disattivato" di ObjectivesComponent (objectives.
+  // trackingDisabledWarning), qui AL POSTO della griglia invece che accanto ad essa (v. template:
+  // ramo esclusivo dell'@if, la griglia non viene proprio renderizzata) — centrato nel riquadro,
+  // non in fondo alla sidebar come nella pagina Obiettivi. `flex: 1` sul tab-content (v. sopra)
+  // riempie sempre l'altezza visibile del tab, anche a lista vuota.
+  &__objectives-warning {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     gap: var(--sp-3);
+    flex: 1;
+    color: var(--accent-hover);
+    text-align: center;
+
+    p {
+      max-width: 32ch;
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+  }
+
+  // Stessa tecnica mask-image di ObjectivesComponent.__warning-icon — l'SVG sorgente è grigio
+  // chiaro fisso, un `<img>` normale non potrebbe seguire il rosso del testo accanto.
+  &__objectives-warning-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    background-color: var(--accent-hover);
+    mask-image: url('/icons/warning_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-image: url('/icons/warning_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+  }
+
+  // Stesso schema di .objectives__grid — le card sono ObjectiveCardComponent, già stilate da sole
+  // (objective-card.component.scss), qui serve solo il contenitore. `min-width: 0` sulla card:
+  // senza, il testo `white-space: nowrap` di .objective-card__reward (es. `Sfondo "Dorato"`) impone
+  // alla cella grid la propria larghezza intrinseca invece di restringersi nella quota "1fr",
+  // mandando la card fuori dal contenitore — la causa reale dell'overflow segnalato, non solo la
+  // larghezza della colonna.
+  &__objectives-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-3);
+
+    app-objective-card {
+      min-width: 0;
+    }
+
+    @media (max-width: 720px) {
+      grid-template-columns: repeat(1, 1fr);
+    }
   }
 }
