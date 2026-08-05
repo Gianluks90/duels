@@ -14,7 +14,7 @@
     }
   </div>
 
-  <app-header (friendsChanged)="loadPublicGames()" />
+  <app-header />
 
   <main class="home__main">
     @if (friendLinkResult(); as result) {
@@ -117,7 +117,11 @@
         @if (!roomCode()) {
           <div class="home__panel-actions">
             @if (isDebugUser()) {
-              <button class="btn btn--secondary" [disabled]="debugLoading()" (click)="startDebugGame()">
+              <button
+                class="btn btn--secondary"
+                [disabled]="debugLoading()"
+                (click)="startDebugGame()"
+              >
                 {{ debugLoading() ? '…' : ('home.debug' | translate) }}
               </button>
             }

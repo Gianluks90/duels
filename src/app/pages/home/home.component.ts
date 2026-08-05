@@ -178,7 +178,7 @@ export class HomeComponent implements OnInit {
     void this.handleFriendLink();
   }
 
-  /** Link amico (?friend=<uid>, vedi FriendsDialogComponent.myLink) — se presente, invia subito la
+  /** Link amico (?friend=<uid>, vedi FriendsComponent.myLink) — se presente, invia subito la
    * richiesta e ripulisce l'URL, così un refresh della pagina non la rimanda una seconda volta. */
   private async handleFriendLink(): Promise<void> {
     const targetUid = this.route.snapshot.queryParamMap.get('friend');

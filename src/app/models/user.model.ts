@@ -77,7 +77,7 @@ export interface UserProfile {
    * Mai true → false. Assente sui profili che non l'hanno ancora letto. */
   rulebookRead?: boolean;
   /** Numero di amicizie accettate — Achievements "Duellante socievole"/"Duellante amichevole".
-   * Sincronizzato da AuthService.syncFriendsCount() ogni volta che FriendsDialogComponent carica la
+   * Sincronizzato da AuthService.syncFriendsCount() ogni volta che FriendsComponent carica la
    * lista completa per intero (FriendsService.listFriends), non un contatore incrementato a ogni
    * singola accettazione: più semplice, e quel numero va comunque recuperato per disegnare la lista
    * quindi il costo aggiuntivo è pari a zero. Può scendere (disamicizia) — un obiettivo già

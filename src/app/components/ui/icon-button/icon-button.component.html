@@ -1,6 +1,17 @@
-<button type="button" class="icon-btn" [style.width.px]="size()" [style.height.px]="size()"
-        [attr.aria-label]="ariaLabel()" (click)="iconClick.emit()">
+<button
+  type="button"
+  class="icon-btn"
+  [style.width.px]="size()"
+  [style.height.px]="size()"
+  [attr.aria-label]="ariaLabel()"
+  [disabled]="disabled()"
+  (click)="iconClick.emit()"
+>
   <span class="icon-btn__gem">
-    <span class="icon-btn__icon" [style.mask-image]="iconUrl()" [style.-webkit-mask-image]="iconUrl()"></span>
+    <span
+      class="icon-btn__icon"
+      [style.mask-image]="iconUrl()"
+      [style.-webkit-mask-image]="iconUrl()"
+    ></span>
   </span>
 </button>

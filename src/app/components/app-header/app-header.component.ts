@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, computed, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { Dialog } from '@angular/cdk/dialog';
 import { Overlay } from '@angular/cdk/overlay';
@@ -10,7 +10,6 @@ import { RulebookDialogComponent } from '../../dialogs/rulebook/rulebook-dialog.
 import { OptionsDialogComponent } from '../../dialogs/options/options-dialog.component';
 import { GrimoireDialogComponent } from '../../dialogs/grimoire/grimoire-dialog.component';
 import { RedeemDialogComponent } from '../../dialogs/redeem/redeem-dialog.component';
-import { FriendsDialogComponent } from '../../dialogs/friends/friends-dialog.component';
 import { IconButtonComponent } from '../ui/icon-button/icon-button.component';
 import { TooltipDirective } from '../ui/tooltip/tooltip.directive';
 import { ActionMenuComponent, type ActionMenuItem } from '../ui/action-menu/action-menu.component';
@@ -51,11 +50,6 @@ export class AppHeaderComponent {
   protected readonly rulebookIcon =
     '/icons/question_mark_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   protected readonly gearIcon = '/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
-
-  /** Emesso quando la dialog Amici si chiude — HomeComponent la usa per ricaricare l'elenco duelli
-   * pubblici (l'ordinamento "amici in cima" potrebbe essere cambiato). Le altre pagine che montano
-   * questo header semplicemente non ci si iscrivono. */
-  readonly friendsChanged = output<void>();
 
   protected readonly navMenuItems = computed<ActionMenuItem[]>(() => [
     { label: this.i18n.t('home.homeNav'), action: () => this.goHome() },
@@ -127,13 +121,7 @@ export class AppHeaderComponent {
   }
 
   protected openFriends(): void {
-    const ref = this.dialog.open(FriendsDialogComponent, {
-      positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
-      hasBackdrop: true,
-      backdropClass: 'dialog-backdrop',
-      panelClass: 'dialog-panel',
-    });
-    ref.closed.subscribe(() => this.friendsChanged.emit());
+    this.router.navigate(['/friends']);
   }
 
   protected async signOut(): Promise<void> {

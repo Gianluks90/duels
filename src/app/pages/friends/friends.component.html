@@ -1,0 +1,186 @@
+<div class="friends-page">
+  <app-header />
+
+  <div class="friends panel panel--raised">
+    <header class="friends__header">
+      <h1 class="t-display friends__title">{{ 'friends.title' | translate }}</h1>
+    </header>
+
+    <div class="friends__body">
+      <div class="friends__sidebar">
+        <section class="friends__section">
+          <h2 class="friends__section-title">{{ 'friends.code.title' | translate }}</h2>
+          <p class="t-muted friends__hint">{{ 'friends.code.hint' | translate }}</p>
+          <div class="friends__code-row">
+            <span class="friends__code-value">{{ myLink() }}</span>
+            <button class="btn btn--secondary" (click)="copyLink()">
+              {{ (linkCopied() ? 'friends.code.copied' : 'friends.code.copyLink') | translate }}
+            </button>
+          </div>
+        </section>
+
+        <section class="friends__section">
+          <h2 class="friends__section-title">{{ 'friends.add.title' | translate }}</h2>
+          <div class="friends__add-row">
+            <input
+              class="friends__input"
+              type="text"
+              [value]="addValue()"
+              (input)="setAddValue($any($event.target).value)"
+              [placeholder]="'friends.add.placeholder' | translate"
+              autocomplete="off"
+              (keydown.enter)="sendRequest()"
+            />
+            <button
+              class="btn btn--primary"
+              [disabled]="addSending() || !addValue().trim()"
+              (click)="sendRequest()"
+            >
+              {{ (addSending() ? 'friends.add.sending' : 'friends.add.send') | translate }}
+            </button>
+          </div>
+          @if (addError()) {
+            <p class="friends__error">{{ addError() }}</p>
+          }
+          @if (addSuccess()) {
+            <p class="friends__success">{{ 'friends.add.success' | translate }}</p>
+          }
+        </section>
+
+        @if (!loading()) {
+          @if (incoming().length > 0) {
+            <section class="friends__section">
+              <h2 class="friends__section-title">{{ 'friends.incoming.title' | translate }}</h2>
+              <ul class="friends__list">
+                @for (request of incoming(); track request.id) {
+                  <li class="friends__row">
+                    <div class="friends__row-identity">
+                      @if (request.fromPhoto; as photo) {
+                        <img
+                          class="friends__avatar"
+                          [src]="photo"
+                          alt=""
+                          referrerpolicy="no-referrer"
+                        />
+                      } @else {
+                        <span class="friends__avatar friends__avatar--fallback">{{
+                          request.fromName.charAt(0)
+                        }}</span>
+                      }
+                      <span>{{ request.fromName }}</span>
+                    </div>
+                    <div class="friends__row-actions">
+                      <button
+                        class="btn btn--secondary"
+                        [disabled]="busyRequestId() === request.id"
+                        (click)="respond(request, false)"
+                      >
+                        {{ 'friends.incoming.decline' | translate }}
+                      </button>
+                      <button
+                        class="btn btn--primary"
+                        [disabled]="busyRequestId() === request.id"
+                        (click)="respond(request, true)"
+                      >
+                        {{ 'friends.incoming.accept' | translate }}
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (outgoing().length > 0) {
+            <section class="friends__section">
+              <h2 class="friends__section-title">{{ 'friends.outgoing.title' | translate }}</h2>
+              <ul class="friends__list">
+                @for (request of outgoing(); track request.id) {
+                  <li class="friends__row">
+                    <div class="friends__row-identity">
+                      <span>{{ request.toUid }}</span>
+                      @if (request.status === 'declined') {
+                        <span class="friends__status-tag friends__status-tag--declined">
+                          {{ 'friends.outgoing.declined' | translate }}
+                        </span>
+                      } @else {
+                        <span class="friends__status-tag">
+                          {{ 'friends.outgoing.pending' | translate }}
+                        </span>
+                      }
+                    </div>
+                    <div class="friends__row-actions">
+                      @if (request.status === 'declined') {
+                        <button
+                          class="btn btn--secondary"
+                          [disabled]="busyRequestId() === request.id"
+                          (click)="resend(request)"
+                        >
+                          {{ 'friends.outgoing.resend' | translate }}
+                        </button>
+                      }
+                      <button
+                        class="btn btn--secondary"
+                        [disabled]="busyRequestId() === request.id"
+                        (click)="removeRequest(request.id)"
+                      >
+                        {{ 'friends.outgoing.cancel' | translate }}
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+        }
+      </div>
+
+      <div class="friends__content">
+        @if (loading()) {
+          <p class="t-muted friends__empty">{{ 'profilePage.loading' | translate }}</p>
+        } @else if (friends().length === 0) {
+          <p class="t-muted friends__empty">{{ 'friends.list.empty' | translate }}</p>
+        } @else {
+          <div class="friends__grid">
+            @for (row of friends(); track row.uid) {
+              <div class="friends__card">
+                <button type="button" class="friends__card-identity" (click)="viewProfile(row.uid)">
+                  @if (row.profile?.photoURL; as photo) {
+                    <img
+                      class="friends__card-avatar"
+                      [src]="photo"
+                      alt=""
+                      referrerpolicy="no-referrer"
+                    />
+                  } @else {
+                    <span class="friends__card-avatar friends__card-avatar--fallback">{{
+                      (row.profile?.displayName ?? row.uid).charAt(0)
+                    }}</span>
+                  }
+                  <span class="friends__card-info">
+                    <span class="friends__card-name">{{
+                      row.profile?.displayName ?? row.uid
+                    }}</span>
+                    @if (friendTitle(row); as title) {
+                      <span class="friends__card-player-title">{{ title }}</span>
+                    }
+                  </span>
+                </button>
+                <app-icon-button
+                  [icon]="removeIcon"
+                  [ariaLabel]="
+                    'friends.list.removeAria'
+                      | translate: { name: row.profile?.displayName ?? row.uid }
+                  "
+                  [size]="36"
+                  [disabled]="busyRequestId() === row.request.id"
+                  (iconClick)="removeRequest(row.request.id)"
+                />
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</div>

@@ -253,9 +253,7 @@
   },
 
   "friends": {
-    "dialogAria": "Friends",
     "title": "Friends",
-    "closeAria": "Close",
     "code": {
       "title": "Your friend link",
       "hint": "Share it — whoever opens it while signed in immediately sends you a friend request.",
@@ -286,12 +284,8 @@
       "cancel": "Cancel"
     },
     "list": {
-      "title": "Your friends",
       "empty": "No friends yet — share your code to get started.",
-      "favorites": "Favorite spells",
-      "noFavorites": "No favorite spells.",
-      "viewProfile": "View profile",
-      "remove": "Remove"
+      "removeAria": "Remove {name} from friends"
     }
   },
 

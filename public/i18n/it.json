@@ -256,9 +256,7 @@
   },
 
   "friends": {
-    "dialogAria": "Amici",
     "title": "Amici",
-    "closeAria": "Chiudi",
     "code": {
       "title": "Il tuo link amico",
       "hint": "Condividilo — chi lo apre da loggato ti manda subito una richiesta di amicizia.",
@@ -289,12 +287,8 @@
       "cancel": "Annulla"
     },
     "list": {
-      "title": "I tuoi amici",
       "empty": "Nessun amico ancora — condividi il tuo codice per iniziare.",
-      "favorites": "Magie preferite",
-      "noFavorites": "Nessuna magia preferita.",
-      "viewProfile": "Vedi profilo",
-      "remove": "Rimuovi"
+      "removeAria": "Rimuovi {name} dagli amici"
     }
   },
 

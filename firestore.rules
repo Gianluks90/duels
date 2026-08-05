@@ -322,10 +322,10 @@ service cloud.firestore {
     }
 
     // Achievements "Duellante socievole"/"Duellante amichevole": friendsCount è sincronizzato da
-    // FriendsDialogComponent col numero di amicizie accettate REALMENTE lette in quel momento (v.
+    // FriendsComponent col numero di amicizie accettate REALMENTE lette in quel momento (v.
     // AuthService.syncFriendsCount) — a differenza di loginStreak non c'è un "+1 a scrittura" da
-    // imporre (si può scoprire di aver guadagnato più amici insieme tra un'apertura e l'altra della
-    // dialog), né un orologio server con cui confrontarlo: stesso rischio accettato di
+    // imporre (si può scoprire di aver guadagnato più amici insieme tra una visita e l'altra della
+    // pagina), né un orologio server con cui confrontarlo: stesso rischio accettato di
     // statsPlausible() sopra, solo un tetto largo a prova di errori grossolani, non una prova che il
     // numero dichiarato sia quello vero.
     function friendsCountValid() {

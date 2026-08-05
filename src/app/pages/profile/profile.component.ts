@@ -92,7 +92,7 @@ export class ProfileComponent implements OnInit {
   private readonly fetchedProfile = signal<UserProfile | null>(null);
   protected readonly loading = signal(true);
   protected readonly notFound = signal(false);
-  /** Feedback temporaneo sul bottone "Aggiungi amico" — stesso schema di FriendsDialogComponent.linkCopied
+  /** Feedback temporaneo sul bottone "Aggiungi amico" — stesso schema di FriendsComponent.linkCopied
    * (si azzera da solo dopo 2s), niente stato di errore dedicato: chi arriva su questa pagina è già
    * amico nella stragrande maggioranza dei casi (v. isFriend() in firestore.rules, unica via oggi per
    * raggiungere il profilo di qualcun altro), quindi un eventuale errore Firestore è la stessa
@@ -106,7 +106,7 @@ export class ProfileComponent implements OnInit {
   protected readonly stats = computed(() => this.profile()?.stats ?? EMPTY_USER_STATS);
   protected readonly statFields = ProfileComponent.STAT_FIELDS;
   protected readonly favoriteSpellIds = computed(() => this.profile()?.favoriteSpellIds ?? []);
-  /** Sincronizzato da FriendsDialogComponent ogni volta che carica la lista amici per intero (v.
+  /** Sincronizzato da FriendsComponent ogni volta che carica la lista amici per intero (v.
    * AuthService.syncFriendsCount) — nessuna chiamata di rete in più qui, solo il valore già
    * denormalizzato sul profilo (proprio o di un amico, entrambi leggibili da questa pagina). */
   protected readonly friendsCount = computed(() => this.profile()?.friendsCount ?? 0);
@@ -289,7 +289,7 @@ export class ProfileComponent implements OnInit {
   }
 
   /** Solo per un profilo altrui (v. isSelf sopra) — manda una richiesta di amicizia diretta, stesso
-   * FriendsService.sendRequest() di FriendsDialogComponent. */
+   * FriendsService.sendRequest() di FriendsComponent. */
   protected async addFriend(): Promise<void> {
     const myProfile = this.auth.profile();
     const uid = this.viewedUid();

@@ -1,36 +1,44 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
-import { DialogRef } from '@angular/cdk/dialog';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FriendsService, type FriendRequest } from '../../services/friends.service';
 import { TranslationService } from '../../services/translation.service';
-import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { SPELL_CATALOG } from '../../data/spells';
+import { AppHeaderComponent } from '../../components/app-header/app-header.component';
+import { IconButtonComponent } from '../../components/ui/icon-button/icon-button.component';
 import type { UserProfile } from '../../models/user.model';
 
 interface FriendRow {
   request: FriendRequest;
   uid: string;
   profile: UserProfile | null;
-  expanded: boolean;
 }
 
+/**
+ * Pagina Amici (Achievements): stessa struttura a due colonne di CollectionComponent/
+ * ObjectivesComponent (header con bordo sotto + corpo diviso da un bordo verticale) invece della
+ * vecchia FriendsDialogComponent (CDK Dialog) — sostituita interamente da questa route, non più
+ * raggiungibile: AppHeaderComponent.openFriends() ora naviga qui. Colonna sinistra: identico
+ * contenuto della vecchia dialog TRANNE l'elenco amici (link/codice, aggiungi amico, richieste
+ * ricevute/inviate) — v. FriendsService per tutta la logica di dominio, invariata. Colonna destra:
+ * l'elenco amici, ora una griglia di card (non più righe espandibili con le magie preferite —
+ * quel dettaglio resta comunque visibile aprendo il profilo pubblico dell'amico, un click via).
+ */
 @Component({
-  selector: 'app-friends-dialog',
+  selector: 'app-friends',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconButtonComponent, TranslatePipe],
-  templateUrl: './friends-dialog.component.html',
-  styleUrl: './friends-dialog.component.scss',
+  host: { style: 'display: block' },
+  imports: [TranslatePipe, AppHeaderComponent, IconButtonComponent],
+  templateUrl: './friends.component.html',
+  styleUrl: './friends.component.scss',
 })
-export class FriendsDialogComponent {
-  private readonly dialogRef = inject(DialogRef);
+export class FriendsComponent {
   private readonly auth = inject(AuthService);
   private readonly friendsService = inject(FriendsService);
   private readonly router = inject(Router);
   protected readonly i18n = inject(TranslationService);
 
-  protected readonly closeIcon = '/icons/close_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  protected readonly removeIcon = '/icons/person_remove_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
   protected readonly myUid = computed(() => this.auth.user()?.uid ?? '');
   /** Stesso dominio della room code (home.component.ts, copyCode) — un link che, aperto già loggati,
@@ -52,15 +60,11 @@ export class FriendsDialogComponent {
   protected readonly friends = signal<readonly FriendRow[]>([]);
 
   /** gameId... ehm, requestId per cui è in corso un accept/decline/resend/remove — disabilita solo il
-   * bottone di QUELLA riga invece di bloccare l'intera dialog per un'azione singola. */
+   * bottone di QUELLA riga/card invece di bloccare l'intera pagina per un'azione singola. */
   protected readonly busyRequestId = signal<string | null>(null);
 
   constructor() {
     void this.refresh();
-  }
-
-  protected close(): void {
-    this.dialogRef.close();
   }
 
   private async refresh(): Promise<void> {
@@ -83,16 +87,23 @@ export class FriendsDialogComponent {
         friendRequests.map(async (request): Promise<FriendRow> => {
           const friendUid = this.friendsService.otherUid(request, uid);
           const profile = await this.friendsService.getFriendProfile(friendUid);
-          return { request, uid: friendUid, profile, expanded: false };
+          return { request, uid: friendUid, profile };
         }),
       );
       this.friends.set(rows);
       // Achievements "Duellante socievole"/"Duellante amichevole" — il conteggio è comunque già
-      // qui per disegnare la lista, nessun giro di rete in più (v. AuthService.syncFriendsCount).
+      // qui per disegnare la griglia, nessun giro di rete in più (v. AuthService.syncFriendsCount).
       void this.auth.syncFriendsCount(rows.length);
     } finally {
       this.loading.set(false);
     }
+  }
+
+  /** Titolo equipaggiato dall'amico (v. ProfileComponent.displayTitle, stessa risoluzione variant-id
+   * → testo) — `null` se non ne ha ancora sbloccato/equipaggiato uno, la card mostra solo il nome. */
+  protected friendTitle(row: FriendRow): string | null {
+    const titleId = row.profile?.title;
+    return titleId ? this.i18n.titleLabel(titleId) : null;
   }
 
   protected async copyLink(): Promise<void> {
@@ -178,24 +189,8 @@ export class FriendsDialogComponent {
     }
   }
 
-  protected toggleExpanded(row: FriendRow): void {
-    this.friends.update((rows) =>
-      rows.map((r) => (r === row ? { ...r, expanded: !r.expanded } : r)),
-    );
-  }
-
-  /** Profilo pubblico (Achievements) di un amico — chiude la dialog prima di navigare, altrimenti
-   * resterebbe aperta sopra la nuova pagina. */
+  /** Profilo pubblico (Achievements) di un amico. */
   protected viewProfile(uid: string): void {
-    this.dialogRef.close();
     this.router.navigate(['/profile', uid]);
-  }
-
-  protected friendSpellNames(row: FriendRow): string[] {
-    const ids = row.profile?.favoriteSpellIds ?? [];
-    return ids
-      .map((id) => SPELL_CATALOG.find((s) => s.id === id))
-      .filter((s): s is (typeof SPELL_CATALOG)[number] => !!s)
-      .map((s) => this.i18n.t(`spells.${s.id}.name`));
   }
 }

@@ -46,7 +46,7 @@ export class RedeemDialogComponent {
     }
   }
 
-  /** Stesso schema di JoinGameDialogComponent.errorMessage/FriendsDialogComponent: error code stabile
+  /** Stesso schema di JoinGameDialogComponent.errorMessage/FriendsComponent: error code stabile
    * (AuthService.redeemCode) tradotto qui via il fallback "chiave non risolta = testo grezzo" di
    * TranslationService.t(). */
   private errorMessage(err: unknown): string {

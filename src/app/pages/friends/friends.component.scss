@@ -1,0 +1,313 @@
+.friends-page {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+
+  // Stacca il pannello dai bordi fisici dello schermo in mobile portrait — stesso schema di
+  // .objectives-page/.collection-page/.profile-page.
+  @media (max-width: 639px) and (orientation: portrait) {
+    padding: 0 var(--sp-2);
+  }
+}
+
+// Stesso schema a due colonne di CollectionComponent/ObjectivesComponent (header con bordo sotto +
+// corpo diviso da un bordo verticale) invece della vecchia FriendsDialogComponent (CDK Dialog) —
+// coerenza tra i pannelli Achievements. A differenza di quelle due (nav + contenuto), qui la
+// colonna sinistra è lei stessa contenuto vero (link/codice, aggiungi amico, richieste), non una
+// navigazione tra viste.
+.friends {
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  width: 100%;
+  margin: var(--sp-5) auto;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+
+  @media (max-width: 639px) and (orientation: portrait) {
+    margin-bottom: 64px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+  }
+
+  &__body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+
+    @media (max-width: 720px) {
+      flex-direction: column;
+    }
+  }
+
+  // Più largo di .collection__sidebar/.objectives__sidebar (220px): qui non è una nav ma il
+  // contenuto vero (link/codice, form aggiungi amico, richieste ricevute/inviate) — deve poter
+  // contenere il link amico intero senza spezzarlo su ogni riga.
+  &__sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    width: 360px;
+    flex-shrink: 0;
+    padding: var(--sp-5);
+    overflow-y: auto;
+    border-right: 1px solid var(--border-subtle);
+
+    @media (max-width: 720px) {
+      width: 100%;
+      border-right: none;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+  }
+
+  &__content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--sp-6);
+  }
+
+  &__empty {
+    padding: var(--sp-4) 0;
+  }
+
+  // ── Sezioni colonna sinistra (stesso schema di FriendsDialogComponent) ──────────
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+    padding: var(--sp-4);
+    border: 1px solid var(--border-subtle);
+  }
+
+  &__section-title {
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-hover);
+  }
+
+  &__hint {
+    font-size: 0.78rem;
+  }
+
+  &__code-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  &__code-value {
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+  }
+
+  &__add-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  &__input {
+    padding: var(--sp-2) var(--sp-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-gold);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+  }
+
+  &__error {
+    font-size: 0.75rem;
+    color: var(--accent-hover);
+  }
+
+  &__success {
+    font-size: 0.75rem;
+    color: var(--text-heading);
+  }
+
+  &__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  &__row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 4px;
+
+    @media (min-width: 481px) {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  &__row-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-width: 0;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+  }
+
+  &__row-actions {
+    display: flex;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+  }
+
+  &__avatar {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-gold);
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  // Stesso linguaggio del tag "Creabile" nel Grimorio (grimoire-dialog.component.scss) — pillola di
+  // testo colorata invece di un'icona.
+  &__status-tag {
+    flex-shrink: 0;
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-subtle);
+    border-radius: 3px;
+    padding: 1px 5px;
+
+    &--declined {
+      color: #d02f2f;
+      background: rgba(208, 47, 47, 0.12);
+      border-color: rgba(208, 47, 47, 0.4);
+    }
+  }
+
+  // ── Griglia amici (colonna destra) ───────────────────────────────────────────
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-3);
+
+    @media (max-width: 480px) {
+      grid-template-columns: repeat(1, 1fr);
+    }
+  }
+
+  &__card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: 6px;
+  }
+
+  &__card-identity {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    min-width: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  &__card-avatar {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--border-gold);
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    font-family: var(--font-ui);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  &__card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  &__card-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__card-player-title {
+    font-size: 0.72rem;
+    color: var(--text-heading);
+    letter-spacing: 0.03em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

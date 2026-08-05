@@ -266,7 +266,7 @@ export class AuthService {
   }
 
   /** Achievements "Duellante socievole"/"Duellante amichevole" — sincronizza il numero di amicizie
-   * accettate. Chiamata da FriendsDialogComponent ogni volta che carica la lista completa
+   * accettate. Chiamata da FriendsComponent ogni volta che carica la lista completa
    * (FriendsService.listFriends) per disegnarla: quel conteggio va comunque recuperato per la UI,
    * quindi il costo aggiuntivo di questa sincronizzazione è pari a zero. No-op se il conteggio non è
    * cambiato dall'ultima sincronizzazione, o finché OBJECTIVES_TRACKING_ENABLED è `false` (beta). */

@@ -11,6 +11,7 @@ export class IconButtonComponent {
   icon = input.required<string>();
   ariaLabel = input.required<string>();
   size = input(44);
+  disabled = input(false);
 
   iconClick = output<void>();
 
