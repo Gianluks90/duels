@@ -63,6 +63,14 @@
     text-align: center;
   }
 
+  &__emote-preview {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--text-heading);
+    text-align: center;
+    margin: 0;
+  }
+
   &__preview {
     display: block;
     width: 192px;

@@ -23,6 +23,8 @@ This is a digital companion/implementation for **MAGI**, a 1v1 physical card gam
 
 Earlier design notes in [documentation/rulebook/v1/](documentation/rulebook/v1/) and [documentation/spells_ideas.md](documentation/spells_ideas.md) are superseded brainstorm material, kept for history — not authoritative.
 
+Adding a new collectible (card back, background, title, emote) or the objective that unlocks it? Follow [documentation/adding-collectibles.md](documentation/adding-collectibles.md) step by step instead of improvising — it covers the catalog/i18n/firestore.rules mirror pattern shared by all of them, including which `public/config/*.json` files are actually read at runtime and which are stale.
+
 ## Architecture
 
 **Stack**: Angular 22 (standalone), Firebase v12, SCSS, TypeScript 6.

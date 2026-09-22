@@ -19,13 +19,23 @@ import {
 } from '../../data/titles';
 import { COLLECTIBLE_ELEMENT_IDS } from '../../data/elements';
 import { SPELL_CATALOG } from '../../data/spells';
+import { EMOTE_CATALOG, EMOTES_FEATURE_ENABLED, type EmoteDefinition } from '../../data/emotes';
 import { SPELL_LEGACY_UNLOCK_COUNT } from '../../game/collection-progress';
 import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
 import { elementImagePath } from '../../models/element.model';
 import type { RewardUnlock } from '../../models/reward-unlock.model';
 import type { Objective } from '../../models/objective.model';
 
-type CollectionCategory = 'cardBacks' | 'backgrounds' | 'titles' | 'elements' | 'mana' | 'spells';
+type CollectionCategory =
+  | 'cardBacks'
+  | 'backgrounds'
+  | 'titles'
+  | 'elements'
+  | 'mana'
+  | 'spells'
+  | 'avatars'
+  | 'emotes'
+  | 'stories';
 
 /**
  * Collezione (Achievements): dorsi/sfondi/titoli in un'unica griglia per categoria, in ordine
@@ -56,7 +66,20 @@ export class CollectionComponent {
     { id: 'elements', labelKey: 'collection.elements' },
     { id: 'mana', labelKey: 'collection.mana' },
     { id: 'spells', labelKey: 'collection.spells' },
+    { id: 'avatars', labelKey: 'collection.avatars' },
+    { id: 'emotes', labelKey: 'collection.emotes' },
+    { id: 'stories', labelKey: 'collection.stories' },
   ];
+
+  /** Categorie legate alla lore, contenuti ancora da scrivere: il tab compare già ma resta
+   * disabilitato finché non c'è nulla da mostrare (v. template). "Emotes" invece ha già contenuto
+   * (v. emoteItems sotto) ma resta comunque disabilitato finché EMOTES_FEATURE_ENABLED è false
+   * (non ancora visibile durante il beta test). */
+  protected readonly comingSoonCategories: ReadonlySet<CollectionCategory> = new Set([
+    'avatars',
+    'stories',
+    ...(EMOTES_FEATURE_ENABLED ? [] : (['emotes'] as const)),
+  ]);
 
   protected readonly selectedCategory = signal<CollectionCategory>('cardBacks');
 
@@ -299,6 +322,16 @@ export class CollectionComponent {
     );
   });
 
+  /** Emotes: stesso schema di catalogItem (dorsi/sfondi) — un catalogo condiviso, una voce
+   * posseduta per RewardUnlock/unlockedEmotes, nessuna arte (`imageUrl: null`, come i titoli:
+   * mostrata con shape="title" nel template). Tutte 'free' per ora (v. EMOTE_CATALOG), quindi tutte
+   * già possedute: l'ownedIds serve solo a non dover toccare di nuovo questo metodo quando si
+   * aggiungeranno frasi sbloccabili con altri RewardUnlock. */
+  protected readonly emoteItems = computed<CollectionItem[]>(() => {
+    const ownedIds = new Set(this.auth.profile()?.unlockedEmotes ?? []);
+    return this.sortById(EMOTE_CATALOG.map((def) => this.emoteItem(def, ownedIds)));
+  });
+
   /** % di completamento generale su TUTTE le categorie insieme (non solo quella selezionata) —
    * stesso trattamento di ObjectivesComponent.completionPercent, qui "completato" è semplicemente
    * CollectionItem.owned. */
@@ -310,6 +343,9 @@ export class CollectionComponent {
       ...this.elementItems(),
       ...this.manaItems(),
       ...this.spellItems(),
+      // Esclusa finché il tab resta dietro EMOTES_FEATURE_ENABLED: non deve far muovere una % che il
+      // giocatore non può ancora vedere/influenzare da nessuna parte dell'app.
+      ...(EMOTES_FEATURE_ENABLED ? this.emoteItems() : []),
     ];
     if (all.length === 0) return 0;
     const owned = all.filter((item) => item.owned).length;
@@ -410,6 +446,20 @@ export class CollectionComponent {
       owned,
       name: forms.length > 0 ? forms.join(' / ') : this.i18n.t('objectives.rewardPending'),
       description: this.i18n.t('collection.descriptionPending'),
+      unlockInfo: this.rewardUnlockInfo(def.unlock, owned),
+    };
+  }
+
+  /** Una voce di EMOTE_CATALOG — `name` è la frase stessa (non un titolo di categoria), `description`
+   * il nome della categoria (v. collection-tile tooltip, mostrato sotto al nome). */
+  private emoteItem(def: EmoteDefinition, ownedIds: ReadonlySet<string>): CollectionItem {
+    const owned = def.unlock.kind === 'free' || ownedIds.has(def.id);
+    return {
+      id: def.id,
+      imageUrl: null,
+      owned,
+      name: this.i18n.t(`collection.emoteCatalog.${def.id}.text`),
+      description: this.i18n.t(`collection.emoteCategories.${def.category}`),
       unlockInfo: this.rewardUnlockInfo(def.unlock, owned),
     };
   }

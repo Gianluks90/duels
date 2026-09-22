@@ -1,4 +1,5 @@
 import type { CardBackSkin } from './player.model';
+import type { EmoteCategory, EmoteLoadoutSlot } from './emote.model';
 
 /** Id di default per UserProfile.background — qui (non in background.service.ts) perché sia
  * AuthService (profilo nuovo) sia BackgroundService (fallback prima che il profilo carichi) ne
@@ -90,6 +91,19 @@ export interface UserProfile {
    * Collezione, non si sceglie in game): letta direttamente da CollectionComponent.elementItems.
    * Assente sui profili senza sblocchi, va letto con `?? []`. */
   unlockedElementVariants?: string[];
+  /** Frasi emote sbloccate oltre alle gratuite di default (una per categoria, v. EMOTE_CATALOG in
+   * data/emotes.ts) — stesso schema di unlockedCardBacks/unlockedBackgrounds. Assente sui profili
+   * senza sblocchi, va letto con `?? []`. Feature dietro EMOTES_FEATURE_ENABLED: non ancora visibile
+   * durante il beta test. */
+  unlockedEmotes?: string[];
+  /** Slot equipaggiato per categoria (v. EmoteCategory) — assente sui profili che non l'hanno mai
+   * impostato: va letto con un fallback a DEFAULT_EQUIPPED_EMOTES (data/emotes.ts), non con `?? []`
+   * come le liste di sblocco sopra. */
+  equippedEmotes?: Partial<Record<EmoteCategory, EmoteLoadoutSlot>>;
+  /** Uid degli avversari le cui emote sono silenziate durante una partita — anti-spam (stesso
+   * principio dello "squelch" di Hearthstone), impostabile una volta che lo strumento emote sarà
+   * attivo. Assente finché non se ne silenzia nessuno, va letto con `?? []`. */
+  mutedEmotesFrom?: string[];
 }
 
 /** Numero massimo di incantesimi che un utente può segnare come preferiti (globale, account-level). */

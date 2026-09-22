@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
 import { DEFAULT_BACKGROUND_ID, MAX_FAVORITE_SPELLS, type UserProfile } from '../models/user.model';
-import type { RedeemCode } from '../models/redeem-code.model';
+import type { RedeemCode, RedeemCodeReward } from '../models/redeem-code.model';
 import type { GameDoc } from './game.service';
 import type { PlayerId } from '../models/player.model';
 import { OBJECTIVE_CATALOG } from '../data/objectives';
@@ -104,12 +104,13 @@ export class AuthService {
     await this.updateProfile({ favoriteSpellIds: next });
   }
 
-  /** Riscatta codice: sblocca il dorso carta legato a `codes/{codice}` (v. RedeemCode). Il precheck
-   * qui sotto (getDoc + date + redeemedCodeIds locale) è solo UX — la regola Firestore su
-   * users/{userId} rivalida tutto al momento del write (stesso schema difensivo di
-   * GameService.joinGame), quindi resta l'unica fonte di verità reale. Ritorna il cardBackId
-   * sbloccato, per mostrarne subito l'anteprima nella dialog di riscatto. */
-  async redeemCode(rawCode: string): Promise<string> {
+  /** Riscatta codice: sblocca dorsi e/o emote legati a `codes/{codice}` (v. RedeemCode — un codice
+   * può accreditare entrambi i tipi insieme). Il precheck qui sotto (getDoc + date +
+   * redeemedCodeIds locale) è solo UX — la regola Firestore su users/{userId} (redeemGrantValid())
+   * rivalida tutto al momento del write (stesso schema difensivo di GameService.joinGame), quindi
+   * resta l'unica fonte di verità reale. Ritorna le ricompense sbloccate, per mostrarne subito
+   * l'anteprima nella dialog di riscatto. */
+  async redeemCode(rawCode: string): Promise<RedeemCodeReward[]> {
     const user = this.auth.currentUser;
     const current = this.profile();
     if (!user || !current) throw new Error('not-signed-in');
@@ -126,20 +127,29 @@ export class AuthService {
     if (codeData.startAt && now < codeData.startAt.toMillis()) throw new Error('code-not-started');
     if (codeData.endAt && now > codeData.endAt.toMillis()) throw new Error('code-expired');
 
-    await updateDoc(doc(this.firebase.db, 'users', user.uid), {
-      unlockedCardBacks: arrayUnion(codeData.cardBackId),
+    const cardBackIds = codeData.cardBackIds ?? [];
+    const emoteIds = codeData.emoteIds ?? [];
+
+    const updates: Record<string, unknown> = {
       redeemedCodeIds: arrayUnion(code),
       lastRedeemedCode: code,
-    });
+    };
+    if (cardBackIds.length > 0) updates['unlockedCardBacks'] = arrayUnion(...cardBackIds);
+    if (emoteIds.length > 0) updates['unlockedEmotes'] = arrayUnion(...emoteIds);
+    await updateDoc(doc(this.firebase.db, 'users', user.uid), updates);
 
     this.profile.set({
       ...current,
-      unlockedCardBacks: [...new Set([...(current.unlockedCardBacks ?? []), codeData.cardBackId])],
+      unlockedCardBacks: [...new Set([...(current.unlockedCardBacks ?? []), ...cardBackIds])],
+      unlockedEmotes: [...new Set([...(current.unlockedEmotes ?? []), ...emoteIds])],
       redeemedCodeIds: [...(current.redeemedCodeIds ?? []), code],
       lastRedeemedCode: code,
     });
 
-    return codeData.cardBackId;
+    return [
+      ...cardBackIds.map((id): RedeemCodeReward => ({ type: 'cardBack', id })),
+      ...emoteIds.map((id): RedeemCodeReward => ({ type: 'emote', id })),
+    ];
   }
 
   /**

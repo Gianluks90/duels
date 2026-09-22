@@ -14,10 +14,18 @@
     />
   </header>
 
-  @if (unlockedCardBackId(); as skin) {
+  @if (unlockedRewards(); as rewards) {
     <div class="redeem-dialog__body">
       <p class="redeem-dialog__success">{{ 'redeem.success' | translate }}</p>
-      <img class="redeem-dialog__preview" [src]="'/cards-back/' + skin + '.webp'" alt="" />
+      @for (reward of rewards; track reward.type + reward.id) {
+        @if (reward.type === 'cardBack') {
+          <img class="redeem-dialog__preview" [src]="'/cards-back/' + reward.id + '.webp'" alt="" />
+        } @else {
+          <p class="redeem-dialog__emote-preview">
+            "{{ i18n.t('collection.emoteCatalog.' + reward.id + '.text') }}"
+          </p>
+        }
+      }
     </div>
     <div class="redeem-dialog__footer">
       <button class="btn btn--primary" (click)="close()">

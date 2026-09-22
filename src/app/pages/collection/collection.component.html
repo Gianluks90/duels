@@ -15,7 +15,7 @@
               type="button"
               class="collection__category"
               [class.collection__category--active]="selectedCategory() === category.id"
-              [disabled]="category.id === 'titles' && editMode()"
+              [disabled]="(category.id === 'titles' && editMode()) || comingSoonCategories.has(category.id)"
               (click)="selectCategory(category.id)"
             >
               {{ category.labelKey | translate }}
@@ -116,6 +116,19 @@
                 <app-collection-tile [item]="item" shape="card" />
               }
             </div>
+          }
+          @case ('avatars') {
+            <p class="t-muted">{{ 'collection.comingSoon' | translate }}</p>
+          }
+          @case ('emotes') {
+            <div class="collection__grid collection__grid--emotes">
+              @for (item of emoteItems(); track item.id) {
+                <app-collection-tile [item]="item" shape="title" />
+              }
+            </div>
+          }
+          @case ('stories') {
+            <p class="t-muted">{{ 'collection.comingSoon' | translate }}</p>
           }
         }
       </div>

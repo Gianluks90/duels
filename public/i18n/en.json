@@ -240,7 +240,7 @@
     "cancel": "Cancel",
     "submit": "Redeem",
     "submitting": "Redeeming…",
-    "success": "Card back unlocked! You'll find it selectable in your profile.",
+    "success": "Reward unlocked! You'll find it in your profile.",
     "successCta": "Done",
     "unknownError": "Unknown error.",
     "errors": {
@@ -544,12 +544,38 @@
     "elements": "Elements",
     "mana": "Mana",
     "spells": "Spells",
+    "avatars": "Avatars",
+    "emotes": "Emotes",
+    "stories": "Stories",
     "personalize": {
       "start": "Customize",
       "apply": "Apply",
       "cancel": "Cancel"
     },
     "noTitles": "No titles unlocked yet.",
+    "comingSoon": "Content coming soon.",
+    "emoteCategories": {
+      "greeting": "Greeting",
+      "taunt": "Taunt",
+      "compliment": "Compliment",
+      "thanks": "Thanks",
+      "sorry": "Sorry",
+      "oops": "Oops"
+    },
+    "emoteCatalog": {
+      "greeting_default": { "text": "Hello!" },
+      "taunt_default": { "text": "Is that all you've got?" },
+      "compliment_default": { "text": "Nice move" },
+      "thanks_default": { "text": "Thanks!" },
+      "sorry_default": { "text": "Sorry!" },
+      "oops_default": { "text": "Oops" },
+      "greeting_debug": { "text": "Hello, world!" },
+      "taunt_debug": { "text": "Did you even read the Rulebook?!" },
+      "compliment_debug": { "text": "Approved!" },
+      "thanks_debug": { "text": "Thanks, noted" },
+      "sorry_debug": { "text": "Sorry, I'll fix it later" },
+      "oops_debug": { "text": "Yes, that was me!" }
+    },
     "activeTooltip": "Active",
     "descriptionPending": "Description to be defined.",
     "alwaysAvailable": "Always available.",

@@ -243,7 +243,7 @@
     "cancel": "Annulla",
     "submit": "Riscatta",
     "submitting": "Riscatto…",
-    "success": "Dorso sbloccato! Lo trovi già selezionabile nel tuo profilo.",
+    "success": "Ricompensa sbloccata! La trovi già nel tuo profilo.",
     "successCta": "Fatto",
     "unknownError": "Errore sconosciuto.",
     "errors": {
@@ -547,12 +547,38 @@
     "elements": "Elementi",
     "mana": "Mana",
     "spells": "Incantesimi",
+    "avatars": "Avatar",
+    "emotes": "Emotes",
+    "stories": "Storie",
     "personalize": {
       "start": "Personalizza",
       "apply": "Applica",
       "cancel": "Annulla"
     },
     "noTitles": "Nessun titolo sbloccato ancora.",
+    "comingSoon": "Contenuti in arrivo.",
+    "emoteCategories": {
+      "greeting": "Saluto",
+      "taunt": "Provocazione",
+      "compliment": "Complimenti",
+      "thanks": "Grazie",
+      "sorry": "Scusa",
+      "oops": "Ops"
+    },
+    "emoteCatalog": {
+      "greeting_default": { "text": "Salve!" },
+      "taunt_default": { "text": "È tutto quello che sai fare?" },
+      "compliment_default": { "text": "Bella mossa" },
+      "thanks_default": { "text": "Grazie!" },
+      "sorry_default": { "text": "Scusa!" },
+      "oops_default": { "text": "Ops" },
+      "greeting_debug": { "text": "Ciao, mondo!" },
+      "taunt_debug": { "text": "Ma hai letto il Regolamento!?" },
+      "compliment_debug": { "text": "Approvato!" },
+      "thanks_debug": { "text": "Grazie, prendo nota" },
+      "sorry_debug": { "text": "Scusa, lo sistemo poi" },
+      "oops_debug": { "text": "Sì, l'ho fatto io!" }
+    },
     "activeTooltip": "Attivo",
     "descriptionPending": "Descrizione da definire.",
     "alwaysAvailable": "Sempre disponibile.",

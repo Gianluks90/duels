@@ -174,8 +174,10 @@
     }
 
     // Card rettangolari sottili (testo, non arte) — 2 colonne, non 3: ci sta l'intero
-    // nome/condizione di sblocco senza dover troncare.
-    &--titles {
+    // nome/condizione di sblocco senza dover troncare. Emotes usa la stessa shape="title" (nessuna
+    // arte, solo frase + categoria), stesso layout.
+    &--titles,
+    &--emotes {
       grid-template-columns: repeat(2, 1fr);
     }
 
@@ -198,7 +200,8 @@
       }
 
       &--backgrounds,
-      &--titles {
+      &--titles,
+      &--emotes {
         grid-template-columns: repeat(1, 1fr);
       }
     }

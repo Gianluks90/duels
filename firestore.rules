@@ -89,41 +89,53 @@ service cloud.firestore {
 
     // Riscatto codice (AuthService.redeemCode): `lastRedeemedCode` è l'unico modo per la regola di
     // sapere QUALE codes/{CODICE} verificare — le regole non possono risalire al codice da un array
-    // diff su unlockedCardBacks/redeemedCodeIds. Verifica lo stato FINALE del documento (il codice è
-    // scaduto/non iniziato, è già in redeemedCodeIds, il cardBackId che sblocca è in
-    // unlockedCardBacks) invece di provare a isolare "l'elemento appena aggiunto" agli array.
+    // diff su unlockedCardBacks/unlockedEmotes/redeemedCodeIds. Verifica lo stato FINALE del
+    // documento (il codice è scaduto/non iniziato, è già in redeemedCodeIds, gli id che sblocca
+    // sono negli array giusti) invece di provare a isolare "l'elemento appena aggiunto" agli array.
     //
-    // hasAny(['lastRedeemedCode', 'unlockedCardBacks']) invece del solo lastRedeemedCode (fix
-    // dell'audit 2026-07, mentre si chiudeva lo stesso gap per backgrounds/titles sotto): prima
-    // nulla impediva a una scrittura che toccasse SOLO unlockedCardBacks — senza mai passare da
-    // lastRedeemedCode — di infilarci un id arbitrario.
+    // hasAny(['lastRedeemedCode', 'unlockedCardBacks', 'unlockedEmotes']) invece del solo
+    // lastRedeemedCode (fix dell'audit 2026-07, mentre si chiudeva lo stesso gap per
+    // backgrounds/titles sotto): prima nulla impediva a una scrittura che toccasse SOLO uno di
+    // questi array — senza mai passare da lastRedeemedCode — di infilarci un id arbitrario.
     //
     // Da quando anche i dorsi possono essere reward di obiettivi (ObjectiveRewardType 'cardBack'),
     // unlockedCardBacks ha DUE fonti legittime di crescita: il riscatto codice qui sotto, oppure un
-    // riscatto obiettivo (claimGrantValid() più sotto, stesso file). Se lastRedeemedCode non è
-    // cambiato, questa funzione si limita a controllare che sia comunque un riscatto obiettivo "in
-    // forma" (claimedObjectiveIds cambiato anch'esso) — la validazione vera del contenuto
-    // (monotonia, tetto di crescita) resta tutta in claimGrantValid(), non duplicata qui.
+    // riscatto obiettivo (claimGrantValid() più sotto, stesso file) — per questo, se
+    // lastRedeemedCode non è cambiato, basta che sia comunque un riscatto obiettivo "in forma"
+    // (claimedObjectiveIds cambiato anch'esso; la validazione vera del contenuto resta in
+    // claimGrantValid(), non duplicata qui). unlockedEmotes invece ha UNA SOLA fonte legittima
+    // (nessun ObjectiveRewardType 'emote' esiste oggi): se cambia, deve SEMPRE passare da
+    // lastRedeemedCode/redeemGrantValid() sotto, mai dalla scorciatoia "obiettivo riscattato" —
+    // altrimenti un riscatto obiettivo legittimo (che tocca claimedObjectiveIds per tutt'altro
+    // motivo) potrebbe fare da cavallo di Troia per un'emote arbitraria.
     function redeemValid() {
-      return !changedKeys().hasAny(['lastRedeemedCode', 'unlockedCardBacks']) ||
+      return !changedKeys().hasAny(['lastRedeemedCode', 'unlockedCardBacks', 'unlockedEmotes']) ||
         (changedKeys().hasAny(['lastRedeemedCode'])
           ? redeemGrantValid()
-          : changedKeys().hasAny(['claimedObjectiveIds']));
+          : !changedKeys().hasAny(['unlockedEmotes']) &&
+            changedKeys().hasAny(['claimedObjectiveIds']));
     }
 
     function redeemGrantValid() {
       let code = request.resource.data.lastRedeemedCode;
       let codeRef = /databases/$(database)/documents/codes/$(code);
-      // size() <= prior + 1 (fix dell'audit 2026-07): senza questo tetto, verificare solo che
-      // l'id sbloccato dal codice SIA in unlockedCardBacks non impedirebbe di infilarcene un
-      // secondo a piacere nella stessa scrittura — lo stesso schema già usato in claimGrantValid().
+      let nextCardBacks = request.resource.data.get('unlockedCardBacks', []);
+      let priorCardBacks = resource.data.get('unlockedCardBacks', []);
+      let nextEmotes = request.resource.data.get('unlockedEmotes', []);
+      let priorEmotes = resource.data.get('unlockedEmotes', []);
+      // hasAll() + tetto di crescita "<= prior + quanti ne dà il codice" per ENTRAMBI gli array
+      // (fix dell'audit 2026-07, stesso schema di prima): senza il tetto, sapere solo che gli id del
+      // codice SONO negli array non impedirebbe di infilarcene altri a piacere nella stessa
+      // scrittura — lo stesso principio già usato in claimGrantValid().
       return exists(codeRef) &&
         (get(codeRef).data.startAt == null || request.time >= get(codeRef).data.startAt) &&
         (get(codeRef).data.endAt == null || request.time <= get(codeRef).data.endAt) &&
         code in request.resource.data.get('redeemedCodeIds', []) &&
-        get(codeRef).data.cardBackId in request.resource.data.get('unlockedCardBacks', []) &&
-        request.resource.data.get('unlockedCardBacks', []).size() <=
-          resource.data.get('unlockedCardBacks', []).size() + 1;
+        nextCardBacks.hasAll(get(codeRef).data.get('cardBackIds', [])) &&
+        nextCardBacks.size() <=
+          priorCardBacks.size() + get(codeRef).data.get('cardBackIds', []).size() &&
+        nextEmotes.hasAll(get(codeRef).data.get('emoteIds', [])) &&
+        nextEmotes.size() <= priorEmotes.size() + get(codeRef).data.get('emoteIds', []).size();
     }
 
     // Statistiche (Achievements): stesso schema del riscatto codice sopra — `lastStatsGameId` è
