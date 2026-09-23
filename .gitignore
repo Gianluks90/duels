@@ -6,6 +6,10 @@
 /out-tsc
 /bazel-out
 
+# Fogli di stampa generati da scripts/print-*.mjs — rigenerabili on demand, non versionati (PNG a
+# 300 DPI, alcuni MB l'uno).
+/print
+
 # Node
 /node_modules
 npm-debug.log
