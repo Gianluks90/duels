@@ -131,7 +131,19 @@
     border-bottom: 1px solid var(--border-gold);
   }
 
-  &__settings {
+  // Contenitore dei due pulsanti-icona del proprio pannello (lancia emote + impostazioni) — separato
+  // da .hud__settings/.hud__emote-launcher stessi perché .hud__name-row è space-between: senza
+  // questo wrapper i 3 figli (identità + i due pulsanti) verrebbero distanziati equamente invece che
+  // i due pulsanti restare vicini tra loro, lontani dall'identità.
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+
+  &__settings,
+  &__emote-launcher,
+  &__mute {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -145,17 +157,143 @@
     &:hover {
       opacity: 1;
     }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
   }
 
-  &__settings-icon {
+  &__settings-icon,
+  &__emote-launcher-icon {
     display: block;
     width: 14px;
     height: 14px;
     background-color: var(--text-heading);
+  }
+
+  &__settings-icon {
     mask: url('/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain
       no-repeat;
     -webkit-mask: url('/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain
       no-repeat;
+  }
+
+  &__emote-launcher-icon {
+    mask: url('/icons/chat_bubble_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    -webkit-mask: url('/icons/chat_bubble_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg') center /
+      contain no-repeat;
+  }
+
+  // Mute/unmute avversario (Qualità della vita, permanente — v. UserProfile.mutedEmotesFrom) — solo
+  // pannello specchiato (v. .html), stessa dimensione/opacità di __settings ma icona che cambia in
+  // base allo stato invece di aprire una dialog.
+  &__mute-icon {
+    display: block;
+    width: 14px;
+    height: 14px;
+    background-color: var(--text-heading);
+    mask: url('/icons/volume_up_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center / contain
+      no-repeat;
+    -webkit-mask: url('/icons/volume_up_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg') center /
+      contain no-repeat;
+
+    &--muted {
+      mask-image: url('/icons/volume_off_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+      -webkit-mask-image: url('/icons/volume_off_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg');
+      background-color: #ff5a4a; // stesso rosso di __flash--damage: mute è uno stato "acceso", va notato
+    }
+  }
+
+  // Fumetto emote (Qualità della vita) — sfondo bianco crema con indicatore a triangolo (::after),
+  // stesso trattamento "colore diretto, non variabile del tema" di __flash sopra: è un elemento
+  // deliberatamente fuori dalla palette scura del resto della UI, non va confuso con un tema chiaro.
+  // Ancorato sopra il pannello proprio (bottom, punta verso il basso) o sotto quello dell'avversario
+  // (top, punta verso l'alto) — stessa logica di specchiatura di __pinned-row/hpTooltip.
+  &__emote-bubble {
+    position: absolute;
+    // Agganciato a sinistra (sotto/sopra la stessa metà da cui parte la coda), non più centrato sul
+    // pannello — --mirrored sotto lo aggancia a destra invece.
+    left: 0;
+    z-index: 3;
+    box-sizing: border-box;
+    min-width: 120px;
+    // Niente max-width apposta: la frase resta sempre su una riga (v. white-space sotto), il
+    // fumetto si allarga per contenerla invece di andare a capo.
+    white-space: nowrap;
+    padding: var(--sp-2) var(--sp-4);
+    background: #faf3e0;
+    color: #2b2620;
+    border-radius: 20px;
+    // Cinzel (--font-ui, il font decorativo usato nel resto dell'interfaccia) è poco leggibile per
+    // una frase intera a questa dimensione — qui serve testo scorrevole, non un'etichetta breve,
+    // quindi --font-body (Lora): stesso font già usato per tooltip/dialoghi/log di gioco, non un
+    // terzo font introdotto apposta.
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.35;
+    text-align: center;
+    // Ombra esterna (profondità sul tavolo) + due ombre interne "a cuscino": un chiarore chiaro in
+    // alto e un'ombra scura tenue in basso, stesso principio già usato per la barra vita
+    // (__hp-fill sopra) per dare un aspetto pieno/tondeggiante invece che piatto.
+    box-shadow:
+      0 4px 14px rgba(0, 0, 0, 0.45),
+      inset 0 2px 3px rgba(255, 255, 255, 0.6),
+      inset 0 -3px 6px rgba(0, 0, 0, 0.08);
+    bottom: calc(100% + 30px);
+    // Pop d'ingresso (leggero overshoot, si assesta entro i primi 400ms) + deriva verso l'alto e
+    // dissolvenza finale — un'unica animazione che governa sia opacity sia transform ad ogni
+    // fotogramma chiave (niente conflitti fra più animazioni sulla stessa proprietà). Durata legata
+    // a EMOTE_BUBBLE_DURATION_MS (animation-queue.service.ts, v. commento lì): deve finire invisibile
+    // esattamente quando AnimationQueueService rimuove il segnale, non prima né dopo. `forwards`
+    // mantiene lo stato finale (opacity 0) nell'istante prima che Angular rimuova davvero l'elemento
+    // dal DOM.
+    animation: hud-emote-bubble-enter-up 5000ms ease-out forwards;
+
+    // Coda (stile MTG Arena, v. riferimento dell'utente) — asset SVG dedicato
+    // (public/icons/emote_bubble_tail.svg, disegnato a mano dall'utente stesso: la geometria esatta
+    // non si presta a essere indovinata "alla cieca" via CSS, v. i tentativi precedenti), applicato
+    // come maschera: stesso trattamento mask-image + background-color già usato per le icone in
+    // tutto il progetto (v. __emote-launcher-icon sopra) — il colore nell'SVG non conta, solo la sua
+    // forma/trasparenza. L'asset va disegnato con la punta verso il BASSO A SINISTRA e l'estremità
+    // larga (che si "attacca" al fumetto) verso l'ALTO A DESTRA del suo viewBox — questo perché sul
+    // proprio fumetto la coda sta in basso a sinistra, mentre su quello dell'avversario (--mirrored
+    // sotto) lo STESSO asset viene ruotato di 180°, che trasforma esattamente "punta in basso a
+    // sinistra" in "punta in alto a destra": un solo file, nessuna seconda versione speculare da
+    // disegnare. mask-size: contain preserva le proporzioni originali del viewBox, quindi l'asset
+    // può essere qualunque rapporto larghezza/altezza — il box qui sotto (24×24) è solo il "canvas"
+    // massimo in cui viene scalato, non deve essere necessariamente riempito del tutto.
+    &::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      bottom: -16px;
+      width: 24px;
+      height: 24px;
+      background-color: #faf3e0;
+      mask: url('/icons/emote_bubble_tail.svg') left bottom / contain no-repeat;
+      -webkit-mask: url('/icons/emote_bubble_tail.svg') left bottom / contain no-repeat;
+    }
+
+    &--mirrored {
+      left: auto;
+      right: 0;
+      bottom: auto;
+      top: calc(100% + 30px);
+      // Specchiato: il pop e la deriva finale vanno verso il basso (si allontana dal pannello
+      // dell'avversario, ancorato in alto), non verso l'alto come sul proprio fumetto — solo il
+      // nome dell'animazione cambia, durata/timing/fill-mode restano quelli dello shorthand sopra.
+      animation-name: hud-emote-bubble-enter-down;
+
+      &::before {
+        left: auto;
+        right: 10px;
+        bottom: auto;
+        top: -16px;
+        transform: rotate(180deg);
+      }
+    }
   }
 
   &__identity {
@@ -515,5 +653,54 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -28px);
+  }
+}
+
+// Fumetto emote (Qualità della vita) — pop d'ingresso con leggero overshoot, pausa ferma, poi
+// deriva verso l'alto (via) mentre dissolve. Durata 5000ms in sync con EMOTE_BUBBLE_DURATION_MS
+// (animation-queue.service.ts, v. commento lì) — .hud__emote-bubble applica questa qui, la
+// variante --mirrored sotto (avversario, si allontana verso il basso) usa hud-emote-bubble-enter-down.
+@keyframes hud-emote-bubble-enter-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.75);
+  }
+  4% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.05);
+  }
+  7% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(1);
+  }
+}
+
+// Specchiata verticalmente rispetto a quella sopra — v. .hud__emote-bubble--mirrored.
+@keyframes hud-emote-bubble-enter-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.75);
+  }
+  4% {
+    opacity: 1;
+    transform: translateY(6px) scale(1.05);
+  }
+  7% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(16px) scale(1);
   }
 }

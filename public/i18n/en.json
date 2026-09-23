@@ -82,7 +82,10 @@
     "poisonAria": "Poisoned: level {level}",
     "frozenAria": "Frozen: risk of drawing Freeze cards instead of useful ones",
     "favoritesTooltip": "Favorites: {names}",
-    "pinnedAria": "Pinned spells"
+    "pinnedAria": "Pinned spells",
+    "emoteAria": "Send an emote",
+    "muteAria": "Mute this player's emotes",
+    "unmuteAria": "Unmute this player's emotes"
   },
 
   "phaseTracker": {
@@ -574,10 +577,36 @@
       "compliment_debug": { "text": "Approved!" },
       "thanks_debug": { "text": "Thanks, noted" },
       "sorry_debug": { "text": "Sorry, I'll fix it later" },
-      "oops_debug": { "text": "Yes, that was me!" }
+      "oops_debug": { "text": "Yes, that was me!" },
+      "greeting_hi": { "text": "Hi!" },
+      "greeting_here_we_go": { "text": "Here we go" },
+      "greeting_nice_day": { "text": "Nice day, isn't it?" },
+      "greeting_good_luck": { "text": "Good luck" },
+      "greeting_lets_play": { "text": "Shall we play?" },
+      "taunt_best_move": { "text": "Is that your best move?" },
+      "taunt_goat": { "text": "Did a goat teach you that?" },
+      "taunt_not_great": { "text": "Not great, huh" },
+      "taunt_is_that_all": { "text": "That's it?" },
+      "compliment_skilled": { "text": "You've got skills!" },
+      "compliment_unexpected": { "text": "Didn't see that coming" },
+      "compliment_gg": { "text": "GG" },
+      "compliment_wow": { "text": "Wow!" },
+      "thanks_appreciate": { "text": "Thank you" },
+      "thanks_pleasure": { "text": "My pleasure" },
+      "thanks_kind": { "text": "Very kind of you" },
+      "thanks_thx": { "text": "Thx" },
+      "sorry_regret": { "text": "I'm sorry" },
+      "sorry_no_intent": { "text": "Didn't mean to" },
+      "sorry_apologize": { "text": "My apologies" },
+      "sorry_not_on_purpose": { "text": "That wasn't my intention" },
+      "oops_shrug": { "text": "My bad" },
+      "oops_not_sorry": { "text": "Sorry not sorry" },
+      "oops_honestly": { "text": "Honestly? Couldn't wait" },
+      "oops_so_sorry": { "text": "So sorry" }
     },
     "activeTooltip": "Active",
     "descriptionPending": "Description to be defined.",
+    "unlockPending": "Unlock condition not available yet.",
     "alwaysAvailable": "Always available.",
     "unlockedViaCode": "Unlocked with a redeem code.",
     "unlockedCondition": "Unlocked by completing: {condition}.",
@@ -880,6 +909,12 @@
     "navAria": "Rulebook sections"
   },
 
+  "emotePicker": {
+    "title": "Choose an emote",
+    "dialogAria": "Emote picker",
+    "closeAria": "Close"
+  },
+
   "pileDialog": {
     "dialogAria": "Pile contents",
     "closeAria": "Close",
@@ -1025,6 +1060,11 @@
     },
     "titleEquip": {
       "title": "Title"
+    },
+    "mutedPlayers": {
+      "title": "Muted players",
+      "empty": "You haven't muted any players.",
+      "unmute": "Unmute"
     },
     "danger": {
       "title": "Danger Zone",

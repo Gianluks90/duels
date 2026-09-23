@@ -87,6 +87,62 @@ service cloud.firestore {
             .union(resource.data.get('unlockedTitles', []).toSet());
     }
 
+    // Deve combaciare con le entry `unlock.kind === 'free'` di EMOTE_CATALOG in data/emotes.ts —
+    // stesso schema di freeCardBacks()/freeTitles() sopra. Le frasi con `unlock.kind ===
+    // 'objectivePending'` (v. reward-unlock.model.ts) NON vanno qui: restano bloccate di default
+    // (mai in freeEmotes() né in unlockedEmotes) finché non diventano un vero 'objective'.
+    function freeEmotes() {
+      return [
+        'greeting_default', 'taunt_default', 'compliment_default',
+        'thanks_default', 'sorry_default', 'oops_default'
+      ];
+    }
+
+    // Un solo slot equipaggiato (v. EmoteLoadoutSlot) — stickerId resta sempre null (feature sticker
+    // non ancora implementata, v. emote.model.ts), emoteId deve essere gratuito o posseduto.
+    function emoteSlotValid(slot) {
+      return slot.stickerId == null &&
+        slot.emoteId in freeEmotes().toSet().union(resource.data.get('unlockedEmotes', []).toSet());
+    }
+
+    // equippedEmotes è una mappa a chiavi fisse (EMOTE_CATEGORIES, un insieme chiuso — v.
+    // emote.model.ts, non pensato per crescere in numero di categorie): un controllo esplicito per
+    // ognuna delle 6 è più semplice di un'iterazione dinamica (le regole Firestore non supportano
+    // un ciclo generico su chiavi arbitrarie), stesso spirito verboso ma esplicito di
+    // exclusiveTitles()/claimGrantValid() sopra/sotto.
+    function equippedEmotesValid() {
+      return !changedKeys().hasAny(['equippedEmotes']) ||
+        (request.resource.data.equippedEmotes.keys().hasOnly(
+          ['greeting', 'taunt', 'compliment', 'thanks', 'sorry', 'oops']) &&
+         (!('greeting' in request.resource.data.equippedEmotes) ||
+          emoteSlotValid(request.resource.data.equippedEmotes.greeting)) &&
+         (!('taunt' in request.resource.data.equippedEmotes) ||
+          emoteSlotValid(request.resource.data.equippedEmotes.taunt)) &&
+         (!('compliment' in request.resource.data.equippedEmotes) ||
+          emoteSlotValid(request.resource.data.equippedEmotes.compliment)) &&
+         (!('thanks' in request.resource.data.equippedEmotes) ||
+          emoteSlotValid(request.resource.data.equippedEmotes.thanks)) &&
+         (!('sorry' in request.resource.data.equippedEmotes) ||
+          emoteSlotValid(request.resource.data.equippedEmotes.sorry)) &&
+         (!('oops' in request.resource.data.equippedEmotes) ||
+          emoteSlotValid(request.resource.data.equippedEmotes.oops)));
+    }
+
+    // Mute permanente (v. UserProfile.mutedEmotesFrom/mutedPlayerNames): lista scelta liberamente dal
+    // proprietario stesso (mai un privilegio da concedere, solo una preferenza personale — a
+    // differenza di unlockedCardBacks/unlockedEmotes non serve un catalogo da rispettare), quindi
+    // basta un tetto largo alla dimensione (stesso spirito di favoritesValid()/claimedIdsValid()
+    // sopra) per evitare che l'array cresca senza controllo. mutedPlayerNames deve restare in
+    // sincrono (stesse chiavi, v. AuthService.toggleMuteEmotesFrom) — qui basta lo stesso tetto,
+    // combaciare esattamente le chiavi non è necessario: uno snapshot nome in più/meno non concede
+    // alcun privilegio, è solo testo mostrato nella propria UI.
+    function mutedEmotesValid() {
+      return (!changedKeys().hasAny(['mutedEmotesFrom']) ||
+        request.resource.data.mutedEmotesFrom.size() <= 200) &&
+        (!changedKeys().hasAny(['mutedPlayerNames']) ||
+        request.resource.data.mutedPlayerNames.keys().size() <= 200);
+    }
+
     // Riscatto codice (AuthService.redeemCode): `lastRedeemedCode` è l'unico modo per la regola di
     // sapere QUALE codes/{CODICE} verificare — le regole non possono risalire al codice da un array
     // diff su unlockedCardBacks/unlockedEmotes/redeemedCodeIds. Verifica lo stato FINALE del
@@ -471,7 +527,8 @@ service cloud.firestore {
       allow read: if request.auth != null && (request.auth.uid == userId || isFriend(userId));
       allow write: if request.auth != null && request.auth.uid == userId &&
         favoritesValid() && cardBackValid() && redeemValid() && statsValid() &&
-        backgroundValid() && titleValid() && claimValid();
+        backgroundValid() && titleValid() && claimValid() &&
+        equippedEmotesValid() && mutedEmotesValid();
     }
 
     // Achievements: marker create-only "questa partita è già stata conteggiata negli stats

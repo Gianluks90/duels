@@ -75,7 +75,13 @@ export class AuthService {
     patch: Partial<
       Pick<
         UserProfile,
-        'displayName' | 'photoURL' | 'cardBack' | 'background' | 'favoriteSpellIds' | 'title'
+        | 'displayName'
+        | 'photoURL'
+        | 'cardBack'
+        | 'background'
+        | 'favoriteSpellIds'
+        | 'title'
+        | 'equippedEmotes'
       >
     >,
   ): Promise<void> {
@@ -85,6 +91,35 @@ export class AuthService {
 
     await updateDoc(doc(this.firebase.db, 'users', user.uid), patch);
     this.profile.set({ ...current, ...patch });
+  }
+
+  /** Silenzia/desilenzia un avversario (permanente, cross-partita — v. UserProfile.mutedEmotesFrom):
+   * stesso schema add/remove di toggleFavoriteSpell sopra, ma su DUE campi nella stessa scrittura
+   * (mutedPlayerNames tenuto in sincrono con mutedEmotesFrom, v. commento lì). `displayName` serve
+   * solo quando si AGGIUNGE un mute (per lo snapshot); ignorato quando si desilenzia. */
+  async toggleMuteEmotesFrom(uid: string, displayName: string): Promise<void> {
+    const user = this.auth.currentUser;
+    const current = this.profile();
+    if (!user || !current) return;
+
+    const muted = current.mutedEmotesFrom ?? [];
+    const isMuted = muted.includes(uid);
+    const names = { ...(current.mutedPlayerNames ?? {}) };
+
+    let nextMuted: string[];
+    if (isMuted) {
+      nextMuted = muted.filter((id) => id !== uid);
+      delete names[uid];
+    } else {
+      nextMuted = [...muted, uid];
+      names[uid] = displayName;
+    }
+
+    await updateDoc(doc(this.firebase.db, 'users', user.uid), {
+      mutedEmotesFrom: nextMuted,
+      mutedPlayerNames: names,
+    });
+    this.profile.set({ ...current, mutedEmotesFrom: nextMuted, mutedPlayerNames: names });
   }
 
   /** Regolamento "Qualità della vita" — segna/rimuove una magia dai preferiti dell'account (visibili

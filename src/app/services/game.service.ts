@@ -20,7 +20,7 @@ import { FriendsService } from './friends.service';
 import type { Wand } from '../models/wand.model';
 import type { GameState } from '../models/game.model';
 import type { UserProfile } from '../models/user.model';
-import type { CardBackSkin } from '../models/player.model';
+import type { CardBackSkin, PlayerId } from '../models/player.model';
 import { createInitialGameState } from '../game/deck-builder';
 
 export interface GameDoc {
@@ -64,6 +64,13 @@ export interface GameDoc {
   wasFriendDuel: boolean;
   createdAt: number;
   state: GameState | null;
+  /** Ultima emote lanciata (Qualità della vita) — un campo transiente sul documento partita, non
+   * parte di GameState/turn-engine: le emote sono chiacchiera in game, non regolamento, non passano
+   * mai per GameEngineService.mutate/resolveVictory (v. sendEmote sotto). `sentAt` è la sorgente di
+   * verità per "è una NUOVA emote" lato client (AnimationQueueService.syncEmote): un doppio invio
+   * dello stesso emoteId aggiorna comunque sentAt, quindi resta rilevabile. null finché nessuno ha
+   * mai lanciato un'emote in questa partita. */
+  lastEmote: { by: PlayerId; emoteId: string; sentAt: number } | null;
   /** Protezione opzionale per la lobby pubblica (Qualità della vita) — "per disattenzione", non un
    * vero segreto: un documento 'waiting' è già leggibile da chiunque autenticato (vedi la regola su
    * games/{gameId}), quindi anche questo campo lo è. Basta a scoraggiare un ingresso casuale, non
@@ -122,6 +129,7 @@ export class GameService {
       wasFriendDuel: false,
       createdAt: Date.now(),
       state: null,
+      lastEmote: null,
       password: options?.password?.trim() || null,
       visibility: options?.friendsOnly ? 'friends' : 'public',
     };
@@ -173,6 +181,17 @@ export class GameService {
     });
   }
 
+  /** Lancia un'emote (Qualità della vita) — un plain updateDoc come setReady sopra, non
+   * GameEngineService.mutate: non tocca mai `state`, quindi non serve la transazione read-modify-
+   * write che quello usa per proteggere il vero motore di gioco da scritture concorrenti. Nessuna
+   * nuova regola Firestore necessaria: games/{gameId} già permette a host/guest di scrivere qualunque
+   * campo una volta nella partita (v. firestore.rules). L'anti-spam (cooldown) è responsabilità del
+   * chiamante (board.component.ts), non di questo servizio. */
+  async sendEmote(gameId: string, role: PlayerId, emoteId: string): Promise<void> {
+    const ref = doc(this.db, 'games', gameId);
+    await updateDoc(ref, { lastEmote: { by: role, emoteId, sentAt: Date.now() } });
+  }
+
   async createDebugGame(profile: UserProfile): Promise<string> {
     const gameId = this.generateRoomCode();
     const defaultWand: Wand = { handleSocket: null, bodySocket: null, tipSlot: null };
@@ -206,6 +225,7 @@ export class GameService {
       createdAt: Date.now(),
       password: null,
       visibility: 'public',
+      lastEmote: null,
       state: createInitialGameState(
         { name: hostName, wand: defaultWand, cardBack: profile.cardBack },
         { name: guestName, wand: defaultWand, cardBack: 'dark' },

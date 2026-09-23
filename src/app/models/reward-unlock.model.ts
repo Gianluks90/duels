@@ -5,6 +5,14 @@
 export type RewardUnlock =
   | { kind: 'free' }
   | { kind: 'objective'; objectiveId: string }
+  /** Sarà legato a un obiettivo, ma QUALE non è ancora stato deciso (a differenza di 'objective',
+   * che punta già a un Objective.id reale in OBJECTIVE_CATALOG) — mai posseduto/equipaggiabile
+   * finché resta in questo stato (nessun objectiveId da verificare, quindi nessun percorso di
+   * sblocco reale). Mostrato comunque in Collezione con un messaggio esplicito ("Condizione di
+   * sblocco non ancora disponibile"), non nascosto. Quando si deciderà l'obiettivo giusto, va
+   * sostituito con `{ kind: 'objective', objectiveId: '...' }` — v. data/emotes.ts per l'uso
+   * attuale (frasi aggiunte prima di decidere come sbloccarle). */
+  | { kind: 'objectivePending' }
   /** Codice riscatto dedicato — il codice stesso non compare mai in UI (vanificherebbe il
    * riscatto); il documento `codes/{CODICE}` va creato manualmente da console/CLI Firebase. */
   | { kind: 'redeemCode' }

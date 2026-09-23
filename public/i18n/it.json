@@ -85,7 +85,10 @@
     "poisonAria": "Avvelenamento: livello {level}",
     "frozenAria": "Congelato: rischio di pescare carte Congelamento invece di carte utili",
     "favoritesTooltip": "Preferite: {names}",
-    "pinnedAria": "Magie appuntate"
+    "pinnedAria": "Magie appuntate",
+    "emoteAria": "Lancia un'emote",
+    "muteAria": "Silenzia le emote di questo giocatore",
+    "unmuteAria": "Desilenzia le emote di questo giocatore"
   },
 
   "phaseTracker": {
@@ -577,10 +580,36 @@
       "compliment_debug": { "text": "Approvato!" },
       "thanks_debug": { "text": "Grazie, prendo nota" },
       "sorry_debug": { "text": "Scusa, lo sistemo poi" },
-      "oops_debug": { "text": "Sì, l'ho fatto io!" }
+      "oops_debug": { "text": "Sì, l'ho fatto io!" },
+      "greeting_hi": { "text": "Ciao!" },
+      "greeting_here_we_go": { "text": "Eccoci qua" },
+      "greeting_nice_day": { "text": "Bella giornata vero?" },
+      "greeting_good_luck": { "text": "In bocca al lupo" },
+      "greeting_lets_play": { "text": "Giochiamo?" },
+      "taunt_best_move": { "text": "È la tua mossa migliore?" },
+      "taunt_goat": { "text": "Hai imparato da una capra?" },
+      "taunt_not_great": { "text": "Non è un gran ché" },
+      "taunt_is_that_all": { "text": "Tutto qui?" },
+      "compliment_skilled": { "text": "Ci sai fare!" },
+      "compliment_unexpected": { "text": "Questa non me l'aspettavo" },
+      "compliment_gg": { "text": "GG" },
+      "compliment_wow": { "text": "Wow!" },
+      "thanks_appreciate": { "text": "Ti ringrazio" },
+      "thanks_pleasure": { "text": "È un piacere" },
+      "thanks_kind": { "text": "Molto gentile" },
+      "thanks_thx": { "text": "Grz" },
+      "sorry_regret": { "text": "Mi dispiace" },
+      "sorry_no_intent": { "text": "Non volevo" },
+      "sorry_apologize": { "text": "Chiedo scusa" },
+      "sorry_not_on_purpose": { "text": "Non era mia intenzione" },
+      "oops_shrug": { "text": "Spiace" },
+      "oops_not_sorry": { "text": "Sorry not sorry" },
+      "oops_honestly": { "text": "Onestamente? Non vedevo l'ora" },
+      "oops_so_sorry": { "text": "Quanto mi dispiace" }
     },
     "activeTooltip": "Attivo",
     "descriptionPending": "Descrizione da definire.",
+    "unlockPending": "Condizione di sblocco non ancora disponibile.",
     "alwaysAvailable": "Sempre disponibile.",
     "unlockedViaCode": "Sbloccato con un codice riscatto.",
     "unlockedCondition": "Sbloccato completando: {condition}.",
@@ -883,6 +912,12 @@
     "navAria": "Sezioni regolamento"
   },
 
+  "emotePicker": {
+    "title": "Scegli un'emote",
+    "dialogAria": "Scelta emote",
+    "closeAria": "Chiudi"
+  },
+
   "pileDialog": {
     "dialogAria": "Contenuto della pila",
     "closeAria": "Chiudi",
@@ -1028,6 +1063,11 @@
     },
     "titleEquip": {
       "title": "Titolo"
+    },
+    "mutedPlayers": {
+      "title": "Giocatori silenziati",
+      "empty": "Non hai silenziato nessun giocatore.",
+      "unmute": "Desilenzia"
     },
     "danger": {
       "title": "Zona Pericolosa",

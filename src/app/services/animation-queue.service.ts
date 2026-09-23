@@ -5,7 +5,20 @@ import type { Card } from '../models/card.model';
 import type { GameEvent } from '../models/game-event.model';
 import { deriveGameEvents } from '../game/derive-events';
 import { AudioService } from './audio.service';
-import type { FlashEvent } from '../components/player-hud/player-hud.component';
+import { AuthService } from './auth.service';
+import { TranslationService } from './translation.service';
+import type { GameDoc } from './game.service';
+import { EMOTE_CATALOG } from '../data/emotes';
+import type { EmoteBubbleEvent, FlashEvent } from '../components/player-hud/player-hud.component';
+
+/** Durata di visualizzazione del fumetto emote (Qualità della vita) prima che svanisca da solo —
+ * decisa insieme all'utente in fase di design, non un valore arbitrario come le altre costanti di
+ * questo file. Deve combaciare con la durata di @keyframes hud-emote-bubble-enter-up/-down in
+ * player-hud.component.scss e board-compact.component.scss: quell'animazione CSS (pop d'ingresso +
+ * deriva verso l'alto/basso + dissolvenza) è tarata per finire esattamente invisibile a questo
+ * timeout, non prima — un valore diverso lì farebbe sparire il fumetto di scatto (animazione
+ * ancora a metà) o lo terrebbe visibile ferma dopo il fade-out (animazione già conclusa). */
+export const EMOTE_BUBBLE_DURATION_MS = 5000;
 
 /** Durata dell'animazione di sparizione delle carte "temporanee" (Congelamento/Residuo,
  * Card.expiresAt) e della carta appena uscita dalla punta della bacchetta — deve combaciare con
@@ -61,9 +74,24 @@ function roleRecord<T>(value: T): Record<PlayerId, T> {
 @Injectable()
 export class AnimationQueueService {
   private readonly audio = inject(AudioService);
+  private readonly auth = inject(AuthService);
+  private readonly i18n = inject(TranslationService);
   private readonly destroyRef = inject(DestroyRef);
 
   private previousRaw: GameState | null = null;
+  /** `sentAt` dell'ultima GameDoc.lastEmote già processata — a differenza di previousRaw (un intero
+   * GameState) qui basta un timestamp: "nuova emote" significa solo "sentAt è cambiato da quando ho
+   * guardato l'ultima volta", v. syncEmote. `undefined` (non null) finché syncEmote non è mai stato
+   * chiamato: distingue "primo GameDoc di sempre" (mai vista NESSUNA emote, ok mostrarla) da "nessuna
+   * emote ancora lanciata in partita" (lastEmote null, v. syncEmote) — undefined è anche il valore
+   * che rende il primo lastEmote MAI un evento "nuovo" da animare quando si carica/ricarica la board
+   * a metà partita (stesso spirito del guard `!prev` di sync() sotto: niente animazioni per uno stato
+   * già vecchio visto per la prima volta). */
+  private previousEmoteSentAt: number | null | undefined = undefined;
+  private emoteCounter = 0;
+  private readonly emoteEventByRole = signal<Record<PlayerId, EmoteBubbleEvent | null>>(
+    roleRecord(null),
+  );
   private syncCounter = 0;
   /** true se il tab è stato in background (throttling dei timer del browser) da quando è stato
    * processato l'ultimo GameState — vedi sync(). */
@@ -132,6 +160,50 @@ export class AnimationQueueService {
 
   poisonDamageEventFor(role: PlayerId | null): FlashEvent | null {
     return role ? this.poisonDamageEventByRole()[role] : null;
+  }
+
+  emoteEventFor(role: PlayerId | null): EmoteBubbleEvent | null {
+    return role ? this.emoteEventByRole()[role] : null;
+  }
+
+  /**
+   * Chiamato da BoardComponent (ngOnInit, stesso listenToGame di sync() sopra) ad ogni nuovo
+   * GameDoc — a differenza di sync(), la sorgente qui è `doc.lastEmote` (un campo transiente sul
+   * documento partita, non parte di GameState/deriveGameEvents, v. GameService.sendEmote), quindi
+   * non passa dal diff di deriveGameEvents. `sentAt` (non l'emoteId) decide se è "nuova": due lanci
+   * consecutivi della STESSA emote restano comunque rilevabili. Nessun filtro per ruolo (a
+   * differenza di sync()): il fumetto va mostrato sia sul proprio pannello (si è mandata da sé) sia
+   * su quello dell'avversario, mai solo uno dei due.
+   *
+   * Un mittente silenziato (auth.profile()?.mutedEmotesFrom, v. UserProfile) non produce alcun
+   * fumetto: soppresso qui, silenziosamente, PRIMA di toccare qualunque segnale — chi silenzia non
+   * scrive mai nulla su Firestore per farlo, e chi viene silenziato non se ne accorge in alcun modo
+   * (nessun eco verso il mittente).
+   */
+  syncEmote(doc: GameDoc): void {
+    const emote = doc.lastEmote;
+    const isFirstCall = this.previousEmoteSentAt === undefined;
+    const alreadySeen = !!emote && emote.sentAt === this.previousEmoteSentAt;
+    this.previousEmoteSentAt = emote?.sentAt ?? null;
+    if (!emote || alreadySeen || isFirstCall) return;
+
+    const senderUid = emote.by === 'host' ? doc.hostId : doc.guestId;
+    if (senderUid && (this.auth.profile()?.mutedEmotesFrom ?? []).includes(senderUid)) return;
+
+    const definition = EMOTE_CATALOG.find((def) => def.id === emote.emoteId);
+    if (!definition) return;
+    const text = this.i18n.t(`collection.emoteCatalog.${definition.id}.text`);
+
+    this.emoteCounter++;
+    const bubble: EmoteBubbleEvent = { id: this.emoteCounter, text };
+    this.emoteEventByRole.update((rec) => ({ ...rec, [emote.by]: bubble }));
+
+    const timer = setTimeout(() => {
+      this.emoteEventByRole.update((rec) =>
+        rec[emote.by]?.id === bubble.id ? { ...rec, [emote.by]: null } : rec,
+      );
+    }, EMOTE_BUBBLE_DURATION_MS);
+    this.destroyRef.onDestroy(() => clearTimeout(timer));
   }
 
   drawDelayMsFor(cardId: string): number {

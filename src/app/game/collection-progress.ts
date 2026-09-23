@@ -3,6 +3,7 @@ import { BACKGROUND_CATALOG } from '../data/backgrounds';
 import { TITLE_CATALOG, titleRewardVariantIds } from '../data/titles';
 import { COLLECTIBLE_ELEMENT_IDS } from '../data/elements';
 import { SPELL_CATALOG } from '../data/spells';
+import { EMOTE_CATALOG, EMOTES_FEATURE_ENABLED } from '../data/emotes';
 import type { UserProfile } from '../models/user.model';
 
 /** Incantesimi lanciati per sbloccare l'arte v1 di un incantesimo — stessa soglia di
@@ -14,7 +15,7 @@ export const SPELL_LEGACY_UNLOCK_COUNT = 10;
  * usata sia per leggere il conteggio da CollectionProgress sia per l'etichetta i18n
  * (`collection.<key>`, le stesse stringhe già usate per le tab). */
 export type CollectionCategoryKey =
-  'cardBacks' | 'backgrounds' | 'titles' | 'elements' | 'mana' | 'spells';
+  'cardBacks' | 'backgrounds' | 'titles' | 'elements' | 'mana' | 'spells' | 'emotes';
 
 export const COLLECTION_CATEGORY_ORDER: readonly CollectionCategoryKey[] = [
   'cardBacks',
@@ -23,6 +24,7 @@ export const COLLECTION_CATEGORY_ORDER: readonly CollectionCategoryKey[] = [
   'elements',
   'mana',
   'spells',
+  'emotes',
 ];
 
 export interface CollectionCategoryProgress {
@@ -49,6 +51,7 @@ export function collectionProgress(profile: UserProfile | null | undefined): Col
     elements: { owned: 0, total: 0 },
     mana: { owned: 0, total: 0 },
     spells: { owned: 0, total: 0 },
+    emotes: { owned: 0, total: 0 },
   };
   if (!profile) return progress;
 
@@ -95,6 +98,18 @@ export function collectionProgress(profile: UserProfile | null | undefined): Col
   for (const spell of SPELL_CATALOG) {
     progress.spells.total += 2;
     progress.spells.owned += 1 + ((castCounts[spell.id] ?? 0) >= SPELL_LEGACY_UNLOCK_COUNT ? 1 : 0);
+  }
+
+  // Emote: stesso schema di cardBacks/backgrounds sopra (free o in unlockedEmotes). Esclusa finché
+  // EMOTES_FEATURE_ENABLED è false — stesso motivo di CollectionComponent.completionPercent: non
+  // deve far muovere una % che il giocatore non può ancora vedere/influenzare da nessuna parte
+  // dell'app.
+  if (EMOTES_FEATURE_ENABLED) {
+    const ownedEmotes = new Set(profile.unlockedEmotes ?? []);
+    for (const def of EMOTE_CATALOG) {
+      progress.emotes.total++;
+      if (def.unlock.kind === 'free' || ownedEmotes.has(def.id)) progress.emotes.owned++;
+    }
   }
 
   return progress;

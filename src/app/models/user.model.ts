@@ -100,10 +100,20 @@ export interface UserProfile {
    * impostato: va letto con un fallback a DEFAULT_EQUIPPED_EMOTES (data/emotes.ts), non con `?? []`
    * come le liste di sblocco sopra. */
   equippedEmotes?: Partial<Record<EmoteCategory, EmoteLoadoutSlot>>;
-  /** Uid degli avversari le cui emote sono silenziate durante una partita — anti-spam (stesso
-   * principio dello "squelch" di Hearthstone), impostabile una volta che lo strumento emote sarà
-   * attivo. Assente finché non se ne silenzia nessuno, va letto con `?? []`. */
+  /** Uid degli avversari le cui emote sono silenziate — permanente e cross-partita (stesso
+   * principio dello "squelch" di Hearthstone): una volta silenziato un uid, le sue emote non
+   * vengono più mostrate in NESSUNA partita futura, finché non lo si desilenzia esplicitamente
+   * (v. AuthService.toggleMuteEmotesFrom, sezione "Giocatori silenziati" in ProfileDialogComponent).
+   * Assente finché non se ne silenzia nessuno, va letto con `?? []`. */
   mutedEmotesFrom?: string[];
+  /** Snapshot uid -> displayName preso al MOMENTO del silenziamento (v. mutedEmotesFrom sopra) —
+   * necessario perché la regola Firestore su users/{userId} permette di leggere il profilo altrui
+   * solo se amici (isFriend), e un avversario silenziato è spesso uno sconosciuto: senza questo
+   * snapshot la lista "Giocatori silenziati" non avrebbe alcun nome da mostrare per la maggior parte
+   * delle voci. Le chiavi restano in sincrono con mutedEmotesFrom (stessa scrittura in
+   * toggleMuteEmotesFrom), ma è puramente per la UI: mai letto per decidere se un'emote va filtrata,
+   * quello resta compito esclusivo di mutedEmotesFrom. */
+  mutedPlayerNames?: Record<string, string>;
 }
 
 /** Numero massimo di incantesimi che un utente può segnare come preferiti (globale, account-level). */

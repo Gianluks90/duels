@@ -124,6 +124,28 @@
   }
 
   // ── Danger zone (moved here from Opzioni — account management belongs together) ─
+  // ── Muted players ────────────────────────────────────────────────────────────
+  &__muted-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__muted-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+  }
+
+  &__muted-name {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+  }
+
   &__danger-row {
     display: flex;
     align-items: center;

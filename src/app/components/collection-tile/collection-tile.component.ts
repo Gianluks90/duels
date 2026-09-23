@@ -23,21 +23,22 @@ export interface CollectionItem {
  * stessa dimensione (aspect ratio) sia da sbloccare (lucchetto dorato centrato, arte nascosta) sia
  * da posseduta (arte reale), con tooltip al passaggio del mouse/focus per nome/descrizione/
  * condizione — necessario perché l'arte va coperta finché non sbloccata.
- * Titoli (`shape() === 'title'`): niente arte da nascondere, quindi niente tooltip — una card
- * rettangolare sottile con nome ed eventuale condizione di sblocco scritti direttamente, un badge
- * assoluto in alto a destra (stesso angolo/stile di `__radio` sotto): lucchetto se non ancora
- * sbloccato, spunta dorata (`activeIconUrl`, `selected()`) se è il titolo equipaggiato in questo
- * momento, nulla in quello spazio altrimenti. Il tile bloccato è inoltre leggermente attenuato
- * (`opacity: .8`, v. scss) invece del solo overlay scuro già usato da card/sfondo. Il titolo non
- * partecipa MAI alla modalità personalizzazione sotto (resta un select in ProfileDialogComponent,
- * questione di identità più che di collezione) — `selectable` non ha alcun effetto quando
- * `shape() === 'title'`, `selected()` qui marca solo il badge "Attivo", mai una selezione pendente.
+ * Titoli ED EMOTE (`shape() === 'title'`, testo puro senza arte da nascondere quindi niente
+ * tooltip): una card rettangolare sottile con nome ed eventuale condizione di sblocco scritti
+ * direttamente, un badge assoluto in alto a destra (`__title-lock`, stesso angolo/stile di `__radio`
+ * sotto) che riusa la STESSA macchina a 3 stati di card/sfondo (lucchetto se non posseduto, radio
+ * cerchio/cerchio-spunta se `selectable`, spunta dorata statica se `selected` e basta). Il tile
+ * bloccato è inoltre leggermente attenuato (`opacity: .8`, v. scss) invece del solo overlay scuro
+ * già usato da card/sfondo. I TITOLI in particolare non partecipano mai alla modalità
+ * personalizzazione (restano un select in ProfileDialogComponent, questione di identità più che di
+ * collezione — CollectionComponent non passa mai `selectable` per quella categoria); le EMOTE invece
+ * sì (v. CollectionComponent.selectEmote), un radiogroup per categoria.
  *
- * Modalità personalizzazione (CollectionComponent.editMode, solo dorso/sfondo): un tile posseduto
- * diventa un radio button travestito da cerchio/cerchio-spunta dorato (`selectable` true, `selected`
- * = è la selezione pendente) — mai su un tile bloccato, non c'è nulla da equipaggiare lì. Il
- * raggruppamento "un solo selezionato per categoria" è responsabilità del chiamante
- * (CollectionComponent), non di questo componente: qui ci si limita a mostrare lo stato e a
+ * Modalità personalizzazione (CollectionComponent.editMode — dorso/sfondo/emote, mai titoli): un
+ * tile posseduto diventa un radio button travestito da cerchio/cerchio-spunta dorato (`selectable`
+ * true, `selected` = è la selezione pendente) — mai su un tile bloccato, non c'è nulla da
+ * equipaggiare lì. Il raggruppamento "un solo selezionato per categoria" è responsabilità del
+ * chiamante (CollectionComponent), non di questo componente: qui ci si limita a mostrare lo stato e a
  * emettere `select` al click/Invio/Spazio.
  *
  * FUORI dalla modalità personalizzazione, lo stesso `selected` (con `selectable` false) marca
@@ -55,12 +56,27 @@ export interface CollectionItem {
       <div
         class="collection-tile collection-tile--title"
         [class.collection-tile--locked]="!item().owned"
+        [class.collection-tile--selectable]="selectable()"
+        [attr.tabindex]="selectable() ? 0 : null"
+        [attr.role]="selectable() ? 'radio' : null"
+        [attr.aria-checked]="selectable() ? selected() : null"
+        [attr.aria-label]="selectable() ? item().name : null"
+        (click)="activate()"
+        (keydown.enter)="activate()"
+        (keydown.space)="activateOnSpace($event)"
       >
         @if (!item().owned) {
           <span
             class="collection-tile__title-lock"
             [style.mask-image]="lockIconUrl"
             [style.-webkit-mask-image]="lockIconUrl"
+          ></span>
+        } @else if (selectable()) {
+          <span
+            class="collection-tile__title-lock"
+            [class.collection-tile__title-lock--selected]="selected()"
+            [style.mask-image]="radioIconUrl()"
+            [style.-webkit-mask-image]="radioIconUrl()"
           ></span>
         } @else if (selected()) {
           <span

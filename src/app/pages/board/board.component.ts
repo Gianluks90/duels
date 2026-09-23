@@ -56,6 +56,11 @@ import {
 } from '../../dialogs/socket/socket-dialog.component';
 import { PileDialogComponent, type PileDialogData } from '../../dialogs/pile/pile-dialog.component';
 import {
+  EmotePickerDialogComponent,
+  type EmotePickerDialogData,
+  type EmotePickerOption,
+} from '../../dialogs/emote-picker/emote-picker-dialog.component';
+import {
   GameLogDialogComponent,
   type GameLogDialogData,
 } from '../../dialogs/game-log/game-log-dialog.component';
@@ -81,6 +86,8 @@ import { combineNeedsChoice, countMatchingCards, hasElements } from '../../game/
 import { TURN_PHASES, type TurnPhase } from '../../models/turn-phase.model';
 import { SPELL_CATALOG } from '../../data/spells';
 import type { Spell } from '../../models/spell.model';
+import { DEFAULT_EQUIPPED_EMOTES } from '../../data/emotes';
+import { EMOTE_CATEGORIES } from '../../models/emote.model';
 import { TranslationService } from '../../services/translation.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { BoardLayoutService } from '../../services/board-layout.service';
@@ -95,6 +102,11 @@ const PANEL_HEIGHT = 128;
 const PANEL_CONTENT_HEIGHT = 100;
 /** Matches --sp-3 — used to size the spacer that reserves room for the (absolutely positioned) wand panels within the row. */
 const ROW_GAP = 12;
+
+/** Anti-spam per il lancio emote (Qualità della vita) — cooldown lato client soltanto, nessuna
+ * regola Firestore lo impone (v. GameService.sendEmote): il pulsante lanciatore resta disabilitato
+ * per questa durata dopo ogni invio riuscito. */
+const EMOTE_COOLDOWN_MS = 10000;
 
 /** Width of the mazzo/scarti card-backs in the mano box (the deck/discard piles beside the arc — not the arc's own cards). */
 const HAND_CARD_WIDTH = 84;
@@ -252,6 +264,14 @@ export class BoardComponent implements OnInit {
   protected readonly settingsIcon = '/icons/settings_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
   /** Stessa icona teschio usata da player-hud.component per il livello di Avvelenamento (2.3.4) — riusata nel layout compatto, che non passa per PlayerHudComponent. */
   protected readonly poisonIcon = elementIconPath('poison');
+  /** Lancia emote/mute avversario (Qualità della vita) — layout compatto, stesse icone usate da
+   * PlayerHudComponent (che il layout compatto non passa per). */
+  protected readonly emoteLauncherIcon =
+    '/icons/chat_bubble_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24.svg';
+  /** Mostrata quando l'avversario NON è silenziato (click = silenzia). */
+  protected readonly volumeOnIcon = '/icons/volume_up_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
+  /** Mostrata quando l'avversario È GIÀ silenziato (click = desilenzia). */
+  protected readonly volumeOffIcon = '/icons/volume_off_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24.svg';
 
   /** Osservati con un effect dedicato (vedi costruttore), non afterNextRender: board.component.html
    * avvolge tutto il layout (desktop e compatto) in un @if (state()), quindi questi elementi non
@@ -286,6 +306,13 @@ export class BoardComponent implements OnInit {
   protected readonly compactOpponentWandTrackWidth = signal(0);
 
   protected readonly gameId = signal<string>('');
+  /** true mentre il pulsante lanciatore deve restare disabilitato (Qualità della vita, anti-spam) —
+   * un signal scrivibile esplicito, non un computed su Date.now(): Date.now() non è un signal,
+   * quindi un computed che lo confronta con un timestamp si "cristallizza" al valore calcolato
+   * all'ultima rivalutazione e non ridiventa mai false da solo al passare del tempo (bug osservato:
+   * il pulsante restava disabilitato per sempre dopo il primo invio). Qui invece un vero
+   * setTimeout in openEmotePicker() lo rimette a false esplicitamente allo scadere del cooldown. */
+  protected readonly emoteCooldownActive = signal(false);
   /** Documento Firestore grezzo, alias di GameStateService.gameDoc (scritto da ngOnInit) — il resto
    * della classe continua a leggerlo/scriverlo come un proprio signal, invariato rispetto a prima. */
   protected readonly gameDoc = this.gameState.gameDoc;
@@ -346,6 +373,14 @@ export class BoardComponent implements OnInit {
   );
   protected readonly opponentShieldEvent = computed(() =>
     this.animationQueue.shieldEventFor(this.opponentRole()),
+  );
+  /** Fumetto emote (Qualità della vita) — stesso schema dedup-su-id di sopra, ma alimentato da
+   * AnimationQueueService.syncEmote (GameDoc.lastEmote), non da deriveGameEvents. */
+  protected readonly playerEmoteEvent = computed(() =>
+    this.animationQueue.emoteEventFor(this.myRole()),
+  );
+  protected readonly opponentEmoteEvent = computed(() =>
+    this.animationQueue.emoteEventFor(this.opponentRole()),
   );
   /** Danno da Avvelenamento (2.3.4, resolvePreparation) — icona/colore propri (teschio verde) invece
    * del generico lampo rosso, vedi playerDamageEvent sopra sul perché è scorporato. */
@@ -551,6 +586,22 @@ export class BoardComponent implements OnInit {
     const doc = this.gameDoc();
     if (!doc) return null;
     return this.myRole() === 'host' ? doc.guestPhoto : doc.hostPhoto;
+  });
+
+  /** Uid REALE dell'avversario (a differenza di opponentName/opponentPhoto sopra, mai un
+   * placeholder) — serve solo per il mute (Qualità della vita, AuthService.toggleMuteEmotesFrom),
+   * null finché il guest non si è ancora unito. */
+  protected readonly opponentUid = computed(() => {
+    const doc = this.gameDoc();
+    if (!doc) return null;
+    return this.myRole() === 'host' ? doc.guestId : doc.hostId;
+  });
+
+  /** true se l'avversario è già nella lista permanente (v. UserProfile.mutedEmotesFrom) — pilota
+   * l'icona mute/unmute sul suo pannello. */
+  protected readonly isOpponentMuted = computed(() => {
+    const uid = this.opponentUid();
+    return !!uid && (this.auth.profile()?.mutedEmotesFrom ?? []).includes(uid);
   });
 
   /** Snapshot preso al join (GameDoc.hostTitle/guestTitle, vedi GameService) — una variant-id (v.
@@ -845,7 +896,7 @@ export class BoardComponent implements OnInit {
 
       const gameId = this.gameId();
       const timer = setTimeout(
-        () => void this.gameEngine.advancePhase(gameId, 'guest'),
+        () => this.advancePhaseWithRetry(gameId, 'guest'),
         this.DEBUG_BOT_PHASE_DELAY_MS[s.phase],
       );
       this.destroyRef.onDestroy(() => clearTimeout(timer));
@@ -887,7 +938,7 @@ export class BoardComponent implements OnInit {
 
       const gameId = this.gameId();
       const timer = setTimeout(
-        () => void this.gameEngine.advancePhase(gameId, role),
+        () => this.advancePhaseWithRetry(gameId, role),
         this.autoAdvanceDelayMs(),
       );
       this.destroyRef.onDestroy(() => clearTimeout(timer));
@@ -901,6 +952,14 @@ export class BoardComponent implements OnInit {
     effect(() => {
       const raw = this.state();
       if (raw) this.animationQueue.sync(raw, this.myRole());
+    });
+
+    // Fumetto emote (Qualità della vita): sorgente separata da sync() sopra — GameDoc.lastEmote è un
+    // campo transiente sul documento partita, non parte di GameState/deriveGameEvents (v.
+    // GameService.sendEmote, AnimationQueueService.syncEmote).
+    effect(() => {
+      const doc = this.gameDoc();
+      if (doc) this.animationQueue.syncEmote(doc);
     });
   }
 
@@ -1537,6 +1596,29 @@ export class BoardComponent implements OnInit {
     await this.gameEngine.advancePhase(this.gameId(), role);
   }
 
+  /**
+   * Avanza fase per l'auto-avanzamento SOLO (bot di debug + giocatore reale, v. gli effect nel
+   * costruttore) — a differenza di advancePhase() sopra (click manuale: se fallisce l'utente può
+   * semplicemente ricliccare), qui non c'è alcun controllo a cui affidarsi: prima di questo fix un
+   * fallimento silenzioso (rete, o la transazione di GameEngineService.mutate che perde una gara di
+   * scrittura concorrente sullo STESSO documento games/{gameId} — es. GameService.sendEmote, che
+   * scrive lì con un updateDoc non transazionale) lasciava la partita bloccata "per sempre": gli
+   * effect segnano autoAdvanceKey/turnAutoAdvanceKey come già gestito PRIMA di sapere se la
+   * transazione andrà davvero a buon fine, quindi un fallimento non veniva mai ritentato finché non
+   * si ricaricava la pagina (che riarma l'effect da zero in un componente nuovo). Un solo nuovo
+   * tentativo dopo un breve ritardo copre la stragrande maggioranza dei casi (contesa transitoria,
+   * già in parte assorbita da runTransaction stesso prima di arrivare a fallire) senza rischiare un
+   * retry infinito su un errore persistente (es. connessione davvero caduta).
+   */
+  private advancePhaseWithRetry(gameId: string, role: PlayerId, isRetry = false): void {
+    this.gameEngine.advancePhase(gameId, role).catch((err: unknown) => {
+      console.error(`advancePhase failed${isRetry ? ' (retry)' : ''}`, err);
+      if (isRetry) return;
+      const timer = setTimeout(() => this.advancePhaseWithRetry(gameId, role, true), 1000);
+      this.destroyRef.onDestroy(() => clearTimeout(timer));
+    });
+  }
+
   private topOf(cards: readonly Card[] | undefined): Card | null {
     return cards && cards.length > 0 ? cards[cards.length - 1] : null;
   }
@@ -1558,6 +1640,49 @@ export class BoardComponent implements OnInit {
       backdropClass: 'dialog-backdrop',
       panelClass: 'dialog-panel',
     });
+  }
+
+  /** Lancio emote (Qualità della vita): apre la scelta tra le 6 equipaggiate (una per categoria, v.
+   * UserProfile.equippedEmotes) e, alla selezione, invia GameService.sendEmote — no-op durante il
+   * cooldown anti-spam (emoteCooldownActive) o se equippedEmotes non è mai stato impostato (ricade
+   * su DEFAULT_EQUIPPED_EMOTES, sempre presente). */
+  protected async openEmotePicker(): Promise<void> {
+    const role = this.myRole();
+    if (!role || this.emoteCooldownActive()) return;
+
+    const equipped = this.auth.profile()?.equippedEmotes ?? {};
+    const options: EmotePickerOption[] = EMOTE_CATEGORIES.map((category) => {
+      const emoteId = equipped[category]?.emoteId ?? DEFAULT_EQUIPPED_EMOTES[category].emoteId;
+      const text = this.i18n.t(`collection.emoteCatalog.${emoteId}.text`);
+      return { emoteId, category, text };
+    });
+
+    const ref = this.dialog.open<string | undefined, EmotePickerDialogData>(
+      EmotePickerDialogComponent,
+      {
+        data: { options },
+        positionStrategy: this.overlay.position().global().centerHorizontally().centerVertically(),
+        hasBackdrop: true,
+        backdropClass: 'dialog-backdrop',
+        panelClass: 'dialog-panel',
+      },
+    );
+    const emoteId = await firstValueFrom(ref.closed);
+    if (!emoteId) return;
+
+    this.emoteCooldownActive.set(true);
+    const timer = setTimeout(() => this.emoteCooldownActive.set(false), EMOTE_COOLDOWN_MS);
+    this.destroyRef.onDestroy(() => clearTimeout(timer));
+    await this.game.sendEmote(this.gameId(), role, emoteId);
+  }
+
+  /** Silenzia/desilenzia l'avversario (Qualità della vita, permanente e cross-partita — v.
+   * AuthService.toggleMuteEmotesFrom). No-op se l'avversario non si è ancora unito (opponentUid
+   * null). */
+  protected async toggleMuteOpponent(): Promise<void> {
+    const uid = this.opponentUid();
+    if (!uid) return;
+    await this.auth.toggleMuteEmotesFrom(uid, this.opponentName());
   }
 
   /** Regolamento 5: il Grimorio si può sfogliare "in qualsiasi momento" — passiamo comunque hand/canCreate così il bottone "Crea" (5.1) può auto-disabilitarsi quando non è la fase Azione del giocatore, senza dover riaprire la dialog per accorgersene. */

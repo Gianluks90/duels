@@ -19,10 +19,20 @@ import {
 } from '../../data/titles';
 import { COLLECTIBLE_ELEMENT_IDS } from '../../data/elements';
 import { SPELL_CATALOG } from '../../data/spells';
-import { EMOTE_CATALOG, EMOTES_FEATURE_ENABLED, type EmoteDefinition } from '../../data/emotes';
+import {
+  DEFAULT_EQUIPPED_EMOTES,
+  EMOTE_CATALOG,
+  EMOTES_FEATURE_ENABLED,
+  type EmoteDefinition,
+} from '../../data/emotes';
 import { SPELL_LEGACY_UNLOCK_COUNT } from '../../game/collection-progress';
 import { DEFAULT_BACKGROUND_ID } from '../../models/user.model';
 import { elementImagePath } from '../../models/element.model';
+import {
+  EMOTE_CATEGORIES,
+  type EmoteCategory,
+  type EmoteLoadoutSlot,
+} from '../../models/emote.model';
 import type { RewardUnlock } from '../../models/reward-unlock.model';
 import type { Objective } from '../../models/objective.model';
 
@@ -104,6 +114,10 @@ export class CollectionComponent {
   protected readonly editMode = signal(false);
   protected readonly pendingCardBack = signal('dark');
   protected readonly pendingBackground = signal(DEFAULT_BACKGROUND_ID);
+  /** Selezione pendente per le emote, una per categoria — a differenza di pendingCardBack/
+   * pendingBackground (un solo valore) qui serve una mappa: ogni categoria è il proprio radiogroup
+   * indipendente (v. template), non un'unica selezione condivisa da tutto il tab. */
+  protected readonly pendingEquippedEmotes = signal<Partial<Record<EmoteCategory, string>>>({});
 
   /** Dorso/sfondo REALMENTE equipaggiati in questo momento (non la selezione pendente) — usati per
    * il badge "Attivo" (v. CollectionTileComponent.selected) quando NON si è in modalità
@@ -112,6 +126,16 @@ export class CollectionComponent {
   protected readonly equippedBackground = computed(
     () => this.auth.profile()?.background ?? DEFAULT_BACKGROUND_ID,
   );
+
+  /** Emote REALMENTE equipaggiata in questo momento per una categoria — stesso ruolo di
+   * equippedCardBack/equippedBackground sopra, col fallback a DEFAULT_EQUIPPED_EMOTES (mai `?? []`
+   * come le liste di sblocco: qui serve sempre un valore, v. UserProfile.equippedEmotes). */
+  protected equippedEmoteId(category: EmoteCategory): string {
+    return (
+      this.auth.profile()?.equippedEmotes?.[category]?.emoteId ??
+      DEFAULT_EQUIPPED_EMOTES[category].emoteId
+    );
+  }
 
   /** Id BASE del titolo equipaggiato in questo momento (v. titleBaseId, risale da una delle
    * variant-id di genere a `TitleDefinition.id`) — usato per il badge "Attivo" sul tile, stesso
@@ -126,6 +150,11 @@ export class CollectionComponent {
     const profile = this.auth.profile();
     this.pendingCardBack.set(profile?.cardBack ?? 'dark');
     this.pendingBackground.set(profile?.background ?? DEFAULT_BACKGROUND_ID);
+    this.pendingEquippedEmotes.set(
+      Object.fromEntries(
+        EMOTE_CATEGORIES.map((category) => [category, this.equippedEmoteId(category)]),
+      ),
+    );
     // Il tab Titoli si disabilita in modalità personalizzazione (v. template) — se ci si era sopra,
     // se ne esce, altrimenti resterebbe un tab attivo ma non raggiungibile via click.
     if (this.selectedCategory() === 'titles') this.selectedCategory.set(this.categories[0].id);
@@ -137,9 +166,19 @@ export class CollectionComponent {
   }
 
   protected async applyPersonalizing(): Promise<void> {
+    const equippedEmotes = Object.fromEntries(
+      EMOTE_CATEGORIES.map((category) => [
+        category,
+        {
+          emoteId: this.pendingEquippedEmotes()[category] ?? this.equippedEmoteId(category),
+          stickerId: null,
+        } satisfies EmoteLoadoutSlot,
+      ]),
+    ) as Partial<Record<EmoteCategory, EmoteLoadoutSlot>>;
     await this.auth.updateProfile({
       cardBack: this.pendingCardBack(),
       background: this.pendingBackground(),
+      equippedEmotes,
     });
     this.editMode.set(false);
   }
@@ -150,6 +189,10 @@ export class CollectionComponent {
 
   protected selectBackground(id: string): void {
     this.pendingBackground.set(id);
+  }
+
+  protected selectEmote(category: EmoteCategory, id: string): void {
+    this.pendingEquippedEmotes.update((current) => ({ ...current, [category]: id }));
   }
 
   /** Dorsi carta: guidati da CARD_BACK_CATALOG (arte reale per tutti, v. data/card-backs.ts) —
@@ -332,6 +375,23 @@ export class CollectionComponent {
     return this.sortById(EMOTE_CATALOG.map((def) => this.emoteItem(def, ownedIds)));
   });
 
+  /** emoteItems raggruppate per categoria, nell'ordine fisso di EMOTE_CATEGORIES — usata dal
+   * template per mostrare un sottotitolo (i18n `collection.emoteCategories.<categoria>`, già
+   * esistente per il tooltip) sopra ogni radiogroup, invece dell'unica griglia piatta di prima. */
+  protected readonly emoteItemsByCategory = computed<
+    { category: EmoteCategory; items: CollectionItem[] }[]
+  >(() => {
+    const ownedIds = new Set(this.auth.profile()?.unlockedEmotes ?? []);
+    return EMOTE_CATEGORIES.map((category) => ({
+      category,
+      items: this.sortById(
+        EMOTE_CATALOG.filter((def) => def.category === category).map((def) =>
+          this.emoteItem(def, ownedIds),
+        ),
+      ),
+    }));
+  });
+
   /** % di completamento generale su TUTTE le categorie insieme (non solo quella selezionata) —
    * stesso trattamento di ObjectivesComponent.completionPercent, qui "completato" è semplicemente
    * CollectionItem.owned. */
@@ -405,6 +465,10 @@ export class CollectionComponent {
         // Mostrato solo al proprietario (v. titleItems sopra, filtrato per chiunque altro) —
         // "sempre disponibile" è corretto dal SUO punto di vista, l'unico che possa mai vederlo qui.
         return this.i18n.t('collection.alwaysAvailable');
+      case 'objectivePending':
+        // Mai owned (v. reward-unlock.model.ts): nessun ramo "sbloccato", a differenza degli altri
+        // kind sopra — qui non esiste ancora un obiettivo reale da poter mai completare.
+        return this.i18n.t('collection.unlockPending');
     }
   }
 

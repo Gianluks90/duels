@@ -104,6 +104,20 @@
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+    transition: background-color var(--transition);
+  }
+
+  // Radio "cerchio/cerchio-spunta" in modalità personalizzazione (v. __radio sopra) — stesso
+  // trattamento grigio muto finché non è la selezione pendente/dorato una volta selezionato, riusando
+  // il badge __title-lock già posizionato in angolo invece di duplicarne uno nuovo per shape 'title'.
+  // La regola "selected" è tre classi apposta (invece di due) per battere quella "selectable" qui
+  // sotto a parità di ordine nel file, evitando di dipendere da chi è dichiarato per ultimo.
+  &--selectable &__title-lock {
+    background-color: var(--text-muted);
+  }
+
+  &--selectable &__title-lock.collection-tile__title-lock--selected {
+    background-color: var(--text-heading);
   }
 
   // Radio "cerchio/cerchio-spunta" per la modalità personalizzazione (CollectionComponent) — grigio

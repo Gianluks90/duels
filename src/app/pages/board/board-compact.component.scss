@@ -209,6 +209,76 @@
   color: var(--text-primary);
 }
 
+// Fumetto emote (Qualità della vita) — stesso trattamento cream/tail di .hud__emote-bubble sul
+// desktop (player-hud.component.scss), duplicato qui perché il layout compatto non passa per
+// PlayerHudComponent (v. board.component.html). Ancorato a .board-compact__identity (position:
+// relative già impostato sopra): sopra il footer giocatore (punta verso il basso), sotto l'header
+// avversario (punta verso l'alto, --mirrored).
+.board-compact__emote-bubble {
+  position: absolute;
+  // Agganciato a sinistra (sotto/sopra la stessa metà da cui parte la coda), non più centrato sul
+  // pannello — --mirrored sotto lo aggancia a destra invece.
+  left: 0;
+  z-index: 3;
+  box-sizing: border-box;
+  min-width: 110px;
+  // Niente max-width apposta: la frase resta sempre su una riga (v. white-space sotto), il fumetto
+  // si allarga per contenerla invece di andare a capo.
+  white-space: nowrap;
+  padding: var(--sp-2) var(--sp-4);
+  background: #faf3e0;
+  color: #2b2620;
+  border-radius: 20px;
+  // Cinzel (--font-ui) è poco leggibile per una frase intera — v. il commento su
+  // .hud__emote-bubble in player-hud.component.scss per il perché di --font-body (Lora) invece.
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.35;
+  text-align: center;
+  // Ombra esterna + due ombre interne "a cuscino" (v. .hud__emote-bubble sul desktop per il
+  // dettaglio) per un aspetto pieno/tondeggiante invece che piatto.
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.45),
+    inset 0 2px 3px rgba(255, 255, 255, 0.6),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.08);
+  bottom: calc(100% + 22px);
+  // Pop d'ingresso + deriva/dissolvenza finale — stessa animazione di .hud__emote-bubble sul
+  // desktop (player-hud.component.scss), keyframes duplicate qui sotto per lo stesso motivo per
+  // cui l'intero fumetto è duplicato in questo file (v. commento sopra). Durata in sync con
+  // EMOTE_BUBBLE_DURATION_MS (animation-queue.service.ts).
+  animation: hud-emote-bubble-enter-up 5000ms ease-out forwards;
+
+  // Coda — stesso asset SVG di .hud__emote-bubble sul desktop (player-hud.component.scss, v. il
+  // commento lì per l'orientamento richiesto), solo scalata più piccola.
+  &::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    bottom: -13px;
+    width: 20px;
+    height: 20px;
+    background-color: #faf3e0;
+    mask: url('/icons/emote_bubble_tail.svg') left bottom / contain no-repeat;
+    -webkit-mask: url('/icons/emote_bubble_tail.svg') left bottom / contain no-repeat;
+  }
+}
+
+.board-compact__emote-bubble--mirrored {
+  left: auto;
+  right: 0;
+  bottom: auto;
+  top: calc(100% + 22px);
+  animation-name: hud-emote-bubble-enter-down;
+
+  &::before {
+    left: auto;
+    right: 8px;
+    bottom: auto;
+    top: -13px;
+    transform: rotate(180deg);
+  }
+}
+
 // Stesso stile di .hud__avatar (quadrato smussato, non un cerchio) — coerenza con l'HUD desktop.
 .board-compact__avatar {
   display: flex;
@@ -402,6 +472,54 @@
   to {
     opacity: 0;
     transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+// Fumetto emote (Qualità della vita) — duplicate di @keyframes hud-emote-bubble-enter-up/-down in
+// player-hud.component.scss (v. commento lì per la coreografia: pop d'ingresso, pausa ferma, deriva
+// verso l'alto/basso mentre dissolve). Stesso motivo di ogni altra duplicazione in questo file: il
+// layout compatto non passa per PlayerHudComponent.
+@keyframes hud-emote-bubble-enter-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.75);
+  }
+  4% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.05);
+  }
+  7% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(1);
+  }
+}
+
+@keyframes hud-emote-bubble-enter-down {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.75);
+  }
+  4% {
+    opacity: 1;
+    transform: translateY(6px) scale(1.05);
+  }
+  7% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(16px) scale(1);
   }
 }
 

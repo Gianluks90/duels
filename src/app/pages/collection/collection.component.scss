@@ -161,9 +161,26 @@
     padding: var(--sp-6);
   }
 
+  // Sottotitolo per categoria (v. CollectionComponent.emoteItemsByCategory) — solo le emote hanno
+  // più di un gruppo nello stesso tab, quindi nessun'altra griglia qui sopra ne ha bisogno.
+  &__group-title {
+    margin: 0 0 var(--sp-2);
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+
+    &:not(:first-child) {
+      margin-top: var(--sp-5);
+    }
+  }
+
   &__grid {
     display: grid;
     gap: var(--sp-3);
+    margin-bottom: var(--sp-2);
 
     &--card-backs {
       grid-template-columns: repeat(6, 1fr);

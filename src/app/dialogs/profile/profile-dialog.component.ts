@@ -51,6 +51,23 @@ export class ProfileDialogComponent {
   ]);
   protected readonly hasTitles = computed(() => this.ownedTitleIds().length > 0);
 
+  /** Giocatori silenziati (permanente, cross-partita — v. UserProfile.mutedEmotesFrom): risolti a
+   * {uid, name} qui invece che nel template, `name` da mutedPlayerNames (snapshot preso al momento
+   * del mute, v. AuthService.toggleMuteEmotesFrom) con l'uid stesso come ultimo fallback — non
+   * dovrebbe mai mancare (scritti sempre insieme), ma un profilo toccato a mano non va a rompere la
+   * UI. */
+  protected readonly mutedPlayers = computed(() => {
+    const profile = this.profile();
+    return (profile?.mutedEmotesFrom ?? []).map((uid) => ({
+      uid,
+      name: profile?.mutedPlayerNames?.[uid] ?? uid,
+    }));
+  });
+
+  protected async unmutePlayer(uid: string, name: string): Promise<void> {
+    await this.auth.toggleMuteEmotesFrom(uid, name);
+  }
+
   protected readonly confirmDelete = signal(false);
   protected readonly deleting = signal(false);
   protected readonly deleteError = signal<string | null>(null);

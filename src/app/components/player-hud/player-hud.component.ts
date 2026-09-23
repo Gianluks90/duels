@@ -28,6 +28,14 @@ export interface FlashEvent {
   amount: number;
 }
 
+/** Un'emote da mostrare come fumetto sopra/sotto il pannello (Qualità della vita) — stesso schema
+ * minimale di FlashEvent (id per il dedup, v. watchFlashEvent), `text` già risolto in i18n da
+ * AnimationQueueService: questo componente resta presentazionale, non conosce EMOTE_CATALOG. */
+export interface EmoteBubbleEvent {
+  id: number;
+  text: string;
+}
+
 /** Un elemento della formula di una magia pinnata, già risolto per il tooltip — `available` dice se
  * QUELL'elemento ha almeno una carta corrispondente in mano+mazzo+scarti (countMatchingCards,
  * turn-engine.ts), calcolato in board.component.ts. */
@@ -93,9 +101,24 @@ export class PlayerHudComponent {
   readonly shieldEvent = input<FlashEvent | null>(null);
   /** Danno da Avvelenamento (2.3.4) da segnalare — stesso schema di damageEvent, ma con propria icona/colore (teschio verde invece del lampo rosso generico), già scorporato dal danno generico lato AnimationQueueService. */
   readonly poisonDamageEvent = input<FlashEvent | null>(null);
+  /** Emote da mostrare come fumetto (Qualità della vita) — a differenza di damageEvent/healEvent/...
+   * il timer di sparizione (5s, EMOTE_BUBBLE_DURATION_MS) è già gestito da AnimationQueueService
+   * stesso (v. syncEmote), non da un watchFlashEvent locale: questo input riflette direttamente lo
+   * stato del servizio, nessun dedup-su-id necessario qui. */
+  readonly emoteEvent = input<EmoteBubbleEvent | null>(null);
+  /** true se l'avversario di QUESTO pannello è già silenziato — pilota solo l'icona mute/unmute,
+   * mai renderizzata quando mirrored() è false (non ha senso silenziare se stessi). */
+  readonly muted = input<boolean>(false);
+  /** true durante il cooldown anti-spam (board.component.ts, EMOTE_COOLDOWN_MS) — disabilita solo il
+   * pulsante lanciatore, mai renderizzato quando mirrored() è true. */
+  readonly emoteCooldown = input<boolean>(false);
 
   /** Only rendered when !mirrored() — the opponent's panel has no settings button. */
   readonly settingsClick = output<void>();
+  /** Only rendered when !mirrored() — solo il proprio pannello lancia emote. */
+  readonly emoteClick = output<void>();
+  /** Only rendered when mirrored() — solo il pannello dell'avversario ha un mute da alternare. */
+  readonly muteClick = output<void>();
 
   /** null finché non c'è una variazione da mostrare; altrimenti l'ammontare, per il tempo dell'animazione. */
   protected readonly activeDamageAmount = this.watchFlashEvent(this.damageEvent);

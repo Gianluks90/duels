@@ -79,6 +79,29 @@
         </div>
       </section>
 
+      <section class="profile-dialog__section">
+        <h3 class="profile-dialog__section-title">
+          {{ 'profile.mutedPlayers.title' | translate }}
+        </h3>
+
+        @if (mutedPlayers().length === 0) {
+          <p class="t-muted profile-dialog__danger-desc">
+            {{ 'profile.mutedPlayers.empty' | translate }}
+          </p>
+        } @else {
+          <ul class="profile-dialog__muted-list">
+            @for (player of mutedPlayers(); track player.uid) {
+              <li class="profile-dialog__muted-row">
+                <span class="profile-dialog__muted-name">{{ player.name }}</span>
+                <button class="btn btn--secondary" (click)="unmutePlayer(player.uid, player.name)">
+                  {{ 'profile.mutedPlayers.unmute' | translate }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
       <section class="profile-dialog__section profile-dialog__section--danger">
         <h3 class="profile-dialog__section-title">{{ 'profile.danger.title' | translate }}</h3>
 

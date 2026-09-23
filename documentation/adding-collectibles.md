@@ -273,9 +273,23 @@ I titoli in italiano spesso servono in 3 varianti di genere: maschile, femminile
    "taunt_retry": { "text": "Ti va di riprovare?" }
    ```
 
-3. Ricordati che l'intera funzione resta invisibile in app finché `EMOTES_FEATURE_ENABLED` (in
-   cima a `data/emotes.ts`) è `false` — nessun mirror da aggiornare in `firestore.rules` finché non
-   implementiamo davvero lo sblocco/equip (oggi tutte le emote sono `free`).
+3. Se `unlock.kind` è `'free'` (come nell'esempio), aggiungi anche l'id a `freeEmotes()` in
+   [firestore.rules](../firestore.rules) — mirror manuale, stesso schema di `freeCardBacks()`/
+   `freeTitles()`: senza quella riga la nuova frase non sarebbe equipaggiabile (`equippedEmotesValid()`
+   la rifiuterebbe). Se invece `unlock.kind` è `'redeemCode'` non serve toccare le regole: l'id
+   diventa equipaggiabile non appena finisce in `unlockedEmotes` via riscatto codice (v. `redeemValid()`
+   in `firestore.rules`, già copre `unlockedEmotes`).
+
+   Vuoi aggiungere il testo di una frase PRIMA di aver deciso come si sblocca? Usa
+   `unlock: { kind: 'objectivePending' }` (v. `reward-unlock.model.ts`) invece di `'free'`: compare
+   comunque in Collezione (bloccata, con "Condizione di sblocco non ancora disponibile"), ma non è
+   equipaggiabile da nessuno — niente da toccare in `firestore.rules`, non essendo mai né `free` né
+   in `unlockedEmotes`. Quando deciderai l'obiettivo giusto, sostituisci con
+   `{ kind: 'objective', objectiveId: '...' }` (v. Ricetta 6 sotto).
+
+4. `EMOTES_FEATURE_ENABLED` (in cima a `data/emotes.ts`) è `true` dal lancio dello strumento emote
+   in game — equip (Collezione, "Personalizza") e lancio (in game) sono entrambi implementati, non
+   c'è più nulla da tenere nascosto qui.
 
 ## Ricetta 6 — Nuovo obiettivo (Achievements) che sblocca uno dei collezionabili sopra
 

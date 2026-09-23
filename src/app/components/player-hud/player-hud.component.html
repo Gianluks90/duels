@@ -53,6 +53,21 @@
     </div>
   }
 
+  <!-- Fumetto emote (Qualità della vita) — sibling assoluto di .hud__content, stesso motivo di
+       .hud__pinned-row sopra (quel contenitore ha un'altezza fissa a 2 righe, un terzo figlio
+       romperebbe lo space-between). Sopra il pannello proprio, sotto quello dell'avversario
+       (specchiato, v. scss) — sparisce da solo dopo 5s (AnimationQueueService.syncEmote), nessun
+       timer qui. -->
+  @if (emoteEvent(); as bubble) {
+    <div
+      class="hud__emote-bubble"
+      [class.hud__emote-bubble--mirrored]="mirrored()"
+      aria-live="polite"
+    >
+      {{ bubble.text }}
+    </div>
+  }
+
   <!-- Only this wrapper (sized to the visible slice) is space-between'd —
        the outer .hud stays anchored to the edge like the other two panels. -->
   <div class="hud__content">
@@ -78,13 +93,39 @@
           <span class="hud__name t-heading">{{ firstName() }}</span>
         </div>
         @if (!mirrored()) {
+          <div class="hud__actions">
+            <button
+              type="button"
+              class="hud__emote-launcher"
+              [disabled]="emoteCooldown()"
+              (click)="emoteClick.emit()"
+              [attr.aria-label]="'playerHud.emoteAria' | translate"
+            >
+              <span class="hud__emote-launcher-icon" aria-hidden="true"></span>
+            </button>
+            <button
+              type="button"
+              class="hud__settings"
+              (click)="settingsClick.emit()"
+              [attr.aria-label]="'playerHud.settingsAria' | translate"
+            >
+              <span class="hud__settings-icon" aria-hidden="true"></span>
+            </button>
+          </div>
+        } @else {
           <button
             type="button"
-            class="hud__settings"
-            (click)="settingsClick.emit()"
-            [attr.aria-label]="'playerHud.settingsAria' | translate"
+            class="hud__mute"
+            (click)="muteClick.emit()"
+            [attr.aria-label]="
+              (muted() ? 'playerHud.unmuteAria' : 'playerHud.muteAria') | translate
+            "
           >
-            <span class="hud__settings-icon" aria-hidden="true"></span>
+            <span
+              class="hud__mute-icon"
+              [class.hud__mute-icon--muted]="muted()"
+              aria-hidden="true"
+            ></span>
           </button>
         }
       </div>

@@ -29,7 +29,10 @@
           [poisonDamageEvent]="opponentPoisonDamageEvent()"
           [favoriteSpellNames]="opponentFavoriteSpellNames()"
           [equippedTitle]="opponentTitle()"
+          [emoteEvent]="opponentEmoteEvent()"
+          [muted]="isOpponentMuted()"
           [mirrored]="true"
+          (muteClick)="toggleMuteOpponent()"
         />
 
         <!-- Box: mazzo (15%) | arco (1fr, l'unico che esce sopra il box) | scarti (15%).
@@ -204,7 +207,6 @@
                 </div>
               }
             }
-
           </div>
 
           <div class="board__hand-box-side">
@@ -626,8 +628,11 @@
           [favoriteSpellNames]="playerFavoriteSpellNames()"
           [equippedTitle]="playerTitle()"
           [pinnedSpells]="playerPinnedSpells()"
+          [emoteEvent]="playerEmoteEvent()"
+          [emoteCooldown]="emoteCooldownActive()"
           [mirrored]="false"
           (settingsClick)="openGameSettings()"
+          (emoteClick)="openEmotePicker()"
         />
 
         <!-- Box: mazzo (15%) | arco (1fr, l'unico che esce sopra il box) | scarti (15%).
@@ -1007,7 +1012,20 @@
               }}</span>
             }
             <span class="board-compact__name">{{ opponentName() }}</span>
+            <app-icon-button
+              [icon]="isOpponentMuted() ? volumeOffIcon : volumeOnIcon"
+              [ariaLabel]="
+                (isOpponentMuted() ? 'playerHud.unmuteAria' : 'playerHud.muteAria') | translate
+              "
+              [size]="24"
+              (iconClick)="toggleMuteOpponent()"
+            />
           </div>
+          @if (opponentEmoteEvent(); as bubble) {
+            <div class="board-compact__emote-bubble board-compact__emote-bubble--mirrored">
+              {{ bubble.text }}
+            </div>
+          }
           @if (opponentPoisonLevel() > 0) {
             <span
               class="board-compact__poison"
@@ -1880,12 +1898,22 @@
               }}</span>
             }
             <app-icon-button
+              [icon]="emoteLauncherIcon"
+              [ariaLabel]="'playerHud.emoteAria' | translate"
+              [size]="28"
+              [disabled]="emoteCooldownActive()"
+              (iconClick)="openEmotePicker()"
+            />
+            <app-icon-button
               [icon]="settingsIcon"
               [ariaLabel]="'playerHud.settingsAria' | translate"
               [size]="28"
               (iconClick)="openGameSettings()"
             />
           </div>
+          @if (playerEmoteEvent(); as bubble) {
+            <div class="board-compact__emote-bubble">{{ bubble.text }}</div>
+          }
         </div>
         <div class="board-compact__hp-bar">
           <div class="board-compact__hp-track">

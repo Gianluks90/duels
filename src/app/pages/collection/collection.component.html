@@ -15,7 +15,9 @@
               type="button"
               class="collection__category"
               [class.collection__category--active]="selectedCategory() === category.id"
-              [disabled]="(category.id === 'titles' && editMode()) || comingSoonCategories.has(category.id)"
+              [disabled]="
+                (category.id === 'titles' && editMode()) || comingSoonCategories.has(category.id)
+              "
               (click)="selectCategory(category.id)"
             >
               {{ category.labelKey | translate }}
@@ -121,11 +123,33 @@
             <p class="t-muted">{{ 'collection.comingSoon' | translate }}</p>
           }
           @case ('emotes') {
-            <div class="collection__grid collection__grid--emotes">
-              @for (item of emoteItems(); track item.id) {
-                <app-collection-tile [item]="item" shape="title" />
-              }
-            </div>
+            @for (group of emoteItemsByCategory(); track group.category) {
+              <h3 class="collection__group-title">
+                {{ 'collection.emoteCategories.' + group.category | translate }}
+              </h3>
+              <div
+                class="collection__grid collection__grid--emotes"
+                [attr.role]="editMode() ? 'radiogroup' : null"
+                [attr.aria-label]="
+                  editMode() ? ('collection.emoteCategories.' + group.category | translate) : null
+                "
+              >
+                @for (item of group.items; track item.id) {
+                  <app-collection-tile
+                    [item]="item"
+                    shape="title"
+                    [selectable]="editMode() && item.owned"
+                    [selected]="
+                      editMode()
+                        ? pendingEquippedEmotes()[group.category] === item.id
+                        : equippedEmoteId(group.category) === item.id
+                    "
+                    [activeLabel]="'collection.activeTooltip' | translate"
+                    (select)="selectEmote(group.category, item.id)"
+                  />
+                }
+              </div>
+            }
           }
           @case ('stories') {
             <p class="t-muted">{{ 'collection.comingSoon' | translate }}</p>
